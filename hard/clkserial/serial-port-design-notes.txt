@@ -1,0 +1,395 @@
+A1200 Clock port Serial Card design Notes
+-----------------------------------------
+
+Preliminary release, 4th July 2001 by Ian Stedman
+Ian.Stedman@zoom.co.uk
+
+Introduction
+------------
+
+A public domain design for a high speed serial port for the Amiga A1200.
+
+September last year, I wrote a short note on the A1200 clock port which I 
+posted to Aminet. I received a few emails asking for more info and how to 
+design something for this port. Whilst I had a few ideas, I needed to design
+something myself to help others, hence this project was born.
+
+I know there are commercially available, high speed, Serial ports for the A1200
+so I decided to try and design one to show you, the reader, how they are built.
+
+The design is untested for 2 reasons:
+
+1) I can't make surface mount PCBs yet. Using through hole parts would make the 
+   pcb way too big.
+2) I do not own an A1200. I own an A600 and CD32/SX32.
+
+If I get the chance I intend to build this design to make sure it does work ;)
+
+
+
+The Design process
+------------------
+
+This falls into 3 stages:
+
+1) Research on the A1200
+2) Research of high speed serial parts (UARTS)
+3) the actual hardware design
+
+Stage 1, A1200 Design notes
+---------------------------
+
+I advise you to have a quick read of my previous note on the clock port
+contained in this archive and available on aminet before continuing.
+Some info is expanded upon here.
+
+Relevant documents
+------------------
+
+Obtaining detailed design information on the A1200 is tricky.
+Using Google I found some useful bit of information, namely the A1200 
+schematics and the A1200 functional specification.
+
+A1200 Schematics	http://www.amiga-hardware.com/a1200.html 
+Goto the bottom of the page and download the LZX file
+
+A1200 Functional specification
+Any aminet mirror,
+A1200FuncSpec.lha  hard/misc   35K  96 A1200 functional Specifications
+
+Oh and don't forget the following
+
+A1200Hardware.lha  hard/misc   73K 195 All you need to know about the A1200 Hardwardware
+a1200INFO6.lha     hard/misc    5K 241 A1200 HARDWARE info, vol.6 (11/96)- RTC
+
+By studying these I managed to piece together the following on the clock port, most
+of which comes from my previous A1200 clock port notes.
+
+
+
+Pins Available and their function
+---------------------------------
+
+What follows is the relevant signals available for add on expansions.
+
+All are located on the bottom half of connecter P9B
+
+Unless stated overwise, all signals are TTL compatible and have the following characteristics
+
+Logic 0		<=0.8V for an input, <= 0.4V for an output, 3.2 mA drive.
+Logic 1		>=2.0V for an input, >= 2.4V for an output, 400 microamp (uA) drive.  
+
+
+_RTC_CS 
+
+Chip select for the real time clock that was never fitted.
+It decodes/selects a 64K memory space from $DC0000 to DCFFFF.
+There are 3 Wait states on a read and 4 on a write to ports using 
+this address strobe.
+Active low.
+
+_IORD
+
+An Intel/PC style I/O Read signal.
+Active low.
+Used for Read strobes on a device connected to the clock port.
+The IORD signal is also used by the IDE interface.
+
+Signal sourced from Gayle. 
+
+_IOWR
+
+An Intel/PC style I/O Write signal.
+Active low.
+Used for write strobes to devices connected to the clock port.
+Also used by the IDE interface.
+
+Signal sourced from Gayle. 
+
+_RESET & PWR_BAD
+
+The RESET line appears to come from the RESET line by the keyboard micro?
+
+PWR_BAD is a power up reset signal, as far as I can tell.
+
+The KB_RESET signal is used to Warm Reboot the Amiga and this signal comes from the 
+keyboard array by using the 3 finger salute!
+
+_INT6
+
+A level 6 interrupt which goes to Paula. Paula feeds this to the 68020's IPL 
+(Interrupt Priority Level) lines. Can be used by add on peripherals
+
+_RTC_CS
+
+One of 2 chip selects available on the clock port.
+
+Was originally intended for the optional clock!
+
+It is active low for any address access in the range of $DC0000 to $DCFFFF
+
+_SPARE_CS
+
+The second of the chip selects.
+
+It is active low for any address access in the range of $D80000 to $D8FFFF
+
+D23-D16
+
+8 bits of the 68020 Data bus.
+
+These are the only data bus lines available for add on peripherals.
+
+These lines connect directly to the 68020 so bear in mind their limited drive 
+capability, 400 uA for a logic 1, and 3.2 mA for a logic 0.
+
+Timing in relation to IORD and IOWR is detailed later.
+
+A5-A2
+
+4 bits of the 68020 Address bus.
+
+DC drive capabilities as above for the Data bus.
+
+Timing info to be added later.
+
+VCC
+
+A +5V supply pin.
+
+No idea of current limits, depends on PCB tracking. 
+Limit to 200 mA to play safe.
+
+GND
+
+2 0VL (0V logic) pins.
+
+The Next Step + some analysis
+-----------------------------
+
+Looking at these signals and the schematics made the following observations.
+
+- Only 8 data bits available, limiting but fine for a serial or parallel port or
+  any other communications part that needs an 8 bit interface (maybe ISDN).
+
+- 2 Chip selects that each decode a 64K address space. This eliminates the 
+  need for any address decode logic to provide chip selects
+
+- There are only 4 address lines available!
+  This is a real pain as you can only access 16 memory locations.
+
+- There are separate Read (IORD) and Write (IOWR) lines which mimic 80X86 style 
+  Read write lines. Timing information difficult to obtain though.
+
+So in summary, everything you need for a small peripheral is there but some careful 
+design is needed. 
+
+The only thing I was lacking was some timing information on IORD, IOWR and the two
+chip selects, more on this later.
+
+PC Peripheral, high speed UART
+------------------------------
+
+Virtually all PCs use a 16550 compatible UART, be it an IC from National 
+Semiconductor (the original designers) on an expansion card or embedded 
+within a southbridge chip, as on most modern PCs.
+
+This is a popular chip as it contains a 16 byte FIFO for transmit and 
+receive functions, helping to lower CPU interrupt overheads. It also allows
+data rates upto 1.5 Mbit/second. MS windows limits serial ports to 115,200 bits
+per second, Amiga's are only limited by CPU speed.
+
+This is also the part used on all high speed serial port cards I have seen 
+for the Amiga. I have also designed using this part before so I knew there
+was a good chance it would work with the Amiga.
+
+The datasheet is available from National Semiconductor's web site at;
+
+http://www.national.com
+
+Search for PC16550 or look for CPU accessories/support.
+
+Interfacing the UART to the Clock Port
+--------------------------------------
+
+The first page of the datasheet shows a basic configuration which with a little 
+modification, would work with the A1200. Section 9, contained a clearer typical 
+application for an 8088 CPU, see included example1.gif and example2.gif
+
+With a little amount of interface circuitry we can interface this to the clock port.
+
+Taking the example circuit as a reference we can connect as follows
+
+A1200 PIN(S)	UART PIN(S)
+----------------------------
+_SPARE_CS	_CS2*
+_IORD		_RD**
+_IOWR		_WR
+A2-A5		A0-A2
+_RESET		RESET***
+INT6		INT****
+
+*    Tie CS0 & CS1 to +5V so that CS2 is used to select the device.
+**   Tie the RD and WR pins to +5V.
+***  The UART has an active high reset, we need to invert it.
+**** INT is active high on the UART, we must invert it.
+
+All we need is a 7404 Hex inverter chip for the 2 signals that need
+to be inverted.
+
+RS232 Transceiver chip
+-----------------------
+
+I chose the MAX 208 from MAXIM as I had data to hand on this part.
+
+It is limited to a mximum data rate of 120KBPS. There are faster parts available.
+If you used his part, you could lower the clock crystal to 18.436 MHZ to achieve
+a 115,200 BPS data rate.
+
+Conection of the transceiver to the UART is esy enough, see the schematics.
+
+Make sure you use the correct value capacitors for the charge pumps (C4-C7).
+
+Decoupling
+----------
+
+Each IC has a 100nF capacitor for power supply decoupling.
+A 10 uF capacitor whould be placed across the power rails, as close as 
+possible to the clock port header to reduce power supply transient effects.
+
+Timing Analysis
+---------------
+
+Obtaining full timing information for the clock port has been extremely difficult.
+
+I have timing information on the address and data lines, which came from the 68020
+user manual.
+
+What I really needed was the accurate timing for the IORD, IOWR and various chip 
+selects.
+
+What I have managed to gather is as follows.
+
+A1200 clock speed is around 14.3 MHz, which is approximately 70 ns.
+
+This is important when you consider the number of wait states associated with
+the chip selects.
+
+_SPARE_CS has 3 wait states (210ns) for a read and 4 wait states (280ns) for a 
+write.
+
+From an email by Jens Schoenfeld
+
+The IOR/IOW timing is very slow (several waitstates!), and you can always
+rely on data being valid over the whole active-time or IOW, and should
+make data valid before the rise of IOR. CS is always asserted way before
+IOR or IOW, since it is generated without AS, so you may encounter
+glitches on this signal without accelerator boards. 
+
+Sorry, no further info. These signals are generated by the Gayle chip, and
+that seems to be totally undocumented. I have heard that it has registers
+where you can configure this timing, but nobody has found out yet.
+
+This should fit in with the UART timing but the Address may not be present at
+the right time! The fact the signals are slow could help. The 68020 asserts the 
+address at S1, and data at S2 (70 ns time).
+
+This could potentially make the design malfunction. Without either a logic analyser
+capture or some probing with an oscilloscope I can not say any more.
+
+Hardware Design Conclusion
+--------------------------
+
+I have two concerns with the design at the moment, mainly due to not having
+built a prototype yet. They are:
+
+1) Some of the control signals, _IORD, _IOWR and SPARE_CS may need AC 
+   termination. Probably an 68 Ohm resistor and a 100 pF capacitor 
+   should do the trick.
+
+2) The timing info is sketchy. Hopefully by releasing this design I will 
+attract some attention and maybe someone will provide the info I need.
+
+The trickiest part of the design was finding out about the A1200 clock port, 
+once done it took about an hour to design the circuit.
+
+
+Software
+--------
+
+Well we need to access the part.
+
+The 16550 UART needs 8 address locations as follows
+
+SPARE_CS Base address $D800000 
+
+You would probably need to access the port using 16 bit accesses as the 
+part is on bits 16-23 of the address bus. So all addresses start from $D800001.
+
+We only have access to A2-A5 so all address increments are offset by 4 locations.
+
+The upper 8 bits (D24-D31) of the data bus will be ignored.
+
+The function of the internal register in part depend upon the Divisor latch
+address bit (DLAB) which is bit 7 of the Line control register.
+
+
+Register Name		Function			Address
+------------------------------------------------------------------
+RX Buffer		Holds a byte received		$D80001 (DLAB=0)
+TX Buffer		Holds byte to transmit		$D80001 (DLAB=0)
+Interrupt Enable	Interrupt control register	$D80005	(DLAB=0)
+Divisor Latch lower	Used to set the serial speed	$D80001 (DLAB=1)
+Divisor Latch higher	Used to set the serial speed	$D80005 (DLAB=1)
+Interrupt Ident 	Details of raised interrupt	$D80009 (Read Only)
+FIFO Control Register	Controls internal FIFOs		$D80009 (Write Only)
+Line Control Register	Set serial data control		$D8000D
+MODEM Control Register	Setup of some modem bits	$D80011
+Line Status Register	Various status bits		$D80015
+MODEM Status Register	Modem status bits		$D80019
+Scratch Register	For scratch data?		$D8001D
+
+For more details on the internal registers, see the 16550 user manual.
+
+To read and write data to the serial port you access address $D80001.
+
+NOTE: If you used the _RTC_CS chip select the address offsets would be the same but 
+they would start from, $DC0001.
+
+	
+There are 8 unused addresses from $D80021 to $D8003D. If you used a Dual UART, like the
+16C552, you could map the second UART in this address range.
+
+I am unsure if this design will work with available serial port drivers.
+Any clock port device will have to use addresses similar to those listed above
+so it could work. 
+
+Future Enhancements to the design
+---------------------------------
+
+As I was completing this write up I came across the 16C552 Dual UART with 
+enhanced parallel port from Texas Instruments (Document number SLLS102B).
+
+This includes 2 independent 16550 compatible UARTS and an enhanced parallel
+port. All that would need to be done to use this part is to modify the design to use
+the other available chip select, _RTC_CS so that the Parallel port can be used and 
+to modify the chip select configuration.
+
+Final Conclusion
+----------------
+
+I designed this system as an educational exercise for myself and hopefully, for 
+others who wish to design peripherals using the A1200 clock port.
+
+There may be some errors in this design, use it at your own risk.
+
+Copyright
+---------
+
+This design and associated document is copyright Ian Stedman, 4th July 2001.
+
+You may distribute freely and use the design in a product on one condition,
+if you manufacture a commercial card, you must send one to me.
+
+There may be errors and omissions in this document, I can not be held responsible
+for them, you use this information at your own risk.

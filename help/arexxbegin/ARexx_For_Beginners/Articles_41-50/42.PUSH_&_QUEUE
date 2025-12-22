@@ -1,0 +1,372 @@
+@DATABASE "ARB42"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 42 - Pushing & Queueing"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 42 - PUSHING & QUEUEING
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" PUSH and QUEUE Instructions   " LINK "PushQueue"}
+@{"    Example 42-1               " LINK "42-1"}
+@{"    Example 42-2               " LINK "42-2"}
+@{" The LINES() Built In Function " LINK "Lines()"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "PushQueue" "Article 42 - Pushing & Queueing - The PUSH & QUEUE instructions"
+
+@{B}@{U}@{JCENTER}THE PUSH & QUEUE INSTRUCTIONS@{UB}@{UU}
+@{JLEFT}
+The format for these two instructions is:-
+
+  PUSH   [expression]
+  QUEUE  [expression]
+
+The "expression" is placed (PUSHed or QUEUEd) into the @{"STDIN" LINK "ARB:Misc/Glossary/Streams"} stream's
+buffer. If the program was launched from a Shell/CLI window and no diversion
+of STDIN has been done, then that Shell/CLI window will be the STDIN
+stream.
+
+The data PUSHed or QUEUEd will be stored in the STDIN stream's buffer
+until one of these events occurs:-
+
+- An instruction clause using @{"PARSE PULL" LINK "ARB:Articles_31-40/36.Parse-Templates-2/Pull"} or @{"PULL" LINK "ARB:Articles_01-10/08.Symbols_Ex_Keyboard/MAIN"22} retrieves the data that
+  was PUSHed or QUEUEd. You will recall that PULL normally retrieves data
+  entered at the keyboard. Keyboard entry goes to the STDIN stream.
+
+  This is demonstrated by @{"Example42-1" LINK "42-1"}
+
+- The AREXX program has finished with STDIN stream which is normally when
+  the program ends or EXITs. The data in the STDIN stream's buffer will
+  then be displayed or acted on in the STDIN stream's window.
+
+  This is demonstrated by @{"Example42-2" LINK "42-2"}
+
+Until one of these events occurs, the "expression" waits in the STDIN
+stream's buffer.
+
+More than one "expression" can be sent and stored in the buffer without
+any retrieval taking place. The "expressions" are stored in order of being
+PUSHed or QUEUEd.
+
+The only difference between PUSH and QUEUE is that they act in a @{B}reverse
+manner@{UB} to each other in the way the data is stored in the STDIN stream's
+buffer:-
+
+- PUSH works on a "First In - Last Out", or @{B}FILO @{UB}basis, i.e.:-
+
+    the @{B}first@{UB} expression to be PUSHed is the @{B}last@{UB}  to be retrieved, and
+    the @{B}last@{UB}  expression to be PUSHed is the @{B}first@{UB} to be retrieved.
+
+- QUEUE works on a "First In - First Out", or @{B}FIFO @{UB}basis, i.e.:-
+
+    the @{B}first@{UB} expression QUEUEd is the @{B}first@{UB} expression retrieved, and
+    the @{B}last@{UB}  expression QUEUEd is the @{B}last@{UB}  retrieved.
+
+@{B}Note that@{UB} the "expression" is @{B}optional@{UB}. If it is @{B}not@{UB} used, as in:-
+
+  PUSH
+  QUEUE
+
+then the equivalent of a @{B}blank line@{UB} is sent. This is the equivalent of
+pressing RETURN on its own at a Shell/CLI prompt. This is demonstrated
+by @{"Example42-1" LINK "42-1"29}.
+
+A line feed character, @{"ASCII Code" LINK "ARB:Appendices/App-C_Ascii_Codes/NonPrintable"} '0a'x is sent at the end of the
+"expression" so that it is just the same as if you had entered the
+expression at a Shell/CLI prompt then pressed the return key.
+
+PUSH and QUEUE are demonstrated by @{"Example42-1" LINK "42-1"} and @{"Example42-2" LINK "42-2"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+@ENDNODE
+
+@NODE "42-1" "Article 42 - Pushing & Queueing - Example 42-1"
+
+@{B}@{U}@{JCENTER}PUSHING & QUEUEING - EXAMPLE 42-1@{UB}@{UU}
+@{JLEFT}
+  /* Example 42-1 */
+
+  SAY 'c'x'Now Using PUSH:-'||'a'x
+  DO x = 1 TO 6
+    PUSH 'Line number '||x
+    IF X = 3 THEN PUSH
+  END
+  CALL Output
+
+  SAY 'a'x'Now using QUEUE:-'||'a'x
+  DO x = 1 TO 6
+    QUEUE 'Line number '||x
+    IF X = 3 THEN QUEUE
+  END
+  CALL Output
+
+  EXIT
+
+  Output:
+    DO FOR 7
+      PARSE PULL In
+      SAY In
+    END
+RETURN
+
+This program will use first PUSH and then QUEUE to store the lines in
+this order:-
+
+  @{U}  For PUSH  @{UU}        @{U}  For QUEUE @{UU}
+
+  Line number 6       Line number 1
+  Line number 5       Line number 2
+  Line number 4       Line number 3
+
+  Line number 3       Line number 4
+  Line number 2       Line number 5
+  Line number 1       Line number 6
+
+@{B}Note@{UB} the blank lines stored between lines 3 and 4. This is from the lines:-
+
+  IF X = 3 THEN PUSH
+
+  IF X = 3 THEN QUEUE
+
+These two lines demonstrate that PUSH and QUEUE, when used @{B}without@{UB} an
+expression, will store a blank line. The output from RXing the program
+will prove this.
+
+@{B}After using PUSH@{UB}, the 7 lines (including the blank line) are retrieved
+and displayed by the "Output:" internal function. The display is:-
+
+  Now Using PUSH:-
+
+  Line number 6
+  Line number 5
+  Line number 4
+
+  Line number 3
+  Line number 2
+  Line number 1
+
+showing that the lines are stored in @{"FILO" LINK "PushQueue"39} order.
+
+@{B}After using QUEUE@{UB}, the 5 lines (including the blank line) are retrieved
+and displayed by the "Output:" internal function. The display is:-
+
+  Now using QUEUE:-
+
+  Line number 1
+  Line number 2
+  Line number 3
+
+  Line number 4
+  Line number 5
+  Line number 6
+
+showing that the lines are stored in @{"FIFO" LINK "PushQueue"44} order.
+
+Note that the Shell/CLI window displays the output from the two SAY
+instructions before the "expressions" are retrieved. This indicates that
+the window can still be used as the STDOUT stream even while the STDIN
+buffer (which is the same window) has information stored in it.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "42-2" "Article 42 - Pushing & Queueing - Example 42-2"
+
+@{B}@{U}@{JCENTER}PUSHING & QUEUEING - EXAMPLE 42-2@{UB}@{UU}
+@{JLEFT}
+/* Example 42-2 */
+
+SAY 'c'x'Now Using PUSH:-'||'a'x
+DO x = 1 TO 6
+  PUSH 'echo "Line number '||x'"'
+  IF X = 3 THEN PUSH
+END
+
+SAY 'a'x'Now using QUEUE:-'||'a'x
+DO x = 1 TO 6
+  QUEUE 'echo "Line number '||x'"'
+  IF X = 3 THEN QUEUE
+END
+
+This program uses similar DO loops as @{"Example42-1" LINK "42-1"}. However, this time
+the lines PUSHed or QUEUEd include the AmigaDOS command "Echo". Again
+a blank line is sent when "X = 3".
+
+The lines stored in the STDIN buffer will be:-
+
+  @{U}      For PUSH     @{UU}        @{U}     For QUEUE     @{UU}
+
+  Echo "Line number 6"       Echo "Line Number 1"
+  Echo "Line Number 5"       Echo "Line Number 2"
+  Echo "Line Number 4"       Echo "Line Number 3"
+
+  Echo "Line Number 3"       Echo "Line Number 4"
+  Echo "Line Number 2"       Echo "Line Number 5"
+  Echo "Line Number 1"       Echo "Line Number 6"
+
+@{B}Note@{UB} that this time there is no retrieval of the stored data from within
+the ARexx program. This means that as soon as the program finishes, the
+lines are sent to the Shell/CLI window from which you started the program.
+Each line is acted upon in turn just as though you had typed it into the
+Shell/CLI window and pressed RETURN (but with @{B}one difference@{UB} - see
+below).
+
+The output should look like this (but your CLI process number and directory
+will probably be different):-
+
+  Now Using PUSH:-
+
+  Now using QUEUE:-
+
+  1.Work:ARB/Articles_41-50> @{B}Line number 6@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 5@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 4@{UB}
+  1.Work:ARB/Articles_41-50>
+  1.Work:ARB/Articles_41-50> @{B}Line number 3@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 2@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 1@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 1@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 2@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 3@{UB}
+  1.Work:ARB/Articles_41-50>
+  1.Work:ARB/Articles_41-50> @{B}Line number 4@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 5@{UB}
+  1.Work:ARB/Articles_41-50> @{B}Line number 6@{UB}
+  1.Work:ARB/Articles_41-50>
+
+The @{B}one difference@{UB} to entering the "Echo" commands yourself is that the
+output from the echo appears immediately after the Shell/CLI prompt instead
+of on the next line.
+
+@{B}Note@{UB} that the two blank lines have resulted in another Shell/CLI prompt
+appearing on the same line as the previous one.
+
+What this program shows is that, if the ARexx program does @{B}not@{UB} retrieve
+the data that has been PUSHed or QUEUEd, then it is sent to the STDIN
+window as soon as the ARexx program has finished.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Lines()" "Article 42 - Pushing & Queueing - The LINES() Function"
+
+@{B}@{U}@{JCENTER}THE LINES() BUILT IN FUNCTION@{UB}@{UU}
+@{JLEFT}
+This function has the format:-
+
+  LINES(LogicalFileName)
+
+It is supposed to return the number of lines waiting (PUSHed or QUEUEd
+or typed ahead) for the logical file which must be an "interactive" @{"stream"  LINK "ARB:Misc/Glossary/Streams"},
+e.g. the STDIN stream.
+
+The following program is the same as @{"Example42-1" LINK "42-1"} except that the QUEUE
+section has been omitted and the extra line using LINES() has been
+included:-
+
+  /* Example 42-3 */
+
+  SAY 'c'x'Now Using PUSH:-'||'a'x
+  DO x = 1 TO 6
+    PUSH 'Line number '||x
+    IF X = 3 THEN PUSH
+  END
+  SAY 'Lines waiting in STDIN =' LINES('STDIN')
+  CALL Output
+
+  EXIT
+
+  Output:
+  DO FOR 7
+    PARSE PULL In
+    SAY In
+  END
+  RETURN
+
+The manuals (official and unofficial) that I have read all say that if
+you use the LINES() function in the above manner then the line:-
+
+  SAY 'Lines waiting in STDIN =' LINES('STDIN')
+
+should produce this output:-
+
+  Lines waiting in STDIN = 7
+
+to indicate that 7 lines are waiting in the STDIN buffer.
+
+However, my Amiga and ARexx version will output the following in response
+to that line:-
+
+  Lines waiting in STDIN = 0
+
+The fact that the seven lines really @{B}are@{UB} PUSHed into the stream and waiting
+is evidenced by the fact that the full output from the program is:-
+
+  Now Using PUSH:-
+
+  Lines waiting in STDIN = 0
+  Line number 6
+  Line number 5
+  Line number 4
+
+  Line number 3
+  Line number 2
+  Line number 1
+
+However, we can demonstrate the LINES() function does work in some
+circumstances with this program:-
+
+  /* Example 42-4 */
+
+  ADDRESS COMMAND 'Wait 30 secs'
+
+  SAY 'Lines waiting in STDIN =' LINES('STDIN')
+
+  ADDRESS COMMAND 'Wait 2 secs'
+
+This program will pause for 30 seconds to give you time to type the
+following three lines into the same Shell/CLI window which is running the
+program. There will not be any prompt to type at nor will there be any
+immediate reaction when you press return at the end of each line:-
+
+  echo "Line number 1"
+  echo "Line number 2"
+  echo "Line number 3"
+
+After the 30 seconds, the SAY line should give this output:-
+
+  Lines waiting in STDIN = 3
+
+which indicates that 3 lines have been typed ahead but not yet acted upon.
+After this the following three lines should appear (separated by the prompt)
+as a result of the three lines you manually entered:-
+
+  Line number 1
+  Line number 2
+  Line number 3
+
+I have not yet worked out any practical use for this function.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

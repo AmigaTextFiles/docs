@@ -1,0 +1,287 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                28.Teil...
+
+Wie ich versprochen habe, kommen wir jetzt an etwas schwierigere
+Blitterthemen.
+Also ran an die logischen Verknuepfungen.
+
+Wer von euch ein bisschen mit dem letzten Bob-Listing gearbeitet hat, der
+hat bestimmt einige unangenehme eigenschaften des Programm`s kennengelernt.
+Zum Beispiel das wenn mehrere Bob`s sich ueberschneiden, immer nur der
+oberste ganz dargestellt wird, und von den anderen immer mehr oder weniger
+fehlt.
+
+Die Erklaerung ist einfach. Wir Kopieren ja bloss von A nach D. Alles was
+ich A steht geht auch nach D.
+Das ist keine Verknupfung. Schalten wir mal eben auf eine Plane, da kann
+man die Funktion besser erkennen.
+
+Es soll ja am Ende so Funktionieren das in der Bitplane alles gesetzt wird
+was auch im Bob gesetzt ist. Sobald aber mal das aktuelle Bit im Bob nicht
+gesetzt ist, soll das gesetzt werden was dort vorher stand.
+Da wir aber nicht Logisch mit D arbeiten koennen, sondern in D immer nur
+das Ergebnis steht, muessen wir eine weitere Quelle dazu schalten.
+Dazu nehmen wir die Quelle B.
+
+Der Blitteraufruf sieht dann so aus das A auf den einplaneBob zeigt, B auf
+den bereich zeigt der von dem Bob ueberschrieben wird, und D auf den
+gleichen Bereich, allerdings als Ziel....
+
+Im BLTCON0-Register muss man dann nur noch die Verknuepfung
+
+        D =  A  or  B
+
+Das heisst auf Deutsch - D ist immer dann 1, wenn A oder B 1 ist. Wichtig
+ist dabei das Oder.
+
+Manche werden sich jetzt fragen ob ich noch ganz echt bin. Aber trotzdem
+werde ich jetzt wieder mal die Bobs kurz verlassen, da ich ja immer zu dem
+jeweiligen Stand des Koennens in Assembler ein paar andere Sachen mache.
+Das finde ich naemlich sehr viel besser.
+
+Kommen wir nun zu einer Sache die vor einem Jahr das Markenzeichen fuer
+gute Intro/Demo-Programmierer war. Mittlerweile ist es allerdings Standart
+geworden. Das ist zwar etwas traurig aber es ist nach wie vor eine tolle
+Sache, an der man seine Programmtechnischen Faehigkeiten sehr gut messen
+kann.
+
+22.Realisierung eines einfachen Sinusscrollers mit dem Blitter
+
+Als Grundprogramm nehmen wir einfach das Laufschriftprogramm was wir im
+Kapitel Laufschrift geschrieben haben.
+Es muss auch nicht soviel daran geaendert werden, deshalb bietet es sich
+an.
+
+Schauen wir uns mal an was der Prozessor dem Blitter zu tun gibt.
+Der Prozessor laesst den Blitter jede 1/50 Sekunde den Laufschrift Bereich
+um eins nach Links schieben. Gleichzeitig zaehlt er jedoch ob der Aktuelle
+Buchstabe schon aus dem Puffer herausgeschoben ist. Sobald das passiert ist
+laesst er den Blitter einen neue Buchstaben in den Puffer kopieren.
+
+Diese Kopierroutine ist einfach Mathematisch darzustellen.
+
+        D  =  A
+
+Also...Ist A = 1 dann ist auch D = 1, ist A = 0 dann....
+Somit wird auch der Muell der beim Linksrotieren des Puffer hinten
+reingeschoben wird, ueberschrieben. Schoen und gut.
+
+Jetzt wollen wir uns mal ueberlegen wie man die Wellen, oder einfacher,
+ueberhaupt einen Vertikalen versatz hinkriegen koennen.
+Wenn wir immer mit einem Wort arbeiten, ist das ja nicht schwer. Das
+naechste Ziel des Blitters liegt dann eben 3 oder 4 zeilen unter dem
+vorherigen. Was ist aber wenn wir die abstufungen Steiler machen wollen ?
+
+Wir muessten dann mehrmals pro Wort um eine Zeile runtergehen. Sagen wir
+mal immer 4 Bits, und dann eine Zeile runter.
+Aber wie kriegt man nur 4 Bits kopiert, und wie weiss der Blitter welche 4
+Bits ich will ?
+
+Dazu gibt es Bltafwm und Bltalwm, die beiden Masken die man ueber das erste
+und letzte Word der zu kopierenden Zeilen legen kann. Damit markieren wir
+einfach die Bits die wir kopieren wollen. Nachdem das passiert ist schieben
+wir die Maske auf die naechsten 4 Bits, und starten die Aktion fuer das
+Wort nochmal. Solange bis das Wort kopiert ist. Ihr koennt euch sicherlich
+vorstellen was das fuer eine arbeit fuer den Blitter ist. Wiegesagt -
+erstes und letztes Wort der Zeile. Falls die Zeile nur ein Wort, wie in
+unserem Fall, breit ist, dann werden die Masken uebereinander gelegt. Um
+dann sinnvolle angaben zu erhalten, muessen die beiden Masken jeweils
+denselben Inhalt haben. Wenn ich also aus dem Wort nur Bit 1,2,3 und 4
+kopieren will, dann muessen die Masken fuer die Register ungefaehr so !
+aussehen.
+
+        BltaFwm =  %1111000000000000
+        BltaLwm =  %1111000000000000
+ 
+So, und was geschieht mit dem Rest ? Der Blitter schreibt an ihre Stelle im
+Ziel, egal was in der Quelle steht, immer eine Null. Somit haetten wir dann
+nur die 4 Bits die wir gewuenscht haben, kopiert.
+
+Was passiert aber wenn ich die ersten 4 Bits kopiert habe, die Maske
+verschoben habe, und nun die Bits 5 - 8 um eine zeile verschoben, Kopieren
+will. Da Nullen ja auch Kopiert werden, und die ausmaskierten Bits, als 0
+Interpretiert werden, wird der groesste Teil der ersten 4 Bits geloescht.
+
+Das ist dann ehrlichgesagt - Scheisse !, und ganz bestimmt nicht das was
+wir wollen.
+Deshalb muessen wir es so einrichten, das der Blitter die gesetzten Bits im
+Ziel, die durch nullen ueberschrieben werden wuerden, zu beruecksichtigen.
+
+Die Logische verknuepfung die wir dafuer einstellen muessen, ist
+
+        D  =  A ^ B
+
+Was auf Deutsch heisst. D ist auf jedenfall 1 wenn A oder B 1 ist. Wenn
+beide 1 sind, was aber in unserem Fall nicht vorkommen wird, ist es
+natuerlich auch 1.
+
+Auf diese Art und Weise, werden die davor kopierten Bitspalten, in Ruhe
+gelassen, und halten ihr aussehen.
+
+Ich will das ebenbesprochene mal Source-Code-Maessig unterstuetzen.
+Es kopiert einen im Source enthaltenen Bob, jeweils um eine Zeile versatz
+pro Bit auf den Screen.
+
+
+Start:
+Execbase=       4
+Openlibrary=    -408
+Vhposr=         $dff006
+Forbid=         -30-102
+Permit=         -30-108
+Bltafwm=        $dff044
+Bltalwm=        $dff046
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltamod=        $dff064
+Bltbmod=        $dff062
+Bltdmod=        $dff066
+Bltapt=         $dff050
+Bltbpt=         $dff04c
+Bltdpt=         $dff054
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltsize=        $dff058
+
+
+        Move.w  #$0020,Dmacon
+        Move.w  #$4000,Intena
+        Move.l  Execbase.w,a6
+        Jsr     Forbid(a6)
+
+
+        Move.l  #$60000,a0
+        Move.l  #$9588/4,d0
+Clearloop:
+        Move.l  #$0,(a0)+
+        Dbf     d0,Clearloop
+
+
+        Bsr.l   Makecl
+        Bsr.l   Bobmaker                ; Aufruf der Bobroutine
+
+Wait:
+        Btst    #6,$bfe001
+        Bne     Wait
+
+        Move.l  Execbase.w,a6
+        Jsr     Permit(a6)
+        Lea     Gfxname(pc),a1
+        Jsr     Openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,Dmacon
+        Move.w  #$c000,Intena
+        Move.l  38(a6),$dff080
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $05f000,a0
+        Move.l  a0,$dff080
+
+        Move.l  #$00e00006,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$008e1a64,(a0)+
+        Move.l  #$009039d1,(a0)+
+        Move.l  #$00920030,(a0)+
+        Move.l  #$009400d8,(a0)+
+        Move.l  #$01001200,(a0)+
+;----------------------------------------------
+        Move.l  #$01800000,(a0)+
+        Move.l  #$01820fff,(a0)+
+;----------------------------------------------
+        Move.l  #$fffffffe,(a0)+
+        Rts
+Waitblit:
+        Btst    #6,Dmaconr                      ; Wartet bis Blitter fertig
+        Bne.s   Waitblit
+        Rts
+Bobmaker:
+        Move.w  #$0f,d7                         ; Counter fuer die Spalten-
+                                                ; Anzahl
+        Move.w  #%1000000000000000,d0           ; Erste Maske
+        Move.l  #$61088,d1                      ; Erste Adressen
+Loop:   Bsr.l   Set_bob                         ; Bob setzen
+        Add.l   #$2c,d1                         ; Eine Zeile runter
+        Ror.l   #1,d0                           ; Maske 1 Bit verschieben
+        Dbf     d7,Loop                         ; Schleife ob schon ganzer
+                                                ; Bob ?
+        Rts
+
+
+Set_bob:
+        Bsr.s   Waitblit
+        Move.w  d0,Bltafwm
+        Move.w  d0,Bltalwm
+        Move.w  #%0000110100111100,Bltcon0
+        Move.w  #0,Bltamod              ; Quellmodulo = 0 (rawblit)
+        Move.w  #42,Bltdmod             ; Zielmodulo = 42 (planes = $2c)
+        Move.w  #42,Bltbmod
+        Move.l  #Bob,Bltapt             ; Quelladr.
+        Move.l  d1,Bltbpt
+        Move.l  d1,Bltdpt               ; Zieladr.
+        Move.w  #16*64+1,Bltsize        ; Bltsize und Start
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+
+even
+
+Bob:
+Dc.w %1111111111111111
+Dc.w %0000000000110000
+Dc.w %0000000001100000
+Dc.w %0000000011000000
+Dc.w %0000000110000000
+Dc.w %0000001100000000
+Dc.w %0000111111000000
+Dc.w %0001111111100000
+Dc.w %0001111111100000
+Dc.w %0010000000000000
+Dc.w %0001000000000000
+Dc.w %0000100011110000
+Dc.w %0000010000000000
+Dc.w %0000001000000000
+Dc.w %0000000100000000
+Dc.w %1111111111111111
+
+
+Das Listing ist ja ein Bisschen Dokumentiert. Ihr duerftet aber keine
+Probleme mehr damit haben.
+Mir hat ein bekannter gesagt, das es eine Sache gibt die ihn an diesem Kurs
+stoert. Das ich viel zu viel zeige, und die Leute nicht selber denken
+lasse.
+Ich habe aber sonst keine Klagen gehoert, deshalb schaetze ich mal das euch
+der Kurs ganz gut gefaellt. Naja, aber trotzdem, ich werde jetzt in den
+letzten Teile die Kritik hinnehmen und befolgen.
+
+Um daraus jetzt eine Sinusschrift zu machen muesst ihr folgendes machen.
+
+Diese Kopierroutine in das Laufschrift Programm einsetzen. Auf eine ganze
+Zeile erweitern, und die Zeilen in die Kopiert wird aus einer Tabelle lesen
+lassen. Die alte Laufschrift muesst ihr dann in einen Puffer ablaufen
+lassen, sodas erst diese Kopierroutine die Schrift auf den Screen bringt.
+
+Mehr nicht...
+
+Eigentlich war es das zu der Sinuslaufschrift..Wenn ihr das Prinzip
+geschnallt habt, dann ist ja alles O.K...Verschiedene Variationen werdet
+ihr ja sicher selber machen. Nur halt soviel. Ueberlegt euch immer vorher
+ob es in einem Demo immer eine Sinusschrift sein muss. Denn diese ganzen
+Blitteraktionen nehmen auf dem Prozessor viel Zeit weg, und deshalb kann
+fuer das restliche Intro nicht mehr soviel Zeit aufgebracht werden. Wenn
+ihr das mal durchrechnet was der Blitter da schon an Zeit braucht, dann
+wisst ihr warum die eigentlich garnicht so schwierigen Sinusscroller nicht
+so oft eingesetzt werden.
+Es gibt ja genug andere schoene Effekte die sich fuer Intro`s eignen. Und
+nicht der, der am besten andere Ideen nachprogrammiert macht von sich
+reden, sondern der, der die schoensten eigenen Ideen hat. Wobei Egal ist
+wie einfach sie zu programmieren sind. Hauptsache schon...
+
+Mit diesen Worten moechte ich mich von euch verabschieden...wuensche euch
+viel Spass beim Sinussen...
+
+Haste Luego
+
+                Jeff Kandle

@@ -1,0 +1,498 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "Assembler Seconda Lezione"
+
+@{JLEFT}
+@{b}Seconda Lezione: Modi di Indirizzamento@{ub}
+                                           
+
+
+Iniziamo chiarendo che un'istruzione Asm può trattare diversi tipi di dati,
+tipi definiti in base alle loro dimensioni: @{i}bit,@{ui} @{i}byte,@{ui}
+@{i}word,@{ui} @{i}longword@{ui} e @{i}BCD @{ui}(Binary Coded Decimal, 4
+bit, li vedremo più avanti, anche se gli altri 4 sono i piu' usati).
+
+Per esempio, immaginiamo che io voglia spostare il contenuto di una locazione di
+memoria $xxxx nel registro dati D0: a tal fine userò l'istruzione @{i}move@{ui}.
+Ma io potrei voler spostare un byte, una word o una longword. Per fare ciò
+specifico di seguito all'istruzione la dimensione (il tipo di dato...)
+dell'operando sorgente su cui voglio lavorare:
+
+  @{i}move.b $xxxx,D0@{ui} per mettere in D0 il byte che si trova all'indirizzo $xxxx
+
+  @{i}move.w $xxxx,D0@{ui} per mettere in D0 la word che occupa i 2 bytes agli indirizzi $xxxx e $xxxx+1
+
+  @{i}move.l $xxxx,D0@{ui} per mettere in D0 la long che occupa i 4 bytes agli indirizzi $xxxx, $xxxx+1, $xxxx+2, $xxxx+3
+
+
+Vedremo più giù come viene modificato il contenuto di D0. Per ora ci
+basta avere appurato il fatto che posso lavorare con dati di dimensioni
+diverse. Abbiamo oltretutto cominciato a vedere qual è il formato di
+un'istruzione Asm: un campo per l'opcode (dall'inglese OPerating CODE),
+ossia il comando vero e proprio (move.w), e un campo degli operandi su cui
+lavora l'opcode ($xxxx,D0), che possono essere 1, 2, 3, 4 o nessuno.
+
+
+Ma una cpu che si limitasse a dei banali spostamenti come sopra sarebbe
+poco pratica. È per questo che i progettisti si sono inventati vari modi
+di referenziare gli operandi sorgente e destinazione: ad esempio, a partire
+dalla locazione $xxxx potrei aver memorizzato una TABELLA DI INDIRIZZI che
+puntano a determinati dati. Allora, scrivendo  move.b (A0),D0  posso fare
+in modo che la long locata in A0 venga considerata come un indirizzo da cui
+andare a prelevare il byte da mettere in D0. Questa è una delle
+possibilita' offerte dal 68000. I vari modi di trattare gli operandi
+vengono detti @{u}Modi Di Indirizzamento@{uu}.
+
+L'osservazione più spontanea è che una cpu dovrebbe avere più modi di
+indirizzamento possibili. Ciò non è sbagliato, ma comporterebbe una
+grossa difficoltà nel gestire tutte le caratteristiche offerte dalla cpu
+oltre che un elevato costo di realizzazione.
+
+
+Il 68000 dispone di 14 modi di indirizzamento: all'epoca della sua uscita
+giravano gli 8086 con 7 modi di indirizzamento... Questi 14 modi possono
+essere raggruppati per le loro caratteristiche in 6 categorie:
+
+  1) implicito
+
+  2) diretto a registro
+
+  3) indiretto a registro indirizzi
+
+  4) relativo al Program Counter
+
+  5) assoluto
+
+  6) immediato
+
+
+@{b}RICORDIAMO BENE@{ub} che:
+
+- il 68000 considera gli indirizzi come aventi dimensione di longwords
+
+  tranne nel caso in cui siano valori compresi tra $0000 e $7fff o tra
+
+  $ffff8000 e $ffffffff,
+
+- i registri indirizzo trattano direttamente solo dati di dimensione word o
+
+  longword,
+
+- l'accesso a operandi in formato byte può avvenire a indirizzi pari o
+
+  dispari,
+
+- nei modi di indirizzamento 3), 4), 5), l'accesso a operandi di dimensione
+
+  word o long può avvenire solo ad indirizzi pari, pena Guru!
+
+
+@{b}@{u}INDIRIZZAMENTO IMPLICITO@{uu}@{ub}
+
+A questo gruppo appartiene un solo modo di indirizzamento, detto appunto
+implicito! Vi appartengono quelle istruzioni che non hanno operandi (@{i}RESET@{ui},
+@{i}RTS@{ui}...), che non hanno la necessità di specificare un registro all'interno
+del campo operandi (@{i}JMP $xxxx@{ui}, non ha bisogno di specificare che il
+registro in cui verrà messo il valore $0000xxxx sarà il PC) o le
+istruzioni che fanno riferimento allo SP e allo SR.
+
+
+@{b}@{u}INDIRIZZAMENTO DIRETTO A REGISTRO@{uu}@{ub}
+
+Vi appartengono 2 modi di indirizzamento:
+
+ - diretto a registro dati
+
+ - diretto a registro indirizzi
+
+L'operando sorgente è un registro dati o indirizzo.
+Nel primo modo l'operando destinazione è un registro dati:
+
+
+                       PRIMA         DOPO
+
+  1) @{i}move.b D1,D0@{ui}   D1=$12345678  D1=$12345678
+
+                    D0=$abcdef12  D0=$abcdef78
+
+
+  2) @{i}move.w A1,D0@{ui}   A1=$12345678  A1=$12345678
+
+                    D0=$abcdef12  D0=$abcd5678
+
+
+  3) @{i}move.l D1,D0@{ui}   D1=$12345678  D1=$12345678
+
+                    D0=$abcdef12  D0=$12345678
+
+
+NB Da qui vediamo come si modifica l'operando destinazione (nel nostro caso
+
+   D0) a seconda della dimensione del dato su cui vogliamo lavorare:
+
+     - l'operando sorgente resta sempre invariato,
+
+     - in 1, specificando il suffisso .b, spostiamo effettivamente solo il byte
+
+       basso di D1 (gli 8 bit meno significativi) nel byte basso di D0,
+
+       modificando quindi solo il byte basso di D0,
+
+     - in 2 copiamo la word bassa da A1 a D0, restando invariata la word alta di
+
+       D0 mentre la word bassa di D0 sarà uguale a quella di A1,
+
+     - in 3 copiamo tutto il contenuto di D1 in D0.
+
+Nell'indirizzamento diretto a registro indirizzi l'operando destinazione è
+un registro indirizzi:
+
+
+                        PRIMA         DOPO
+
+  1) move.w D1,A0   D1=$12345678  D1=$12345678
+
+                    A0=$a1b2c3d4  A0=$00005678  <--Attenzione!
+
+
+  2) move.w A1,A0   A1=$1234abcd  A1=$1234abcd
+
+                    A0=$a1b2c3d4  A0=$ffffabcd  <--Attenzione!
+
+
+  3) move.l D1,A0   D1=$12345678  D1=$12345678
+
+                    A0=$a1b2c3d4  A0=$12345678
+
+
+Analizziamo i primi 2 casi. Le modifiche ad A0 avvengono come
+nell'indirizzamento diretto a registro dati, con una differenza: questa
+volta la word alta di A0 non resta invariata, ma a seconda della word da
+spostare dalla sorgente assume un certo valore.
+
+  - Se la word da spostare ha un valore compreso tra $0000 (0000000000000000)
+
+    e $7fff (0111111111111111) allora la word alta dell'operando destinazione
+
+    diventa $0000,
+
+  - se la word da spostare ha un valore compreso tra $8000 (1000000000000000)
+
+    e $ffff (1111111111111111) allora la word alta dell'operando destinazione
+
+    diventa $ffff.
+
+
+Questa modifica è detta estensione del segno (in pratica la word alta
+dell'operatore destinazione viene riempita col valore del bit più significativo della
+word da spostare) ed avviene solo quando l'operando destinazione è un
+registro indirizzi trattato direttamente, qualunque modo di indirizzamento
+tra quelli disponibili si stia usando.
+
+
+@{b}@{u}INDIRIZZAMENTO INDIRETTO A REGISTRO INDIRIZZI@{uu}@{ub}
+
+Vi appartengono 4 modi di indirizzamento:
+
+  - indiretto a registro indirizzi
+
+  - indiretto a registro indirizzi con post-incremento
+
+  - indiretto a registro indirizzi con pre-decremento
+
+  - indiretto a registro indirizzi con spiazzamento
+
+L'operando sorgente (e/o quello destinazione) sarà un registro indirizzi.
+Questi modi sono chiamati indiretti in quanto, a differenza
+dell'indirizzamento diretto, il registro non contiene il dato su cui
+operare ma l'indirizzo di memoria in cui leggere o scrivere il dato. Per la
+sintassi questo modi si distinguono in quanto il registro viene racchiuso
+tra 2 parentesi: (Ax). Solo i registri indirizzi possono essere trattati
+indirettamente.
+
+
+- Indiretto a registro indirizzi
+
+È il piu semplice fra i quattro. Vediamo subito qualche esempio:
+
+
+                          PRIMA           DOPO
+
+  1) @{i}move.w (A0),D1@{ui}   A0=$00012346   A0=$00012346  <--Ricordiamoci che DEVE essere pari!
+
+                      D1=$abcd0000   D1=$abcdffff
+
+   word all'indirizzo $12346=#$ffff  $12346=#$ffff
+
+
+  2) @{i}move.w D1,(A0)@{ui}   D1=$abcdffff   D1=$abcdffff
+
+                      A0=$00023456   A0=$00023456
+
+                      $23456=#$0000  $23456=#$ffff
+
+
+  3) @{i}move.w A0,(A0)@{ui}   A0=$00023456   A0=$00023456
+
+                      $23456=#$abcd  $23456=#$3456
+
+
+  4) @{i}move.w (A0),A0@{ui}   A0=$00023456   A0=$ffff8a42
+
+                      $23456=#$8a42  $23456=#$8a42
+
+
+  5) @{i}move.b (A0),D0@{ui}   A0=$00023456   A0=$00023456
+
+                      D0=$a0b1c2d3   D0=$a0b1c274
+
+                      $23456=#$74    $23456=#$74
+
+NB Posso trattare il byte perchè mi riferisco all'indirizzo puntato da A0 e non al contenuto
+del registro stesso e la destinazione non è un registro indirizzi!
+
+
+A differenza dell'indirizzamento diretto, il contenuto di A0 viene trattato
+non come dato da spostare ma come indirizzo di memoria. Nel primo esempio
+il contenuto di A0 rappresenta l'indirizzo di memoria da cui prelevare la
+word da mettere in D1. Spezzando l'istruzione in più passi:
+
+ - leggi il contenuto di A0
+
+ - preleva la word contenuta nell'indirizzo di memoria puntato da A0 (cioè
+   l'indirizzo uguale alla long contenuta in A0) metti la word letta in D1
+
+Nel secondo esempio legge la word bassa contenuta in D1 e la scrive
+all'indirizzo di memoria puntato da A0:
+
+ - leggi la word bassa di D1
+
+ - leggi la long contenuta in A0
+
+ - scrivi la word bassa di D1 all'indirizzo di memoria puntato da A0
+
+
+Il terzo esempio potrebbe sembrare incasinato, ma non lo è:
+
+ - leggi la word bassa di A0
+
+ - leggi la long contenuta in A0
+
+ - scrivi la word bassa di A0 nell'indirizzo puntato da A0
+
+
+Il quarto esempio è altrettanto chiaro:
+
+ - leggi la long contenuta in A0
+
+ - preleva la word contenuta nell'indirizzo puntato da A0
+
+ - scrivi la word prelevata nella word bassa di A0
+
+
+In quest'ultimo esempio abbiamo anche ritrovato l'estensione del segno, che per
+noi non rappresenta più un problema (o no?). Il quinto esempio comprendetelo da
+soli! Ora che è chiaro il meccanismo dell'indirizzamento indiretto procediamo
+più rapidamente affrontando gli altri 3 modi.
+
+
+- Indiretto a registro indirizzi con post-incremento
+
+Il nome forse è un pò spaventoso :), ma l'utilità è enorme (quando
+inizieremo a scrivere un pò di codice sarà evidente!). La sintassi è la
+seguente: @{i}(Ax)+@{ui}. Vediamo subito qualche esempio:
+
+
+                          PRIMA           DOPO
+
+  1) @{i}move.l (A0)+,D0@{ui}  A0=$00023456   A0=$0002345a <--Notate l'incremento di 4
+
+                      D0=$00000000   D0=$ffffffff
+
+                 $23456=#$ffffffff   $23456=#$ffffffff
+
+
+  2) @{i}move.b D0,(A0)+@{ui}  D0=$ffffffff   D0=$ffffffff
+
+                      A0=$00023456   A0=$00023457 <--Notate l'incremento di 1
+
+                      $23456=#$00    $23456=#$ff
+
+
+  3) @{i}move.w (A0)+,$12344@{ui}
+
+                      A0=$00023456   A0=$00023458 <--Notate l'incremento di 2
+
+                     $23456=#$ffff  $23456=#$ffff
+
+                     $12344=#$0000  $12344=#$ffff
+
+
+Dovrebbe già essere chiara la peculiarità di questo modo di
+indirizzamento: dopo aver svolto la normale operazione di move già vista
+nell'indirizzamento indiretto a registro indirizzi, il 68000 incrementa
+automaticamente il contenuto di Ax di un numero uguale alla dimensione del
+dato specificata nell'opcode. Quindi se tratto bytes incrementa Ax di 1, se
+tratto words incrementa Ax di 2 e se tratto longwords incrementa Ax di 4.
+L'importante è sottolineare che prima effettua le operazioni di lettura o
+scrittura sulla locazione puntata da Ax e DOPO ne incrementa il contenuto.
+
+
+- Indiretto a registro indirizzi con pre-decremento
+
+I più attenti avranno già capito tutto, comunque intanto diamo la
+sintassi: @{i}-(Ax)@{ui}. Partiamo subito con qualche esempio:
+
+
+                           PRIMA        DURANTE         DOPO
+
+  1) @{i}move.b -(A0),D0@{ui}  A0=$00023456   A0=$00023455   A0=$00023455
+
+                      D0=$00000000   D0=$00000000   D0=$000000ff
+
+                                     $23455=#$ff    $23455=#$ff
+
+
+  2) @{i}move.w $12234,-(A0)@{ui}
+
+                      A0=$00024678   A0=$00024676   A0=$00024676
+
+                     $12234=#$ffff  $12234=#$ffff  $12234=#$ffff
+
+                                    $24676=#$aaaa  $24676=#$ffff
+
+
+Come funziona questo indirizzamento? PRIMA decrementa il contenuto del
+registro indirizzi a seconda del tipo di dato definito nell'opcode, poi
+esegue le normali operazioni di lettura o scrittura dalla locazione puntata
+dal registro indirizzi modificato. Ho aggiunto la colonna DURANTE per
+rendere più evidente l'ordine in cui vengono svolte le operazioni.
+
+
+- Indiretto a registro indirizzi con spiazzamento
+
+Ora che abbiamo capito la logica dell'indirizzamento indiretto, anche
+questo modo si presenterà molto semplice da capire. La sintassi è questa:
+@{i}w(Ax)@{ui}. In questo indirizzamento viene aggiunto al valore contenuto in Ax
+una costante con segno avente dimensione massima di 16 bit, in altre parole
+una word! Questa costante potrà quindi variare tra -$8000 e $7fff, in
+decimale -32768 e 32767. Vediamo degli esempi:
+
+
+                           PRIMA          DOPO
+
+  1) @{i}move.w 7(A0),D0@{ui}   A0=$00023451   A0=$00023451
+
+                       D0=$aaaabbbb   D0=$aaaa6776
+
+                       $23458=#$6776  $23458=#$6776
+
+
+  2) @{i}move.l -6(A0),A1@{ui}  A0=$00023456   A0=$00023456
+
+                       A1=$bbbbaaaa   A1=$12345678
+
+                  $23450=#$12345678   $23450=#$12345678
+
+
+  3) @{i}move.w $1234,4(A0)@{ui}
+
+                       A0=$00023454   A0=$00023454
+
+                       $1234=#$aabb   $1234=#$aabb
+
+                      $23458=#$8899  $23458=#$aabb
+
+
+Chiariamo subito 2 particolari: il registro indirizzi a cui viene sommato
+lo spiazzamento (positivo o negativo) @{u}NON@{uu} viene modificato e @{u}PRIMA@{uu} viene
+effettuata l'operazione di somma tra la costante e il valore contenuto nel
+registro e in seguito si legge o scrive dalla locazione puntata dalla somma
+tra 'w' e Ax.
+
+Nel primo esempio:
+
+ - leggi il valore contenuto in A0 e sommagli la costante di spiazzamento
+
+ - leggi la word locata nella locazione risultante dalla somma precedente
+
+ - scrivi la word letta nella word bassa di D0
+
+Il secondo esempio è equivalente al primo ma con uno spiazzamento
+negativo. Nel terzo esempio il meccanismo è equivalente ma la somma tra la
+costante di spiazzamento e il valore contenuto nel registro indirizzi
+fornisce l'indirizzo destinazione in cui andare a scrivere i dati.
+
+
+La prossima volta terminiamo di vedere i modi di indirizzamento e
+cominciamo con le istruzioni.
+
+Come fare un boot da disco senza usare l'AmigaDOS?
+
+
+Un milione di volte avremo formattato un disco e poi installato il
+bootblock per renderlo avviabile. Ma in questa maniera si partirà sempre
+con l'AmigaOS! Come fanno quelle demo o quei giochi a partire senza andare
+a scomodare l'OS?
+
+Prima di tutto studiamoci un pò l'organizzazione dei dati sul disco. A
+questo proposito vi consiglierei, se non lo avete già, di scaricarvi da
+Aminet un editor di settori: mi sembra buono DiskMon (farò sempre
+riferimento a questo, ma non ricordo a che versione sia arrivato!).
+Anche se esistono 2 tipi di filesystem, OFS e FFS, le cose che ci
+interessano sono identiche per entrambi, quindi non ci dovremo preoccupare
+di questo.
+
+Rapidamente: un disco è diviso in circonferenze concentriche dette tracce
+ed ogni traccia è divisa in 11 archi detti settori; le tracce esterne sono
+fisicamente più lunghe delle tracce interne, ma il numero di settori è
+uguale per tutte. Con la voce traccia da ora intenderemo l'insieme di
+settori appartenente alla faccia superiore e inferiore del disco, per
+indicare a quale faccia appartiene il settore che stiamo leggendo
+introduciamo un'altra voce, HEAD, che stara' a 0 o 1; quindi dicendo
+semplicemente traccia intenderemo un insieme di 22 settori (spesso chiamato
+cilindro), altrimenti specificheremo l'head. Lanciamo diskmon.
+Mettendo alla voce Block il valore 0 osserveremo il contenuto in Hex del
+settore 0 traccia 0 head 0, ossia nient'altro che il bootblock. Il
+contenuto ci apparirà diviso in longwords:
+
+ - La prima long non è altro che la rappresentazione HEX del tipo di disco
+   (DOS o KICK) terminante, solo se si tratta di DOS, con 00 se il disco è
+   OFS e con 01 se è FFS. Il fatto che ci sia scritto DOS non significa che
+   il disco sia scritto in formato AmigaDOS ma, risalendo all'Amiga 1000 in
+   cui il kickstart veniva caricato da disco, stá a indicare se si tratta di
+   un disco di dati o contenente il KickStart. Se il disco è di tipo DOS
+   leggeremo: $444f5300 se OFS o $444f5301 se FFS.
+
+ - La seconda long contiene il checksum del settore (o blocco, sono la
+   stessa cosa, solo che con blocco si indica il numero di settori complessivi
+   che distano dal blocco 0: tr.2 sett.10 h.0=blocco 54, ossia il 55esimo; con
+   settore si specifica il numero di settori all'interno di una traccia,
+   quindi varia da 0 a 10); se il checksum è corretto (vedremo come) viene
+   lanciato il codice situato a partire dalla quarta long.
+
+ - La terza long punta al root block, mi dice cioè il numero del blocco in
+   cui si trova la root (se il disco è AmigaDOS leggeremo $00000370=880, in
+   quanto il rootblock si trova in tr.40 sett.0 h.0).
+
+Dalla quarta long inizia il codice, che si può protrarre anche sul blocco
+successivo al bootblock.
+
+Per ora fermiamo qui questo 'corso nel corso', perchè ancora non
+conosciamo le istruzioni del 68000. La prossima volta approfondiremo il
+discorso.
+
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link assembler_lesson_1.guide}
+@{"Indice Assembler" link transactor_lessons.guide/ASSEMBLER}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link assembler_lesson_3.guide}
+@ENDNODE                                                                                             

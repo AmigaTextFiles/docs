@@ -1,0 +1,304 @@
+Une carte postale, un mail, ou un petit cadeau...
+
+
+I. Introduction
+---------------
+
+Beaucoup d'utilisateurs d'Amiga veulent pouvoir connecter un clavier de PC sur
+leur machine. En 1991 Eric Rudolph a conçu une interface à base d'un micro-contrôleur
+Intel 8051 qui permettait une telle chose. Lorsque je lis les News Amiga je
+constate que peu de gens sont au courant ou que la description de ce montage
+semble un peu confuse. C'est pourquoi, ayant moi-même construit cette
+interface, je veux donner quelques explications supplémentaires.
+
+
+II. Ce qu'il vous faut !
+------------------------
+
+Il y a 2 problèmes différents:
+
+	Les personnes qui ont déjà un clavier externes (A2000, 3000, 4000) pour
+qui seule l'interface micro contrôleur est nécessaire,
+
+	Les personnes, qui comme moi ont un 1200, qui vont devoir d'abord rendre
+leur clavier externe.
+
+Donc une ou deux étapes sont nécessaires suivant la machine.
+
+Dans tous les cas il vous faut de la patience, de la méthode, un fer à
+souder, un Amiga, quelques composants électroniques bon marché et le plus
+compliqué une personne capable de vous programmer une eprom (c'est le seul
+point qui peut bloquer, le reste est à la porté de tous...).
+
+En plus de cela je vous recommande les archives suivantes qu'on trouve sur aminet:
+
+	A1200exkeyb.lha 		(hard/hack)
+	editkeys.lha
+
+
+III. Ce que je propose en plus !
+--------------------------------
+
+Pour les personnes qui ont 1200, la façon dont on peut rendre son clavier
+externe est décrite dans l'archive A1200ExtKeyb.lha. Ca me semble clair (avec
+un zoli schéma de l'intérieur du 1200).
+Une seule remarque de taille: je n'ai rien coupé sur mon 1200. En effet je
+n'ai pas deconnecté le clavier interne en coupant ou dessoudant les 2 pins
+citées dans l'archive, les 2 claviers cohabitent parfaitement sur ma machine
+mais pas forcément sur toutes...
+
+Dans mon cas j'ai donc simplement soudé trois fils sur le CIA:
+
+	le reset
+	le kb clock
+	le kb data
+
+et j'ai récupéré le 5 volt et la masse sur le lecteur de disquette.
+
+CONSEIL 1:
+	Le fait que certaines personnes soient obligées de déconnecter leur
+clavier interne en coupant les pistes (clock et data) montrent sans doute
+que ces signaux s'écroulent. Par conséquent je vous recommande d'utiliser du
+fil très fin et pas très long (dans mon cas du fil à wrapper de 15 à 20 cm
+de long).
+
+CONSEIL 2:
+	Souder des fils sur du CMS ça peut être effrayant, dans ce cas, achetez un
+support pour le CIA , soudez les fils sur le support et montez le à l'envers 
+sur le circuit de votre machine si fragile.
+
+
+En ce concerne l'interface clavier PC je vous apporte:
+
+	- un schéma electronique (l'original n'a qu'un long descriptif),
+	- un PCB de mon prototype (pas terrible vu le nombre de straps mais c'est du
+	simple face donc facile à faire, peu cher et ça marche et puis j'ai pas
+	le temps de faire mieux :),
+	- un binaire retravaillé mais qui ne gère que l'émulation PC/AT pour
+	alléger le programme (donc pas de clavier XT).
+    - des plus dans l'interface (clavier win95, reset auto).
+
+CONSEIL 3:
+	Si vous n'êtes pas bricôleur évitez de bricoler ;)
+
+CONSEIL 4:
+	Montez les circuits sur support (au moins le 8051 et l'eprom).
+
+
+Encore plus ...
+---------------
+
+Cette version vous offre la possibilité d'utiliser pleinement un clavier type
+AT 105 touches (les nouveaux windaube 95). Si vous mettez à l'état bas la pin
+7 (p1.6) du 8051 (souder un fil entre cette pin et GND), le nouveau mapping
+sera:
+
+    windows gauche : Amiga gauche
+    windows droit  : Amiga droit
+    menu windows   : Amiga gauche M (cycle les écrans)
+    control droit ou gauche : control.
+
+Le mapping des touches supplémentaires que sont F11, F12, ...
+est décrit dans le fichier otherStuf.txt.
+Si celui-ci ne vous plait pas (quelle drôle d'idée) vous avez 2 solutions:
+
+ - changer le code source et réassembler avant de brûler votre eprom (pour
+public averti).
+ - mettre à l'état bas la pin 8 (p1.7) du 8051, l'interface enverra alors
+des codes rawkey pour les touches en question:
+
+ home        : 75
+ end   :     : 76
+ pageUp      : 77
+ pageDown    : 78
+ F11         : 79
+ F12         : 7a
+ printScreen : 7b
+ scrollLock  : 7c
+
+Vous pourrez donc employer un programme externe pour intercepter ces codes et
+les convertir en ce que vous voulez :-) Un exemple simple (pas le temps de
+faire mieux) à des fins de test se trouve dans le répertoire "bonus".
+Si une personne écrit une commodité ou un handler plus évolué ;) qu'elle me
+fasse parvenir le source si possible.
+
+
+Et toujours plus ...
+--------------------
+
+Bon, un certain nombre d'entre nous a des problèmes de démarrage à froid car
+le disque dur met du temps à se reveiller...
+La solution est donc de faire un reset après le premier démarrage...et c'est
+pénible, non ?
+Alors voilà, l'interface clavier vous offre désormais la possibilité de
+programmer un reset automatique après un certain délais, étonnant non ?
+
+Si vous mettez à l'état bas une des pins du port p3 du 8051 (10à17) le
+miracle aura lieu.
+En fait le port p3 est vu comme un registre qui sert à déterminer la tempo
+avant le reset.
+La tempo est égale à !P3 * base de temps interne (environ 70 ms).
+
+exemples:
+
+ si aucun bit de p3 n'est à l'état bas (en l'air donc) alors pas de reset auto.
+ p3.6 = 0 (pin 16) on aura un reset après (64 * base) ms.
+ p3.6 = p3.5 = 0 (pin 15 et 16) on aura un reset après (64 + 32) * base ms.
+
+Simple non ?
+
+Dans mon cas la pin 16 est à gnd et je peux enfin laisser booter ma machine
+toute seule :-)
+
+
+IV Des explications:
+--------------------
+
+
+Seul un micro-contrôleur peut facilement décoder les frappes clavier avec le
+protocole PC et les recoder avec le protocole Amiga car il n'y aucune
+compatibilité entre les deux types de claviers malgré le brochages identiques
+de la fichue 5 broches !
+Le micro-contrôleur utilisé est bon marché, facile à trouver et je connais sa
+programmation bien que se soit de l'INTEL ;-)
+
+La version avec eprom embarquée (8751) rends le montage beaucoup plus simple
+mais programmer une eprom est sans doute plus accessible à chacun. En effet
+un petit programmateur sait faire ça alors que pour programmer un 8751 il
+faut un programmateur universel ou bricôler...
+Personnellemnt dans ma phase de test j'ai utilisé une ram sauvegardée qui se
+substituait à l'eprom car, pour ceux qui ne le savent pas, une eprom se
+programme bien mais si ça va pas il faut 20 minutes aux UV pour tout effacer.
+La ram m'a affranchi de ce problème, c'est pourquoi mon prototype est
+toujours une version avec mémoire externe (c'est aussi dû au fait que j'ai pu
+récupérer un 8051 alors pourquoi acheter un 8751 ?, d'ailleurs j'ai rien acheté
+du tout:-). La solution eprom externe doit être de toute façon moins chère...
+
+Mon schéma met en oeuvre une eprom de type 2732 (4k) mais mon binaire ne fait
+pas 2K octets donc on peut aussi utiliser une 2716 (2k). Pour cela il faut couper
+la piste qui va à la pin 21 de l'eprom et relier cette pin 21 avec la pin
+24. Ce qui revient à mettre à l'état haut (5V) la pin 21 de la 2716 qui est
+la pin de programmation.
+
+Ca doit marcher du premier coup sauf si vous avez inversé le kbclock et
+kbdata auquel cas vous avez ce caractère: "'", c'est pas grave permuttez.
+
+Personnellement j'utilise en cet instant même un vieux clavier Tandon
+(en position AT) que je trouve infiniment mieux que le clavier du 1200.
+
+Rappels:
+=======
+
+J'ai changé certain mapping de touche pour être plus proche d'un clavier français.
+
+Une astuce permet d'utiliser la touche capslock comme control si elle est appuyée
+avec une autre touche.
+
+Pour les électroniciens:
+Sur mon schéma électronique (pcKeyshem.eps) ne figurent pas les alim. des
+circuits intégrés car elles sont placées automatiquement par le logiciel
+utilisé.
+
+
+Remarques concernant l'original (ibminterface.lha):
+=========
+
+Attention le binaire fourni avec l'original n'est pas correct car il ne tient
+pas compte des sauts d'adresses que l'on peut trouver lorsque que l'on a un
+fichier hex du type adresse: data data data ...
+Le fichier hex lui doit être correct, je ne l'ai pas testé.
+
+Le bouton qui sert au reset (et les composants associés) du micro-contrôleur
+n'est pas vraiment utile.
+
+L'assembleur d'Eric est à manipuler avec précaution...
+
+
+V Conclusion
+------------
+
+Ceci existe simplement pour informer les personnes désireuses de brancher un
+clavier PC sur leur Amiga que cela est possible moyennant bricôlage. J'ai
+simplement voulu relancer la chose, et je suis donc disponible pour répondre
+à vos questions.
+En résumé construisez le montage décrit et servez vous du fichier hex ou bin
+pour programmer l'eprom, branchez et voilà.
+
+Si le mapping des touches ne vous convient pas je vous recommande
+l'utilitaire editKey de David Kinder qui vous permet de faire votre propre
+keymap. J'ai inclus un keymap plus proche d'un clavier PC azerty (avec la
+mise en oeuvre des séquences altGr-touche).
+
+Sont joins:
+
+	doc/frenchDoc.txt		( ce fichier)
+	doc/englishDoc.txt		( to be or not to be )
+	doc/otherStuf.txt		( ce qu'il faut et divers, un résumé quoi ! )
+	onlyAT.asm		( le source d'Eric Rudolph grandement modifié )
+	onlyAT.hex		( hex pour programmateur d'eprom au format hex )
+	onlyAT.bin		( binaire pour programmateur d'eprom au format bin )
+	keymaps/fPC		( keymap PC français)
+	bonus/simpleHandler.c	( un peu de C amiga )
+    bonus/simpleHandler     (binaire amiga)
+    bonus/simpleHandler.txt (english doc)
+
+et en plus mon travail sur PC au format EPS:
+
+	shem/pcKeyPCB.eps 	( le PCB - Printed Circuit Board - )
+	shem/pcKeyshem.eps		( enfin un schéma clair !!)
+	shem/pcKeyTop.eps	( l'implantation des composants sur le PCB )
+
+Le logiciel que j'ai utilisé (Protel) pour traiter les aspects électroniques
+tournent sur PC et je ne peux actuellement que vous fournir des fichiers
+encapsulés postscript (c'est déjà pas mal !) surtout pour le PCB où l'echelle
+est très importante.
+Donc si vous avez une application capable d'imprimer ce type de fichier tout
+va bien (en principe une imprimante postscript suffit), sinon dans un cas
+extrême envoyez moi une enveloppe A4 auto-adressée et affranchie pour trois
+feuilles et...on verra;-)
+
+
+*****************************************************************************
+Je décline toute responsabilité en cas de dégâts (je ne vous le souhaite pas).
+*****************************************************************************
+
+
+
+Remerciements à:
+
+Eric Rudolph pour avoir initié ce projet y-a si longtemps (je ne suis pas
+arrivé à le joindre)
+David Kinder pour son super editKeys,
+tous ceux qui ont exploré le 1200 pour trouver où patcher les lignes du
+clavier,
+moi-même pour avoir vaincu ma fainéantise pour vous faire partager mon
+expérience.
+ceux qui m'ont remercié;-)
+
+
+J'utilise la version enregistrée de l'éditeur 'FrexxEd', il est géant
+malgré l'abscence de consonnance métallique dans son nom; le support est
+super, merci donc aux auteurs.(Daniel Stenberg & Kjell Ericson)
+
+
+Existe-t-il un logiciel (Amiga) de cao électronique capable de gérer des
+projets du schéma jusqu'au routage ?
+
+
+FUTURE ?
+
+Peut-être aucun, ou alors je réecrit tout en C ;).
+
+
+Une carte postale, un mail, ou un petit cadeau...(z'avez vu l'heure!)
+
+le 6/6/96
+
+Charles Da Costa
+66, avenue du Vercors
+38170 Seyssinet-Pariset
+FRANCE
+
+dacosta@lag.grenet.fr
+
+enjoy !

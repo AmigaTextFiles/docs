@@ -1,0 +1,4508 @@
+
+Amiga HardFile FAQ -This is Revision 5.0 experimental fsys  07-Nov-1996
+                   -This is Revision 4.0 multiplatform vols 28-Aug-1996
+                   -This is Revision 3.0 multidos & multios 31-May-1996
+                   -Prev is Revision 2.0 emplant mac/msdos  18-Mar-1996
+                   -Prev is Revision 1.0 crossdos & fmsdisk 03-Nov-1995
+                   -Initially released   defs & components  20-Oct-1995
+
+
+CONTENTS:
+
+0.  What can we expect from the Amiga community for multi-platform support?
+1.  What are "hardfiles" and why does anyone use them?
+2.  What are the advantages of hardfiles over partitions?
+3.  What are the disadvantages of hardfiles?
+4.  How can I can get faster disk transfers to and from my hardfiles?
+5.  What utilities are available for use in generating hardfiles?
+6.  What components are involved in the installation of a hardfile?
+7.  What file formats or handler specifications are acceptable for hardfiles?
+8.  How do I make a symbolic device link to a hardfile and get it mounted?
+9.  What does a typical Mountlist for a hardfile have in it?
+10. What keywords are known to the AmigaDOS Mount Command?
+11. Can I mount a file system for A-Max as a hardfile?
+12. Can I mount Emplant or PCTask hardfiles for access from the Amiga side?
+13. Can I use MessyDOS for MSDOS hardfiles?
+14. Can I use MultiDos for MSDOS hardfiles?
+15. Can I use my Mac-2-DOS MAC floppy adapter cartridge to load hardfiles?
+16. Can I use my A-MaxII ROM / MAC floppy adapter cartridge to load hardfiles?
+17. Can I use my Emplant AMIA MAC floppy adapter cartridge to load hardfiles?
+18. Can I read A-Max Mini-transfer and other mixed format disks with CrossDOS?
+19. Are there useful mixed format disks, and if so, how do I create them?
+20. How can I make image file copies of floppy disks and hardfiles?
+21. Will we have any trouble with the advice in this FAQ?
+22. Where can I get FmsDisk?
+23. Where can I get CrossMAC and CrossDOS?
+24. Where can I get Emplant and AMIA?
+25. Where can I get A-MaxII, A-MaxII+ or A-MaxIV?
+26. Where can I get Shape Shifter?
+27. What address can we use for the FAQ maintainer?
+
+---------- BEGIN AMIGA HARDFILE FAQ ----------
+
+0.  What can we expect from the Amiga community for multi-platform support?
+
+    This is a temporary section added for the purpose of providing a context
+    for the use of the material included in this FAQ.  Multi-platform support
+    in the Amiga community can be divided into two categories.  First, there
+    are companies which provide cross-platform software packages as commercial
+    products, either as stand-alone utilities, or as support packages for
+    emulators.  Respective examples are Consultron (CrossDOS/CrossMAC) and
+    Utilities Unlimited (Emplant, 586PC).  Then there are the PD (publicly
+    distributable) utilities and shareware.  Respective examples are PCDisk
+    and MultiDOS.
+
+    The commercial packages are usually self-contained and self-consistent.
+    This means that the packages consist of two or more parts which have been
+    designed to work together (thus they are compatible with each other and
+    with AmigaDOS).  The publicly distributable and shareware codes are set
+    up best as they possibly can to be compatible with AmigaDOS and to be
+    co-compatible with other existing packages, such as PCTask or with the
+    CBM Bridgeboard or perhaps even with ShapeShifter.  It usually becomes
+    necessary for the commercial package producers to maintain firm control
+    (in order to keep the workload on the support services lines at a sane
+    level).  Thus, the use of commercial packages in combination with PD
+    utilities is permissible only if you resolve not to call the product
+    support line, given that you encounter unexpected problems.  For one
+    thing, problems are what you should expect, and for another, the product
+    support people don't have any information about the PD tools you're using.
+
+    We can expect in the future, with the seemingly dispersed Amiga product
+    leadership, that commercial products will move toward interfaces which
+    are capable of recognizing the company drivers and handlers, and thus
+    are also capable of xenophobic rejection of unfamiliar PD and shareware
+    utilities.  The PD utilities will, on the other hand become more and more
+    tailored to work with standardized static output from commercial packages
+    and MSDOS, Macintosh or AmigaDOS data storage and retrieval systems.  For
+    further information, see "COMPATIBILITY ISSUES" in section 7.
+    
+    Last but not least is the matter of parenthood for the AmigaDOS software
+    itself.  As of this writing I do not yet see a dominant principality for
+    the care and feeding of AmigaDOS.  We do have AmigaDOS 3.1x and we expect
+    continued development for the operating system software.  However, since
+    there is not a broad support base for the new OS versions in the US, this
+    FAQ has not yet evaluated hardfile application techniques for AmigaDOS 3.1
+    and higher.  Thus in the future, this FAQ will need to be significantly
+    changed so as to have separate sections directed at specific commercial
+    products for the new OS versions, and other sections for PD and shareware
+    utilities, some of which are applicable only to older OS versions.
+
+1.  What are "hardfiles" and why does anyone use them?
+
+    Hardfiles are simulated hard disks; they are implemented through
+    generation of an organized flat file representation of a hierarchical
+    directory tree.  The folks who use hardfiles are those who don't
+    have room for several dozen multi-OS hard drives in their desktop
+    computer, for one thing.  For another thing, they are also people
+    who cannot tolerate the agony of frequently repartitioning their
+    hard drive into a myriad number of various odd-sized partitions.
+
+2.  What are the advantages of hardfiles over partitions?
+
+    Hardfiles are used rather than partitions because they are easy
+    to generate and discard, and because they lend themselves to the
+    application of simple, understandable file comparison and modification
+    tools.  The consequences of a damaging action in a partition on a
+    disk containing primary operating system tools and software is far
+    greater than the consequences of damaging action in a directory full
+    of hardfiles.  Also, hardfiles are very much less expensive than
+    a hard disk farm, particularly where the data set consists of many
+    small disks.
+
+3.  What are the disadvantages of hardfiles?
+
+    Hardfiles are slow.  Working with large hardfiles is more wearisome
+    than other challenging activities, such as watching paint dry.  The
+    tasks of generating, assigning, and mounting hardfiles are sometimes
+    seemingly obscure, and the tools for generating and maintaining them
+    are often pragmatically oriented toward some particular application,
+    and thereby lack flexibility compared to less frequently used partition
+    related tools.
+
+4.  How can I can get faster disk transfers to and from my hardfiles?
+
+    The AmigaDOS AddBuffers command works for any disk device, and thereby
+    will speed up any file system that works by asking the device for sector-
+    sized records.  A file system such as the PFS (from Aminet) that asks
+    for larger amounts, such as multiple tracks, and then buffers these in
+    its own allocated memory space will probably not be helped by the use
+    of the AddBuffers command.  A buffer is only 512 bytes.  If you issue
+    a command to AddBuffers 2000 you'll allocate enough RAM (1 Megabyte) to
+    get good performance out of even an 80 Meg hardfile, so use about 1000
+    buffers per 40 Meg of hardfile.  Use a command such as
+
+    			AddBuffers HD1: 2000
+
+    for the HFD directory (which in this case can be assigned to HD1:HFD).
+
+5.  What utilities are available for use in generating hardfiles?
+
+    Following is a list of some utilities used for generating hardfiles:
+
+	Utility		    Applications	      Software / Drivers
+
+	MakeAB		CBM Bridgeboard; Soft PCs	janus.library
+	HardFileSetup	UU Emplant MacII Emulator	emphf.device
+	Install		Consultron CrossDOS		filedisk.device
+	Mount		AmigaDOS recoverable RADs	ramdrive.device
+	various		DILLON File system devel/maint	any of the following:
+			     FmsDisk hardfile		fmsdisk.device
+			     Consultron CrossMAC	fmsdisk.device
+			     Consultron CrossDOS	filedisk.device
+			     CBM AmigaDOS hardfile	scsi.device
+
+	Tool				Amiga Use
+
+	Assign		-Amiga symbolic link generator
+	Mount		-Amiga partition and general device mounting tool
+	DJMount		-Mounts AmigaDOS format partitions within MSDOS disks
+	Format		-Amiga general file system formatting tool
+
+	Note:	Installation of CrossMAC/CrossDOS overwrites some AmigaDOS
+		 commands, replacing them with versions having extended
+		 capabilities which support CrossMAC and CrossDOS file systems.
+		 If you have not purchased and installed Consultron's CrossDOS
+		 and CrossMAC packages, invocations of the Format and DiskCopy
+		 commands could produce results different than results shown
+		 in this FAQ.
+
+	Tool				MSDOS Use
+
+	JLINK		-Mounts extendible MSDOS format Amiga hardfiles for BB
+	FDISK		-MSDOS disk partitioning tool
+	ADISK		-AmigaDOS disk partitioning tool for BB MSDOS drives
+
+	Tool			     Bridgeboard Use
+
+	AREAD		-Reads AmigaDOS files and writes them to MSDOS files
+	AWRITE		-Writes MSDOS files to AmigaDOS partitions/directories
+
+	Note: janus.library AND its icon must be placed in sys:Expansion
+	      so as to automatically load the Bridgeboard autoboot code!!!
+
+	FYI only, available partition file devices:
+
+	PCDisk		Publicly Distributable MSDOS emulator partition manager
+			-this is an _excellent_ partition manager which both
+			 allows mounting an MSDOS file system for the emulator,
+			 and also allows mounting the same partition on the
+			 Amiga side (via the CrossDOSFileSystem).  You can get
+			 simultaneous [but somewhat uncoordinated] disk access.
+			 It's on Aminet Set 1 D (a four-disk set) filed as a
+			 beta revision, ":Aminet/misc/emu/PCDisk91b.lha" there
+			 may be a more current release, so check around...
+
+	A-MaxII		Mac Plus emulator  Eeeek! :-)	 NO! A-Max uses
+							 _partition_ device
+	 Controller	 Device Driver	A-MaxII Driver   drivers, which will 
+							 not only not create
+	   A2090         hddisk.device    hddisk.amhd    hardfiles - they will
+	   A2091/A590    scsi.device      scsi.amhd      destroy all other
+	   GVP           scsidev.device   scsidev.amhd   data in your hardfile
+							 partition!!!
+	But there is a way - see item on A-MaxII below.
+
+6.  What components are involved in the installation of a hardfile?
+
+    Installation of a hardfile is accomplished for an application via a GUI,
+    a program, a shell script, or a manually invoked sequence of commands
+    which accomplish a procedure of the following form:
+
+	a. A link is provided between the hardfile location and the
+	   hardfile device driver.  Some drivers want to be given a
+	   partition name, some need a volume:directory/path supplied
+	   through a software ASSIGN, and some drivers need an ASCII
+	   string pointer in a <Volume/directory/filename> format.  For
+	   example an Emplant hardfile might need "Assign EMPHF: HD1:"
+	   where EMPHF: is a symbolic link name known to the emphf.device
+	   driver, and HD1: is a hard disk device name. The device driver
+	   will usually supply the actual enumerated file name for the
+           hardfile, with the enumeration determined through information
+           supplied from the GUI tool or CLI entry, inspection of the named
+           partition, or by the "Unit =" entry in the mountlist.  One
+	   exception is the Bridgeboard, which looks for an ASCII string
+	   file pointer link in a file having the name aboot.ctrl which
+	   must be placed in the sys:PC/System drawer; some more usual
+	   examples would be
+
+           "Unit0" (FmsDisk) or "EmpHardFile0" (Utilities Unlimited).
+
+	b. Specifications for the required hardfile size, driver, file
+	   system definition and format are supplied through either CLI
+	   or GUI user input or through a user supplied Mountlist.
+	   For circumstances where simulated hard disk size and desired
+	   file system were supplied by the user, the creation/installation
+	   utility will, on user request, write a Mountlist suitable for
+	   subsequent loading of the device driver and mounting of the
+	   hardfile.  By the end of this part of the sequence, the
+	   hardfile is created and low-level prep'd; perhaps it will
+	   also be mounted, ready for formatting.  If not automatically
+	   mounted by the installation utility, the device will have to
+	   be mounted by the user.  As an example, the FmsDisk driver
+	   fmsdisk.device would like to see the following sequence:
+	   "Assign FMS: HD1:HFD" and "Mount MAC: from devs:Mountlist_MAC"
+	   where "FMS:" is the symbolic device name, "HD1:" is an actual
+	   hard disk partition device name, "HFD" is a nice, quiet, clean
+	   directory for storing hardfiles, and Mountlist_MAC is a suitable
+	   mountlist containing mounting information for the volume.
+
+	c. The FORMAT command is invoked by the user in the same fashion
+	   as would be required for high-level preparation of an actual
+	   hard drive, i.e.:  If Mountlist_MAC begins with the symbolic
+	   device name "MAC:", "Format drive MAC: name Sys7.1.1 noicons"
+	   is the command that will format the "MAC:" device after it has
+	   been mounted.
+
+7.  What file formats or handler specifications are acceptable for hardfiles?
+
+    The answer to this question depends on the device driver.  Basically,
+    it's a bit of a zoo.
+
+    COMPATIBILITY ISSUES:
+
+    For some time now, computer data and instruction storage systems have
+    been structured for device independent composition.  Beginning with the
+    Unix operating system, the idea was that any driver could be connected
+    to any device, each driver extracting or replacing from that device the
+    elements of its own concern, leaving the remainder untouched.  However,
+    painful lessons have emerged concerning the practicality of this simple
+    approach.  While it has worked fairly well for common use of sequential
+    serial access file systems and hierarchical parallel access file systems,
+    difficulties have been encountered with highly specialized applications
+    such as multi-OS data storage and retrieval systems.  In particular, the
+    boundary interface between the system, the drivers, and the file systems
+    must be written coherently.  If a reader requests an element of data, the
+    most recent data must be passed.  If a writer sends an element of data,
+    the data element must be written in the most current storage location.
+    It does appear that in AmigaDOS and its applications this does not always
+    happen as it should.  The interface boundary specification is either not
+    followed, or it is not capable of assuring this simple scheme will work
+    as needs be.  Systems using the mem/media data cache approach (i.e., the
+    Emplant file system) evidently won't work with drivers that don't expect
+    data cache methodologies to be in use (i.e., FMSdisk or the Flat-Handler).
+
+    Don't expect co-compatibility with application specific file systems; to
+    the contrary, expect that extended operations with drivers not specifically
+    designed for use with a particular application, and not co-maintained with
+    the current release of the software in use will sooner or later bring about
+    file system corruption.  Uses of these tools are thus for first aid efforts
+    or for inconsequential experimentation only, and are better practiced only
+    by those familiar with each of the application specific environments.
+    
+    SOME DEVICE AND DRIVER ASSOCIATIONS:
+
+    Here is a brief overview, by device:
+
+	Tool/Device      File Formats Supported     File Formats Not Supported
+
+	makeab/janus     MSDOS Big Floppy Image     Standard Hard Drive Format
+	jlink/janus      MSDOS Big Floppy Image     Standard Hard Drive Format
+	Install/emphf    EMPLANT hardfile drive     Any entry accepted.  Use of
+	                 CrossDOS/MAC formats       PD drivers unacceptable;
+	                 supported for MAC & PC     not a co-compatible system.
+	Install/filedisk MSDOS, CrossDOSFileSystem  Unknown: manual spec can
+	                 Mac,   CrossMACFileSystem  be entered in Mountfile via
+	                                            any text editor; it's YTBD.
+	PcFormat/multidos MSDOS, MultiDosFilesystem Those needing MSDOS bootcode
+	Various/fmsdisk Non-cached data systems     You MUST supply a Mountlist
+	                                            No Mountlist = No Support!
+
+    Note that "Install" refers to the CBM Install utility, which is custom
+    built by each licensee for a particular application.  The problem is
+    that an application's Install menu may not offer at a critical point
+    in the install sequence the particular option you seek to invoke.
+
+    Both A-Max and Emplant are able to read and write to AMAX partitions,
+    though Emplant will not format on request a disk volume with AMAX format
+    unless the volume is a hardfile created by the Emplant install utility
+    for which the file system was specified as "L:CrossMACFileSystem".
+
+    A-MaxII does not accept EMPLANT format, regardless of the supplied media.
+    For Macintosh enthusiasts, FmsDisk can create many Mac formats desired
+    for a hardfile via a user supplied Mountlist containing a suitably set
+    reference: i.e., "FileSystem = L:CrossMACFileSystem"; furthermore, with
+    this Mountlist entry "Flags = 2 /* Amax = 2 */" will succeed in creating
+    a hardfile with the AMAX format.  Unfortunately, though, the mfm.device
+    used with this file system may not be able to reliably read those floppy
+    disks not too well written (it would seem) by A-MaxII.  The Emplant
+    multi-os.device can provide a way out of this problem, or at least, it
+    can if you have the Emplant Macintosh emulation software release 5.0 or
+    earlier.  For 5.0 or lower, the multi-os.device can be substituted for the
+    CrossDOS mfm.device.  Do not use FmsDisk with the EMPHF hardfiles, though,
+    since FmsDisk is not co-compatible with that system.  With the release of
+    Emplant version 5.1, UU put this interesting note in the upgrade document:
+	
+ "* Removed AmigaDOS support completely from multi-os.device.  Due to various
+    changes in trackdisk.device over time, it no longer behaves in a proper
+    manner (ProtStatus can no longer be called from with [sic] an interrupt),
+    so multi-os.device no longer passes things to trackdisk.device (AmigaDOS
+    disk format).  This means that you will no longer be able to use the
+    multi-os.device in place of the mfm.device (as of OS3.1's version of
+    CrossDOS you couldn't anyways)."
+	
+    One can easily surmise that difficult, ugly and weird terrain lies ahead
+    in the world of multi-OS file system management via independent drivers
+    and devices.  Formerly it was the case that CBM enforced the rules for
+    Amiga compatible devices and drivers.  Now it is the case that the VARs
+    have been transformed to independent system authors.  They are now found
+    to be responsible for the proper function of their application software,
+    independently with respect to the operating system.  Expect that they will
+    use a Macintosh-like closed system authorship, and will maintain whatever
+    compatibility is needed within their own products, co-compatibility then
+    becoming a thing of the past, a relic of former days when there was a
+    strong Amiga parent company.
+
+    The constructs discussed in this FAQ were verified under AmigaDOS 2.1 and
+    3.0 with Consultron's CrossMAC 1.05 used with CrossDOS version 6.03, A2000,
+    A3000, & A4000 computers.  While Consultron did provide CrossDOS for CBMs
+    AmigaDOS version 2.1 and 3.0, many users have reported problems for newer
+    AmigaDOS 3.1 with CrossDOS and with the Emplant empscsi.device. Likely it
+    is broken under AmigaDOS version 3.1; if it won't work, it probably isn't
+    a Utilities Unlimited problem.  The same applies to the CrossDOS examples.
+
+    For all the CBM AmigaDOS versions one can use FmsDisk to create and mount
+    floppy disk image hardfiles with Consultron's supplied floppy Mountlist.
+    One can then format the floppy via Consultron's own Format command.  As
+    long as one uses the comparatively slower FmsDisk software exclusively
+    with the file systems created via the fmsdisk.device, and one does not
+    sometimes Mount them with the emphf.devices and at other times go to the
+    fmsdisk.device for the same volume, data corruption is unlikely.  When
+    CrossMAC's file system handler (CrossMACFileSystem) is in the Mountlist,
+    a floppy thus initialized is an aligned mfm format that is superior to
+    one written by A-MaxII (at least with respect to desired cross-system
+    portability).  It is, as well, a format into which either A-MaxII or
+    Emplant can reliably copy whatever files you may want to move from one
+    platform to another.
+
+    Below is a list of file systems used in hardfiles, per application:
+
+	Application	File System		Compatible Drivers
+
+	Apple `Any Mac'	L:CrossMACFileSystem	fmsdisk.device, mfm.device
+	Consultron				ramdrive.device, emphf.device
+
+	Apple MacII	UU Emplant proprietary	emphf.device ONLY
+	HardFileSetup	?"EmplantFileSystem"? <-FS Name not seen in Mountlist!
+
+	A-MaxII/IV	L:CrossMACFileSystem	fmsdisk.device, mfm.device
+	Consultron				ramdrive.device
+
+	MSDOS		L:MultiDosFilesystem	multidos.device, mfm.device
+						fmsdisk.device, ramdrive.device
+
+	MSDOS		L:CrossDOSFileSystem	filedisk.device, mfm.device
+	Consultron				fmsdisk.device, ramdrive.device
+
+	Amiga		AmigaDOS		fmsdisk.device, ramdrive.device
+	Commodore				scsi.device
+
+	Bridgeboard	MSDOS			janus.library, scsi.device etc.
+	JLINK		makes PC linked hardfile volumes, extendible size
+	MakeAB		makes PC Autoboot hardfile volume, fixed size
+
+8.  How do I make a symbolic device link to a hardfile and get it mounted?
+
+    Very well, here's the bunch of procedures, listed by Application.  The
+    Mountlists are described below in the query concerning "typical mountlists"
+    Note that a reference to "Mountlist_DEV"[n] in the procedures below
+    identifies the particular mountlist "DEV" and, optionally a unit number n
+    which should be used with that procedure.  The mountlist entries in the 
+    mountlist section may either be placed in individual files in the devs:
+    directory with the filename given in the procedure, or they may all be 
+    lifted out of this FAQ as one file named, say, "devs:Mountlist_HF" or
+    whatever fits well with your particular method of filing mountlists.
+
+	In any of the following, HDx is a partition on a hard disk drive or a
+	disk hardware-jumpered to Unit number x, FDHF is a "Floppy Disk image"
+	stored as an AmigaDOS HardFile, and HF is a general purpose specifiable
+	length hardfile stored via AmigaDOS.
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS RRDisk	ramdrive.device	L:FastFileSystem	FRDn:	FFS
+
+	Command:	Mount FRDn: from devs:Mountlist_FRDn "n is unit number"
+	Command:	Format drive FRDn: name "Volume Name" noicons ffs
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos FDHF	fmsdisk.device	L:MultiDosFilesystem	DV0:	MSDOS
+				     or	L:CrossDOSFileSystem
+
+	Command:	Assign FMS: HDx:HFD where HDx is an AmigaDOS partition
+			                    and HFD is a hardfile directory
+	Command:	Mount DV0: from devs:Mountlist_DV0
+	Command:	PcFormat drive DV0: name "Volume Name" noicons -f<spec>
+			where <spec> is an entry in the file s:PcFormat.spc
+			For "-fF0Standard:" it is of the form
+
+				F0Standard:
+				SystemID = MDos1.0
+				BytesPerSector = 512
+				BlocksPerCluster = 1
+				PreAlloc = 1
+				NumbersOfFats = 2
+				NumberOfRootDirEntries = 224
+				TotalBlocksOnDisk = 2880
+				FormatID = 0xF0
+				BlocksPerFat = 9
+				BlocksPerTrack = 18
+				Surfaces = 2
+				HiddenSectors = 0
+				BigTotalSectorsOnDisk = 0
+				PhysicalDriveNumber = 0
+				ExtendedBootRecordSignature = 0x29
+				VolumeSerialNumber = 0
+				VolumeLabel = MultiDos1.0
+			  /*	FileSystemID = FAT12			*/
+				##
+
+		Note that <spec> is optional, however, the default
+		spec is the MSDOS 720K F9 media specification.
+
+		Also note that CrossDOS will not recognize the volume
+		unless "L:CrossDOSFileSystem" is specified in the mountlist
+		in place of the "L:MultiDosFilesystem" entry.
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos RRDisk	ramdrive.device	L:MultiDosFilesystem	DR0:	MSDOS
+				     or	L:CrossDosFileSystem
+
+	Command:	Mount DR0: from devs:Mountlist_DR0
+	Command:	PcFormat drive DR0: name "Volume Name" noicons -f<spec>
+			where <spec> is optional and is the F0 form noted above
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos Floppy	mfm.device	L:MultiDosFilesystem	DD0:	MSDOS
+				     or	L:CrossDosFileSystem
+
+	Command:	Mount DD0: from devs:Mountlist_DD0
+	Command:	PcFormat drive DD0: name "Volume Name" noicons -f<spec>
+			where <spec> is optional and is the F0 form noted above
+			Note that an Amiga HD drive is required for this entry
+			when <spec> is the "F0Standard:" specification
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDOS HF	fmsdisk.device	L:CrossDosFileSystem	MDH:	MSDOS
+
+	Command:	Assign FMS: HDx:HFD where HDx is an AmigaDOS partition
+			                    and HFD is a hardfile directory
+	Command:	Mount MDH: from devs:Mountlist_MDH
+	Command:	PcFormat drive MDH: name "Volume Name" noicons -f<spec>
+			where <spec> is a valid F8 specification -
+			see the MultiDos section earlier in this FAQ
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossDOS Floppy	mfm.device	L:CrossDOSFileSystem	PCn:	MSDOS
+
+	Command:	Mount PCn: from devs:Mountlist_PCn   "n is Unit number"
+	Command:	Format drive PCn: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossMAC Floppy	mfm.device	L:CrossMACFileSystem	MACn: `Any Mac'
+
+	Command:	Mount MACn: from devs:Mountlist_MACn "n is Unit number"
+	Command:	Format drive MACn: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS FDHF	fmsdisk.device	L:FastFileSystem	FMS:	FFS
+					[No Specification]	FMS:	OFS
+
+	Command:	Assign FMS: HDx:HFD;	"HDx as above, HFD a directory"
+	Command:	Mount FFVn from devs:Mountlist_FFVn "n is Unit number"
+	Command:	Format drive FFVn: name "Volume Name" noicons
+
+	Note:		AmigaDOS formats include:
+			Amiga HD AmigaDOS OFS 1676K ,	AmigaDOS FFS 1759K
+			Amiga DD AmigaDOS OFS 837K  ,	AmigaDOS FFS 879K
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossMAC FDHF	fmsdisk.device	L:CrossMACFileSystem	FMS:  `Any Mac'
+
+	Command:	Assign FMS: HDx:HFD;	"HDx as above, HFD a directory"
+	Command:	Mount DEVICE from devs:Mountlist_DEVICE "DEVICE=option"
+
+	    Example:   	"option" is one of MRDn: , MFHn:" "n is Unit number"
+			 "MRDn: is recoverable ramdisk"
+			 "MFHn: is hardfile Macintosh `Any Mac',`AMAX',`EMPLANT'
+				floppy disk format; EMPLANT must be loaded via
+				Consultron `DiskCopy' from UU emulator output."
+	Command:	Format drive NNNn: name "Volume Name" noicons
+			"NNN is simulated floppy device name, n is unit number"
+				"Volume Name" is any desired volume name
+				"NNN is any of MRD or MFH"
+
+	Note:		`Any Mac' includes AMAX , EMPLANT , 800K , 1440K Mac
+			 formats; 1440K Mac format requires an Amiga HD drive
+	}
+
+	{
+	Application	Device Driver	Handler			Name   Format
+
+	CrossDOS FDHF	fmsdisk.device	L:CrossDOSFileSystem	FMS:  `Any DOS'
+
+	Command:	Assign FMS: HDx:HFD;	"HDx as above, HFD a directory"
+	Command:	Mount DEVICE from devs:Mountlist_DEVICE "DEVICE=option"
+	    Example:    "option" is one of DRDn: DFHn:	"n is Unit number
+			DRDn: is recoverable CrossDOS ramdisk floppy disk image
+			DFHn: is a hardfile with a CrossDOS 720K or 1440K
+							     floppy disk image"
+	Command:	Format drive NNNn: name "Volume Name" noicons
+			"NNN is simulated floppy device name, n is unit number"
+				"Volume Name" is any desired volume name
+				"NNN is any of DRD , DFH"
+
+	Note:		"`Any DOS' formats include IBM 1440K	, IBM 720K.
+
+			While the FDHF hardfile can be mounted and initially
+			formatted via the CrossDOS "Format" command, this will
+			not produce a standard floppy format in the hardfile.
+			It is necessary to load the hardfile from a floppy
+			disk (formatted on a PC, a PC emulator or Bridgeboard,
+			or by Consultron's CrossDOS on an Amiga floppy disk
+			drive) via Consultron's version of AmigaDOS "DiskCopy".
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossMAC HF	fmsdisk.device	L:CrossMACFileSystem	FMS:  `Any Mac'
+
+	Command:	Assign FMS: HDx:HFD ;	"HDx" is as specified above"
+						"HFD is a directory"
+	Command:	Mount MHDn: from devs:Mountlist_MHDn
+				"MHDn:" is a hardfile device name,
+				 			    n is a unit number"
+	Command:	Format drive MHDn: name "Volume Name" noicons
+				"Volume Name" is any desired volume name
+	Note:		`Any Mac' includes AMAX , EMPLANT , plus standard Mac
+			 formats
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossDOS HF	fmsdisk.device	L:CrossDOSFileSystem	FMS:	MSDOS
+
+	Command:	Assign FMS: HD1:HFD
+	Command		Mount PCHFn: from devs:Mountlist_PCHFn
+						"PCHF is hardfile device name"
+							    "n is Unit number"
+	Command:	Format drive PCHFn: name "11CHARVOL" noicons
+							    "n is Unit number"
+					`"11CHARVOL" is any 11 character name
+					 except for IBM reserved strings or
+					 AmigaDOS illegal characters'"
+	}
+
+	{
+	Application	Device Driver	Handler		Name	Format
+
+	Emplant HF	emphf.device	HardDiskSetup	EMPHF:	AmigaDOS FFS
+								or write-in,
+		EMPHF:						* EMPLANT
+
+	Command:	Assign EMPHF: HDx: ;	"HDx" is a partition name."
+	Command:	Mount MACHF0: from Mountlist_MACHF0
+	Command:	Format drive MACHF0: name "Volume Name" noicons FFS
+
+		HF:						* MSDOS
+
+			* May be reformatted subsequently by emulator software.
+
+	Command:	Assign EMPHF: HDx: ;	"HDx" is a partition name."
+	Command:	Mount DOSHF0: from Mountlist_DOSHF0
+	Command:	Format drive DOSHF0: name "Volume Name" noicons FFS
+
+	Comment:	The HardDiskSetup program can be invoked by double
+			clicking on its Icon via the mouse.  It is a menu
+			operated selection system similar to the CrossDOS
+			Install program.  Details are explained here;
+			A single page window allows incrementing the
+			hardfile size from 0 in 64Kbyte steps.  Changing
+			anything else in the window in an inappropriate
+			fashion will silently reduce the amount selected
+			to zero, at which point the "Create HardFile" and
+			"Create Mount List" selection gadgets will silently
+			do nothing whatsoever - so keep an eye on the size
+			selected to be sure you are asking for something
+			the menu is willing to provide.  A gadget allows
+			selection of 0 - 15 for the unit number. A string
+			gadget allows specifying a handler for the file system,
+			though for either PC-Task or "Bridge Board" selections,
+			L:CrossDOSFileSystem is entered automatically.  Any
+			string entered in the text gadget will be obediently
+			included in the FileSystem Mountlist entry, even if
+			it's "L:HotCoffeeFileSystem" (don't forget the "L:").
+			For the "Emplant" selection, no handler is either
+			offered up or required in order to create the hardfile.
+			If no entry is made, you get the UU proprietary EMPLANT
+			File System.  If you type in "L:CrossMACFileSystem"
+			your hardfile will be formatted with the AMAX File
+			System.  The Emplant MACII emulator asks to initialize
+			the hardfiles for use as soon as the emulator is opened
+			to the point of displaying the Macintosh desktop.
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	CrossDOS HF	filedisk.device	L:CrossDOSFileSystem	PCC:	MSDOS
+	Command:	Double click on CrossDOS floppy Install icon
+	Query:		Set Installation Mode select Expert User, Proceed
+	Query:		Installation Options select Install for Real
+			 Log all actions to: select None  -  Proceed
+	Query:		Of 4 functions select ONLY "Configure Hard Disk"
+	Query:		Of 3 functions select ONLY "Configure a Disk File"
+	Notice:		Copying file devs/filedisk.device to sys:devs
+	Query:		Installer reports: "The File HD1:HFD/MSDOS0
+			 does not exist - Should I create it? select "Create"
+	Query:		Type DRAWER and FILE entries into text gadgets
+	Query:		Enter the size in increments of 1 Mb, (22 Max) continue
+	Notice:		HardFile being created (go get a cup of coffee...)
+	Result:		MSDOS HardFile placed in specified directory
+	Query:		Specify name for mountable device, i.e., "PCC"
+	Response:	last character must be one of C to Z, but it only
+			 allows you to enter it as .....C; you can edit it
+			 to .....D, E, F, etc., later if you need to, though.
+	Query:		The drive PCC: doesn't appear to be partitioned.
+			 Do you wish to partition it?  WARN: a YES may
+			 corrupt data that already exists! [It seems that it
+			 wants to know if you want to partition the hardfile.
+			 (though it COULD be asking if you want to partition
+			 the storage device (entered above as "HD1:"). You
+			 always answer "Don't Partition" since you can use
+			 the MSDOS FDISK command to partition it if need be,
+			 and you don't want/need HD1: partitioned or, as it
+			 may be, destroyed even.  Nonetheless, when selected
+			 as "Partition" it did partition the hardfile, and not
+			 the drive (Whew!).]
+	Sub Query:	 Do you wish to format the partition?  WARN: a YES
+			 may destroy data that already exists!  I invoked the
+			 Format option, and it formatted the partition it
+			 had placed in the hardfile... I Experimented with
+			 this on a 1440K recoverable ramdisk.  Perhaps it
+			 will behave in similarly civil fashion on a hardfile?
+	Notice:		If you need to prep PCC: again use "QuickPrep" (TM). Ok
+	Result:		Install places Mountfile and Icon in drawer
+			 devs:DOSDrivers, then mounts the hardfile for you.
+			 As the Mountfile is now in the devs:DOSDrivers drawer,
+			 the device will hence be mounted each time the system
+			 is booted.  To avoid this in future boots, you can
+			 move the Mountfile and Icon to sys:Storage/DOSDrivers.
+	Conclusion:	Install closes all hardfile related windows, exits.
+	Comment:	The supplied Mountfile can be converted to a normal
+			 Mountlist by merely inserting the device name ("PCC":)
+			 as the first line of this file, checking to see that
+			 the last line of the file has a single # character
+			 alone on the last line, and then moving the file to
+			 the devs: drawer; delete the Icon, as it is not
+			 thereafter needed.  If needed at some subsequent
+			 date, just cd to devs:DOSDrivers and Copy PIPE.info
+			 to PCC.info and "unedit" the device name from the
+			 mountlist in the devs: directory and move it back to
+			 the devs:DOSDrivers directory where the tool initially
+			 put it.  It would be nice if they'd let you specify
+			 the hardfile size to the nearest kilobyte, or 32Kb,
+			 even but after all, MSDOS would have a cow when it
+			 tried to partition and/or format the file, eh?
+			 Partitioning the hardfile consisted of placing at
+			 the head of the file a standard MSDOS partitioning
+			 table.  Formatting the hardfile consisted of writing
+			 zeros in all the subsequent blocks of the file.
+			 The two PC[ALPHA CHAR] mountlists at the end of the
+			 FAQ's "Typical Mountlists" section (including the RAM
+			 drive), were built by the CrossDOS Install utility.
+	}
+
+	{
+	Application	Device Driver	Handler		Name		Format
+
+	Bridgeboard	janus.library	JLINK		D E F or G	MS-DOS
+
+	Command:	Run <NIL: SYS:PCDisk [Sees that Amiga/BB software runs]
+	Comment:	The PC CONFIG.SYS file needs to have the line
+			 		DEVICE=JDISK.SYS
+			to load the driver, and the JDISK.SYS file must either
+			be in the root of the MSDOS boot disk, or the full path
+			must be specified, i.e.: "DEVICE=C:\JANUS\JDISK.SYS"
+	Command:	JLINK
+	Result:		Monitor displays a table:
+
+				VDrive   Status   Linked to
+				d:
+				e:
+				f:
+				g:
+
+	Command:	JLINK N: FILENAME /SW	[N: is d: e: f: g: from table]
+			with SW as one of the following
+			/N	All messages suppressed except errors
+			/C:N	Create a volume on the Amiga side.
+				 Here N is the size in kilobytes
+			/U	Unlink that volume
+			/R	Link as ReadOnly (all write attempts will fail)
+
+		Note: If you do not specify a switch, JLINK will attempt to
+		       link an existing file.  If the file does not exist,
+		       the link will be unsuccessful.  If you use /N with /C,
+		       existing volumes are deleted without any warning.
+		       For example:
+
+		       		JLINK E: RAM:VD /C:1000
+
+		       creates an Amiga VD file in the root directory of the
+		       Amiga RAM disk.  The file contains the necessary MS-DOS
+		       structures like file allocation tables, MS-DOS format,
+		       and an empty root directory.  The maximum size of the
+		       file in this case will be approximately 1 Meg.  The
+		       specified size (/C:N) is the maximum size the file can
+		       grow to.  Response of JLINK seems inconsistent, so some
+		       rounding of this number must be taking place.  If the
+		       number is less than 160,  the size is set to 160 Kb.
+		       The file starts off as small as possible and can
+		       grow as data is added, but it will never get smaller.
+		       After the file has been created, it is linked (in this
+		       example) to the virtual drive E:.  If the file already
+		       exists, you will be asked if you want to continue.
+		       By continuing, you will destroy all previous data
+		       stored on that volume.  After the Amiga VD file is
+		       created, and linked to the MS-DOS virtual drive E:,
+		       the display will show:
+
+				VDrive   Status   Linked to
+				d:
+				e:	 R/W	  vd
+				f:
+				g:
+
+			The status of a new file will be either R/O for
+			ReadOnly, or R/W for Read and Write.  To unlink a
+			virtual drive, specify the MS-DOS virtual drive
+			you wish to unlink and use the /U switch.
+
+			CAUTION: Be sure to unlink each volume before you
+				  reboot or power down the PC!
+
+			The Amiga files of virtual drives contain no
+			information that could be used on the Amiga side.
+			However, they can be copied, renamed and deleted
+			like normal Amiga files.  When a file is linked
+			to a virtual drive, AmigaDOS cannot access the
+			file until it is unlinked by JLINK.
+
+			[Note that JDISKS are nonetheless hardfiles, and
+			any MSDOS hardfile that has a boot block that can be
+			translated into a mountlist can be mounted via the
+			CrossDOSFileSystem and the fmsdisk.device, or by the
+			CrossDOS ConfigDisk utility.]
+	}
+
+	{
+	Application	Device Driver	Creator		Name		Format
+
+	Bridgeboard	janus.library	MakeAB		AutoBootPC	MS-DOS
+
+	Command:	MakeAB drive:directory/filename [issued in the CLI]
+	Result:		The program asks for specifications for the hardfile:
+			Number of Heads:	Allowable range 1-16	[4-8]
+			Number of Tracks:	Allowable range 1-64	[17]
+			Number of Cylinders:	Allowable range 1-1024	[600]
+
+			After input is complete, MakeAB will display the
+			proposed size.  You can accept or cancel, but you have
+			to re-run the program if you want to start over.  If
+			you accept the parameters, MakeAB will generate the
+			hardfile in the proper format for auto-boot and will
+			place the file in drive:directory/filename.  Once
+			the file is created, you need to supply the Bridgeboard
+			with a pointer to the file.  The system looks for the
+			pointer in the file sys:PC/System/ABOOT.ctrl and in
+			this file there should be one line followed by a <CR>
+			i.e.,
+					DH1:AutoBootPC<CR>
+
+			You can have multiple autoboot files with different
+			DOS versions and you can select which file you wish
+			to use as an auto-boot file by changing the contents
+			of the ABOOT.ctrl file described above. First time
+			boot after making this file should be accomplished
+			from a STARTUP floppy containing all of the usual
+			MS-DOS initialization tools.
+
+	Command:	FDISK (done in MS-DOS after boot-up)
+			See the MS-DOS documentation concerning this disk
+			partitioning, activation and initialization tool.
+	Command:	FORMAT C: /S [/U] (done in MS-DOS after FDISK)
+	Command:	FORMAT D: [/U] (done in MS-DOS if additional partitions
+				         were included in the extended part.)
+	Comment:	The auto-boot volume C: may now be loaded with MS-DOS
+			system software.  Format any of the Pseudo drives
+			mounted in the extended partition, load application
+			software or application data as desired.
+
+			[Note that AutoBootPC drives can be mounted with any
+			system that has CrossDOS.  See discussion above with
+			respect to JLINK devices.]
+
+9.  What does a typical Mountlist for a hardfile have in it?
+
+    Below are some tested samples.  Read and weep.  First, a test ramdrive
+    in which to try a few things like holding a small recoverable hardfile.
+    Though it is not a hardfile itself, it just holds a hardfile.
+
+---------- Mountlist follows, cut here ----------
+
+/* This is an example of a mountlist entry for using the recoverable */
+/* ram disk with the Fast File System.  The BPT value has been set   */
+/* to correspond with that used by a 1759K FFS formatted floppy.     */
+
+FRD0:
+      Device = ramdrive.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 0  ;  HighCyl = 79
+      Interleave = 0
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x444F5301
+      Mask =  0x7FFF
+      Buffers = 30
+      BufMemType = 4
+      BootPri = -1	/* for a booting RRD, use BootPri = 5 */
+      Mount = 1
+#
+
+/* MultiDos 1440K MSDOS hardfile entry */
+/* to be formatted with MultiDos PcFormat utility */
+DV0:
+      Device         = fmsdisk.device
+      Unit           = 0
+      Flags          = 0                /* 1 : Allow 5 1/4" drives */
+      Surfaces       = 2
+      BlocksPerTrack = 18
+      Reserved       = 1	/* for CrossDOSFileSystem Reserved = 0 */
+      Interleave     = 0
+/*    SecOrg         = 1 */
+      LowCyl         = 0
+      HighCyl        = 79
+      FileSystem     = L:MultiDosFilesystem	/* or L:CrossDOSFileSystem */
+      Buffers        = 30
+      BufMemType     = 1	/* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+      Stacksize      = 4000
+      Priority       = 5
+      GlobVec        = -1
+      DosType        = 0x4D534400
+      Mount          = 1
+#
+
+/* MultiDos Recoverable 1440K MSDOS Format ramdrive */
+/* to be formatted with MultiDos PcFormat utility */
+/* DiskCopy to a floppy volume: Reserved must be the same in both volumes */
+DR0:
+      Device         = ramdrive.device
+      Unit           = 0
+      Flags          = 0                /* 1 : Allow 5 1/4" drives */
+      Surfaces       = 2
+      BlocksPerTrack = 18
+      Reserved       = 1	/* for CrossDOSFileSystem Reserved = 0 */
+      Interleave     = 0
+/*    SecOrg         = 1 */
+      LowCyl         = 0
+      HighCyl        = 79
+      FileSystem     = L:MultiDosFilesystem	/* or CrossDOSFileSystem */
+      Buffers        = 30
+      BufMemType     = 1	/* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+      Stacksize      = 4000
+      Priority       = 5
+      GlobVec        = -1
+      DosType        = 0x4D534400
+      BootPri        = -1		/* clever boot blocks could allow +5 */
+      Mount          = 1
+#
+
+/* MultiDos 1440K MSDOS Format floppy - multidos.device will NOT work for HD */
+/* to be formatted with MultiDos PcFormat utility; use option -fF0Standard:  */
+/* DiskCopy to a hardfile volume: Reserved must be the same in both volumes  */
+/* DD0 entry won't subrogate the DF0: device; if that's needed, name it MD0  */
+DD0:
+      Device         = mfm.device
+      Unit           = 0
+      Flags          = 0                /* 1 : Allow 5 1/4" drives */
+      Surfaces       = 2
+      BlocksPerTrack = 18
+      Reserved       = 1	/* for CrossDOSFileSystem Reserved = 0 */
+      Interleave     = 0
+/*    SecOrg         = 1 */
+      LowCyl         = 0
+      HighCyl        = 79
+      FileSystem     = L:MultiDosFilesystem	/* or CrossDOSFileSystem */
+      Buffers        = 30
+      BufMemType     = 1	/* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+      Stacksize      = 4000
+      Priority       = 4
+      GlobVec        = -1
+      DosType        = 0x4D534400
+      Mount          = 1
+#
+
+/* CrossDOS floppy - all units use same mountlist; change Unit # as needed */
+/* Unit 0 is suggested to be an installed Amiga HD drive */
+/* Unit 1 is suggested as an Amiga 880K drive */
+/* Unit 3 _cannot_ be any IBM standard HD floppy drive without an adapter */
+/* concerning which, by the way, there is no presently known manufacturer */
+
+PC0:
+      Device = mfm.device
+      FileSystem = L:CrossDOSFileSystem
+      Unit = 0
+      Flags = 1
+      Surfaces = 2
+      BlocksPerTrack = 9
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 5
+      BufMemType = 0 
+      Activate = 1
+#
+
+/* CrossMAC floppy - all units use same mountlist; change Unit # as needed */
+/* Unit 0 is suggested to be an installed Amiga HD drive */
+/* Unit 1 is suggested as an Amiga 880K drive */
+/* Unit 2 can be an external Mac 800K floppy drive connected to an AMAX cart */
+
+MAC0:
+      Device = mfm.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 0
+      Flags = 2 /* Amax = 2 */
+      Surfaces = 2
+      BlocksPerTrack = 10
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 1
+#
+
+/* AmigaDOS 1760K FFS HardFile HD floppy image */
+
+FFV0:
+      Device = fmsdisk.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 1
+      Surfaces = 2
+      Reserved = 2
+      Interleave = 0
+      BlocksPerTrack = 22           /* For RAM_0 compatibility, use 11  */
+      LowCyl = 0  ;  HighCyl = 79   /* in concert with 159 for High Cyl */
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+/* AmigaDOS 879K FFS HardFile DD floppy image */
+
+FFV1:
+      Device = fmsdisk.device
+      FileSystem = L:FastFileSystem
+      Unit = 1
+      Flags = 1
+      Surfaces = 2
+      Reserved = 2
+      Interleave = 0
+      BlocksPerTrack = 11
+      LowCyl = 0  ;  HighCyl = 79
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 2
+      BufMemType = 0
+      Mount = 1
+#
+
+/* Recoverable 1440K MAC Format ramdrive */
+
+MRD0:
+      Device = ramdrive.device
+      FileSystem = L:CrossMACFileSystem
+      Mask =  0x7FFF
+      Unit = 0
+      Flags = 0
+      Reserved = 0
+      Surfaces = 2
+      BlocksPerTrack = 18
+      LowCyl = 0  ;  HighCyl = 79
+      Interleave = 0
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 10
+      BufMemType = 4 
+      BootPri = -1
+      Mount = 1
+#
+
+/* Recoverable 800K AMAX Format ramdrive */
+
+MRD1:
+      Device = ramdrive.device
+      FileSystem = L:CrossMACFileSystem
+      Mask =  0x7FFF
+      Unit = 1
+      Flags = 2 /* Amax = 2 */
+      Surfaces = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 10
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 5
+      BufMemType = 4 
+      BootPri = -1
+      Mount = 1
+#
+
+/* Recoverable 800K MAC Format ramdrive */
+
+MRD2:
+      Device = ramdrive.device
+      FileSystem = L:CrossMACFileSystem
+      Mask = 0x7FFF
+      Unit = 2
+      Flags = 0
+      Surfaces = 1
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 1600
+      LowCyl = 0  ;  HighCyl = 0
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 4
+      BootPri = -1
+      Mount = 1
+#
+
+/* 1440K MAC Format Floppy Image HardFile */
+
+MFH0:
+      Device = fmsdisk.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 0
+      Flags = 1
+      Surfaces = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 18
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 10
+      BufMemType = 0 
+      Mount = 1
+#
+
+/* 800K AMAX Format Floppy Image HardFile */
+
+MFH1:
+      Device = fmsdisk.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 1
+      Flags = 2 /* Amax = 2 */
+      Surfaces = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 10
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 0 
+      Mount = 1
+#
+
+/* 800K MAC Format Floppy Image HardFile */
+
+MFH2:
+      Device = fmsdisk.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 2
+      Flags = 0
+      Surfaces = 1
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 1600
+      LowCyl = 0  ;  HighCyl = 0
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 0
+      Mount = 1
+#
+
+/* Mountlist for a hardfile image of a 1759K AmigaDOS FFS format floppy disk */
+
+DVD0:
+      Device = fmsdisk.device
+      FileSystem = L:FastFileSystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      Reserved = 2
+      Interleave = 0
+      BlocksPerTrack = 11
+      LowCyl = 0  ;  HighCyl = 159
+      Buffers = 2
+      BufMemType = 0
+      GlobVec = -1
+      DosType = 0x444F5301
+      Mount = 1
+#
+
+/* Mountlist for a hardfile image of a 879K AmigaDOS FFS format floppy disk */
+
+DVD1:
+      Device = fmsdisk.device
+      FileSystem = L:FastFileSystem
+      Unit   = 1
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 11
+      Reserved = 2
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 79
+      Buffers = 2
+      BufMemType = 0
+      GlobVec = -1
+      DosType = 0x444F5301
+      Mount = 1
+#
+
+/* This is an example of a mountlist entry for using the recoverable   */
+/* ram disk with the CrossDOS File System for a 1440K MSDOS floppy disk */
+
+DRD0:
+      Device = ramdrive.device
+      FileSystem = L:CrossDOSFileSystem
+      Mask = 0x7FFF
+      Unit = 0
+      Flags = 0
+      Surfaces  = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 18
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 10
+      BufMemType = 4
+      BootPri = -1
+      Mount = 1
+#
+
+/* This is an example of a mount list entry for using the recoverable  */
+/* ram disk with the CrossDOS File System for a 720K MSDOS floppy disk */
+
+DRD1:
+      Device = ramdrive.device
+      FileSystem = L:CrossDOSFileSystem
+      Mask = 0x7FFF
+      Unit = 1
+      Flags = 0
+      Surfaces = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 9
+      LowCyl = 0  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 5
+      BufMemType = 4
+      BootPri = -1
+      Mount = 1
+#
+
+/* Mountlist for a CrossDOS 1440K MSDOS floppy disk image hardfile */
+
+DFH0:
+      Device = fmsdisk.device
+      FileSystem = L:CrossDOSFileSystem
+      Unit = 0
+      Flags = 0
+      Reserved = 0
+      Surfaces = 2
+      BlocksPerTrack = 18
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 79
+      GlobVec = -1
+      Priority = 5
+      DosType = 0x4D534400
+      Buffers = 10
+      BufMemType = 4
+      Mount = 1
+#
+
+/* Mountlist for a CrossDOS 720K MSDOS floppy disk image hardfile */
+
+DFH1:
+      Device = fmsdisk.device
+      FileSystem = L:CrossDOSFileSystem
+      Unit = 1
+      Flags = 0
+      Reserved = 0
+      Surfaces = 2 BlocksPerTrack = 9
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 79
+      GlobVec = -1
+      Priority = 5
+      DosType = 0x4D534400
+      Buffers = 5
+      BufMemType = 4
+      Mount = 1
+#
+
+/* MultiDos 33Meg MSDOS hardfile entry */
+/* Use PcFormat to initialize the device; CrossDOS Formats too few FAT blocks */
+/* See "-fF8:" and "s:PcFormat.spc" file information in Procedures section */
+MDH:
+      Device         = fmsdisk.device
+      Unit           = 0
+      Flags          = 0
+      Surfaces       = 8
+      BlocksPerTrack = 32
+      Reserved       = 0
+      Interleave     = 0
+/*    SecOrg         = 1 */
+      LowCyl         = 0
+      HighCyl        = 254
+      FileSystem     = L:CrossDOSFileSystem /* MultiDosFilesystem not so good */
+      Buffers        = 30
+      BufMemType     = 1	/* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+      Stacksize      = 4000
+      Priority       = 5
+      GlobVec        = -1
+      DosType        = 0x4D534400
+      Mount          = 1
+#
+
+/* Mountlist entry for `Any Mac' format hardfile for a Macintosh emulator */
+/* All units have same mountlist, except that Unit number is sequenced as */
+/* additional hardfiles containing newer software revisions are included  */
+
+MHD0:
+      Device = fmsdisk.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 0 
+      Flags = 0
+      Reserved = 0
+      Surfaces = 4
+      BlocksPerTrack = 32
+      LowCyl = 0  ;  HighCyl = 407 
+      Stacksize = 4096
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 1
+      Mount = 1
+#
+
+/* Mountlist entry for `Any DOS' format hardfile for Emplant DOS emulator */
+/* All units have same mountlist, except that Unit number is sequenced as */
+/* additional hardfiles containing newer software revisions are included  */
+
+PCHF0:
+      Device = fmsdisk.device
+      FileSystem = L:CrossDOSFileSystem
+      Unit = 0 
+      Flags = 0
+      Reserved = 0
+      Surfaces = 4
+      BlocksPerTrack = 32
+      LowCyl = 0  ;  HighCyl = 414 
+      Stacksize = 4096
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 1
+      Mount = 1
+#
+
+/* Mountlist entry for EMPLANT (proprietary) format hardfile device 25.51Meg */
+
+MACHF0:
+      Device = emphf.device
+      Unit = 0 
+      Flags = 0
+      Surfaces = 4
+      BlocksPerTrack = 32
+      LowCyl = 0  ;  HighCyl = 407 
+      Reserved = 0
+      Stacksize = 4096
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x444F5301 /* created FFS, but Init'd by Macintosh emulation */
+      Buffers = 30
+      BufMemType = 1
+      Mount = 1
+#
+
+/* Mountlist entry for Emplant MSDOS format hardfile device 26Meg */
+/* Bridgeboard or PCTask format file system  */
+
+DOSHF0:
+      Device = emphf.device
+      FileSystem = L:CrossDOSFileSystem
+      Unit = 0 
+      Flags = 1
+      Surfaces = 4
+      BlocksPerTrack = 32
+      LowCyl = 0  ;  HighCyl = 414 
+      Reserved = 0
+      Stacksize = 4096
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 1
+      Mount = 1
+#
+
+PCC:
+/* Mountfile Entry Created: 27-Dec-95 13:10:18
+ * for a File as a CrossDOS Disk.
+ *
+ * Disk Size: 1014.4 K
+ * Creator: CrossDOS Install program
+ */
+/* Disk size parameters.*/
+  Surfaces = 1
+  BlocksPerTrack = 1
+  Lowcyl = 0
+  Highcyl = 2028
+  BufMemType = 0
+  Blocksize = 512
+/* Device driver parameters.*/
+  Device = filedisk.device
+  Unit = "HD1:HFD/MSDOS0"
+  Flags = 0x00000000
+/* File system parameters.*/
+  Mask = 0xFFFFFFFE
+  Maxtransfer = 0xFFFFFFFF
+  Reserved = 0
+  FileSystem = L:CrossDOSFileSystem
+  Stacksize = 2000
+  Priority = 5
+  Bootpri = -20
+  GlobVec = -1
+  Buffers = 5
+  Dostype = 0x4d534800
+  Mount = 1
+#
+
+PCD:
+/* Mountfile Entry Created: 27-Dec-95 13:23:36
+ * for a File as a CrossDOS Disk.
+ *
+ * Disk Size: 1014.4 K
+ * Creator: CrossDOS Install program
+ */
+/* Disk size parameters.*/
+  Surfaces = 1
+  BlocksPerTrack = 1
+  Lowcyl = 0
+  Highcyl = 2028
+  BufMemType = 0
+  Blocksize = 512
+/* Device driver parameters.*/
+  Device = filedisk.device
+  Unit = "HD1:HFD/MSDOS1"
+  Flags = 0x00000000
+/* File system parameters.*/
+  Mask = 0xFFFFFFFE
+  Maxtransfer = 0xFFFFFFFF
+  Reserved = 0
+  FileSystem = L:CrossDOSFileSystem
+  Stacksize = 2000
+  Priority = 5
+  Bootpri = -20
+  GlobVec = -1
+  Buffers = 5
+  Dostype = 0x4d534800
+  Mount = 1
+#
+
+PCRDC:
+/* Mountfile Entry Created: 27-Dec-95 12:53:11
+ * for a File as a CrossDOS Disk.
+ *
+ * Disk Size: 1014.4 K
+ * Vendor and drive name: 
+ */
+/* Disk size parameters.*/
+  Surfaces = 1
+  BlocksPerTrack = 1
+  Lowcyl = 0
+  Highcyl = 2028
+  BufMemType = 0
+  Blocksize = 512
+/* Device driver parameters.*/
+  Device = ramdrive.device
+  Unit = "RAD:MSDOS0"
+  Flags = 0x00000000
+/* File system parameters.*/
+  Mask = 0x7FFF
+  Maxtransfer = 0xFFFFFFFF
+  Reserved = 0
+  FileSystem = L:CrossDOSFileSystem
+  Stacksize = 2000
+  Priority = 5
+  Bootpri = -20
+  GlobVec = -1
+  Buffers = 5
+  Dostype = 0x4d534800
+  Mount = 1
+#
+
+---------- End of Mountlist, cut here ----------
+
+10. What keywords are known to the AmigaDOS Mount Command?
+
+    There are bunches of Mount keywords; most are optional.  Here are the ones
+    described in the "AmigaDOS Reference Guide" (Fourth Edition) Sheldon Leemon
+    Compute Books (1992):
+
+	Handler =	The name of the device handler file.
+	EHandler =	The name of the environment handler file
+			 (Release 2 and 3 AmigaDOS).
+	FileSystem =	The name of the file system file.
+	Device =	The name of the device driver file.
+	Priority =	The task priority of the process;
+			 5 is customary for handlers, 10 for file systems.
+	Unit =		The unit number of the device.
+	Flags =		Flags setting for OpenDevice call (usually 0)
+			 (See RKM for details).
+	Surfaces =	Number of write surfaces.
+	BlocksPerTrack= The number of disk blocks (sectors)
+					per track (cylinder).
+	BlockSize =	Number of bytes per block (default = 512)
+	Reserved =	The number of blocks used for boot block; usually 2.
+	PreAlloc =	The number of blocks reserved at the end of a partition;
+			 used with a few IBM-style hard drives.  Usually set to
+			 zero.
+	Interleave =	Interleave value (controls DOS interleave, not physical
+			 hard drive interleave).
+	LowCyl =	Starting cylinder to use for this device.
+	HighCyl =	Ending cylinder to use for this device.  Total number
+			 of cylinders = HighCyl - LowCyl + 1.
+	Stacksize =	The amount of working memory to allocate to the process.
+	Buffers =	Number of cache buffers to use with this device.
+	BufMemType =	Type of memory to use for cache buffers:
+			 0 or 1 = Any
+			 2 or 3 = CHIP
+			 4 or 5 = FAST
+			 Originally: Odd numbers were presumed to be public.
+				      - or was it the other way around...???
+	Mount =		If this value is positive, MOUNT loads the handler or
+			 driver software as soon as the device is MOUNTed,
+			 rather than the first time the device is accessed.
+			 Workbench 2.1 adds ACTIVATE as a synonym for this
+			 keyword.
+	MaxTransfer = 	The maximum number of blocks transferred at one time;
+			 used with fast file system devices.
+	Mask =		Address mask that specifies the memory range that can
+			 be used for DMA transfers; used with Fast File System.
+	GlobVec =	If the handler is written in BCPL, it needs a global
+			 vector.  A value of 0 sets up a private global vector;
+			 anything else indicates that the handler is written
+			 in C or assembly language, and no global vector is
+			 needed.  If this keyword isn't used, the shared
+			 AmigaDOS global vector is used.
+	Startup =	A string passed to the handler, device or file system
+			 on startup; this string is passed as a BPTR to a BSTR.
+	BootPri =	The boot priority of a bootable device, expressed as a
+			 number between -129 and +127.  A value of -129
+			 indicates that the device isn't bootable, as is
+			 appropriate for use with the recoverable RAM disk if
+			 you don't want to boot from that device on reset.
+	DosType =	Indicates the format of the file system used.  If the
+			 Fast File System is used, this value should be set to
+			 0x444F5301 which is Hex for "DOS1"; other types that
+			 were introduced in 2.1 include 0x444F5302 ("DOS2"),
+			 an international version of the old file system that
+			 allows mixed case accented characters in filenames,
+			 and 0x444F5303 ("DOS3"), an international version of
+			 the Fast File System.  User types commonly found in
+			 applications such as use CrossMAC or CrossDOS are
+			 0x4D414300 ("MAC"), or 0x4D534400 ("MSD"), and from
+			 Emplant 0x4D534800 ("MSH") for their MSDOS hardfiles.
+	Baud =		Serial device speed (in bits per second).
+	Control =	Serial device control parameters;- word length, parity,
+			 and stop bits (e.g. 8N1, 7E1).
+	ForceLoad =	A new 2.1 option; when this value is zero (the default)
+			 the system will check the resource list to see if the
+			 file system named in the entry has already been loaded.
+			 If it has, the system will use that one, instead of
+			 loading a new copy.  When ForceLoad is set to one,
+			 however, a new version will always be loaded from disk.
+
+
+11. Can I mount a file system for A-Max as a hardfile?
+
+    There is at least one way, but it involves several elaborate procedures:
+
+    Make a partition on a Syquest 88 Meg removable media hard disk containing
+    an AutoBootPC volume in the upper half of the partition and an A-MaxII
+    file system in the lower half.  The AutoBootPC volume is effectively just
+    a large-floppy format MSDOS hardfile.  It is then only necessary to overlay
+    the A-MaxII file system by a file which is allocated to AmigaDOS.  This is
+    done by generating a file named "RESERVED" formatted by the AmigaDOS v1.3
+    Fast File System.  The v1.3 Fast File System did not have any dispersed
+    file list blocks such as are interspersed within the otherwise contiguously
+    formable file blocks of the AmigaDOS 2.0 and higher file system revisions.
+    This Mac file system system can be created in the following manner:
+
+	1} Copy the v1.3 FastFileSystem from an AmigaDOS v1.3 Workbench into
+	   your v2.+ AmigaDOS Workbench L: directory as "OFFSFileSystem" and
+	   copy the v1.3 Workbench Format command to sys:System as "Formit"
+	   using either the v1.3 icon or a copy of the sys:System/Format.info
+	   to sys:System/Formit.info; correct the Tool Types to be the same as
+	   are used by the v1.3 version of Format.
+	 
+	2} Build overlapping mountlists for the 64 megabyte DH1 partition.
+	   Inspect and plan to use the "-->" entries in the mountlists below:
+
+	/*SyQuest SQ5110 BBA CFA  ADDR 0  LUN 0	 CYL 2710  HD 2  BPT 32 */
+	RES0:
+	    Device = scsi.device
+	    Unit   = 0
+	    Flags  = 0
+	    Surfaces  = 2
+	    BlocksPerTrack = 32
+	    Reserved = 0
+	    Interleave = 0
+	    LowCyl = 0  ;  HighCyl = 1
+	    Buffers = 1
+	    BufMemType = 0
+	#
+
+	/* SCSI AmigaDOS File System partition */
+	DH0:
+	    Device = scsi.device
+	    Unit   = 0
+	    Flags  = 0
+	    Surfaces  = 2
+	    BlocksPerTrack = 32
+	    Reserved = 2
+	    Interleave = 0
+	    LowCyl = 2  ;  HighCyl = 659
+	    Buffers = 32
+	    BufMemType = 0
+	#
+
+	/* SCSI Fast File System partition */
+ *-->	DH1:
+	    Device = scsi.device
+	    FileSystem = L:OFFSFileSystem
+	    Unit   = 0
+	    Flags  = 0
+	    Surfaces  = 2
+	    BlocksPerTrack = 32
+	    Reserved = 2
+	    Interleave = 0
+	    LowCyl = 660  ;  HighCyl = 2709
+	    Buffers = 384
+	    GlobVec = -1
+	    Mount = 1
+	    BufMemType = 0
+	    DosType = 0x444f5301
+	    StackSize = 4000
+	#
+
+	/* SCSI A-MaxII Macintosh system partition */
+ *-->	AMAX:
+	    Device = scsi.device
+	    FileSystem = L:OFFSFileSystem
+	    Unit   = 0
+	    Flags  = 0
+	    Surfaces  = 2
+	    BlocksPerTrack = 32
+	    Reserved = 2
+	    Interleave = 0
+	    LowCyl = 661  ;  HighCyl = 1656
+	    Buffers = 30
+	    GlobVec = -1
+	    BufMemType = 0
+	    DosType = 0x444f5301
+	    StackSize = 4000
+	#
+
+	While to start with the RDB will contain only DH0: and DH1:, after all
+	of the partitioning, formatting, and loading of software has been done,
+	the RDB will contain only the DH0: and AMAX: volume mountfiles.
+	The intended run-time operation is as follows:
+
+	Of the above, RES0: is unopposedly mounted by the hard drive controller
+	(it is the RDB partition); DH0: and AMAX: are then mounted by the
+	hard drive controller as automounting from the RDB, while the upper
+	half of the space described in the DH1: mountlist above is "empty grey"
+	or unallocated, according to the HDToolbox depiction.  The lower end
+	of DH1: starts one cylinder below AMAX:; the center of DH1:, which
+	contains all of the file list blocks is just above the top of the
+	AMAX: volume.   DH1: is mounted after boot at the beginning of the
+	s:User-startup file.  Why is all this rigamarole engaged?  Well, it's
+	done because A-MaxII will mount ONLY a device whose name begins with
+	AMAX and is also ONLY placed in the RDB!  Devices having names that
+	begin with AMAX and are mounted by Exec after the RDB has been read
+	are ignored by the A-MaxII boot sequence.  Do not let anyone who has
+	not read this FAQ ever invoke HDToolbox on your Syquest drive, or they
+	will surely not understand everything that is going on, and will mess
+	things up before they get any grasp of the way all this must be done!
+
+	A procedure needed to make the file systems in the right order is
+	explained as follows:
+
+	1) Use HDToolbox to initialize the Syquest DH0: and DH1: partitions.
+
+	2) Reboot the system so that the hard drive controller can read the
+	   RDB.  Format the DH0: partition and load the operating software,
+	   including the Bridgeboard and A-MaxII software.
+
+	3) Now "formit" the DH1: volume.
+
+		Formit drive DH1: name DH1 noicons ffs
+
+	4) Generate the AutoBootPC file
+
+		CD DH1:
+		MakeAB AutoBootPC
+
+	   Use 1024 cyl 2 hd 32 blocks per track - get a 33 Meg hardfile, which
+	   AmigaDOS will gleefully place entirely in the upper half of the
+	   partition (except for the file list blocks, some of which will be
+	   written at the top of the lower half of the partition).  Edit the
+	   sys:PC/System/ABoot.ctrl file to contain the string "DH1:AutoBootPC"
+	   sans quotes.
+
+	5) Invoke a program that sequentially allocates file blocks and writes
+	   a FFS format pattern in them; use it to fill the entire lower half
+	   of the DH1 volume.  [One such a program, "Reserve" creates one long
+	   sequential file named "RESERVED"; the OFFS file system puts the
+	   file list blocks just below the root track working downward, while
+	   Reserve writes file blocks at block 2 of Cyl 0, working on upward.
+	   Note: since A-Max adjusts its AMAX: file system to work upward from
+	   (and including) block zero it is necessary to mark blocks 2 through
+	   64 of DH1 as unavailable in the bit map using "Sec" (sector editor).
+	   Reserve will then start by allocating two blocks in the root track,
+	   one for the file header, and one for the first data block.  Reserve
+	   will then continue on writing and allocating blocks starting with
+	   block 65 (the second block in Cyl 1) right up to the last block
+	   available on the disk.  When Reserve is done, Sec is used to change
+	   the file header block pointer for the one data block in the root
+	   track to a pointer to block 64, thus making the RESERVED file start
+	   exactly at the beginning of Cyl 1, and end exactly at the top of
+	   cylinder 996; the last block is block 63807 ($F93F), as must be
+	   secured by zeroing any higher numbered blocks out of block 63849
+	   ($F969), which is the last (and highest numbered) file list block.
+
+	6) The RESERVED file header block size word ($51) is next edited to
+	   show a file length of exactly 32,636,928 bytes = 996 cylinders.
+	   This will leave 22 unallocated blocks just above the last of the
+	   file list blocks that begin with block 63808 ($F940).  There is thus
+	   room there for the disk icon file (Disk.info) if it is written to
+	   the disk right after the disk is validated (see procedure below).
+	   Now, force the disk validator to process the DH1 volume (clear word
+	   4E in the DH1 root block from FFFFFFFF to 00000000 and invoke the
+	   diskchange program to call the validator).  By AmigaDOS standards,
+	   though, the AMAX partition is rather non-standard, since standard
+	   partitions start on an even numbered cylinder and end with an odd
+	   numbered cylinder.  Don't ever try to get AmigaDOS to format the
+	   AMAX partition, as it may format one cylinder higher than intended
+	   while thinking it needs to format an even number of cylinders...
+
+	7) Place the command "Mount DH1:" in the s:User-startup file and edit
+	   the devs:MountList file to contain the above specied device entries.
+	   Invoke HDToolbox; delete the DH1 partition and define the AMAX
+	   partition in the start and end text gadgets as start cyl 661 and
+	   end cyl 1656.  Leave everything above cylinder 1656 unallocated.
+	   Use the "Advanced Options" to declare the AMAX partition as a
+	   "Reserved File System" partition with automount enabled.  Again
+	   reboot the system to bring this status to current for AmigaDOS.
+	   From now on, only the RDB and A-MaxII will need to know about the
+	   AMAX: partition. Having done all this, bring up the Bridgeboard
+	   and use FDISK to initialize the 33 Meg AutoBootPC hardfile, format
+	   its internal partitions (if you created an extension using FDISK)
+	   format all the PC volumes and load the PC software.  When done with
+	   that, invoke A-MaxII; it will find the AMAX: partition mounted by
+	   the hard drive controller from the RDB.  A-MaxII will ask that the
+	   hard disk be initialized; given your approval, at the end of that
+	   operation a 31 Meg Mac hard drive will be available for loading all
+	   those cheap 128K mac programs you've always wanted to try out!
+
+	   In addition, the DH1: file "RESERVED" is effectively an A-MaxII
+	   hardfile which can be transferred as an AmigaDOS file to any other
+	   similarly formed Syquest 88 Meg platter.  It can also be mounted on
+	   the Amiga side, but not simultaneously with operation of the A-MaxII
+	   program, however; as Dave Haynie once declared, "A-MaxII is not a
+	   well behaved Amiga application - it's a `hostile takeover' program."
+	   Following is a CrossMAC mountlist:
+
+  /* SCSI A-MaxII system hardfile on an 88 Meg removable Syquest hard disk */
+
+	MACS:
+	     Device = scsi.device
+	     FileSystem = L:CrossMACFileSystem
+	     Unit   = 0
+	     Flags  = 0
+	     Surfaces  = 2
+	     BlocksPerTrack = 32
+	     Reserved = 2
+	     Interleave = 0
+	     LowCyl = 661  ;  HighCyl = 1656
+	     Buffers = 30
+	     GlobVec = -1
+	     BufMemType = 0
+	     DosType = 0x4D414300
+	     StackSize = 4000
+	#
+
+	   With AMAX: / RESERVED mounted as a CrossMAC volume, you can do with
+	   it as you please in so far as file transfer to your other networked
+	   Amigas and their Mac emulator packages is concerned.  As an exercise
+	   in extreme file system perversion, this is a good one; as "hardfile
+	   support" well, it's just not.  Of course, you could avoid all this
+	   by just doing the RDB allocation of an entire 64 Meg AMAX partition
+	   to A-MaxII, or even by making two 32 Meg partitions, DH1 with PCDisk
+	   for the Bridgeboard, and AMAX for A-MaxII.  You could the copy the
+	   AMAX partition mountlist to devs as a MACX partition with FileSystem
+	   and DosType entries as above, and use CrossMAC to mount the MACX:
+	   volume to access it from the Amiga side when A-MaxII is not running.
+	   Far simpler, but then you wouldn't have a RESERVED hardfile you
+	   could mess with, either, would you...
+
+12. Can I mount Emplant or PCTask hardfiles for access from the Amiga side?
+
+    If you have the applicable multi-platform software (i.e., CrossDOS for PCs,
+    CrossMAC for MACs), you usually can provide access to the hardfile content
+    from the Amiga in addition to that provided through the emulator via its
+    file handling software.  Just as instructions are provided with the Aminet
+    program PCDisk for mounting a PC partition on the Amiga side, instructions
+    can be generated for mounting a PC or MAC hardfile - with a little work.
+
+    Mount a floppy image hardfile as device MFH0 (as in the mountlist section).
+    Format the hardfile via the command "Format drive MFH0: name MFH0 noicons"
+    for instance (this is the first reference for new files - otherwise you can
+    use any command that requests data from the file in order to access it and
+    bring up the Workbench icon for the volume).
+
+    Note that an initial formatting done immediately after creation of the
+    hardfile may not produce a format usable by the emulator.  In that case,
+    the volume will be mounted and presented to the emulator, and the emulator
+    will then usually have the capacity to format the volume for its own use.
+    
+    However, in most cases it is possible to mount and format the volume with
+    CrossDOS or CrossMAC (making it accessible on the Amiga side) and then
+    discover that the emulator also has access to the volume after it has been
+    mounted.  For such instances, do be aware that the emulator has no idea
+    what state AmigaDOS has stored for the content of the volume, and neither
+    does AmigaDOS have any idea what the emulator's stored state for the volume
+    happens to be.  For these circumstances, only one system may write to the
+    volume at once without corrupting it; so as soon as a writer has finished,
+    the reading system needs to perform an internal update of it's own record
+    of the volume content.  With AmigaDOS, use the command "diskchange"; for
+    the Mac it will be necessary to drag the volume to the Trashcan (possibly
+    it will be necessary to re-mount it after doing this).  On a PC, issue a
+    "CHKDSK" command for the volume.  Needless to say, these procedures do not
+    support automatically maintained access from both sides...
+
+    Also, FYI only, Macintosh partitioned hard drives connected to the EMPLANT
+    SCSI bus can be mounted on the Amiga side via the empscsi.device prior to
+    invoking the MACII emulator, thus allowing the same type of self-policed
+    only-one-writer-at-a-time-please mode described above for hardfiles.  Do
+    be aware, though, that you can only read (not write) a disk which has been
+    previously mounted by the Emplant Mac Emulator and formatted to run with
+    the faster EMPLANT file system (which uses directory and data caches); but
+    if the volume was previously formatted via mounting it from the Amiga side
+    using the CrossMACFileSystem, you can read and write as long as you don't
+    do so at the same time the emulator is trying to read or write.  As an
+    an example, assume you have an old Quantum 105S you didn't know what to
+    do with, and you put it on the Emplant SCSI bus.  After the 2-sequence
+    boot produced by RsrvMem via the SetupEMPLANT script launched in the
+    Startup-sequence invocation, before you do much of anything else, mount
+    the Quantum 105S with this mountlist from the file "Mountlist_MACX":
+
+	/* Quantum LP105S with Macintosh format, no Amiga Rigid Disk Block! */
+	/* It is factored to multiples of 13, 16, or 19 blocks per track to */
+	/* utilize a total of 205,504 available blocks.  The Standard Amiga */
+	/* format for this drive is a multiple of 14 blocks per track, done */
+	/* as 2097 cyl, 98 blocks per track = 205,506 available blocks.  It */
+	/* is rated at 101 Meg (1 Meg = 2048 blocks) or 105,906,176 bytes.  */
+
+	MACX:
+	    Device = empscsi.device
+	    FileSystem = L:CrossMACFileSystem
+	    Unit   = 0
+	    Flags  = 0
+	    Surfaces  = 2
+	    BlocksPerTrack = 32
+	    Reserved = 0
+	    Interleave = 0
+	    LowCyl = 0 ;  HighCyl = 3211
+	    Buffers = 30
+	    GlobVec = -1
+	    BufMemType = 0
+	    DosType = 0x4D414300
+	    MaxTransfer = 0xffffff
+	    Mask = 0x7ffffffe
+	    StackSize = 4000
+	#
+
+	via	Mount MACX: from Mountlist_MACX
+
+    Note that you cannot use SCSIMounter to mount this Mac formatted hard disk
+    since it does not have an RDB written to the first two cylinders as would
+    an Amiga system hard drive or Amiga-specific CD-ROM disk.
+
+    If you issue the command "cd MACX:" from a CLI, you will get a requester
+    advising that there is no media in the drive.  However, if you cancel the
+    requester and issue a "DiskChange MACX:" command, a CrossMAC icon for the
+    drive will appear on the Workbench, and the next CLI command you issue to
+    reference the drive will work to open the volume to the Amiga side.
+
+    Once the volume is available to the Amiga, you can go ahead and launch the
+    Mac emulator.  Note that some Mac apps do timing critical disk accesses.
+    If you gong one of these programs with interleaved disk accesses, you may
+    end up with a messed up MAC file system. It isn't assured that you could
+    mess things up if you wanted to, but it's also not assured that you won't
+    even if you don't want to...
+
+    Keep in mind the fact that this volume is mounted and accesed from the
+    Amiga side, this being the case in spite of the fact that the volume is
+    also available to the emulator on the Emplant scsi bus.  What this means
+    is that if the disk is hardware jumpered as unit 0, the emulator will try
+    to boot from it, and if it succeeds in this, it will use it as the System
+    disk.  If, using the emulator setup screen you have also presented it to
+    the emulator as a mountable Amiga device, the Mac can access it as either
+    volume, and will almost certainly corrupt it if it is write permitted, and
+    otherwise will probably crash before long because the read-only volume will
+    not have updated information about the file system once the emulator writes
+    to the System volume.  Next, if the emulator insisted the device was not
+    initialized properly and you elect to have the emulator initialize it, the
+    emulator will install the EmplantFileSystem with a dynamic cache in place.
+    After that, any read or write from the Amiga side will cause the emulator
+    to non-interactively corrupt the file system.  However, as long as the
+    CrossDosFileSystem was used in formating the disk, and the emulator does
+    accept the volume as valid from the emulator port on the scsi bus, and
+    the disk was not presented to the emulator from the Amiga side via the
+    Mac Emulation Setup "Devices" option, and the disk was presented to the
+    emulator via the "Mass Storage" "Enable Emplant SCSI" check box, it should
+    be ok to use via the previously described one-writer-at-a-time methodology.
+
+13. Can I use MessyDOS for MSDOS hardfiles?
+
+    No.  MessyDOS was a shareware program developed for floppy disks on the
+    Amiga 1000 or 2000 computers using the MC68000 processor.  The included
+    formatting routine "MessyFmt" is an IBM DOS 720K floppy tool even though it
+    seems to present options that might allow formatting a 1440K MSDOS floppy.
+    It is reportedly buggy when used with 020/030/040 processors, producing
+    errors such as "missing sector" in freshly formatted disks.  It may have
+    processor speed dependent timing loops that do not work with the faster
+    Motorola processors.  Also, when one enters values that are appropriate
+    for 18 sector/track HD media and a HD disk is placed in an Amiga HD floppy
+    drive, the resultant disk is unreadable by any DOS.  Perhaps a more recent
+    version than the Aug 1990 release would be more functional (v1.3, but at
+    least one earlier release had a higher number due to omission of the "v0."
+    that should have been prepended).
+
+14. Can I use MultiDos for MSDOS hardfiles?
+
+    Yes.  MultiDos, like MessyDOS, is an IBM DOS 720K floppy utility.  The
+    multidos.device is a fine DD floppy driver which provides auto diskchange
+    for volumes mounted in accordance with supplied documentation.  Look for
+    it on Aminet Set #1 disk A in :Aminet/misc/emu.  For hardfile support, the
+    components of MultiDos work just fine with the standard Amiga drivers and
+    work with the fmsdisk.device as well.  While the documentation says that
+    the formatting tool "PcFormat" allows the user to specify the DOS boot
+    block file system information content, it only writes the first 54 bytes
+    of the boot block.  But it will usually provide enough vital file system
+    data that the volume can be mounted and accessed on an Amiga, execpt that
+    the multidos.device fails on HD floppies in the same way as does MessyDOS.
+    If you should happen to use the Norton Utilities program Disk Doctor (NDD)
+    to inspect the disk, and the utiliity requested permission to re-write the
+    boot block, then you will need to inspect the parameters the utility wrote
+    to the boot block to make sure information provided by the PcFormat tool 
+    was not altered; any alteration to the file system parameters will need to
+    be returned to what PcFormat wrote.
+
+    Do have on hand a generous stock of your favorite beverage before invoking
+    the PcFormat command on a large rigid disk hardfile, though, as it can
+    take a significant fraction of an hour to do its work (adding buffers via
+    the AmigaDOS "AddBuffers" command for the disk devices will help some, but 
+    for even a thousand extra buffers, "initializing disk" at the end takes a
+    long time).
+    
+    MultiDos is useful when maintaining hardfile images of floppy disks, since
+    CrossDOS will format non-floppy internal 1440K drives with a 25 sector
+    overhead rather than the standard 33 sector overhead DOS expects.  Use of
+    MultiDos allows formatting internal drives with whatever values are needed
+    for the application via the file "s:PcFormat.spc" in which the usable specs
+    can be entered and identified much as one identifies the individual entries
+    in a large file containing multiple mountlists.  A good optional tool from
+    MultiDos for hardfile support is the sys:System/PcFormat executable.  For
+    previously undocumented extraordinary HD floppy and MSDOS hardfile support,
+    see devices DV0:, DR0:, DD0:, and MDH: in the Procedures and Mountlists
+    sections of this FAQ.  When preparing mountlists, remember that while the
+    CrossDOSFileSystem desires a "Reserved = 0" entry in the mountlist, the
+    MultiDosFilesystem wants to see "Reserved = 1" to separate the boot block
+    from the file system allocation tables (FATs) and the blocks assigned to
+    the root directory.  Below is an example of a "s:PcFormat.spc" file entry
+    for a large hardfile. It shows what was included in the <spec> and what the
+    formatter did for a volume established via the fmsdisk.device referencing
+    the L:MultiDosFilesystem in a mountlist.  As reported by the AmigaDOS Info
+    command, the file system total is 65277 blocks, 157 of which are used in
+    file system overhead.  It can accommodate a 65120 block file, which will
+    be 33341440 bytes. The specification and its result is detailed here:
+
+	Entry				 Result
+
+	F8:				 Boot Record (Norton Utilities):
+	SystemID = MDos1.0		 OEM ID: MDos1.0.
+	BytesPerSector = 512		 Bytes per sector: 512 
+	BlocksPerCluster = 4		 Sectors per cluster: 4 
+	PreAlloc = 1			 Reserved sectors at beginning: 1 
+	NumbersOfFats = 2		 FAT Copies: 2 
+	NumberOfRootDirEntries = 448	 Root directory entries: 448 
+	TotalBlocksOnDisk = 65280	 Total sectors on disk: 65280
+	FormatID = 0xF8			 Media descriptor byte: F8 Hex
+	BlocksPerFat = 64		 Sectors per FAT: 64 
+	BlocksPerTrack = 32		 Sectors per track: 32 
+	Surfaces = 8			 Sides: 8 
+	HiddenSectors = 0		 Special hidden sectors: 0 
+	BigTotalSectorsOnDisk = 0	 Big total number of sectors: (unused)
+	PhysicalDriveNumber = 127	 Physical drive number: 0 
+	ExtendedBootRecordSignature = 41 Extended Boot Record Signature: 00 Hex
+	VolumeSerialNumber = 0		 Volume Serial Number: 0 
+	VolumeLabel MultiDos1.0		 Volume Label:        s1.0
+	FileSystemID = FAT12		 File System ID: ........ <<not known>>
+	##				 ##
+
+
+    The PcFormat software seems to use FAT12 for floppy volumes or moderate
+    size hardfiles, though it automatically adjusts to FAT16 for volumes with
+    more clusters than the 4096 that can be listed with a 12-bit FAT pointer.
+    At no time does it ever enter the FAT type in the bootblock entry, though.
+    It's doubtful that PcFormat can prepare a volume larger than 65 Meg, even
+    if CrossDOSFileSystem were to be used in the mountlist.  Do note that for
+    CrossDOS Professional (CDP) software, an install utility is used to set up
+    large hardfile volumes.  Volumes created by the CrossDOS utility will have
+    a partitioning table pre-pended to the file system, as well. CrossDOS is
+    considerably more stable than the multidos shareware, as one might expect
+    for a commercial file system software package versus good shareware code.
+    This is so not so much in regard to the skill levels of the shareware
+    programmers (who probably do computer programming for a living eight or
+    more hours a day anyway) but rather because commercial establishments can
+    more readily hire additional programmers, and they can as well specify
+    performance criteria for the beta testers they employ.
+
+    If you need to figure out what to use for the <spec> entries, start with a
+    volume size in megabytes (try to use a size that's an even power of two);
+    divide that by 512 to get the TotalBlocksOnDisk (if equal or greater than
+    65536, you need to desire a smaller volume, as this software uses FAT12 and
+    16-bit integers; that's all it can do).  Divide the number of blocks by
+    4096 (FAT12) rounded up to the nearest integer to get the minimum usable
+    number of blocks per cluster.  To make life easy, use 16, 32 or 64 sectors
+    per track (this number also should be used in the device mountlist for the
+    "BlocksPerTrack" item).  You can use whatever multiple of 16 you like for
+    the NumberOfRootDirEntries, since there are 16 entries per 512 byte block.
+    Set the Surfaces to the TotalBlocksOnDisk divided by BlocksPerTrack.  If
+    Surfaces comes out larger than 16, multiply the BlocksPerTrack by factors
+    of two up to no more than 64.  Surfaces times BlocksPerTrack needs to be
+    1024 or less.  If you want a somewhat more MS-DOS compatible file system,
+    you can always set it up with some numbers using PcFormat with -f<spec>
+    option, then edit the boot block with a sector editor to change from the
+    DOS 3.2 implementation to a DOS 4.0+ implementation - if you know what to
+    put in the last six entries.  The only thing you must have done right in
+    order to do this is you must have fat tables large enough to hold the FAT
+    cluster pointers.  If you had enough room for the FAT12 pointers, you'll
+    have enough room for the FAT16 pointers with no adjustment in the cluster
+    size, for sure.  The FAT16 pointers are four bits longer than the FAT12
+    pointers, but there are fewer of them by a factor of 16 with no change in
+    the cluster size.  Thus it is also usually possible to reduce the cluster
+    size by two, four, or eight and still have enough room in the FAT table
+    for all of the cluster pointers.  PcFormat will allow <spec> entries with
+    undersized FATs.  It will just go ahead and put up as free all the file
+    system space it has pointers for, and mark the remainder as unavailable.
+    So if you have calculated ahead of time the size needed for the FAT16
+    tables, you can enter that in the <spec>, then patch the boot block with
+    a sector editor to upgrade the file system to FAT16.  Conceivably, you can
+    use the Norton Utilities to help with this operation, but if you happen to
+    do something Norton DISKEDIT doesn't like, Norton will reward you with a
+    "sector not found" error after writing the boot block back to the disk,
+    and you'll have to start over.  So try to do this with an Amiga sector
+    editor if you have one handy.
+
+    Using "PcFormat" sans the -f option on a device mounted with fmsdisk.device
+    for a handler, and with FileSystem = L:MultiDosFilesystem in the mountlist
+    will create a volume with only 30 blocks overhead.  This implies a large
+    cluster size.  CrossDOS likewise tends to use cluster sizes equal to the
+    volume size in megabytes.  However, when given the "-fF8:" specification
+    as above, there were 157 blocks of file system overhead using a cluster
+    size of only 4 blocks, more nearly as expected for a 33 megabyte volume.
+
+    Also, even for the above listed example, the PcFormat routine nulled out
+    the first seven characters of the Volume Label.  The L:MultiDosFilesystem
+    can be used for both floppy drives and internal floppy images as well as
+    medium sized hard files.  It is, though, fatally cranky about numbers in
+    the file system pointers larger than 65536, and did not employ the FAT16
+    entries found as the last six items in the file properties list above even
+    when they were specified as non-zero values. So it is the case that both
+    MessyDOS and MultiDos are somewhat flakey when it comes to user entry of
+    file system parameters, MessyDOS being considerably worse than MultiDos
+    in that regard.
+
+15. Can I use my Mac-2-DOS MAC floppy adapter cartridge to load hardfiles?
+
+    CrossMAC reports this cartridge as a "Non Amiga-standard Mac drive" and
+    subsequently ignores it.  Emplant ignores either the Mac-2-DOS cartridge
+    or the AMAX cartridge for anything except the "Converter" program.  The
+    Mac-2-DOS software itself is Mac <--> Amiga oriented and does not possess
+    the multi-platform mentality it would need to have in order to transfer
+    files into MSDOS file systems, for instance, in a convenient way.  Each
+    direction of a Mac-2-DOS transfer comes with certain assumptions about
+    vendor & product name, resource & data forks, and the handling of icons.
+    The DOS-2-DOS software package (also produced by Central Coast Software)
+    was intended to address the intricacies of MSDOS <--> Amiga transfer in
+    an independent way.  The tools provided with these packages are oriented
+    to black & white graphics for the most part.  So while it might be that
+    these packages are good companions for the A-MaxII emulator and the CBM
+    XT and AT Bridgeboards, they are not as useful in the current programming
+    context as they need to be.
+
+16. Can I use my A-MaxII ROM / MAC floppy adapter cartridge to load hardfiles?
+
+    Yes, you can.  Connect the cartridge to the DF2: 23-pin D Connector on
+    your Amiga, and you can read, write, format or [accidentally?] destroy
+    any write-permitted 800K real Macintosh variable speed drive floppy you
+    can get your hands on.  You can use either A-MaxII or CrossMAC to read
+    disks on a Mac 800K drive plugged into this cartridge.  You can use the
+    CrossMAC utilities to convert 800K Mac format disks to 800K AMAX format
+    disks, as described earlier in this FAQ.
+
+17. Can I use my Emplant AMIA MAC floppy adapter cartridge to load hardfiles?
+
+    Yes, and a Fujitsu 800Kb floppy drive is available from Utilities Unlimited.
+    Can't say as how it would work with HD disks in a Mac SuperDrive, though;
+    connecting one up might be a fun project to try...
+
+18. Can I read A-Max Mini-transfer and other mixed format disks with CrossDOS?
+
+    The short answer is: If you have an 800K Macintosh drive connected to your
+    DF2 port via an A-MaxII cartridge or you have the A-MaxII+ ZorroII board
+    with an 800K Macintosh drive attached you can probably read either the
+    normal 800K Macintosh disks or AMax Mini-transfer disks.  But of course,
+    if you had an 800K Macintosh drive connected to your Amiga, you wouldn't
+    be asking this question.  While it is true that the CrossMAC devices can
+    read files from A-Max format disks in Amiga DD drives, CrossMAC is not so
+    likely to be able to read Mini-transfer disks in these same drives.  This
+    comes about because a Mini-transfer disk is in fact nothing more than a
+    standard 800K Mac floppy format divided up into two segments, one placed
+    in the lowest 48 tracks and the other located in the highest 32 tracks.
+    A DD disk is formatted in a standard 800K variable track speed Macintosh
+    drive on a Macintosh (or on an Amiga running A-MaxII or A-MaxII+ with a
+    standard 800K Macintosh drive connected to the A-MaxII cartridge or the
+    A-MaxII+ board) and prep'd by the A-Max Disk Transfer application's
+    "Make Mini Transfer Disk" utility.  The utility revises the disk's file
+    system structure for the lower 48 tracks to effectively utilize 704 blocks
+    to make a 262K file system with a 3K desktop.  After the user has written
+    files to this lower part of the disk, the "Prepare Mini-transfer Disk"
+    utility copies the 704 blocks verbatim to the upper 32 tracks of the
+    disk.  If the disk is then moved from the Macintosh to the Amiga running
+    AMax by inserting it in an Amiga DD 880K floppy drive, AMax examines the
+    disk; failing to find a ten sector trackdisk format for track 0, AMax
+    skips over tracks 0-47 and examines track 48 to see if it can find there
+    a ten sector trackdisk format (which for that track and all other higher
+    tracks is the same as a Macintosh DD format).  Although there is nothing
+    more than the addition of some simple code to CrossDOS to have it do the
+    same in order to read such disks, CrossDOS does not at the present time
+    concern itself with such archaic meanderings.
+
+    Mixed format disks are not commonly readable by anything but the software
+    that wrote them.  Although Consultron is constantly upgrading their tools
+    and utilities, priorities do not point to support for non-standard efforts.
+    The A-Max Mini-transfer disk was developed by Readysoft, Inc. as a way of
+    moving software from the Mac Plus to the Amiga.  These days Macintosh can
+    hardly even get enough of their system on a 1440K floppy to boot a MacII
+    (or a MacII emulation, for that matter).  The AMax-II Utilities disk is
+    effectively a Mac format Mini-transfer disk prepared by first formatting
+    it as an 800K disk, then loading 64K of utilities onto the disk, and then
+    running the "Prepare Mini Transfer Disk" utility on it to directly copy
+    704 blocks from the lower part of the disk to the upper 32 tracks.   With
+    a disk image copier, one can make a backup copy of this disk on any 800K
+    Mac floppy drive or on an Amiga running A-MaxII or A-MaxII+ / cartridge
+    or board with an attached standard 800K Mac DD drive.
+
+    Interestingly enough, it is possible to make a mixed Amiga/AMax format
+    disk with the lower 48 tracks having Amiga DD format and the upper 32
+    tracks having the AMax Mini Transfer Disk format.  This would be done by
+    formatting, then using the AMax utility to "Make Mini Transfer Disk" and
+    loading the disk with software, then using the AMax utility to "Prepare
+    Mini Transfer Disk"; following that, overwrite the lower 48 tracks with
+    an Amiga disk copy program that starts at track 0 and can be killed just
+    as it finishes writing track 47.  It helps if the Amiga disk being copied
+    is an FFS floppy, one that has a dummy file in the upper 32 tracks of the
+    disk, but with the protection file's extension blocks located somewhere in
+    the lower 32 tracks in order to reserve the upper 32 tracks from accidental
+    write attempts by AmigaDOS.  You can do this with AmigaDOS version 1.3 FFS
+    and trackdisk.device, along with the QuickCopy program by Copperstate
+    Software (Fish disk 35) and the Amiga TrackUtils (Fish disk 350) or the
+    Amiga DevBlocks program from Aminet Set #1.  That's the good news.  The
+    bad news is that only AMax can read the upper 32 block section, which
+    contains the "Prepared" Mini Transfer portion of the disk.
+
+19. Are there any useful mixed format disks, and if so, how do I create them?
+
+    The Unix Amiga Emulator (UAE) presents a need for multi-OS floppy support.
+    Mixed format disks are useful for distributing multi-os utilities, thus it
+    may be worthwhile to mention a few such formats that may be used, and to
+    give instructions concerning what may be done with them for hardfile or
+    floppy image support.
+    
+    The most serious inhibitor for mixed format floppy disks for the Amiga
+    is that track 0 cannot readily be made simultaneously Amiga and DOS or Mac
+    compatible.  If the lower portion of the disk is Amiga format, then it
+    cannot be recognized by any other OS.  If the upper portion of the disk is
+    Amiga format, then even the Amiga will refuse the disk without some fast
+    handed trickery directed at track 0.  Mixed DOS and Mac formats suffer an
+    even worse fate, since each uses most or all of track 0 for file system
+    tables. Split or nested formats are possible; however, it must be something
+    like a 720K DOS format written by v1.3 FFS within the lower and/or upper
+    portions of an Amiga HD formatted disk via the trackdisk.device, and then
+    accessed by a hardfile driver.  Or it can be that the upper portion of the
+    disk is a Mac, DOS, or Amiga format accessible on an Amiga, while the lower
+    half is a 720K DOS format readable on a PC or a 720K Mac format readable on
+    a Macintosh.  The file systems, while they are on the same disk and are set
+    up independently, can be used alternately, or can be networked via ParNet.
+    The 1440K combined file system is the most useful, but more difficult to
+    construct.
+
+    I. A Combined Multi-OS 1440K floppy file system
+
+    To begin with, try the following example.  Using the mfm.device, we format
+    a 1440K disk first with the Amiga filing system, and then with a Macintosh
+    filing system.  Then we use a sector editor to re-write the first four
+    bytes with the Amiga identifier code DosType = 444F5301.  Presto, the disk
+    can be simultaneously mounted as an Amiga format disk and as a Macintosh
+    format disk.  This is possible because Macintosh uses the zero block for a
+    partition table index, and the Mac doesn't expect a floppy to be partioned
+    anyway.  However, as both file systems maintain their block allocation
+    records independently, it will be necessary to manually confine the writing
+    of Macintosh files to tracks below track 40, and likewise with the Amiga to
+    make sure everything is written to track 40 and higher.  While this is not
+    a totally sweatless proposition, it does come about as a natural behavior
+    of the two file systems as long as one writes not too much.  That is, don't
+    write much more than 700K in either section, and try to confine activities
+    to one file in each section at once.  However, both sections can write
+    almost concurrently when the disk is mounted on an Amiga.  Alternate writes
+    of complete files to the Amiga and MAC sections are surely possible without
+    resulting in file system corruption.  The procedures used are listed below:
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiMAC Floppy	mfm.device	L:FastFileSystem	AX0:	Amiga
+				    and	L:CrossMACFileSystem	MX0:	MSDOS
+
+	Command:	Mount AX0: from devs:Mountlist_AX0
+	Command:	Format drive AX0: name AX0 noicons ffs
+	Command:	Mount MX0: from devs:Mountlist_MX0
+	Command:	Format drive MX0: name MX0 noicons quick
+
+	And do the following (or the equivalent with a sector editor):
+
+	Command:	disked <s:reini.sh AX0:
+	}
+
+	[In the file "s:reini.sh" put the following short script, sans brackets
+
+	g0		;read block 0
+	Sx		;set hex display mode
+	0/#X444F5301	;open longword 0 and replace its content with ffs ID
+	x		;toggle editor's write protect to permit track write
+	p		;write the track with the newly edited track content
+	q		;quit
+
+	                                                         ]
+    The Mountlists for the two volumes are composed as follows:
+
+    /* MultiDOS 1440K Amiga DOS-MAC floppy drive for Amiga DOS-MAC HD disk */
+    AX0:
+         Device         = mfm.device
+         Unit           = 0
+         Flags          = 0
+         Surfaces       = 2
+         BlocksPerTrack = 18
+         Reserved       = 2
+         Interleave     = 0
+    /*   SecOrg         = 1 */
+         LowCyl         = 0
+         HighCyl        = 79
+         FileSystem     = L:FastFileSystem
+         Buffers        = 30
+         BufMemType     = 1         /* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+         Stacksize      = 4000
+         Priority       = 4
+         GlobVec        = -1
+         DosType        = 0x444F5301
+         Mount          = 1
+    #
+
+    /* MultiDos 1440K Macintosh floppy device for dual Amiga-Mac HD disk */
+    MX0:
+         Device         = mfm.device
+         Unit           = 0
+         Flags          = 0
+         Surfaces       = 2
+         BlocksPerTrack = 18
+         Reserved       = 0
+         Interleave     = 0
+    /*   SecOrg         = 1 */
+         LowCyl         = 0
+         HighCyl        = 79
+         FileSystem     = L:CrossMACFileSystem
+         Buffers        = 30
+         BufMemType     = 1         /* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+         Stacksize      = 4000
+         Priority       = 4
+         GlobVec        = -1
+         DosType        = 0x4D414300
+         Mount          = 1
+    #
+
+    Except for the fact that the MSDOS floppy file system IS critically
+    dependent on the content of block zero, one could do much the same with
+    a combined Amiga-MSDOS 1440K HD disk.  If one is willing to edit the
+    boot block before carrying the disk to an MSDOS machine, then the same
+    technique may also be applied to an MSDOS 1440K format, given equivalent
+    changes with respect to the L:MultiDosFilesystem in place of Consultron's
+    L:CrossMACFileSystem in the mountlist:
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDOS Floppy	mfm.device	L:FastFileSystem	AX0:	Amiga
+				    and	L:MultiDosFilesystem	DX0:	MSDOS
+
+	Command:	Mount AX0: from devs:Mountlist_AX0
+	Command:	Format drive AX0: name AX0 noicons ffs
+	Command:	Mount DX0: from devs:Mountlist_DX0
+	Command:	PcFormat drive DX0: name DX0 noicons quick -fF0Standard:
+
+	And do the following (or the equivalent with a sector editor):
+
+	Command:	disked <s:reini.sh AX0:
+	}
+
+	Note that the "F0Standard:" entry in the Mount Procedures section above
+	must be present in the file "s:PcFormat.spc" for PcFormat to succeed.
+	Both the Amiga and the MS-DOS sections of the disk will remain mounted
+	as long as the disk is in the HD drive, which is assumed to be the
+	Amiga's unit 0 drive.  The mountlist follows:
+
+
+	[See above MultiMAC exercise for description of a reini.sh script file]
+	[and the AX0 mountlist for the Amiga FFS file system on a 1440K floppy]
+
+    /* MultiDos 1440K MSDOS floppy device for dual Amiga-MSDOS HD disk */
+    DX0:
+         Device         = mfm.device
+         Unit           = 0
+         Flags          = 0
+         Surfaces       = 2
+         BlocksPerTrack = 18
+         Reserved       = 1
+         Interleave     = 0
+    /*   SecOrg         = 1 */
+         LowCyl         = 0
+         HighCyl        = 79
+         FileSystem     = L:MultiDosFilesystem
+         Buffers        = 30
+         BufMemType     = 1         /* 1=PUBLICMEM / 3=CHIPMEM / 5=FASTMEM */
+         Stacksize      = 4000
+         Priority       = 4
+         GlobVec        = -1
+         DosType        = 0x4D534400
+         Mount          = 1
+    #
+
+    If the first longword of the disk is reset to EB 3C 90 43 before removal,
+    this disk can be ejected and taken to a DOS machine, and the DOS part can
+    be read directly without additional change or patching of the file systems.
+    Now being as the Amiga can write to either type of disk without all this
+    mucking about in hyperspace these days, it's difficult to see what use all
+    of this might happen to be.  But do realize that you can swap MAC and DOS
+    HD floppy disks used in maintaining MultiOS system documentation quickly,
+    having only to use the AmigaDOS DiskChange command for each device to
+    introduce new volumes as you work your way through a documentation update
+    procedure.  It is possible to build a protection file in each section that
+    will protect against the Amiga writing in the DOS reserved section, and
+    vice-versa.  However, the blocks allocated to the protection files must be
+    deliberately placed on the disk (without a block-addressing disk writer,
+    accomplishing this is a difficult endeavor).  An example of the directory
+    lists for such an arrangement follows:
+
+    MAC-AMIGA disk:
+
+    Directory of MX0:
+       MultiDosAFFSimg          ----r-e-  736256 1438  02-Jul-96 08:23:23
+
+    Directory of AX0:
+       mdosbblk.bin             ----r---    1024    2  02-Jul-96 07:03:49
+       mdosfsys.bin             ----r---   23552   46  02-Jul-96 07:09:19
+       mdosdata.bin             ----r---  712704 1411  02-Jul-96 07:18:23
+       mdosmdir.bin             ----r---    1024    2  02-Jul-96 07:29:54
+
+    MSDOS-AMIGA disk:
+
+    Directory of DX0:
+       MDOSAFFS.BIN             ----r-e-  737280 1440  05-Jun-96 16:41:42
+
+    Directory of AX0:
+       mdosbblk.bin             ----r---    1024    2  05-Jun-96 17:26:51
+       mdosfils.bin             ----r---   16896   33  05-Jun-96 17:31:45
+       mdosdata.bin             ----r---  720384 1426  05-Jun-96 18:10:57
+
+    The files are listed in the order installed on the disks.  The bblk is
+    a dummy boot block file because the Amiga filesystem cannot access its
+    own boot block.  The DOS bblk is double linked so that the lowest block
+    of the first FAT is actually taken from the lowest block of the second
+    FAT (an Amiga file system rectification tool would complain concerning
+    this).  The fsys files cover the file system allocation blocks and the
+    file content pointers.  The data files cover the actual file data blocks.
+
+    II. Independent 720K Multi-OS Volume Environments on a 1440K HD Floppy
+
+    Warning: the following is more an intellectual learning execise than it is
+    anything useful.  If you follow it through, though, you will learn more
+    about Amiga Multi-OS floppy operations than you ever really wanted to know.
+    Below are some independent 720K Multi-OS Vol pairs on a 1440K HD Floppy.
+    The largest file size for these half-disk HD floppy volumes is as follows:
+
+							Largest File:
+	Volume	Format	Sectors/Track	Device		Bytes	Blocks
+
+	DFA,DFB	AmigaFFS	22   trackdisk.device	886272	1731
+	DFV,DFW AmigaOFS	18	mfm.device	691008	1416
+	DFX,DFY	AmigaFFS	18	mfm.device	725504	1417
+	DFZ     AmigaOFS	22   trackdisk.device	844728	1731
+	FHA,FHB	MSDOS		22   trackdisk.device	893952	1746
+	MFA,MFB	MAC		18	mfm.device	720896	1408
+	MSA,MSB	MSDOS		18	mfm.device	730112	1426
+
+    Following are procedures for mounting and formatting dual-volume HD disks.
+    Note that the "Formit" command is the AmigaDOS Version 1.3 "Format" command
+    renamed, and that the mounting procedure for for the Macintosh lower (A)
+    volume is somewhat more involved than is the MSDOS file system setup, since
+    an intermediate volume must be mounted, formatted, and DiskCopy then must
+    be used to load the format onto the disk.
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy trackdisk.device L:OFFSFileSystem	DFn:	v1.3FFS
+
+	Command:	Mount DFn: from devs:Mountlist_DFn "n is part A(lower)
+							    or part B(upper)"
+							    22 sector FFS Format
+	Command:	Formit drive DFn: name "Volume Name" noicons ffs
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy mfm.device	Default Amiga OFS	DFn:	AmigaOFS
+
+	Command:	Mount DFn: from devs:Mountlist_DFn "n is part V(lower)
+							    or part W(upper)"
+							    18 sector OFS Format
+	Command:	Formit drive DFn: name "Volume-Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy trackdisk.device L:OFFSFileSystem	DFn:	v1.3FFS
+
+	Command:	Mount DFn: from devs:Mountlist_DFn "n is part X(lower)
+							    or part Y(upper)"
+							    18 sector FFS Format
+	Command:	Formit drive DFn: name "Volume-Name" noicons ffs
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy	trackdisk.device Default Amiga OFS	DFn:	AmigaOFS
+
+	Command:	Mount DFn: from devs:Mountlist_DFn "n is part Z(upper)"
+							    22 sector OFS Format
+	Command:	Formit drive DFn: name "Volume-Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos floppy trackdisk.device L:MultiDosFilesystem	FHn:	MSDOS
+	    Note: this floppy volume and others that utilize		for use
+	    the trackdisk.device cannot be read by PC hardware!       via PARnet
+
+	Command:	Mount FHn: from devs:Mountlist_FHn "n is part A(lower)
+							    or part B(upper)"
+							    22 sector td format
+	Command:	DiskChange FHn:  (do after unformatted disk is inserted)
+	Command:	PcFormat drive FHn: name "11Char-Name" noicons AMIGA
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	Mac Floppy	mfm.device	L:CrossMACFileSystem	MFA:	720KMac
+			+fmsdisk.device L:scsi.device "uses image file transfer,
+							as Format will format
+							the entire floppy disk,
+							destroying volume MFB:"
+	Command:	Mount MFA: from devs:Mountlist_MFA 
+	Command:	DiskChange MFA:  (do after unformatted disk is inserted)
+	Command:	PcFormat drive MFA: name "MFA" noicons "18 sect MFM fmt"
+	Command:	Assign FMS: HDx:HFD "where HDx: is any hard disk volume"
+	Command:	Mount MFF: from Mountlist_MFF	"Set Flags = 2 for AMax"
+	Command:	Format drive MFF: name MFZ noicons "Consultron CrossMAC
+							      `Format' command
+							     This is a 720K vol"
+	Command:	Copy <"Mac-Volume:"> TO MFF:   "Load software to volume
+	Command:	DiskCopy MFF: TO MFA:           via Consultron CrossMAC
+							     `DiskCopy' command"
+	Comment:	Remove target floppy and reboot in order to discard the
+			temporary FmsDisk transfer hardfile.
+
+	Command:	Mount MFA: from devs:Mountlist_MFA
+	Command:	DiskChange MFA:  (do after formatted disk is inserted)
+	Command:	Relabel MFA: <desired volume name>
+	Command:	DiskChange MFA:
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	Mac Floppy	mfm.device	L:CrossMACFileSystem	MFB:	720KMac
+					"Set Flags =2 for AMax"		or AMax
+	Command:	Mount MFB from devs:Mountlist_MFB
+	Command:	DiskChange MFB:  (do after unformatted disk is inserted)
+	Command:	Format drive MFB: name "MFB" noicons	"18 sec MFM fmt"
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	Mac Floppy	fmsdisk.device	L:CrossMACFileSystem	MFF:	720KMac
+					"Set Flags =2 for AMax"		or AMax
+	Command:	Assign FMS: HDx:HFD "where HDx: is any hard disk volume"
+	Command:	Mount MFF from devs:Mountlist_MFF
+	Command:	DiskChange MFF:		   "activate the mounted volume"
+	Command:	Format drive MFF: name "MFF" noicons	  "18 sec/track"
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos Floppy mfm.device	L:MultiDosFileSystem	MSn:	MSDOS
+
+	Command:	Mount MSn: from devs:Mountlist_MSn "n is part A(lower)
+				18 sector MFM Format	    or part B(upper)"
+	Command:	DiskChange MSn:  (do after unformatted disk is inserted)
+	Command:	PcFormat drive MSn: name "11Char-Name" noicons -f<OPT>
+				`where <OPT> is one of two possible formats in
+				 the file "s:PcFormat.spc"; use "F0HD720K:" or
+				 "F9HD720K:" sans quotes but including colon
+				 see PcFormat.spc descriptions appended below'
+	}
+
+	The "s:PcFormat.spc" entries needed for 720K HD floppy volums follows:
+	Either one seems to be ok with the Amiga Bridgeboards, but PCs may be
+	more particular in one circumstance or another.  Medium F0 is the HD
+	floppy medium (normally 1440K, but 720K per part in this application)
+	and medium F9 is the DD floppy medium (normally 720K).
+
+	F0HD720K:
+	      SystemID = MDos1.0
+	      BytesPerSector = 512
+	      BlocksPerCluster = 2
+	      PreAlloc = 1
+	      NumbersOfFats = 2
+	      NumberOfRootDirEntries = 112
+	      TotalBlocksOnDisk = 1440
+	      FormatID = 0xF0
+	      BlocksPerFat = 3
+	      BlocksPerTrack = 18
+	      Surfaces = 2
+	      HiddenSectors = 0
+	      BigTotalSectorsOnDisk = 0
+	      PhysicalDriveNumber = 0
+	      ExtendedBootRecordSignature = 0
+	      VolumeSerialNumber = 0
+	      VolumeLabel = MultiDos1.0
+	##
+
+	F9HD720K:
+	      SystemID = MDos1.0
+	      BytesPerSector = 512
+	      BlocksPerCluster = 2
+	      PreAlloc = 1
+	      NumbersOfFats = 2
+	      NumberOfRootDirEntries = 112
+	      TotalBlocksOnDisk = 1440
+	      FormatID = 0xF9
+	      BlocksPerFat = 3
+	      BlocksPerTrack = 18
+	      Surfaces = 2
+	      HiddenSectors = 0
+	      BigTotalSectorsOnDisk = 0
+	      PhysicalDriveNumber = 0
+	      ExtendedBootRecordSignature = 0
+	      VolumeSerialNumber = 0
+	      VolumeLabel = MultiDos1.0
+	##
+
+ For the procedures, the following mountlist entries are needed:
+
+---------- Mountlist follows, cut here ----------
+
+/* Mountlist for lower half of a HD floppy disk in drive DF0 w/v1.3 FFS */
+
+DFA:
+      Device = trackdisk.device
+      FileSystem = L:OFFSFileSystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 22
+      Reserved = 2
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Buffers = 22
+      BufMemType = 3
+      GlobVec = -1
+#
+
+
+/* Mountlist for upper half of a HD floppy disk in drive DF0 w/v1.3 FFS */
+
+DFB:
+      Device = trackdisk.device
+      FileSystem = L:OFFSFileSystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 22
+      Reserved = 2
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Buffers = 22
+      BufMemType = 3
+      GlobVec = -1
+#
+
+
+/* Mountlist for lower half of an HD floppy in drive DF0 with 18 sector OFS */
+
+DFV:
+      Device = mfm.device
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Buffers = 18
+      BufMemType = 3
+      Activate = 0
+#
+
+
+/* Mountlist for upper half of an HD floppy in drive DF0 with 18 sector OFS */
+
+DFW:
+      Device = mfm.device
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Buffers = 18
+      BufMemType = 3
+      Activate = 0
+#
+
+
+/* Mountlist for lower half of an HD floppy in drive DF0 with 18 sector FFS */
+
+DFX:
+      Device = mfm.device
+      FileSystem = L:OFFSFileSystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Buffers = 18
+      BufMemType = 3
+      GlobVec = -1
+      Activate = 0
+#
+
+
+/* Mountlist for upper half of an HD floppy in drive DF0 with 18 sector FFS */
+
+DFY:
+      Device = mfm.device
+      FileSystem = L:OFFSFileSystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Buffers = 18
+      BufMemType = 3
+      GlobVec = -1
+      Activate = 0
+#
+
+
+/* Mountlist for upper half of an HD floppy in drive DF0 with 22 sector OFS */
+
+DFZ:
+      Device = trackdisk.device
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 22
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Buffers = 22
+      BufMemType = 3
+      Activate = 0
+#
+
+
+/* Mountlist for lower half of an HD floppy disk in drive DF0 w/AMIGA Format */
+
+FHA:
+      Device = trackdisk.device
+      FileSystem = L:MultiDosFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 22
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+
+/* Mountlist for upper half of an HD floppy disk in drive DF0 w/AMIGA Format */
+
+FHB:
+      Device = trackdisk.device
+      FileSystem = L:MultiDosFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 22
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+
+/* Mountlist for lower half HD floppy in drive DF0: w/720K Macintosh FMT */
+/* Use "PcFormat drive MFA: name MFA noicons" or use CrossMAC Format and */
+/* ignore error 254 on format of blank disk, finish format via DiskCopy  */
+/* of previously mounted and formatted HardFile device MFF: TO MFA: vol. */
+/* Use of DosType 0x4D414300 will Format tracks 0-79 to 1440K capacity,  */
+/* and will overwrite volume MFB: if it is mounted in the upper portion. */
+/* Oddly, the Mountlist for volume MFB: does utilize DosType 0x4D414300  */
+/* and will format correctly; the only difference is the cylinder range. */
+
+MFA:
+      Device = mfm.device
+      FileSystem = L:CrossMACFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      Reserved = 0
+      BlocksPerTrack = 18
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400	/* DOS (Not MAC) for MAC 720K size!!! */
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+
+/* Mountlist for upper half HD floppy in drive DF0: w/720K Macintosh FMT */
+
+MFB:
+      Device = mfm.device
+      FileSystem = L:CrossMACFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      Reserved = 0
+      BlocksPerTrack = 18
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+
+/* 720K MAC Format HardFile, equivalent to devices MFA: and MFB: */
+
+MFF:
+      Device = fmsdisk.device
+      FileSystem = L:CrossMACFileSystem
+      Unit = 1
+      Flags = 1
+      Surfaces = 2
+      Reserved = 0
+      Interleave = 0
+      BlocksPerTrack = 18
+      LowCyl = 0 ; HighCyl = 39
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D414300
+      Buffers = 30
+      BufMemType = 0 
+#
+
+
+/* Mountlist for lower half of a HD floppy disk in drive DF0 w/720K MSDOS FMT */
+
+MSA:
+      Device = mfm.device
+      FileSystem = L:MultiDosFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 0  ;  HighCyl = 39
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+
+/* Mountlist for upper half of a HD floppy disk in drive DF0 w/720K MSDOS FMT */
+
+MSB:
+      Device = mfm.device
+      FileSystem = L:MultiDosFilesystem
+      Unit   = 0
+      Flags  = 1
+      Surfaces  = 2
+      BlocksPerTrack = 18
+      Reserved = 1
+      Interleave = 0
+      LowCyl = 40  ;  HighCyl = 79
+      Stacksize = 2000
+      Priority = 5
+      GlobVec = -1
+      DosType = 0x4D534400
+      Buffers = 30
+      BufMemType = 0 
+      Activate = 0
+#
+
+---------- End of Mountlist, cut here ----------
+
+
+    III. Experimental Floppy File Systems
+
+	File systems and devices (for <= 30 character file & dir names):
+
+	The following experimental combinations have been here co-tabulated 
+	first as single HD and DD floppy devices, then as  upper-half and
+	lower-half HD floppy devices:
+
+	Mounted  File-System     Sec/Track,    Device        Largest-File-Size
+	HD Volume   Format       Cyl-Range     Handler         Bytes  Blocks
+
+	PDS0      ProfessionalFS 24,00-81 % diskspare.device @ 2010112 3926
+	DS0  }\/{ FastFileSystem 24,00-81   diskspare.device @ 1985024 3877
+	DSO0 }/\{  OldFileSystem 24,00-81   diskspare.device @ 1891976 3877
+	PDU0      ProfessionalFS 24,00-79 % diskspare.device @ 1960960 3830
+	DU0  }\/{ FastFileSystem 24,00-79   diskspare.device @ 1936384 3782
+	DUO0 }/\{  OldFileSystem 24,00-79   diskspare.device @ 1845616 3782
+	EDU0  ElephantFileSystem 24,00-79 + diskspare.device @ 1936384 3782
+	PDT0      ProfessionalFS 22,00-81 % trunktusk.device & 1842176 3598
+	DT0  }\/{ FastFileSystem 22,00-81   trunktusk.device & 1819136 3553
+	DTO0 }/\{  OldFileSystem 22,00-81   trunktusk.device & 1733864 3533
+	EDT0  ElephantFileSystem 22,00-79 + trunktusk.device & 1775104 3467
+	PDF0      ProfessionalFS 22,00-79 % trackdisk.device # 1797120 3510
+	DF0  }\/{ FastFileSystem 22,00-79   trackdisk.device # 1775104 3467
+	DFO0 }/\{  OldFileSystem 22,00-79   trackdisk.device # 1691896 3467
+
+	Mounted  File-System     Sec/Track,    Device        Largest-File-Size
+	DD Volume   Format       Cyl-Range     Handler         Bytes  Blocks
+
+	PDS1      ProfessionalFS 12,00-81 % diskspare.device @ 1002496 1958
+	DS1  }\/{ FastFileSystem 12,00-81   diskspare.device @  991232 1936
+	DSO1 }/\{  OldFileSystem 12,00-81   diskspare.device @  944768 1936
+	PDU1      ProfessionalFS 12,00-79 % diskspare.device @  977920 1910
+	DU1  }\/{ FastFileSystem 12,00-79   diskspare.device @  967168 1889
+	DUx1 }/\{  OldFileSystem 12,00-79   diskspare.device @  921832 1889
+	EDU1  ElephantFileSystem 12,00-79 + diskspare.device @  967168 1889
+	PDT1      ProfessionalFS 11,00-81 % trunktusk.device &  918528 1794
+	DT1  }\/{ FastFileSystem 11,00-81   trunktusk.device &  908800 1775
+	DTO1 }/\{  OldFileSystem 11,00-81   trunktusk.device &  866200 1775
+	EDT1  ElephantFileSystem 11,00-79 + trunktusk.device &  886272 1731
+	PDF1      ProfessionalFS 11,00-79 % trackdisk.device #  896000 1750
+	DF1  }\/{ FastFileSystem 11,00-79   trackdisk.device #  886272 1731
+	DFO1 }/\{  OldFileSystem 11,00-79   trackdisk.device #  844728 1731
+
+	Mounted   Split-File-Sys Sec/Track,    Device        Largest-File-Size
+	HD Volume   Format       Cyl-Range     Handler         Bytes  Blocks
+
+	PFSB    * ProfessionalFS 24,40-81 % diskspare.device @ 1027072 2006
+	FSB  }\/{ FastFileSystem 24,40-81   diskspare.device @ 1015808 1984
+	FSxB }/\{  OldFileSystem 24,40-81   diskspare.device @  968192 1984
+	EFSB  ElephantFileSystem 24,40-79 + diskspare.device @  967168 1889
+
+	PFKB    * ProfessionalFS 24,40-79 % diskspare.device @  977920 1910
+	EFKB  ElephantFileSystem 24,40-79 + diskspare.device @  967168 1889
+	FKB  }\/{ FastFileSystem 24,40-79   diskspare.device @  967168 1889
+	FKxB }/\{  OldFileSystem 24,40-79   diskspare.device @  921832 1889
+
+	PFJA      ProfessionalFS 24,00-39 % diskspare.device @  977920 1910
+	EFJA  ElephantFileSystem 24,00-39 + diskspare.device @  967168 1889
+	FJA  }\/{ FastFileSystem 24,00-39   diskspare.device @  967168 1889
+	FJxA }/\{  OldFileSystem 24,00-39   diskspare.device @  921832 1889
+
+	PFTB    * ProfessionalFS 22,40-81 % trunktusk.device &  941056 1838
+	FTB  }\/{ FastFileSystem 22,40-81   trunktusk.device &  930816 1818
+	FTxB }/\{  OldFileSystem 22,40-81   trunktusk.device &  887184 1818
+	EFTB  ElephantFileSystem 22,40-79 + trunktusk.device &  886272 1731
+
+	PFDB    * ProfessionalFS 22,40-79 % trackdisk.device #  896000 1750
+	EFDB  ElephantFileSystem 22,40-79 + trackdisk.device #  886272 1731
+	FDB  }\/{ FastFileSystem 22,40-79   trackdisk.device #  886272 1731
+	FDxB }/\{  OldFileSystem 22,40-79   trackdisk.device #  844728 1731
+
+	PFTA      ProfessionalFS 22,00-39 % trunktusk.device &  896000 1750
+	EFTA  ElephantFileSystem 22,00-39 + trunktusk.device &  886272 1731
+	FTA  }\/{ FastFileSystem 22,00-39   trunktusk.device &  886272 1731
+	FTxA }/\{  OldFileSystem 22,00-39   trunktusk.device &  844728 1731
+
+	PFDA      ProfessionalFS 22,00-39 % trackdisk.device #  896000 1750
+	EFDA  ElephantFileSystem 22,00-39 + trackdisk.device #  886272 1731
+	FDA  }\/{ FastFileSystem 22,00-39   trackdisk.device #  886272 1731
+	FDxA }/\{  OldFileSystem 22,00-39   trackdisk.device #  844728 1731
+
+    IV. Extended Trackdisk MultiDosFilesystem Floppy Configurations
+
+	The Amiga is capable of writing extended size MS-DOS file systems on
+	floppy disk.  The MultiDos PcFormat supports numerous configurations:
+
+	MultiDos MS-DOS trackdisk formats (for <= 8n.3e char file & dir names):
+
+	Mounted  File-System     Sec/Track,    Device        Largest-File-Size
+	HD Volume   Format       Cyl-Range     Handler         Bytes Blocks BPC
+
+	MDS0 F0AmigaDds PcFormat 24,00-81   $ fmsdisk.device   2001408 3909  2
+	MSS0 F0AmigaDss PcFormat 24,00-81   $ fmsdisk.device   1995264 3897  1
+	MDD0 F0AmigaDdd PcFormat 24,00-79   $ fmsdisk.device   1946112 3801  1
+	MTS0 F0AmigaDts PcFormat 22,00-81   trunktusk.device & 1828352 3571  1
+	MTT0 F0AmigaDos PcFormat 22,00-79 + trunktusk.device & 1783296 3483  1
+	MB0  F0AmigaDos PcFormat 22,00-79   trackdisk.device # 1783296 3483  1
+
+	Mounted  File-System     Sec/Track,    Device        Largest-File-Size
+	DD Volume   Format       Cyl-Range     Handler         Bytes Blocks BPC
+
+	MDS1 F9AmigaDds PcFormat 12,00-81   $ fmsdisk.device   1000448 1954  2
+	MSS1 F9AmigaDss PcFormat 12,00-81   $ fmsdisk.device    997376 1948  1
+	MDD1 F9AmigaDdd PcFormat 12,00-79   $ fmsdisk.device    975872 1906  2
+	MTS1 F9AmigaDts PcFormat 11,00-81   trunktusk.device &  916480 1790  2
+	MTT1 F9AmigaDos PcFormat 11,00-79 + trunktusk.device &  893952 1746  2
+	MB1  F9AmigaDos PcFormat 11,00-79   trackdisk.device #  893952 1746  2
+
+	BPC is Blocks Per Cluster, equivalent to "SectorsPerCluster" for DOS.
+	The mounting and formatting procedure is the same for all the above
+	volumes.  Mountlists are similar to examples provided below for other
+	extended-track floppy file systems, except that for this section the
+	mountlist must have a "FileSystem = MultiDosFilesystem" entry.  Floppy
+	hardfiles or ram disks may be configured for these file systems by the
+	methods described in earlier sections of this document.  The procedure
+	and the PcFormat.spc file entries for the depicted formats are given
+	next:
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	MultiDos Floppy	  <various>     L:MultiDosFilesystem    Mdtn:   MSDOS
+								"Where dt is
+								 device type
+								 DS =  double
+								       cluster
+								  diskspare fmt
+								 SS =  single
+								       cluster
+								  diskspare fmt
+								 DD =  80 track
+								  diskspare fmt
+								 TS =  extended
+								  trunktusk fmt
+								 TT =  Elephant
+								 file supervisor
+								  trunktusk fmt
+								 And n is the
+								 unit number"
+	Command: Mount Mdtn: from devs:Mountlist_Mdtn
+	Command: PcFormat drive Mdtn: name "Volume Name" NOICONS AMIGA -f<spec>
+			Where <spec> is as given and is of the form noted below
+			Note that an Amiga HD drive is required for an entry if
+			<spec> is an "F0/F1" specification from the above table
+	}
+
+/*                                                                        */
+/* PcFormat.spc file entries for the above tabulated file systems         */
+/*    -      -       -       -       -       -       -       -       -    */
+
+F0AmigaDos:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 1
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberofRootDirEntries = 224
+      TotalBlocksOnDisk = 3520
+      FormatID = 0xF0
+      BlocksPerFat = 11
+      BlocksPerTrack = 22
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F0AmigaDts:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 1
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberofRootDirEntries = 224
+      TotalBlocksOnDisk = 3608
+      FormatID = 0xF0
+      BlocksPerFat = 11
+      BlocksPerTrack = 22
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F0AmigaDdd:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 1
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberofRootDirEntries = 224
+      TotalBlocksOnDisk = 3840
+      FormatID = 0xF0
+      BlocksPerFat = 11
+      BlocksPerTrack = 22
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F0AmigaDss:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 1
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberofRootDirEntries = 224
+      TotalBlocksOnDisk = 3936
+      FormatID = 0xF0
+      BlocksPerFat = 12
+      BlocksPerTrack = 24
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F0AmigaDds:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 2
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberofRootDirEntries = 224
+      TotalBlocksOnDisk = 3936
+      FormatID = 0xF0
+      BlocksPerFat = 6
+      BlocksPerTrack = 22
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F9AmigaDos:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 2
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberOfRootDirEntries = 112
+      TotalBlocksOnDisk = 1760
+      FormatID = 0xF9
+      BlocksPerFat = 3
+      BlocksPerTrack = 11
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F9AmigaDdd:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 2
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberOfRootDirEntries = 112
+      TotalBlocksOnDisk = 1920
+      FormatID = 0xF9
+      BlocksPerFat = 3
+      BlocksPerTrack = 12
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F9AmigaDts:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 2
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberOfRootDirEntries = 112
+      TotalBlocksOnDisk = 1804
+      FormatID = 0xF9
+      BlocksPerFat = 3
+      BlocksPerTrack = 12
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F9AmigaDss:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 1
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberOfRootDirEntries = 112
+      TotalBlocksOnDisk = 1968
+      FormatID = 0xF9
+      BlocksPerFat = 6
+      BlocksPerTrack = 12
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+F9AmigaDds:
+      SystemID = MDos1.0
+      BytesPerSector = 512
+      BlocksPerCluster = 2
+      PreAlloc = 1
+      NumbersOfFats = 2
+      NumberOfRootDirEntries = 112
+      TotalBlocksOnDisk = 1968
+      FormatID = 0xF9
+      BlocksPerFat = 3
+      BlocksPerTrack = 12
+      Surfaces = 2
+      HiddenSectors = 0
+      BigTotalSectorsOnDisk = 0
+      PhysicalDriveNumber = 0
+      ExtendedBootRecordSignature = 0
+      VolumeSerialNumber = 0
+      VolumeLabel = MultiDos1.0
+##
+
+/*    -      -       -       -       -       -       -       -       -    */
+
+    V.  Notes, Procedures and Mountlists for Sections III and IV above
+
+	*   Unfortunately, the upper-half offset of the "B" section in the
+	    mountlist is ignored by the PFS.  The Format and Formit commands
+	    fail; the root block and file system structure end up in track 0
+	    without regard for what the mountlist says.  Even use of another
+	    method of formatting a volume such as making two hardfiles of the
+	    correct length for the upper and lower sections, then JOINing them
+	    as one longer hardfile and then using DiskCopy to get them from
+	    the hardfile to the HD floppy does not work.  A disk preformatted
+	    in this way, even, is recognized as two identical lower-half HD
+	    floppy volumes.  The recognition is followed by an immediate system
+	    crash.  It's too bad, but the PFS will, in this case, not seem to
+	    keep the "B" section file system information where the mountlist
+	    says the sub-volume's root block should be located.  These upper-
+	    half PFS volumes will not be functional until the PFS is revised
+	    to consider more carefully the content of the mountlist.
+
+	%   The ProfessionalFileSystem is found as "pfs95.lha" in the disk/misc
+	    directory of Aminet Set #1, Disk D.  Included is DiskSpare2.2 in
+	    the "tools" directory of the archive.
+
+	+   The Elephant File Supervisor (which is merely a floppy disk
+	    husbandry system for after-the-fact computation of disk-wide
+	    cyclic-redundancy checksums on a block-by-block basis) adds
+	    block checksums as per a schedule algorithm; the checksums are
+	    written to a file maintained in cylinders above track 79 by the
+	    ElephantFileSupervisor, invoked manually or via a cron entry.
+	    Mounted as an RDB-like trailing storage partition, this segment
+	    of the system optionally adds back to the fast file system an
+	    important part of the redundancy lost from the OldFileSystem.
+	    Thus the "file system" portion referenced for this setup is
+	    really just an independent renamed AmigaDOS FastFileSystem; the
+	    the Version 1.3 FFS (OFFSFileSystem) is used for these exercises
+	    because file overhead blocks in that system are near to the root
+	    track and can be more easily picked up in only a few reads and
+	    then made available in an expanded buffer cache.
+
+	$   Unfortunately, the MultiDosFilesystem is not compatible with the
+	    diskspare.device for any known configuration.  The PcFormat.spc
+	    entries work just fine with PcFormat and the fmsdisk.device for
+	    hardfiles, and PcFormat even succeeds in formatting floppies that
+	    have been mounted via a mountlist with a diskspare.device entry.
+	    In accordance with the supplied "-f" option specification, PcFormat
+	    does its job, though it does issue "error 0" at the conclusion of
+	    the formatting operation.  Nevertheless, the mounted volumes cannot
+	    be accessed in the way typically possible for mounted file systems.
+	    Similarly, the CrossDOSFileSystem also fails to recognize the
+	    diskspare.device (even though the diskspare.device does  work
+	    with the OFS, FFS and PFS).  In order to utilize the MDDn:, MSSn:,
+	    or MDSn: devices, one must copy the device mountlist and edit the
+	    copy to substitute the fmsdisk.device for the diskspare.device,
+	    mount a mirror (image) hardfile, and load/use the hardfile until
+	    ready for backup to floppy.  Then one can mount the corresponding
+	    floppy device (and, if the floppy was not formatted as a diskspare
+	    disk, use PcFormat to format it) then DiskCopy the hardfile to the
+	    floppy for cold storage.  Retrieval is accomplished by mounting
+	    both devices and invoking DiskCopy from the floppy back to the
+	    hardfile.  One must want very badly for the storage to be in an
+	    MS-DOS format in order to be willing to put up with this, since
+	    the PFS works just fine with the diskspare device, and can be
+	    routinely used with DD and HD floppies, even while providing the
+	    filenotes feature and the long 30 character Amiga file names!
+
+	@   Obsolete Version 2.0 of the diskspare.device, may be found as
+	    "DskSpr20.lha" in the disk/misc directory of Aminet Set #1,
+	    Disk D.  A very necessary post-release is DiskSpare2.2, part of
+	    the Professional File System archive referenced above.  The
+	    diskspare.device ignores the BlocksPerTrack informtion in the
+	    mountlist when it is greater than 81.  Also SectorsPerTrack must
+	    be 12/24 for diskspare to work; attempting to use "11/22" fails.
+	    Note that ALL automatic DD/HD acceptance for Amiga high-density
+	    drives from a mountfile or mountlist that has, say, a DD entry
+	    for "BlocksPerTrack" occurs via the trackdisk.device and no other
+	    device.  Every other device must be mounted as DD or as HD and
+	    cannot change after mounting.  To provide this function, the
+	    diskspare.device docs say that a patch to trackdisk.device was
+	    necessary; for this patch to work, the diskspare.device must be
+	    mounted in the User-startup.  Otherwise, mountlists must be
+	    specifically DD or HD as are the mountlists (generally speaking)
+	    in this FAQ.
+
+	&   The trunktusk.device is a patched hackdisk.device module.
+	    HackDisk 2.02 is found on Aminet Set #1, disk D; the patch allows
+	    access to tracks 80 and 81.  After November 1996, look for it on
+	    Aminet in the disk/misc directory.
+
+	#   The trackdisk.device may be used for any applications utilizing
+	    track addresses 00-39 or 00-79; also 40-79 may be used, exclusive
+	    of the PFS.  Note that the native trackdisk.device is faster than
+	    the hackdisk.device (and its associated autoverify read-back cycle)
+	    functioning  without the hazard of access collisions with a floppy
+	    in a drive other than unit 0.  These difficulties are of course
+	    circumventable via the hackdisk.device exec list loading procedures
+	    which substitute the hackdisk.device (or trunktusk.device) for the
+	    trackdisk.device, as described in the the HackDisk documentation.
+	    Note however, that the hackdisk.device and the trunktusk.device do
+	    write verification automatically with each track write.  Because of
+	    this they are slower than the trackdisk.device, but a reliable file
+	    system would of course need this feature.  As well, all three of
+	    the devices handle either the FastFileSystem or the OldFileSystem
+	    in a format command with or without (respectively) the command's
+	    "FFS" keyword, and accomplish this transparently when there was no
+	    "FileSystem" or "DosType" entry provided in the mount file (or the
+	    mountlist).  Note also that the "Format" command, reports activity
+	    as in tracks "0 to 39" for either the upper half or the lower half
+	    of the floppy with these volumes as described.  The aforementioned
+	    "Formit" command (which is really just the AmigaDOS V1.3 "Format"
+	    command renamed) which is used for the OFFSFileSystem (which is
+	    actually just the former V1.3 AmigaDOS FastFileSystem) reports its
+	    activity as for tracks "0 to 39" in the lower half of the floppy,
+	    and as for tracks "40 to 79" in the upper half of the floppy, with
+	    either of the trackdisk.device or the hackdisk.device and "0 to 39"
+	    or "40 to 81" with the the trunktusk.device or the diskspare.device
+	    when they are used, respectively, for the lower-half or upper-half
+	    of a floppy format which includes the extended cylinders.
+
+    }\/{    Three-letter devices in this list are prepared by composing
+    }/\{    a mountlist containing no "FileSystem", "DosType", or "GlobVec"
+	    entries.  The format type is defined at the time the "Format"
+	    command is issued, via omitting or including the "FFS" keyword.
+	    A four-letter device name containing a letter replacing the "x"
+	    with "D", "F" or "P", as in the sequence following, will
+	    need (for D) a "DosType = 0x444f5300" entry, or including (for
+	    F) the "DosType = 0x444f5301" and "GlobVec = -1" entries will
+	    load the "FastFileSystem", and including this FFS DosType and
+	    (for P) the "FileSystem = OFFSFileSystem" entry will load the
+	    AmigaDOS V1.3 FFS module, obtained as discussed elsewhere in
+	    this and other sections of this document.
+
+    PC floppy disk hardware drivers cannot read trackdisk format, since that
+    format has no sector gaps (though it does have unused sector headers).
+    The PC hardware is able to read the 18 sector/track MFM formats when the
+    appropriate software handler can be obtained and installed via a CONFIG.SYS
+    file entry.  Generally speaking, all the dual HD MSDOS floppies discussed
+    in this document can be transferred to PCs without modification.  However,
+    invoking the Norton Disk Doctor utility (NDD) will bring up a requester
+    stating that the boot block is invalid (mostly because the PcFormat routine
+    did not write boot code into the boot block).  Allowing NDD to fix the boot
+    block will incapacitate the volume, since NDD will relentlessly reset the
+    sectors per track from 18 to 9.  This can be easily overcome by simply
+    putting it back to 18 with the Norton DiskEdit program.
+    
+    The use of other formats in the Amiga, such as Amiga PFS, is of course easy
+    to accomplish.  This is the case with the exception of the problem of
+    formatting these volumes to begin with.  However, once the media is known
+    to be good, a format may be placed on the volume by means of DiskCopy of a
+    suitable hardfile image to the media, and then the floppy volume can be
+    used without further difficulty.  Note that it is also possible to have a
+    semi-overlapped file system prepared via formatting a floppy as a 1440K
+    PC volume, then formatting the upper half as an 18- sector per track file
+    system in Amiga OFS format, then entering the entire upper half of the PC
+    volume as one file in the PC root directory in order to allow image file
+    access of the volume for the Unix Amiga Emulator (UAE).
+
+	Following are procedures for mounting single volume
+	experimental filesystems tabulated above:
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	ProfFS Floppy	<ttype>.device	L:ProfFileSystem	PDtn:	ProfFS
+
+	Command:	Mount PDtn: from devs:Mountlist_PDtn  "t is volume type"
+								S = diskspare
+								      extended
+								U = diskspare
+								T = trunktusk
+								      extended
+								F = trackdisk
+							      "n is Unit number"
+							        0 = HD Floppy
+								1 = DD Floppy
+	Command:	Format drive PDtn: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy	<ttype>.device	L:FastFileSystem	ttn:   AmigaFFS
+
+	Command:	Mount ttn: from devs:Mountlist_ttn   "tt is volume type"
+								DS = diskspare
+								      extended
+								DU = diskspare
+								DT = trunktusk
+								      extended
+								DF = trackdisk
+							      "n is Unit number"
+							        0 = HD Floppy
+								1 = DD Floppy
+	Command:	Format drive ttn: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	ElephFS Floppy	<ttype>.device	L:FastFileSystem	Ettn:	ElephFS
+					or OldFileSystem
+					L:OFFSFileSystem
+
+	Command:	Mount Ettn: from devs:Mountlist_Ettn "tt is volume type"
+								DS = diskspare
+								      extended
+								DT = trunktusk
+								      extended
+							      "n is Unit number"
+							        0 = HD Floppy
+								1 = DD Floppy
+	Command:	Format drive Ettn: name "Volume Name" noicons
+	}
+
+	Following are procedures for mounting dual volume
+	experimental filesystems tabulated above:
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	ProfFS Floppy	<ttype>.device	L:ProfFileSystem	PFtm:	ProfFS
+
+	Command:	Mount PFtm: from devs:Mountlist_PFtm  "t is volume type"
+								S = diskspare
+								     extended
+								K = diskspare
+								T = trunktusk
+								     extended
+								D = trackdisk
+							      "m is Vol section"
+							        A = lower volume
+								B = upper volume
+	Command:	Format drive PFtm: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	AmigaDOS Floppy	<ttype>.device	L:FastFileSystem	Ftm:   AmigaFFS
+
+	Command:	Mount Ftm: from devs:Mountlist_Ftm    "t is volume type"
+							       S,K,J = diskspare
+								       extended
+							       T = trunktusk
+								       extended
+							       D = trackdisk
+								       extended
+								       lower via
+								       trunktusk
+								       upper
+							      "m is Vol section"
+							        A = HD Floppy
+								B = DD Floppy
+	Command:	Format drive Ftm: name "Volume Name" noicons
+	}
+
+	{
+	Application	Device Driver	Handler			Name	Format
+
+	ElephFS Floppy	<ttype>.device	L:FastFileSystem	EFtm:	ElephFS
+					or OldFileSystem
+					L:OFFSFileSystem
+
+	Command:	Mount EFtm: from devs:Mountlist_EFtm  "t is volume type"
+							       S,K,J = diskspare
+								       extended
+							       T = trunktusk
+								       extended
+							       D = trackdisk
+							               extended
+								       lower via
+								       trunktusk
+								       upper
+							      "m is Vol section"
+							        A = lower volume
+								B = upper volume
+	Command:	Format drive EFtm: name "Volume Name" noicons
+	}
+
+/* Mountlist entries for experimental filesystem configurations */
+/* are listed in the following section:                         */
+
+
+/* Mountlists for single volume HD floppy configurations are listed first */
+/*    -      -       -       -       -       -       -       -       -    */
+
+/* HD floppy with diskspare.device and ProfFileSystem for max capacity */
+
+PDS0:
+      Device = diskspare.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      BufMemType = 1
+      Buffers = 5
+      Activate = 1
+#
+
+
+/* DD floppy with diskspare.device and ProfFileSystem for max capacity */
+
+PDS1:
+      Device = diskspare.device
+      FileSystem = L:ProfFileSystem
+      Unit = 1
+      Flags = 0x3           /* No HD, Allow Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 12   /* The device uses this at 12 for DD floppies */
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      BufMemType = 1
+      Buffers = 5
+      Activate = 1
+#
+
+
+/* HD floppy with diskspare.device for max AmigaDOS filesystem capacity */
+
+DS0:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+
+#
+
+
+/* DD floppy with diskspare.device for max AmigaDOS filesystem capacity */
+
+DS1:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 1
+      Flags = 0x3           /* No HD, Allow Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 12   /* The device uses this at 12 for DD floppies */
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+
+#
+
+
+/* HD floppy with diskspare.device and ProfFileSystem for max capacity */
+
+PDU0:
+      FileSystem = L:ProfFileSystem
+      Device = diskspare.device
+      Unit = 0
+      Flags = 0x5           /* Allow HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Activate = 1
+#
+
+
+/* DD floppy with diskspare.device and ProfFileSystem for max capacity */
+
+PDU1:
+      FileSystem = L:ProfFileSystem
+      Device = diskspare.device
+      Unit = 0
+      Flags = 0x1           /* No HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 12   /* The device uses this at 12 for DD floppies */
+      LowCyl = 0
+      HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Activate = 1
+#
+
+
+/* HD floppy with diskspare.device for max 80-track capacity */
+
+DU0:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0x5           /* Allow HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+
+#
+
+
+/* DD floppy with diskspare.device for max 80-track capacity */
+
+DU1:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 1
+      Flags = 0x5           /* Allow HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 12   /* The device uses this at 12 for DD floppies */
+      LowCyl = 0
+      HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+#
+
+
+/* Extended Professional File System, trunktusk device for standard sectors */
+
+PDT0:
+      Device = trunktusk.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 22
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Extended Professional File System, trunktusk device for standard sectors */
+
+PDT1:
+      FileSystem = L:ProfFileSystem
+      Device = trunktusk.device
+      Unit = 1
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 11
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Extended File System, with standard trackdisk sectors */
+
+DT0:
+      Device = trunktusk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+
+/* Extended File System, with standard trackdisk sectors */
+
+DT1:
+      Device = trunktusk.device
+      Unit = 1
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 11
+      LowCyl = 0
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+
+/* Professional File System mountlist entries */
+
+PDF0:
+      Device = trackdisk.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 11
+      LowCyl = 0 ; HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Professional File System mountlist entries */
+
+PDF1:
+      Device = trackdisk.device
+      FileSystem = L:ProfFileSystem
+      Unit = 1
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 11
+      LowCyl = 0 ; HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+/* Mountlists for dual volume HD floppy configurations are listed next  */
+/*   -      -       -       -       -       -       -       -       -   */
+
+/* Professional File System and diskspare for upper part of a HD floppy */
+
+PFSB:
+      Device = diskspare.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 40
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      Priority = 10
+      StackSize = 600
+      DosType = 0x444F5301
+      GlobVec = -1
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+#
+
+
+/* Upper half HD floppy w/diskspare.device for max AmigaDOS capacity */
+
+FSB:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 40
+      HighCyl = 81          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+
+#
+
+
+/* Professional File System and diskspare for upper part of a HD floppy */
+
+PFKB:
+      Device = diskspare.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 40
+      HighCyl = 79          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      Priority = 10
+      StackSize = 600
+      DosType = 0x444F5301
+      GlobVec = -1
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+#
+
+
+/* Upper half HD floppy w/diskspare.device for max AmigaDOS capacity */
+
+FKB:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0x5           /* Allow HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 40
+      HighCyl = 79
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+#
+
+
+/* Professional file system for lower half of a HD floppy */
+
+PFJA:
+      Device = diskspare.device
+      FileSystem = L:ProfFileSystem
+      Unit = 0
+      Flags = 0x7           /* Allow HD, Cyl.81, DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 39          /* Floppy drives can usually do this reliably */
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+#
+
+
+/* Lower half of HD floppy w/diskspare.device for max AmigaDOS capacity */
+
+FJA:
+      Device = diskspare.device
+      FileSystem = L:FastFileSystem
+      Unit = 0
+      Flags = 0x5           /* Allow HD, No Cyl.81, Allow DiskChange */
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 24   /* The device uses this at 24 for HD floppies */
+      LowCyl = 0
+      HighCyl = 39
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x444F5301
+      Buffers = 5
+      BufMemType = 0
+      Activate = 1
+
+#
+
+
+/* Professional file system with trunktusk for lower half of a HD floppy */
+
+PFTA:
+      FileSystem = L:ProfFileSystem
+      Device = trunktusk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 22
+      LowCyl = 0 ; HighCyl = 39
+      Interleave = 0
+      StackSize = 600
+      Priority = 10
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Professional file system with trunktusk for upper half of a HD floppy */
+
+PFTB:
+      FileSystem = L:ProfFileSystem
+      Device = trunktusk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 22
+      LowCyl = 40 ; HighCyl = 81
+      Interleave = 0
+      Priority = 10
+      StackSize = 600
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Mountlist for lower half of a HD floppy disk in drive DF0: */
+
+FTA:
+      Device = trunktusk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 0 ; HighCyl = 39
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+
+/* Mountlist for extended upper half of a HD floppy disk in drive DF0: */
+
+FTB:
+      Device = trunktusk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 40 ; HighCyl = 81
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+
+/* Professional file system with trackdisk for upper half of a HD floppy */
+
+PFDB:
+      FileSystem = L:ProfFileSystem
+      Device = trackdisk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 22
+      LowCyl = 40
+      HighCyl = 79
+      Interleave = 0
+      Priority = 10
+      StackSize = 600
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Mountlist for upper half of a HD floppy disk in drive DF0: */
+
+FDB:
+      Device = trackdisk.device
+      Unit = 0
+      Flags = 1
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 40 ; HighCyl = 79
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+
+/* Professional file system with trackdisk for lower half of a HD floppy */
+
+PFDA:
+      FileSystem = L:ProfFileSystem
+      Device = trackdisk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlockSize = 512
+      BlocksPerTrack = 22
+      LowCyl = 0
+      HighCyl = 39
+      Interleave = 0
+      Priority = 10
+      StackSize = 600
+      GlobVec = -1
+      DosType = 0x50465300
+      MaxTransfer = 2097152
+      Mask = 0x7ffffffe
+      Buffers = 5
+      BufMemType = 1
+      Mount = 1
+#
+
+
+/* Mountlist for lower half of a HD floppy disk in drive DF0: */
+
+FDA:
+      Device = trackdisk.device
+      Unit = 0
+      Flags = 0
+      Surfaces = 2
+      Reserved = 2
+      BlocksPerTrack = 22
+      LowCyl = 0 ; HighCyl = 39
+      Interleave = 0
+      Priority = 10
+      MaxTransfer = 0x200000
+      Mask = 0x7FFFFFFE
+      Buffers = 5
+      BufMemType = 0
+      Mount = 1
+#
+
+20. How can I make image file copies of floppy disks and hardfiles?
+
+    The simplest way to make an image copy of a floppy is to use a block-
+    read device handler; i.e., Use one of the following utilities to copy
+    the floppy to RAM:; remove the original floppy and replace it with an
+    empty floppy formatted via the same device, and then use the device
+    handler to copy the image file back to to the empty floppy in the same
+    device to get the same volume name and date for the copy.  Following
+    is a list of programs which are block-read/write device handlers:
+
+	Program		File Type	Device Type	Archive
+
+	PackDev		LhA, LhZ, ZIP	XPK packer	AmiNet Set #1
+	DevBlocks	Uncompressed	handler		AmiNet Set #2
+	Device-Handler	Uncompressed	handler		AmiNet Set #1
+	RawDiskHandler	Uncompressed	handler		AmiNet Set #1
+	DD		Uncompressed	handler		AmiNet Set #1
+	Flat		Uncompressed	handler		Fish Disk 535
+
+    Not all of these work adequately with a Macintosh 800K drive attached to
+    AMax hardware, however.  The "Flat" handler does work with AMax hardware
+    for the CrossMAC MAC2: device.  Another method of making identical image
+    Macintosh 800K disks is to use the CrossMAC version 1.01 distribution of
+    the CrossMACFileSystem via the instruction "DiskCopy MAC2: TO MAC2:" which
+    will (while warning that the copy was not validated) produce backup disks
+    with the same volume date as the original.  Interestingly enough, while
+    later versions of CrossMAC always re-date the copy of a floppy to another
+    volume, when copying from a hardfile to a floppy, they will ask if the
+    volume date should be changed, recommending that a change of date is the
+    best choice.  So if a same-date hardfile image can be acquired in the first
+    place, making a same-date backup floppy volume is readily accomplished.
+
+    Note that DevBlocks is useful for saving hard disk RDBs and file system
+    tables for backup purposes.  Realize that you can sometimes edit the hard
+    disk RDBs given that you know how to create and read from a truncated
+    image of those volumes.  However, watch out for volumes with write cache
+    options, including the emphf.device as per other warnings in this FAQ; you
+    may not get what you are looking for when you do block-sequential reads
+    from those devices, and you may even destroy them if they are active on
+    the emulator side while you are trying to read them from the Amiga side.
+    This is a hazard which is in the same instance a system compatibility
+    failure and a system co-compatibility failure.
+
+    Another method for obtaining an image copy involves generating mountlists
+    for both devices with the "FileSystem" and "DosType" entries deleted.  When
+    the volumes are mounted, there may not be icons for them (or you may get
+    "NDOS" icons) but you can succeed in obtaining an image copy via the
+    DiskCopy command from the hardfile to the Mac floppy drive.  CrossMAC won't
+    redate the copy, since no other volume seen by the CrossMAC file system
+    will have the date.  The mountlist used must, however,  have the correct
+    driver and sector/track information, or DiskCopy will refuse to make the
+    copy.
+
+    With CrossMAC any disk you copy from one unit to another will end up with
+    the date set to the current date on the copy.  Thus it won't be a "real"
+    copy in so far as some Macintosh install programs are concerned.  If you
+    are depending on backup floppies, and you have a source floppy disk error
+    in the middle of processing disk 14 of a 16 disk set, and your backup is
+    not a "real" copy, the Mac will just keep asking for the one who's date
+    it has memorized, for instance.  However, it is the situation that for
+    CrossMAC, anyway, that if you use their "DiskCopy" program and issue the
+    the command from some unit to a hardfile device with the same format,
+    i.e., DiskCopy MAC0: TO MFH0: you will get a disk copy with identical
+    directories, though the volume date of the copy will be the current date.
+    If the Mountlist for a hardfile is the same as is used for the mounted
+    real Mac drive connected to your A-MaxII cartridge (or ZorroII board)
+    you can issue the command:
+
+			DiskCopy MAC2: TO MFH2:
+
+    To obtain a hardfile copy of the original 800K Mac format floppy disk.
+    Similarly, you can use:
+
+			DiskCopy MFH2: TO MAC2:
+
+    and make reliable backups of your Macintosh system installation disks.
+    Using a Mac (or mac emulator for that matter) and opening the source and
+    destination disks to windows, then dragging the files and folders from
+    the source disk window to the destination disk window may not work.  This
+    can lead to some difficulty, i.e., icons, such as the Install icon itself
+    may not appear when you insert the copy in the target AMAX floppy drive.
+    Making AMAX format backups of these disks is, though, a substantial task.
+
+    MAKING AMAX FORMAT BACKUPS OF 800K MACINTOSH FORMAT DISKS:
+
+    With a standard DD Amiga floppy DF1: and an AMAX 800K Mac floppy DF2:
+
+    Instead of this:
+
+    "1> DiskCopy MAC2: TO MAC1:
+    DiskCopy Failure: Disks in devices MAC2 and MAC1 are not of
+    the same size and cannot be copied to
+    one another."
+
+    which evidently doesn't do what we want, can be circumvented, believe it
+    or not...
+
+    Try this:
+
+    From a fresh boot-up,
+    double click the CrossMAC MAC2 and MAC1 icons in the DOSDrivers drawer
+    to mount the hardware disks.  If you have files named Unit1 and/or Unit2
+    in your HFD: directory and you want to keep them, you can temporarily
+    rename them U1 and/or U2 so they won't be erased and replaced with content
+    from the following procedure.  Having saved Unit1 and Unit2, enter commands
+    as follows:
+
+    1> Assign FMS: HD1:HFD
+    1> Mount MFH2: from devs:Mountlist_MFH2
+    1> Format drive MFH2: name AMX2 noicons
+    Insert disk to be formatted in device MFH2 [Sokay - hardfile's in there!]
+    Press RETURN to begin formatting or CTRL-C to abort:	[<CR>]
+
+    Formatting/Verifying cylinder 0, 0 to go
+    Initializing disk...
+
+     The previous procedure makes a MAC format hardfile HFD:Unit2, 819200 bytes.
+     Place the Macintosh format 800K source disk in the Mac drive connected to
+     the AMAX ROM / Mac Floppy drive cartridge, and place a blank disk in the
+     DF1:/MAC1: floppy drive.  The following command will want to allocate
+     about 1.6 Meg of ram in order to copy the Mac floppy to the hardfile:
+
+    1> DiskCopy MAC2: TO MFH2:
+    Insert disk to copy from (SOURCE disk) in device MAC2
+    Insert disk to copy to (DESTINATION disk) in device MFH2
+    Press RETURN to begin copying or CTRL-C to abort:
+    Reading/Verifying   cylinder 0, 0 to go
+
+     If you wish to have a different date on the target floppy, leave the Mac
+     floppy in the drive, and CrossDOS will subsequently allow redating the
+     target disk via a requester asking if you want to redate the target.
+
+     After the copy has been made, note the following:
+     It is now necessary to disassociate the hardfile from the MFH2: definition,
+     so you need to rename and remount the hardfile as MFH1, then format the
+     target AMAX floppy:
+
+    1> Assign MFH2: DISMOUNT
+    1> Rename FMS:Unit2 FMS:Unit1
+    1> Mount MFH1: from devs:Mountlist_MFH1
+
+    1> Format drive MAC1: name MAX1 noicons
+    Insert disk to be formatted in device MAC1
+    Press RETURN to begin formatting or CTRL-C to abort:	[<CR>]
+
+    Formatting/Verifying cylinder nn, mm to go
+    Initializing disk...
+
+     Now all that remains is to copy the hardfile to the target AMAX floppy:
+
+    1> DiskCopy MFH1: TO MAC1:
+    Insert disk to copy from (SOURCE disk) in device MFH1
+    Insert disk to copy to (DESTINATION disk) in device MAC1
+    Press RETURN to begin copying or CTRL-C to abort:  
+    Writing/Verifying cylinder mm, nn to go
+
+     If you did not remove the source disk from the Mac floppy drive, this is
+     the time the requester will pop up asking if you want to redate the
+     target.  If you wish to manufacture an image copy, you should click the
+     "Ignore" box, then remove both source and destination floppy disks as
+     soon as possible after the copy is done.  If you want a current date for
+     the target disk, click the "SetDate" box.
+
+     Having finished these procedures, it is advisable to reboot the machine,
+     if for no other reason than to release the lock on the file HFD:Unit1
+     so that you can delete it and rename the U1 and U2 hardfiles back to
+     Unit1 and Unit2 to make them available for mounting, if need be.
+
+21. Will we have any trouble with the advice in this FAQ?
+
+    You can bet we will.  Therefore, this disclaimer:  The information in
+    this file, while as accurate as I can make it, is offered for entertainment
+    use only; neither I nor any subsequently posting site is responsible for
+    damage done to data, programs, computers, or peripheral devices via the
+    content of this FAQ.  Some cases in point: Watch out for the EMPLANT file
+    system when working with disk editors; the hardfiles, at least have an
+    even numbered top block.  Most Amiga disk editors expect an odd numbered
+    top block, and thus may have problems finding the root directory via a
+    simple offset calculation.  Even though the "Reserved" Mountlist entry
+    gets set to 2 for AmigaDOS file systems or 0 for Macintosh and MSDOS file
+    systems, that won't help the tools any.  You may need to set Reserved to
+    an odd number to get disk virus scanners and other tools to work very well.
+    Be prepared to read floppy disks using the program that originally created
+    them.  The same goes for formatting MAC hard drives.  There's no cyl zero
+    prep data on a MAC hard disk, so if you try to mount it on an Amiga hard
+    disk controller, you'll destroy the MAC hard drive root directory when you
+    try to set it up with HDToolbox.  Use the correct procedure for doing this,
+    if you try to do it at all.  For example, see pages 26 and 27 of your
+    A-MaxII manual, or get some hints from the PCDisk documentation.
+    
+22. Where can I get FmsDisk?
+
+    Anywhere Fish Disks are to be found.  FmsDisk is on Fish Disk 294.
+
+23. Where can I get CrossMAC and CrossDOS?
+
+    While there are a few PC# devices included with AmigaDOS >2.0, life will
+    not commence for you until you get the real products from Consultron.
+    You can contact them by email at: consultron@consultron.plymouth.mi.us ;
+    direct the first line in the body of your email to Jay Morgan.  The
+    address is:
+
+	Consultron
+	8959 Ridge Rd
+	Plymouth, MI 48170
+
+	9AM TO 5PM CST Sales/Tech Support/Fax
+	(313) 459-7271
+	for Tech support (Have your customer id # [CIN] ready...)
+	6PM TO 10AM EST Weekdays and 24 hours on weekends this becomes a BBS.
+
+24. Where can I get Emplant and AMIA?
+
+    Emplant is a MacII emulator sold by Utilities Unlimited, Jim Drew CEO.
+    The address I have is
+
+	Utilities Unlimited, Inc.
+	3261 Maricopa #101
+	Lake Havasu City, Arizona 86404
+	(520) 680-9004 Voice
+	(520) 453-6407 FAX
+	(520) 453-3909 BBS
+	(602) 453-9767 Orders
+
+    Mac ROMs, by the way, dump ok as 27C64 devices, creating four files which
+    then must be merged.  This may be accomplished with the Unix binary editor
+    "bed" or an equivalent Amiga binary editor.
+
+25. Where can I get A-MaxII, A-MaxII+ or A-MaxIV?
+
+    Supposedly you can get them through ReadySoft, Inc. in Canada.  Be aware
+    that as of the issue of A-MaxIV, the designers of A-MaxII may not be a
+    part of ReadySoft or the makers of A-MaxIV.  So A-MaxII upgrades may be
+    impossible to acquire via the original source.  This section of the FAQ
+    may need considerable updating itself; send me update information if you
+    have current knowledge, please.  Until such updates are in hand, though:
+    You can reach ReadySoft at (905) 731-4175 from 9-5 Eastern time Monday
+    through Friday, or FAX at (905) 764-8867.  Their mail address is:
+
+	ReadySoft Inc.
+	30 Wertheim Court, Unit 2
+	Richmond Hill, Ontario Canada
+	L4B 1B9
+
+26. Where can I get Shape Shifter?
+
+    As of September 1995 it was:
+
+    ShapeShifter3_5 (at least) at the official ftp-site:
+    131.188.170.4 or server.biologie.uni-erlangen.de/pub/shapeshifter/
+
+    It may also be possible to
+    obtain SS from the Author:
+
+    Christian Bauer, Langenaustr. 65, 56070 Koblenz, Germany
+    EMail: bauec002@goofy.zdv.uni-mainz.de
+
+27. What address can we use for the FAQ maintainer?
+
+    You can yet use email -
+    hull@ucar.edu or hull@ncar.ucar.edu or hull@hao.ucar.edu
+
+    The address is soon to be changed, but until the end of December
+    you can send snailmail to me:
+
+	Howard Hull
+	PO Box 952
+	Nederland, CO 80466
+
+---------- END AMIGA HARDFILE FAQ ----------
+
+ACKNOWLEDGEMENTS:
+
+kanep@mcs.com (Kane Peterson), for response to question number 4 above.
+

@@ -1,0 +1,426 @@
+
+        Hardware Access Using The AmigaBASIC And ARexx Interpreters.
+        ------------------------------------------------------------
+
+                                   Part 6.
+                                   -------
+
+                      Mouse Access Using Standard ARexx.
+                      ----------------------------------
+
+  Overview:-
+  ----------
+
+  The image of the AMIGA mouse is FREE ISSUE:-
+
+               http://creativecommons.org/licenses/by-nc-sa/2.5/ar/
+
+  From:-
+
+                         http://www.solid-state.com.ar/
+
+
+  It is issued under the Creative Commons Licence; many thanks guys...
+  Author(s) unknown but recognised in this AMINET upload.
+
+  RIGHTO, you can't get rid of me that easily... :oD
+
+  (This article should be a follow on for the games port but I decided to
+  make that a continuation for the next article and replace it with this
+  article instead.)
+
+  There is no need to build any hardware for this article as the hardware
+  used is nothing more than the mouse itself... :)
+
+  The explanation of the code below in this article is to show that some
+  mouse 'events', <- NOTE the inverted commas, are possible without the
+  need to know anything BUT the hardware registers that control it.
+
+  Although the registers are NOT discussed in this article, the sister port,
+  (that is the games port), ARE and WILL be. Due to the fact that the mouse
+  is ALWAYS connected for normal usage then the mouse port can ONLY be used
+  in READ mode. There will be NO attempt, neither now nor in the future, to
+  WRITE to this port.
+
+  EFFECTIVELY, pins 1, 2, 3, 4, 6,and 9 of the mouse port are accounted for.
+  There ARE limitations, but even with these limitations the mouse can still
+  be useful as INPUT device for a DEDICATED ARexx program. As a standard
+  AMIGA mouse only has two buttons then there is no code to access what
+  would be pin 5 of the mouse port, but HEY, this is still easily possible.
+
+  (It IS reasonable to assume that as the games and mouse ports are near
+  identical then what is described in this article can be used for the games
+  port also with just changes to the register addresses involved. Therefore
+  it could be said that this IS a contiuation from the previous article. :)
+
+  Now read on... :-)
+
+----------------------------------------------------------------------------
+
+  Minimum Requirements:-
+  ----------------------
+
+  1) WinUAE 1.5.3 with a full STANDARD OS3.0x install... OR...
+  2) Standard AMIGA A1200 complete with a HDD.
+  3) If no HDD is fitted then an extra external FDD IS required.
+  4) OS3.0x full STANDARD install.
+  5) Workbench in standard 4 colours only.
+  6) RexxMast running.
+  7) Although there are probably not any about a Black and White TV... :D
+
+  (Tools required and specifications:- NONE.)
+
+  Everything for this article was developed on a(n) HP Dual Core notebook
+  using MS Windows XP, (TM), running WinUAE 1.5.3 and emulating my A1200,
+  (that is powered up 24/7), and then finally tested on the said A1200.
+
+----------------------------------------------------------------------------
+
+  As ARexx is limited with reference to direct hardware manipulation I
+  decided to use it for pure fun... ;o)
+
+  All I needed were the two mouse buttons to go to two different parts
+  of an ARexx script on the fly WITHOUT the need to type in a character
+  and then press the [RETURN/ENTER] key. I also needed a way to jump, yes
+  JUMP, NOT ~CALL~, to a part of an ARexx script using the keyboard in
+  something akin to the AmigaBASICs ~INKEY$~ function.
+
+  Both are easily possible as shown in the code in this article.
+
+  I'm not going to explain the hardware registers as normally the mouse is
+  out of bounds and is also normally useless in the STANDARD AMIGA ARexx
+  installation, without the use of special third party libraries.
+  The hardware registers used are in HEXADECIMAL inside the ARexx code and
+  you will have to do any hexadecimal to decimal conversions for yourselves.
+
+  Right, now a description of how the code works.
+
+  On program startup two break keys are assigned ~Ctrl C~ and ~Ctrl D~.
+  Both are used in SIGNAL ON BREAK_? mode where ? is C, D, E and/or F.
+  These are normally one time events, but with a little bit of common
+  sense and ingenuity they can be used like AmigaBASICs ~INKEY$~ function.
+
+  SIGNAL ON BREAK_C
+  -----------------
+  When ~Ctrl~ and ~C~ are pressed simultaneously the program will stop in
+  a normal fashion. It not only uses its one time event up but IMMEDIATELY
+  goes to the ~Break_C:~ clean exit label in the program.
+
+  SIGANL ON BREAK_D
+  -----------------
+  This is a 'different animal' completely.
+
+  NOTICE WHERE THE ~Break_D:~ LABEL IS!!!
+
+  Now, when ~Ctrl~ and ~D~ are pressed simultaneously the program will JUMP
+  to the point where the ~Break_D:~ label is and use up its ONE time event.
+  However this event is SET again by re-calling ~SIGNAL ON BREAK_D~ again
+  to await another similar event. This is NON STANDARD practice so be very
+  aware of what you are doing before using this idea.
+
+  The program displays a couple of lines of text then continues into a
+  continuous loop. Then a line comes up reading the hardware mouse counters
+  in real time. Although the values are of little use, the mouse movement
+  itself, (in either or both the horizontal and vertical axes), can be used
+  as yet another means of ~CALL~ing a subroutine.
+  Also the mouse buttons are checked to see if they are depressed or not.
+  When either are depressed the code immediately ~CALL~s a subroutine to
+  notify you of which one is pressed.
+
+  There is a simple delay of around 1 second so as to see these events
+  happening. This uses the standard ARexx calling proceedure to call
+  external executables, in this case the ~Wait~ command in the ~C:~
+  VOLUME as shown in the line below...
+
+  ADDRESS COMMAND 'C:Wait 1'
+
+  That's all there is to it... :D
+
+  A snapshot of the ARexx code, showing the real time mouse counter
+  readings, using a standard classic AMIGA A1200 CLI/Shell and running
+  the ARexx code inside that Shell/CLI...
+
+  Enjoy finding simple solutions to often very difficult problems...
+
+  Both the ARexx AND AmigaBASIC code can be made much simpler but I decided
+  to code both in such a way the youngsters can understand what is going on. 
+
+  Both are issued as Public Domain as of this release...
+
+----------------------------------------------------------------------------
+
+  ARexx Code Mouse-Control.rexx:-
+  -------------------------------
+
+/* HW mouse access using standard ARexx for the HW ACCESS series. */
+/* Original idea copyright, (C)2009, B.Walker, G0LCU. */
+/* Left and right mouse buttons and instant keyboard control. */
+/* Horizontal and vertical mouse counters displayed in real time. */
+/* Use ECHO for ordinary printing to the screen and SAY to print */
+/* lines with any variables inside. */
+
+/* This code was developed on WinUAE Version 1.5.3... */
+
+/* Use SIGNAL ON BREAK_? for instant keyboard access... ;) */
+/* Using SIGNAL ON BREAK_C to quit this program... */
+SIGNAL ON BREAK_C
+
+/* Using SIGNAL ON BREAK_D to do an internal program jump. */
+/* Similarly for SIGNAL ON BREAK_E and SIGNAL ON BREAK_F. */
+/* IMPORTANT NOTE:- SIGNAL ON BREAK_D calls _SELF_ to set itself */
+/* again after pressing the Ctrl and D keys simultaneously. */
+Break_D:
+SIGNAL ON BREAK_D
+
+/* Set up any variables... */
+mousebutton = 0
+horizontalcounter = 0
+verticalcounter = 0
+copyright = '  $VER: Mouse-Control.rexx_Version_00-00-10_Public_Domain_2009_G0LCU.'
+
+/* Set the mouse counters to zero, 0. */
+EXPORT('00DFF036'x, '0000'x, 2)
+
+/* Start with a simple startup screen. */
+ECHO 'c'x
+SAY copyright
+ECHO ''
+ECHO '  Press ~Ctrl D~ to restart.'
+ECHO ''
+ECHO '  Press ~Ctrl C~ to quit.'
+ECHO ''
+ECHO '  Entering mouse controlled loop...'
+
+/* Call the 1 second time delay for demo purposes... */
+CALL timedelay
+
+/* A test loop for checking mouse buttons. */
+DO FOREVER
+/* Click left mouse button to show. */
+  mousebutton = IMPORT('00BFE001'x,1)
+  IF BITTST(mousebutton,6) = 0 THEN CALL lmb
+/* Click right mouse button to show. */
+  mousebutton = IMPORT('00DFF016'x,1)
+  IF BITTST(mousebutton,2) = 0 THEN CALL rmb
+/* Fetch the mouse counter values in real time... */
+  verticalcounter = IMPORT('00DFF00A'x, 1)
+  horizontalcounter = IMPORT('00DFF00B'x, 1)
+/* Print the counter values in real time to the screen... */
+  ECHO 'b'x'b'x
+  SAY '  Horizontal counter '||C2D(horizontalcounter)||'. Vertical counter '||C2D(verticalcounter)||'.    '
+END
+
+/* Print left mouse button access to the screen... */
+lmb:
+ECHO 'c'x
+SAY copyright
+ECHO ''
+ECHO '  Press ~Ctrl D~ to restart.'
+ECHO ''
+ECHO '  Press ~Ctrl C~ to quit.'
+ECHO ''
+ECHO '  Left mouse button pressed.'
+CALL timedelay
+RETURN
+
+/* Print right mouse button access to the screen... */ 
+rmb:
+ECHO 'c'x
+SAY copyright
+ECHO ''
+ECHO '  Press ~Ctrl D~ to restart.'
+ECHO ''
+ECHO '  Press ~Ctrl C~ to quit.'
+ECHO ''
+ECHO '  Right mouse button pressed.'
+CALL timedelay
+RETURN
+
+/* Add a simple 1 second time delay as a subroutine. */
+timedelay:
+ADDRESS COMMAND 'C:Wait 1'
+RETURN
+
+/* Use another instant keyboard access to quit... :) */
+Break_C:
+ECHO 'c'x
+SAY copyright
+ECHO ''
+ECHO '  Ctrl C pressed and quitting...'
+EXIT(0)
+/* Program end. */
+
+----------------------------------------------------------------------------
+
+  As Ctrl-C and Ctrl-D are not normally available in AmigaBASIC I decided to
+  use Alt-C and Alt-D instead. As the INKEY$ function operates on nearly all
+  of the AMIGAs keys then these two keysets could have been anything...
+
+  AmigaBASIC Code Mouse-Control.bas:-
+  -----------------------------------
+
+REM HW mouse access using standard AmigaBASIC for the HW ACCESS series.
+REM Original idea copyright, (C)2009, B.Walker, G0LCU.
+REM Left and right mouse buttons and instant keyboard control.
+REM Horizontal and vertical mouse counters displayed in real time.
+
+REM This code WILL compile under ACE Basic Compiler, (C)David Benn.
+
+REM This code was developed on WinUAE Version 1.5.3...
+
+REM Set up a standard window.
+WINDOW 2,"Mouse Control Test Window...",(0,0)-(580,100),6
+
+REM Set up any variables...
+start:
+LET n = 0
+LET mousebutton = 0
+LET horizontalcounter = 0
+LET verticalcounter = 0
+LET a$ = "(C)2009, B.Walker, G0LCU."
+LET copyright$ = "  $VER: Mouse-Control.bas_Version_00-00-10_Public_Domain_2009_G0LCU."
+
+REM Set the mouse counters to zero, 0.
+POKEW 14676022&,0
+
+REM Start with a simple startup screen.
+CLS
+PRINT
+PRINT copyright$
+PRINT
+PRINT "  Press ~Alt D~ to restart."
+PRINT
+PRINT "  Press ~Alt C~ to quit."
+PRINT
+PRINT "  Entering mouse controlled loop..."
+
+REM Call the 1 second time delay for demo purposes...
+GOSUB timedelay
+
+REM A test loop for checking mouse buttons.
+mainloop:
+REM Click left mouse button to show.
+LET mousebutton = PEEK(12574721&)
+IF mousebutton >= 128 THEN LET mousebutton = mousebutton - 128
+IF mousebutton <= 63 THEN GOSUB lmb
+REM Click right mouse button to show.
+LET mousebutton = PEEK(14675990&)
+IF mousebutton >= 128 THEN LET mousebutton = mousebutton - 128
+IF mousebutton >= 64 THEN LET mousebutton = mousebutton - 64
+IF mousebutton >= 32 THEN LET mousebutton = mousebutton - 32
+IF mousebutton >= 16 THEN LET mousebutton = mousebutton - 16
+IF mousebutton >= 8 THEN LET mousebutton = mousebutton - 8
+if mousebutton <= 3 THEN GOSUB rmb
+REM Fetch the mouse counter values in real time...
+LET verticalcounter = PEEK(14675978&)
+LET horizontalcounter = PEEK(14675979&)
+REM Print the counter values in real time to the screen...
+LOCATE 8,1
+PRINT "  Horizontal counter";horizontalcounter;CHR$(8);". Vertical counter";verticalcounter;CHR$(8);".    "
+LET a$ = INKEY$
+IF a$ = "ç" THEN GOTO getout
+IF a$ = "ð" THEN GOTO start
+GOTO mainloop
+
+REM Print left mouse button access to the screen...
+lmb:
+CLS
+PRINT
+PRINT copyright$
+PRINT
+PRINT "  Press ~Alt D~ to restart."
+PRINT
+PRINT "  Press ~Alt C~ to quit."
+PRINT
+PRINT "  Left mouse button pressed."
+GOSUB timedelay
+RETURN
+
+REM Print right mouse button access to the screen...
+rmb:
+CLS
+PRINT
+PRINT copyright$
+PRINT
+PRINT "  Press ~Alt D~ to restart."
+PRINT
+PRINT "  Press ~Alt C~ to quit."
+PRINT
+PRINT "  Right mouse button pressed."
+GOSUB timedelay
+RETURN
+
+REM Add a simple time delay as a subroutine.
+REM Change this value to suit the machine in question...
+timedelay:
+FOR n = 1 to 1000000
+NEXT n
+RETURN
+
+REM Use another instant keyboard access to quit... :)
+getout:
+CLS
+PRINT
+PRINT copyright$
+PRINT
+PRINT "  ~Alt C~ pressed and quitting..."
+WINDOW CLOSE 2
+END
+REM Program end.
+
+----------------------------------------------------------------------------
+
+  That's all there is to it. Simple mouse input is now available for both
+  ARexx, (and AmigaBASIC), to allow some realtime program control...
+
+  The next part will access Pin 9, (and/or 5), of the Games Port in DIGITAL,
+  the DEFAULT, read mode. ANALOGUE read mode will follow at a later date.
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Public Domain and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200(HD) in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. Also tested on WinUAE in my A1200
+    compatibility mode. All test conditions are running STANDARD OS3.0x
+    using standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~docs/hard~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

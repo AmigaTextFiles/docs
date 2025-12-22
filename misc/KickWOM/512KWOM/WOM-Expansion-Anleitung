@@ -1,0 +1,514 @@
+
+/*************************************************************************/
+/*                                                                       */
+/*                 WOM-Expansion für Amiga 1000                          */
+/*                (512KByte Kickstarts im A1000)                         */
+/*                                                                       */
+/*                Eine Bauanleitung von Jörg Huth                        */
+/*                                                                       */
+/*************************************************************************/
+
+
+Mit der Entwicklung der Kickstart2.0 und dem Aufkommen von
+Kickstart-Umschaltplatinen für den A500/A2000 fragt sich natürlich auch der
+A1000 Besitzer, wie er in den Genuß von Kick 2.0 kommen könnte. Zwar gibt
+es Software-Lösungen (kickit u.ä), doch daß dies sicher nicht der Weisheit
+letzter Schluß ist, bekommt der User, wenn nicht schon bei einem Reset, 
+spätestens nach einem etwas härtern Absturz zu spüren.
+
+Aber auch die Eprom- bzw. Rom-Lösungen haben ihre Nachteile. Kommt ein
+neues Kickstart-Release, so muß man die Eproms komplett löschen und neu
+programmieren. Die Roms bleiben davon verschont, die kann man nämlich
+gleich wegwerfen. Hat man dann aber Eproms und diese auch glücklich neu
+programmiert, kann sich natürlich herausstellen, daß das neue Release
+vielleicht doch nicht so empfehlenswert ist, weil das teuer gekaufte
+CAD-Programm oder die Software für die Platte nicht mehr so richtig will.
+
+Bisher stand der 1000'er User über diesen Dingen. Er konnte nach
+Herzenslust alle möglichen Kickstartversionen fahren und sich bei Bedarf
+auch seine ganz persönliche Kick zusammenpatchen. Ging der Patch in die
+Hose: Macht nichts; Diskmon rein und nochmal probieren.
+
+Und genau so sollte es auch mit der Kick 2.0 gehen. Doch leider ist das WOM
+des A1000 nur 256KByte groß, Kick 2.0 aber 512KByte lang.
+
+Egal! Für unter 70 Märker läßt sich der A1000 so umrüsten, daß nach dem
+Einschalten neben normalen 256KByte Kicks (also 1.0-1.3) auch eine 512KByte
+lange Kickstart-Diskette eingeschoben wird. Der Amiga verhält sich dabei
+ganz genau wie sonst, nur daß die Kickstart jetzt eben evtl. doppelt so
+lang ist ($f80000-$ffffff anstatt $fc0000-$ffffff).
+
+
+Was man alles braucht:
+----------------------
+
+ 1) 8 Stück: Speicherchips 41464 (120ns)
+ 2) 2 Stück: Eproms 27C256 (120ns)
+            (Ersetzen die alten BootRoms im A1000)
+ 3) 1 Stück: 74LS32
+ 4) 1 Stück: 74LS74
+ 5) 1 Stück: 74F86
+ 6) 2 Stück: 74F138
+ 7) 8 Stück: Widerstände 39 Ohm (1/4 Watt)
+ 8) 1 Stück: Widerstand 1 kOhm (1/4 Watt)
+ 9) 1 Stück: Leuchtdiode (3mm, gelb - die Farbe betrachte man als befohlen!)
+10) 1 Stück: Schalter (1*UM)
+11) 5 Stück: Abblockkondensatoren (0.1 MyFarad, keramisch)
+12) 1 Stück: Elko 47 MyFarad / 16 Volt
+13) Sockel für die 74'er nach Bedarf, ein Stück Lochrasterplatine, etwas
+    Schaltlitze
+14) Software (Inhalt für die Eproms) der neuen BootRoms
+
+
+Die Funktionsweise:
+------------------- 
+
+Das WOM des A1000 liegt im Adressbereich von $fc0000 bis $ffffff. Kick 2.0
+liegt aber im Bereich von $f80000 bis $ffffff (dies ist übrigens auch im
+A3000 so). Es fehlt also der Bereich von $f80000 bis $fbffff (genau
+256KByte). Sieht man sich mittels eines Monitors an, was normal in diesem
+Bereich liegt, so findet man eine Kopie des Bereichs von $fc0000-$ffffff.
+Dies ist eigentlich nicht verwunderlich, im Schaltplan des
+A1000 erkennt man, daß zur Auskodierung der WOM-Adresse nur A17, nicht
+aber A18 benutzt wird. Wenn man nun auf die schon vorhandenen WOM-RAMs (8
+Speicherchips (U2J-U1M auf dem Mainboard) von Typ 41464) nochmals 8 Chips
+- im Huckepackverfahren - vom gleichen Typ auflötet, die Chip-Select Leitungen
+der neuen Chips jedoch abbiegt (also nicht mit den Beinchen der alten Chips
+verlötet) und das ganze so ansteuert, daß jetzt auch A18 auskodiert wird,
+so hat man einen durchgängigen WOM-Bereich von $f80000 bis $ffffff.
+
+Doch leider stehen dem einige Probleme entgegen, auf die ich im folgenden
+eingehen will:
+
+Zunächst zur Adressdekodierung, die nun auch mittels A18 erfolgen soll. Im
+A1000 wird das WOM über einen F139 auskodiert (2 Stück: 2 zu 4 Dekodierer).
+Dieser hat zur Auskodierung von A18 aber keine Eingänge mehr frei. Deshalb
+verwendet meine Schaltung zwei 74F138 (3 zu 8 Dekodierer). Der F139 auf dem
+Motherboard muß nun aber freilich stillgelegt werden. Dies geht am
+einfachsten, indem die vier 39 Ohm-Widerstände (R112-R119) abgeknipst
+werden.
+
+Damit ist der untere Teil der Schaltung beschrieben. Doch wofür ist nun der
+obere Teil? Dazu zunächst einige Erläuterungen, was im A1000 nach dem RESET
+passiert:
+
+Nach einem RESET schaut der 68000 in Adresse 4 nach, wohin er springen
+soll. Da ab Adresse 0 in der Regel aber RAM liegt und nach dem Einschalten
+des Rechners hier keine vernünftigen Werte erwartet werden können, blendet
+der Amiga ab Adresse 0 seine BootRoms ein, die normalerweise ab
+Adresse $f80000 liegen (hoppla, hier liegt doch auch der neue WOM-Speicher
+!!! Doch dazu später mehr). Zum Einblenden der BootRoms nach Adresse 0 ist
+eine I/O-Leitung eines 8520 zuständig (CIAA PRA Bit 0). Nach einem RESET
+wird diese Leitung auf High gesetzt und dies bewirkt die Einblendung des
+BootRoms. Über den Zeiger in Adresse 4 wird dann sofort in die
+Originaladresse der BootRoms gesprungen und dort wird dann das
+OVL-Bit auf Null gesetzt, womit die Einblendung verschwindet und alles
+wieder beim alten ist.
+
+Nach einigen Testroutinen überprüft das BootRom nun die Checksum des
+WOM-Bereichs. Ist die Checksum (muß $ffffffff sein) in Ordnung, so gehen die
+BootRoms davon aus, daß schon eine Kickstart geladen wurde. Daraufhin wird
+der Schreibschutz-Mechanismus für das WOM aktiviert und die Kickstart
+gestartet. Ist die Checksum nicht in Ordnung, so wird über DF0: eine
+Kickstart eingelesen, anschließend dann der Schreibschutz-Mechanismus
+aktiviert und die geladene Kickstart gestartet.
+
+Und genau bei der Schreibschutz-Aktivierung liegt der Knackpunkt:
+Ausgelöst wird er durch einen beliebigen Schreibzugriff auf den Bereich
+$f80000-$fbffff. Doch wie soll man dann den neuen WOM-Bereich überhaupt mit
+der Kickstart beschreiben, wenn doch der erste Schreibzugriff den Bereich
+sofort gegen weiter Schreibzugriffe sperrt? Ein anderes Argument kommt noch
+hinzu:
+
+In dem neuen Bereich von $f80000-$fbffff liegen doch auch die Boot-Roms.
+Wie soll man also überhaupt darauf zugreifen?
+
+Die Lösung ist eigentlich relativ einfach: Zunächst einmal werden mit der
+Schreibschutz-Aktivierung des WOMs auch die BootRoms abgeschaltet. D.h. der
+Adressbereich von $f80000-$fbffff steht wieder zu Verfügung (im Normalbetrieb
+des A1000 befindet sich hier ja der gespiegelte WOM-Bereich $fc0000-$ffffff).
+
+Das die BootRoms durch neue ersetzt werden müssen, dürfte mittlerweile
+schon klar geworden sein, schließlich müssen ja 512KByte von Disk eingelesen
+werden und auch die Checksumme ist über einen größeren Bereich zu
+ermitteln. Außerdem müssen die neuen BootRoms wahlweise mit 512KByte Kicks
+oder 256KByte Kicks umgehen. Um von den BootRoms aus jetzt auf den neuen
+WOM-Bereich zugreifen zu können, verwendet meine Schaltung eine kleine
+Logik, mit der die Adressbereiche von $f80000-$fbffff und $fc0000-$ffffff
+miteinander vertauscht werden können. D.h. der Bereich ab $f80000 läßt sich
+nach Vertauschung über den Adressbereich ab $fc0000 ansprechen. Soll auf
+den Originalbereich ab $fc0000 zugegriffen werden, so muß die Vertauschung
+eben wieder rückgängig gemacht werden.
+
+Die Vertauschung an sich ist relativ einfach. Man muß nur die Adresse A18
+entweder invertieren oder normal zu den Dekodern F138
+durchschalten. Zur Steuerung der Vertauschung habe ich eine I/O-Leitung
+verwendet, die eigentlich zur Steuerung der Power-LED vorgesehen ist.
+Natürlich bleibt die LED weiter angeschlossen (wollte ich vorsichtshalber
+noch einmal erwähnen). Jetzt muß eigentlich nur noch sichergestellt
+werden, daß die Vertauschung nach dem Abschalten des BootRoms nicht mehr 
+funktioniert, sonst würde jedes Programm, das die LED umschaltet, den
+Rechner zu Absturz bringen, weil es die Adressbereiche $f80000 und $fc0000
+vertauschen würde.
+
+Zu diesem Zweck dient das D-Latch 74LS74. Nach einem RESET führt der
+Ausgang (Q) einen Low-Pegel. Damit kann das LED-Bit von CIAA den Ausgang
+des Oder-Gatters (74LS32) bestimmen. Ist der Ausgang High, so wird im XOR
+(74F86) die Adress-Leitung A18 invertiert. Bei einem Low am LED-Bit dagegen
+wird A18 unverändert durchgeschaltet. Kurz bevor sich die BootRoms
+abschalten, erzeugen sie am OVL-Bit (CIAA PRA Bit 0) nochmals eine 0-1-0
+Flanke, wodurch das D-Latch LS74 ihren Ausgang bis zum nächsten RESET auf
+High schaltet. Damit ist eine Umschaltung der Adressbereiche über den
+LED-Pin nicht mehr möglich.
+Genau genommen wird jetzt A18 über das XOR-Gatter ständig invertiert. Die
+RAMs sind jedoch so an den Dekodern (F138) angeschlossen, daß dies gerade
+wieder aufgehoben wird. Mit den neuen BootRoms ist die Schaltung also
+vollkommen zum alten A1000 kompatibel. Nur der Adressbereich von $fc0000
+bis $ffffff ist nicht mehr gespiegelt, sondern ab $f80000 liegt nun evtl.
+(256KByte Kick geladen) uninitialisierter Speicher. Aber dies sollte kein
+Programm stören, und trotz Murphy ist mir bisher auch kein solches Programm
+bekannt.
+
+Probleme treten nur auf, wenn die Schaltung in Verbindung mit den originalen
+BootRoms verwendet wird, da diese das D-Latch nicht aktivieren. Somit würde
+jeder Zugriff auf die LED-I/O-Leitung das System zum Absturz bringen.
+Vorsorglich läßt sich dies über den Umschalter aber unterbinden. Steht der
+Schalter in Stellung 'Original', so sind die Adressbereiche nicht
+umschaltbar, und es können die alten BootRoms verwendet werden. 
+
+Da die neuen BootRoms die alten aber vollständig ersetzen, ist der Schalter
+eigentlich unnötig. Er ist höchstes sinnvoll, wenn man die Eproms mit dem
+eigenen Rechner mal umprogrammieren (oder auslesen) will, da man dann in
+den Rechner die alten BootRoms wieder einsetzen muß (die Eproms stecken ja
+jetzt im Epromer).
+
+
+Die neuen BootRoms:
+------------------- 
+
+Ich habe die BootRoms (U5N und U5S) durch zwei Eproms vom Typ 27C256 (120ns)
+ersetzt. Ob die Eproms auch langsamer als 120ns sein können, habe ich nicht
+ausprobiert. Mit 120ns Eproms ist man aber auf der sicheren Seite. Die
+Pinbelegung der 27C256 stimmt mit denen der BootRoms überein, sodaß sie
+einfach in die Sockel der BootRoms gesteckt werden können. Dabei muß aber
+der Pin 1 der Eproms abgebogen werden. Auf dem Sockel liegen hier +5 Volt
+an. Die Eproms erwarten hier ihre Programmierspannung, die im
+Normalbetrieb aber auf keinem Potential liegen sollte (Pin 1 der Eproms
+also abbiegen und in der Luft hängen lassen).
+
+Die neuen BootRoms funktionieren auch, wenn die Schaltung überhaupt nicht
+vorhanden, oder über den Schalter ausgeschaltet ist. Die BootRoms weisen
+dann aber 512KByte Kickstart-Disketten mit dem Hinweis ab, daß mit dem
+Speicherbereich ab $f80000-$fbffff etwas nicht in Ordnung ist. 256KByte
+Kickstarts werden akzeptiert wie eh und je.
+
+Allerdings kann man die Kickstart-Diskette jetzt auch in DF1: oder DF2:
+stecken. Das Schreckgespenst: 'DF0 ist defekt und der Rechner läßt sich
+nicht mehr hochfahren, um zu testen, was mit dem Laufwerk los ist' hat
+somit ein Ende. 
+
+Die BootRoms testen zunächst, ob ein 512KByte Kick geladen ist (anhand der
+Checksumme und des Codes $11144ef9 an Adresse $f80000). Ist dies der Fall
+so wird die Kick direkt gestartet. Ist dies nicht der Fall, so wird auf
+eine 256KByte Kick geprüft (wieder anhand der Checksumme und des Codes
+$11114ef9 ab $fc0000). Ist auch dies erfolglos, so wird der User
+aufgefordert, eine Kickstart-Diskette einzulegen (DF0-DF2).
+
+
+Die Kickstart-Disketten:
+------------------------  
+
+Die neuen BootRoms unterstützen zwei verschiedene Formate von
+Kickstart-Disketten:
+
+1) Die normale 256KByte Kickstart-Diskette (d.h. 1.0-1.3)
+   In Block 0 steht zur Kennzeichnung der String 'KICK'.
+   Die Blöcke 1 bis 512 enthalten die Kickstart.
+   Dabei wird die Kickstart in den Bereich $fc0000-$ffffff geschrieben.
+   Als Kennzeichen steht bei $fc0000 der Code $11114ef9.
+   Die Checksumme beträgt $ffffffff.
+
+2) Die neue 512KByte Kickstart-Diskette (d.h. z.B. 2.0)
+   In Block 0 steht zur Kennzeichnung der String 'f8-KICK'
+   Die Blöcke 1 bis 1024 enthalten die Kickstart.
+   Die Kickstart wird dann in den Bereich $f80000-$ffffff geschrieben.
+   Als Kennzeichnung steht bei $f80000 der Code $11144ef9 (bei 2.0
+   automatisch der Fall) 
+   Die Checksumme muß auch hier $ffffffff betragen! Da dies normalerweise
+   nicht geprüft wird, kann es passieren, daß die Checksumme nicht stimmt.
+   Trotzdem wird die Kickstart z.B. in einem A2000 funktioniern (in Eproms
+   mit Umschalt-Platine). Evtl. muß die Checksum angepasst werden. Sonst
+   erkennt der A1000 die Kickstart nach einem RESET nicht mehr und fordert
+   zum Einlegen einer Kickstart-Diskette auf!
+   
+   Zum Erstellen einer 512KByte Kickstart-Diskette gibt's nachher noch ein
+   paar Tips. (Auf Kickstart 2.0 liegt ein Copyright von Commodore. Deshalb
+   darf es nicht einfach kopiert werden. Ich darf also keine
+   Kickstart-Diskette mit Kick 2.0 anbieten.) 
+
+  
+Der Aufbau:
+-----------
+
+Die üblichen Hinweise, daß die Schaltung nur von jemandem aufgebaut werden
+sollte, der auch weiß, an welcher Seite der Lötkolben heiß wird, spare ich
+mir hier. Zum Aufbau ist es sicher nicht erforderlich die Funktionsweise
+der Schaltung bis aufs letzte verstanden zu haben. Sie sollten aber selbst
+abschätzen, ob Sie sich an den Zusammenbau der Schaltung wagen können.
+
+Auch der Hinweis auf einen Garantie-Verlust bei Öffnung des Rechners 
+entfällt, da es wohl kaum noch einen A1000 mit Garantie geben dürfte.
+
+Vom A1000 gibt es zwei unterschiedliche Versionen. Bei der älteren ist das 
+WOM noch nicht in die Hauptplatine integriert, sondern sitzt auf einer 
+Backplane-Platine (Piggy-Board).
+Der Autor dieser Bauanleitung besitzt die neuere Version des A1000.
+Deshalb beziehen sich die IC-Angaben, sowohl im
+Schaltplan, wie in dieser Anleitung auf die Hauptplatine des 1000'er mit
+integriertem WOM. Die Referenzliste am Ende dieses Artikels soll den Lesern mit
+Piggy-Board das Finden der einzelnen IC's erleichtern.
+
+Als erstes sollten Sie die Eproms programmieren. Dazu verwenden Sie die
+beiden Files BootRom_2.0.LByte und BootRom_2.0.UByte und programmieren die
+Eproms ab Adresse 0. Die Files füllen die Eproms übrigens nicht aus. Das 
+LByte-Eprom stecken Sie dann in den Sockel U5S (odd). Das UByte-Eprom in den
+Sockel U5N (even). Dabei müssen Sie jedesmal den Pin 1 der Eproms abbiegen
+und nicht mit in den Sockel stecken, also in der Luft hängen lassen.
+
+Wenn bis hierher alles gut gegangen ist, so muß der Recher gang normal
+hochfahren. Insbesondere muß die Power-LED sofort anfangen zu blinken.
+Funktioniert der Rechern nicht mehr, so sind die Eproms defekt, falsch
+programmiert oder stecken falsch im Sockel.
+
+Funktioniert alles, so können Sie weitermachen. Natürlich vorher wieder den
+Netzstecker ziehen, den Monitor abklemmen, sämtliche Erweiterungen abziehen
+usw.
+
+Nun kommt der etwas härtere Teil. Bauen Sie jetzt die Schaltung nach dem
+Schaltplan auf. Ich empfehle dazu die Verwendung von einem Stück
+Lochrasterplatine. Dies geht bei den paar Chips sicherlich am 
+schnellsten. Wenn die Schaltung fertig ist, können Sie sie anlöten. Dabei
+die Versorgungsspannung (+5V und Masse) nicht vergessen. Achten Sie
+weiterhin darauf, die richtigen Signale zu verwenden. Sie benötigen z.B. 
+/UCEN und nicht UCEN (Der / steht für ein invertiertes Signal). Weiter
+braucht die Schaltung /LCEN und nicht LCEN, C1 anstatt /C1. Achten Sie auch 
+darauf, die Prozessoradresse A18 und nicht etwa MA18 zu verwenden, welche 
+man auf dem Motherboard vermutlich schneller findet. 
+
+Haben Sie auch dies erledigt, so können Sie den Rechner wieder testen. Er
+sollte sich verhalten wie früher. Stimmt etwas nicht, so sollten Sie
+nochmals kontrollieren, ob Sie die richtigen Leitungen angeschlossen haben.
+Auch die Verdrahtung der Schaltung an sich kann nochmals kontrolliert
+werden. Steht der Schalter in Stellung Original, so muß die neue LED 
+ständig aus sein. In Stellung 'Neu' sollte die LED während des Bootens immer
+dann leuchten, wenn auch die Power-LED leuchtet. Nach dem Booten (Kickstart
+ist dann geladen) hat die LED wieder ständig aus zu sein, egal ob die
+Power-LED an oder aus ist. Bei jedem RESET muß die LED aber mit der
+Power-LED synchron blinken (ist ja Bootvorgang).
+
+Nun können Sie die Widerstände R119-R122 durchknipsen und damit den F139 
+außer Betrieb setzen. Sie brauchen natürlich nur einen Anschluß zu durch-
+trennen. Wählen Sie dabei den Anschluß, der mit dem Pin 16 der RAMs verbunden
+ist. Die Widerstände bleiben somit an dem F139 und nicht an den RAMs hängen.
+Zur Not können die Widerstände dann wieder relativ einfach angelötet werden.
+
+Löten Sie nun die Ausgänge der vier 39 Ohm Widerstände, die sich auf der
+Schaltung befinden und mit 'Original' bezeichnet sind, an die RAMs. Dabei 
+können Sie sinnvollerweise die abgeschnittenen Enden der Widerstände auf
+dem Motherboard verwenden. Jetzt kann wieder ein Test erfolgen. Der Amiga
+muß ganz normal hochfahren. Wenn Sie einen Monitor zur Hand haben, können
+Sie ja mal nachsehen, ob der Speicherbereich $fc0000-$ffffff ab $f80000
+noch gespiegelt ist. Er darf es nicht mehr sein! Steht ab $f80000
+ziemlicher Mist (eben ein nicht belegter Speicherbereich), so ist alles 
+in Ordnung.
+
+Bereiten Sie nun die RAM-Chips zum Auflöten auf die Chips U2J-U1M des
+Motherboards vor: Die Pins leicht zusammendrücken, jeweils Pin 16
+abbiegen und diesen zur Hälfe abschneiden (da die RAMs nachher sehr nahe
+beieinander stehen und der abgebogene Pin sonst im Wege sein würde).
+
+Beim Auflöten der Chips gehen Sie bitte äußerst sorgfältig vor. Auf der
+einen Seite sollte das Zinn schon ordentlich fließen - nicht damit sparen,
+sonst erhält man später schwierig zu lokalisierende Fehler, weil die RAMs dann
+evtl. keinen guten Kontakt haben. Auf der anderen Seite dürfen aber auch
+keine Kurzschlüsse zwischen den IC-Pins entstehen. Außerdem dürfen die RAMs
+auch nicht zu stark erwärmt werden, sonst werden sie zerstört. Fazit:
+Arbeiten Sie sorgfältig, nehmen Sie sich Zeit, um die RAMs immer wieder 
+abkühlen zu lassen und halten Sie Entlötlitze bereit, falls doch einmal ein
+Kurzschluß entstehen sollte. Kontrollieren Sie alle Lötstellen peinlich
+genau, und untersuchen Sie die Pins auf Kurzschlüsse. Danach können Sie auch
+die abgebogenen Pins mit den entsprechenden Widerständen der Schaltung
+verbinden. Vertauschen Sie die Verbindungen dabei nicht!  
+
+So, jetzt ist der Umbau eigentlich beendet. Bootet der Amiga nach diesem
+letzten Schritt nicht mehr, so ist davon auszugehen, daß doch irgendwo
+zwischen den RAM-Bausteinen ein Kurzschluß entstanden ist. Oder Sie haben
+die RAMs zerbraten!
+
+Steht der Schalter in Stellung 'Neu', so muß die Zeit zwischen dem Blinken
+der Power-LED nach dem Einschalten und dem Anlaufen der Laufwerke deutlich
+länger sein sollte als vorher, da jetzt doppelt soviel WOM-Speicher
+getestet werden muß. Nach der Hälfe der Zeit müssen beide LEDs (Power-LED
+und die neue) eingeschaltet werden. Geschieht all dies, so können Sie sich
+schon mal beruhigt gratulieren.
+
+
+Erstellen der neuen Kickstart-Diskette:
+---------------------------------------
+
+Um Kickstart 2.0 auf ihrem A1000 fahren zu können, brauchen Sie jetzt
+nur noch eine Kickstart-Diskette im neuen Format. Prinzipiell ist dies kein
+Problem. Auf Block 0 muß der Text 'f8-KICK' stehen. In den Blocks 1 bis
+einschließlich 1024 folgen dann die eigentlichen Kickstart-Daten, die 
+später ab Adresse $f80000-$ffffff abgelegt werden. Dabei wird auf Adresse
+$f80000 der Code $11144ef9 erwartet. Dies ist die, von Commodore festgelegte,
+Kennung für 512KByte Kickstarts. (D.h. in 2.0 ist dies automatisch der
+Fall). Außerdem muß die Checksumme über den gesamten Bereich den Wert
+$ffffffff (entspricht -1) haben.
+
+Da auf der Kickstart 2.0 natürlich ein Copyright von Commodore liegt und
+zumindest im Moment auch nur mit den 3000'ern ausgeliefert wird, darf ich
+leider keine fertige Kickstart-Diskette für 2.0 zur Verfügung stellen. Sie
+brauchen also ein Kick 2.0, welches im Bereich ab $f80000 liegt und z.B.
+auf einem 2000'er oder 500'er läuft. Da es mittlerweile für die 2000'er und
+500'er Kickstart-Umschaltplatinen gibt, die für 2.0 geeignet sind und somit
+auf vielen 2000'er und 500'er schon Kick 2.0 installiert ist, sollte dies
+aber kein unüberwindliches Problem sein. Sie brauchen auf einem solchen
+Rechner nur den Bereich von $f80000 - $fffffff auszulesen und
+abzuspeichern. Diese File hat dann eine Länge von genau 524288 Bytes. Mit
+einem entsprechenden Tool können sie das File auf die Blöcke 1 bis
+1024 einer Diskette schreiben.
+
+Damit die BootRoms nach einem RESET feststellen können, ob die Kickstart
+noch in Ordnung bzw. schon geladen ist, muß die Checksume den Wert
+$ffffffff haben. Stimmt dieser Wert nicht, so funktioniert zwar alles, da
+die Checksumme nach dem Einlesen einer Kickstart-Diskette nicht geprüft
+wird, aber nur bis zum nächsten RESET. Dann meckern die BootRoms nämlich die
+falsche Checksumme an und fordern zum Einlegen einer Kickstart-Diskette auf.   
+
+Dieser Hinweis ist besonders wichtig, da die Checksumme beim 2000'er oder
+500'er nicht geprüft wird und deshalb meist auch nicht stimmt. Was sollte
+das System beim Feststellen einer falschen Checksumme in den ROMs (bzw.
+Eproms) auch machen? 
+
+Erstellen Sie aber ruhig zunächst eine Kickstart-Diskette mit evtl.
+falscher Checksumme. Mit dieser Anleitung stelle ich ein kleines Utilities 
+zur Verfügung, mit dem Sie die Checksumme der Kickstart automatisch anpassen
+können. Dieses Utilities schreibt dann auch den Wert 'f8-KICK' auf Block 0.
+
+Außerdem müssen die RESET-Routinen des Kick 2.0 auf den A1000 angepasst
+werden, sonst startet der Amiga nach einem Guru nicht mehr selbststaendig,
+sondern es müßte mit dem Klammergriff nachgeholfen werden. Das Utilitie
+erledigt aber auch dies:
+
+Legen Sie dazu die Kickstart-Diskette, auf die Sie auf die Blöcke 1 bis 1024 
+das Kick 2.0 kopiert haben, in ein Laufwerk DFX: und geben das
+Kommando: AdaptKick dfX: -r -h -c
+ein. AdaptKick liest dann die Kickstart-Diskette ein, adaptiert die
+RESET-Routinen, berechnet die Checksumme und schreibt schließlich noch den
+Header-Block auf die Disk.  
+ 
+
+Erstellen der neuen Kickstart-Diskette:
+---------------------------------------
+
+Um Kickstart 2.0 oder 2.1 auf ihrem A1000 fahren zu können, brauchen Sie jetzt
+nur noch eine Kickstart-Diskette im neuen Format. Prinzipiell ist dies kein
+Problem. Auf Block 0 muß der Text 'f8-KICK' stehen. In den Blocks 1 bis
+einschließlich 1024 folgen dann die eigentlichen Kickstart-Daten, die 
+später ab Adresse $f80000-$ffffff abgelegt werden. Dabei wird auf Adresse
+$f80000 der Code $11144ef9 erwartet. Dies ist die, von Commodore festgelegte,
+Kennung für 512KByte Kickstarts. (D.h. in 2.0 oder 2.1 ist dies automatisch der
+Fall). Die Checksumme über den gesamten Bereich muß den Wert
+$ffffffff (entspricht -1) haben.
+
+Sie brauchen ein Kickstart 2.0 oder 2.1, welches im Bereich ab $f80000 liegt und 
+z.B. auf einem 2000'er oder 500'er läuffähig ist. Dazu kaufen sie sich das
+Umrüstkit 2.0 von Commodore. Dieses ROM, stecken Sie in einen
+2000'er oder 500'er und lesen den Bereich von $f80000 - $fffffff aus und 
+speichern ihn abschließend ab. Das File hat dann eine Länge von genau 
+524288 Bytes. Mit einem entsprechenden Tool (sihe unten) 
+können sie das File auf die Blöcke 1 bis 1024 einer Diskette schreiben.
+
+Danach müssen Sie das zu dieser Bauanleitung gehörige Utilities
+Adaptkick starten, daß die Checksumme der Kickstart automatisch anpaßt und
+den Wert 'f8-KICK' auf Block 0 der Diskette schreibt.
+
+Außerdem werden von Adaptkick die RESET-Routinen des Kick 2.0 oder 2.1
+auf den A1000 angepasst. Dies ist notwendig, da der Amiga sonst nach einem Guru 
+nicht mehr selbststaendig booten würde,
+sondern es müßte mit dem Klammergriff nachgeholfen werden.
+AdaptKick ist für die Kickstartversionen 37.59, 37.175 und 37.210 geeignet.
+
+Legen Sie die Kickstart-Diskette, auf die Sie auf die Blöcke 1 bis 1024 
+das Kick 2.0 kopiert haben, z.B. in das Laufwerk DF0: und geben das
+Kommando: AdaptKick df0: -r -h -c
+ein. AdaptKick liest die Kickstart-Diskette ein, adaptiert die
+RESET-Routinen, berechnet die Checksumme neu und schreibt schließlich noch den
+Header-Block auf die Disk.  
+ 
+
+Noch einige Anmerkungen zum Schluß:
+-----------------------------------
+
+Um die Kickstart von
+einem auf 2.0 umgerüsteten 500'er oder 2000'er auslesen zu können und
+mit diesem File dann eine Kickstart-Diskette erzeugen zu können, eignet
+sich das Programm 'TrackDos' von Nic Wilson. Dieses befindet sich auf der
+Fish-Disk 365 von Fred Fish.
+Den meisten 1000'er Besitzern ist wohl das Utilities ChangeKick bekannt,
+mit dem man eine Kickstart aus dem WOM werfen kann. Die neuen BootRoms
+machen ein neues ChangeKick notwendig. Dieses wird mit dieser Bauanleitung
+ebenfalls zur Verfügung gestellt.  
+
+Referenzliste benutzter Chips auf dem Mainboard:
+------------------------------------------------
+
+Wie bereits oben erwäht, beziehen sich alle IC-Angaben auf den 1000'er mit
+integriertem WOM. Damit Sie die entsprechenden Lötpukte auch auf anderen
+1000'ern finden, hier die Beschreibung der Chips:
+
+Referenzliste benutzter Chips auf dem Mainboard:
+------------------------------------------------
+
+Wie bereits oben erwäht, beziehen sich alle IC-Angaben auf den 1000'er mit
+integriertem WOM. Damit Sie die entsprechenden Lötpukte auch auf anderen
+1000'ern finden, hier die Beschreibung der Chips:
+
+U6T: CIAA (8520), ist mit den Data-Leitungen des  Centronics-Port verbunden 
+U2H: F399, davon gibt es nur einen
+U1R: F139, auch hiervon gibt es nur einen
+U1H: F138, es gibt zwei Chips mit dieser Bezeichnung. Pin 4 ist bei beiden
+           aber gleich belegt.
+U2J, U1J: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 5 U1R verbunden.
+U2K, U1K: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 7 U1R verbunden.
+U2L, U1L: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 11 U1R verbunden.
+U2M, U1M: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 9 U1R verbunden.
+U5N: ROM 23256 (even)
+U5S: ROM 23256 (odd)
+
+Die Informationen in der vorliegenden Bauanleitung habe ich ohne Rücksicht 
+auf einen eventuellen Patentschutz oder Copyright erstellt und sind nur für
+den privaten Gebrauch bestimmt. Warennamen werden ohne Gewährleistung der
+freien Verwendbarkeit benutzt. Ich bin beim Zusammenstellen der Anleitung 
+mit größter Sorgfalt vorgegangen. Trotzdem können Fehler nicht vollständig 
+ausgeschlossen werden. Ich kann für fehlerhafte Angaben und deren Folgen 
+weder eine juristische Verantwortung, noch irgendeine Haftung übernehmen. 
+
+
+Copyright (c) 1991 by Jörg Huth
+
+Kaiserslautern, den 23.05.91
+
+
+Meine Adresse:
+
+Jörg Huth
+Trippstadter Str. 121-1315
+W-6750 Kaiserslautern
+Tel: (0631) 13796 (Voice)
+E-Mail: J_Huth@JoKL.ZER
+	jhuth@scooter.informatik.uni-kl.de
+
+
+

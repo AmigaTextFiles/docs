@@ -1,0 +1,157 @@
+@DATABASE "ADB30"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 30 - The QUIT Command"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 30 - THE QUIT COMMAND@{UB}@{UU}
+@{JLEFT}
+@{B}Location@{UB}     - v1.x - "c" directory
+             - v2+ - Internal
+
+@{B}Purpose@{UB}      - to allow a script file to be exited with a nominated return
+               code being passed back to the process that launched it.
+
+@{B}Availability@{UB} - All AmigaDOS Versions
+
+This command is for use within script files to cause an exit from the
+script. It can be used with or without a number following it:-
+
+  QUIT
+  QUIT number
+
+If "number" is not used then a default number of 0 (zero) is used.
+
+The "number" is a @{"return code" LINK "ADB:Parts_21-30/29.FailAt_&_Return_Code/RC"} which can be set to any value desired by
+the script writer. However, it is suggested that you stay with the standard
+numbers of:-
+
+       0 No Problem
+       5 Warn
+       10 Error
+       20 Failure
+
+QUIT is usually used in conjunction with an IF...ELSE...ENDIF situation
+so that the script can be exited if one condition exists or continued
+if another exists.
+
+As an example, a script could contain something like this:-
+
+(@{B}v1.2 and earlier users @{UB}note that this will not work as, in early versions,
+COPY does not appear to set a return code when it fails!!)
+
+  Example-30.1
+
+  FAILAT 21
+
+  COPY >Nil: SYS:s/this_does_not_exist Ram:
+  IF FAIL
+    ECHO "Copy failed!!"
+    QUIT 10
+  ENDIF
+  ; .... rest of script
+
+When executed, the COPY command won't be able to find the file that it
+is to copy (You @{B}don't@{UB} have a file called "this_does_not_exist" in your
+"S" directory, do you?!?!).
+
+Because COPY fails, it sets the return code to 20 and the "IF FAIL" is
+true so the script displays the message "Copy failed!!" then QUITs with
+a code of 10.
+
+@{B}V2+@{UB} users will be able to confirm this return code by entering:-
+
+  > ECHO $RC
+
+  --> 10
+
+(We will be looking at the usage of $RC in the article
+@{"ENVIRONMENTAL VARIABLES" LINK "ADB:Parts_31-40/40.Env-Variables/Special"25}.)
+
+If you like, copy the script to RAM: and edit it to insert other QUIT
+numbers and check the return code with "ECHO $RC".
+
+If we used QUIT without a number, the process from which it was launched
+would pick up the default QUIT code of 0 (zero).
+
+Normally we would put the appropriate code to match the event which, in
+the above example, would be "QUIT 20". However, I put "10" to illustrate
+that it really was the QUIT command setting the return code as COPY would
+set it to "20"
+
+Maybe the thought has crossed your mind that you could execute "Script-1"
+from "Script-2" and use QUIT in "Script-1" to go back to "Script-2".
+
+This will @{B}not@{UB} work if you call "Script-1" with:-
+
+  EXECUTE Script-1
+
+To make it work you @{B}must@{UB} use:-
+
+  RUN EXECUTE Script-1
+
+This can be illustrated with these two examples:-
+
+(@{B}v1.2 and earlier users@{UB} note that these will not work as, in early versions,
+COPY does not appear to set a return code when it fails!!)
+
+  ; Example-30.2
+
+  ECHO "I am Example-30.2 calling Example-30.1 without RUN"
+  EXECUTE Example-30.1
+  WAIT 2 SECS
+  ECHO "I will NOT return to here!!"
+
+  ; Example-30.3
+
+  ECHO "I am Example-30.3 calling Example-30.1 with RUN"
+  RUN EXECUTE Example-30.1
+  WAIT 2 SECS
+  ECHO "I WILL return to here!!"
+
+The @{"WAIT" LINK "ADB:Parts_31-40/31.Wait/MAIN"} command (which we will look at in the next article) is to allow
+a 2 second pause so that the called script can finish before the final
+ECHO command is reached.
+
+The reason that the QUIT in Example-30.1 does not return to Example-30.2
+is that, when a script is called from another script with EXECUTE but
+@{B}not@{UB} with RUN, a temporary script file is set up in T: that is a combination
+of Example-30.1 @{B}plus@{UB} the part of Example-30.2 from @{B}after@{UB} the EXECUTE command.
+This temporary file would be:-
+
+  ; Example-30.1
+
+  FAILAT 21
+
+  COPY >Nil: SYS:s/this_does_not_exist ram:
+  IF FAIL
+    ECHO "Copy failed!!"
+    QUIT 20
+  ENDIF
+  ; .... rest of script
+  WAIT 2 SECS
+  ECHO "I will NOT return to here!!"
+
+The system then uses the temporary script file and ignores the rest of
+the original script files. As you can see, the QUIT will quit this temporary
+script file and give the appearance that @{B}both@{UB} the calling script @{B}and@{UB} the
+called script have been quit.
+
+(The temporary file is automatically deleted after use. When we reach
+the article @{"EXECUTE & DOT" LINK "ADB:Parts_31-40/39.Execute_&_Dot/.Key"51} we will be looking further at these temporary
+files.)
+
+Using RUN allows a new process to be set up for the called file and so
+the calling file can continue in its own process. However, the return
+code from the QUIT will @{B}not@{UB} be returned to the calling script.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

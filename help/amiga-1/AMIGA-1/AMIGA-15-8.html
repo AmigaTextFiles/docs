@@ -1,0 +1,101 @@
+        <html>
+        <head><base target="_self">
+<title>русский транзит - amiga#1: arexx, манипуляции с файлами</title>
+</head>
+<body link="#009999" vlink="#006666" alink="#000088" bgcolor="#ffffff" text="#000000">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta name="keywords" content="amiga,develope,ARexx,манипуляции,файл,delete,exists,makedir,rename,statef">
+
+<font face="Arial, Helvetica, sans-serif" size="4">
+<p align="left"><a name=A158>Манипуляции с файлами</a></p></font>
+
+<blockquote><p align="justify">
+Функции группы файловых манипуляций ARexx-a являются аналогами соответствующих функций ОС. Например, удаление файла можно произвести, не пользуясь ARexx-функцией <a href="AMIGA-15-8.html#A1581">DELETE()</a>, а вызвав соответствующую ОС-функцию:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+ADDRESS command
+DELETE filename
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+Однако использование ARexx-функций более удобно хотя бы потому, что возвращаемое ими значение может быть немедленно использовано для проверки результата работы заданной функции. Если в качестве параметра функций задается неполный маршрут, то отсчет производится от текущего каталога.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1581>
+<b>DELETE</b>()
+<blockquote>res = <b>DELETE</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается булевское значение TRUE, если операция удаления заданного &quot;именем&quot; файла или каталога прошла успешно, либо FALSE в противном случае.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1582>
+<b>EXISTS</b>()
+<blockquote>res = <b>EXISTS</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается булевское значение TRUE, если файл или каталог с заданным &quot;именем&quot; существует, в противном случае возвращается FALSE. При проверке существования объекта на отсутствующем томе вы, как правило, получите риквестер с запросом &quot;Вставьте диск...&quot;; если такая ситуация нежелательна, следует предварительно вызвать функцию <a href="AMIGA-15-9.html#A159B">PRAGMA ('W', 'N')</a>. Вызов же PRAGMA('D', &lt;маршрут&gt;) изменит текущий каталог на указанный параметром &quot;маршрут&quot;.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1583>
+<b>MAKEDIR</b>()
+<blockquote>res = <b>MAKEDIR</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция создает каталог с заданным &quot;именем&quot; и в случае успеха возвращает TRUE. В случае ОС 1.3 TRUE возвращается также, если заданный каталог уже существует на диске, в более старших версиях ОС при этом возвращается FALSE.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1584>
+<b>RENAME</b>()
+<blockquote>res = <b>RENAME</b>(&lt;старое_имя&gt;,&lt;новое_имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция переименовывает файл в соответствии с достаточно очевидными параметрами. Возвращается булевское значение TRUE, если операция переименования прошла успешно, либо FALSE в противном случае.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1585>
+<b>STATEF</b>()
+<blockquote>res = <b>STATEF</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает строку, содержащую информацию о файле (каталоге) с заданным &quot;именем&quot;. Формат полученной строки:
+</p></blockquote>
+
+<blockquote><pre><i>
+FILE | DIR &lt;длина&gt; &lt;блоки&gt; &lt;признаки&gt; &lt;дни&gt; &lt;минуты&gt; &lt;отсчет&gt; &lt;комментарий&gt;
+</i></pre></blockquote>
+
+<blockquote><blockquote><pre>
+ где:
+</pre></blockquote></blockquote>
+
+<blockquote><ul><p align="justify">
+<li><i>длина</i> - длина файла в байтах;</li><br>
+<li><i>блоки</i> - число блокое (секторов) в файле;</li><br>
+<li><i>признаки</i> - признаки защиты файла (каталога) в формате HSPARWED. Если некоторый признак отсутствует, то на его месте стоит тире;</li><br>
+<li><i>дни</i> - число полных суток, прошедших с 1/01/78 до момента создания/модификации файла (каталога);</li><br>
+<li><i>минуты</i> - число полных минут, прошедших с полуночи до момента создания/модификации файла (каталога);</li><br>
+<li><i>отсчет</i> - число системных временных интервалов (по 20ms), прошедших с начала последней минуты;</li><br>
+<li><i>комментарий</i> - содержимое комментария к файлу.</li>
+</p></ul></blockquote>
+
+<blockquote>Пример:</blockquote>
+
+<blockquote><blockquote><pre>
+say STATEF('C:ed')   ==> FILE 5696 12 --RWED 6375 1209 2100
+</pre></blockquote></blockquote>
+
+<hr>
+
+</body></html>

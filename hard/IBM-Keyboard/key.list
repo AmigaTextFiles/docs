@@ -1,0 +1,1191 @@
+000001 0000                  ;* these equates are explained below. Relocate them to any of
+000002 0000                  ;* Port1, pins 0-7 or Port3, pins 0-7, except Port3, pins2 and 3
+000003 0000                  ;* because these are the external interrupts.
+000004 0000                  
+000005 0090                          .equ    Kclk,p1.0
+000006 0091                          .equ    Kdat,p1.1
+000007 0092                          .equ    Kreset,p1.2 
+000008 0093                          .equ    Aclk,p1.3
+000009 0094                          .equ    Adat,p1.4
+000010 0095                          .equ    Areset,p1.5
+000011 0097                          .equ    Kswitch,p1.7
+000012 0000                  
+000013 0000                          .org    0000h
+000014 0000 020200           init:   ljmp    start
+000015 0003                          .org    0003h
+000016 0003 0204D0                   ljmp    resetint
+000017 001B                          .org    001bh
+000018 001B 0205B4                   ljmp    timer1int
+000019 001E                  
+000020 001E                  ;**************************************************
+000021 001E                  ;*
+000022 001E                  ;*
+000023 001E                  ;* Equates Descriptions:
+000024 001E                  ;* 
+000025 001E                  ;*    Watch1 is a flag which tells the IBM keycode parser that
+000026 001E                  ;* some extranneous codes are to come across the lines. In 
+000027 001E                  ;* particular, these codes will be either E0 4A or E0 59. The 
+000028 001E                  ;* parser should ignore them.
+000029 001E                  ;*      Watch2 is also the same type of flag as Watch1. It
+000030 001E                  ;* tells the parser that E0 12 59 will follow and to ignore it.
+000031 001E                  ;*
+000032 001E                  ;*      Aclk is the line to the Amiga keyboard clock in. (P1.3)
+000033 001E                  ;*      Adat is the line to the Amiga keyboard data in. (P1.4)
+000034 001E                  ;*      Areset is the Amiga Reset line (P1.5)
+000035 001E                  ;*      Kclk is the line to the Keyboard clock out (P1.0)
+000036 001E                  ;*      Kdat is the line to the Keyboard data out (P1.1)
+000037 001E                  ;*      Kreset is the Keyboard Reset line (P1.2)
+000038 001E                  ;*      Kstyle is bit defining whether or not the keyboard
+000039 001E                  ;*        is AT or XT. if AT, Kstyle=1
+000040 001E                  ;*
+000041 001E                  ;*      Oldchar is the last character typed to go to the Amiga.
+000042 001E                  ;* This is used to tell if the Capslock was Pressed and 
+000043 001E                  ;* Released without pressing any other keys. If this was done, 
+000044 001E                  ;* then it is a "Caps Lock" otherwise, the Caps key functions
+000045 001E                  ;* as the Control Key because of the keyboard remapping.
+000046 001E                  ;*
+000047 001E                  ;*      Capbit is the flag which tells whether the Caps Lock
+000048 001E                  ;* should be down or up.
+000049 001E                  ;*      Capdown is the flag which tells whether the Caps Lock 
+000050 001E                  ;* KEY is presently down or up. The difference between Capdown 
+000051 001E                  ;* and Capbit is that Capdown relates to the KEY. Capbit toggles 
+000052 001E                  ;* once for every "press and release" of the Cap Lock Key. 
+000053 001E                  ;* Press and release Cap Lock Key, and Capbit goes low.....
+000054 001E                  ;* Press and release it again, and Capbit goes high....
+000055 001E                  ;*      Cntldown is the flag which is set and reset when you 
+000056 001E                  ;* press Cap Lock and then another key. Then, Cap Lock Key 
+000057 001E                  ;* functions as the Control Key.
+000058 001E                  ;* LAMIGA,RAMIGA,and CONTROL are all flags that tell if those 
+000059 001E                  ;* keys are being held down. When all three are, the computer
+000060 001E                  ;* will reset.
+000061 001E                  ;*
+000062 001E                  ;* ATparity is the 10th bit that the AT keyboard transmits. It 
+000063 001E                  ;* is SET if the number of DATA bits set is EVEN. Otherwise, its
+000064 001E                  ;* CLEARED.
+000065 001E                  ;*
+000066 001E                  ;**************************************************
+000067 001E                  
+000068 001E                          ;bit memory locations:
+000069 001E                  
+000070 0042                          .equ    Capbit,42h
+000071 0043                          .equ    Capdown,43h
+000072 0044                          .equ    Ctrldown,44h
+000073 0045                          .equ    CONTROL,45h
+000074 0046                          .equ    LAMIGA,46h
+000075 0047                          .equ    RAMIGA,47h
+000076 0048                          .equ    ATparity,48h
+000077 0049                          .equ    Make,49h
+000078 004A                          .equ    XT7bit,4ah
+000079 004B                          .equ    Kstyle,4bh
+000080 001E                  
+000081 001E                          ;byte memory locations:
+000082 001E                  
+000083 0050                          .equ    Charbad,50h
+000084 0051                          .equ    Oldchar,51h
+000085 0052                          .equ    Amigachar,52h
+000086 001E                  
+000087 0200                          .org    0200h
+000088 0200                  
+000089 0200 758911           start:  mov     tmod,#11h       ;two 16 bit timers
+000090 0203 758805                   mov     tcon,#05h
+000091 0206 75A800                   mov     ie,#00h         ;clear all interrupts
+000092 0209 D2AF                     setb    ea
+000093 020B D2AB                     setb    et1             ;enable timer 1
+000094 020D D2A8                     setb    ex0             ;enable external 0
+000095 020F D2B2                     setb    int0            ;make sure it's high
+000096 0211 D2B9                     setb    pt0
+000097 0213 758130                   mov     sp,#30h         ;stack somewhere safe.
+000098 0216                  
+000099 0216                  ; set the ports for input
+000100 0216 7590FF                   mov     p1,#255         ;set port1 for read
+000101 0219 C28E                     clr     tr1             ;make sure timers are in
+000102 021B C28F                     clr     tf1             ;reset state.
+000103 021D C28C                     clr     tr0
+000104 021F C28D                     clr     tf0
+000105 0221                  
+000106 0221                  ; clear out the miscellaneous flags.
+000107 0221 C243                     clr     Capdown         ;Caps is up...
+000108 0223 C244                     clr     Ctrldown        ;Control is up
+000109 0225 C242                     clr     Capbit          ;Caps light is off.
+000110 0227 D245                     setb    CONTROL         ;all reset keys are UP
+000111 0229 D246                     setb    LAMIGA
+000112 022B D247                     setb    RAMIGA
+000113 022D                  
+000114 022D                  ;**** sync the controller with the Amiga. clock out
+000115 022D                  ;**** ones until we receive a handshake...
+000116 022D                  sync:
+000117 022D 758B00                   mov     tl1,#0          ;set up timer for 143ms
+000118 0230 758D00                   mov     th1,#0
+000119 0233 7902                     mov     r1,#2
+000120 0235 D28E                     setb     tr1
+000121 0237                  sync2:
+000122 0237 2094FD                   jb      Adat,sync2      ;wait for handshake
+000123 023A                  sync3:
+000124 023A 3094FD                   jnb     Adat,sync3      ;wait for end of handshake
+000125 023D C28E                     clr     tr1
+000126 023F                  
+000127 023F                  ;**** transmit power up key stream and end key stream.
+000128 023F 74FD                     mov     a,#0FDh
+000129 0241 B16F                     acall   actualtransmit
+000130 0243 74FE                     mov     a,#0FEh
+000131 0245 B16F                     acall   actualtransmit
+000132 0247                  
+000133 0247                  ;**** test for XT keyboard, if Kswitch is low, automatically
+000134 0247                  ;**** jump to XT mode.
+000135 0247                  ;**** otherwise, test to see if Kdat is low and stays there.
+000136 0247                  ;**** If so, it's in XT mode.                                
+000137 0247 309719                   jnb     Kswitch,XTPowerup 
+000138 024A 20912A                   jb      Kdat,ATPowerup
+000139 024D 758C00                   mov     th0,#0
+000140 0250 758A00                   mov     tl0,#0
+000141 0253 C28D                     clr     tf0
+000142 0255 D28C                     setb    tr0
+000143 0257 208D09           XTtest: jb      tf0,XTPowerup   ;timer ran out. XT mode.
+000144 025A 3091FA                   jnb     Kdat,XTtest     ;data is low, but for how long?
+000145 025D C28C                     clr     tr0
+000146 025F C28D                     clr     tf0
+000147 0261 8014                     sjmp    ATPowerup
+000148 0263                  XTPowerup:
+000149 0263 C24B                     clr     Kstyle          ;XT flag.
+000150 0265 C28D                     clr     tf0
+000151 0267 C290                     clr     Kclk            ;Clock low=Reset for the XT.
+000152 0269                  XTreset:
+000153 0269 308DFD                   jnb     tf0,XTreset
+000154 026C D290                     setb    Kclk
+000155 026E C28C                     clr     tr0
+000156 0270 C28D                     clr     tf0
+000157 0272 715C             ll:     acall   XTgetkey        ;(Should be AA)
+000158 0274 02037A                   ljmp    XTstyle
+000159 0277                  
+000160 0277                  ;**** sync up the AT and go with it!
+000161 0277                  
+000162 0277                  ATPowerup:
+000163 0277 D24B                     setb    Kstyle
+000164 0279 74FF                     mov     a,#0ffh         ;RESET
+000165 027B 711F                     acall   SendtoAT
+000166 027D 74F6                     mov     a,#0f6h         ;DEFAULT
+000167 027F 711F                     acall   SendtoAT
+000168 0281 74ED                     mov     a,#0edh         ;NEXT DATA is FOR LIGHTS
+000169 0283 711F                     acall   SendtoAT
+000170 0285 7402                     mov     a,#2            ;NUMLOCK ON?
+000171 0287 711F                     acall   SendtoAT
+000172 0289 74F4                     mov     a,#0f4h         ;CLEAR BUFFER
+000173 028B 711F                     acall   SendtoAT
+000174 028D 0202CB                   ljmp    ATstyle         ;go and parse AT keyboard
+000175 0290                  
+000176 0290                  ;***********************************************
+000177 0290                  ;* ATgetkey
+000178 0290                  ;* ATgetkey
+000179 0290                  ;* ATgetkey
+000180 0290                  ;*
+000181 0290                  ;* ATgetkey looks at the keyboard and waits for a key to be
+000182 0290                  ;* pressed. ATinkey is the actual routine that watched the logic
+000183 0290                  ;* levels of Kdat and Kclk. IF the character's parity is not 
+000184 0290                  ;* what it is supposed to be, then the routine will attempt to
+000185 0290                  ;* tell the keyboard to resend.
+000186 0290                  ;*
+000187 0290                  ;* When exiting from this routine, Kclock is pulled low to hold 
+000188 0290                  ;* off any more transmissions. You must restore it to 5 volts to
+000189 0290                  ;* receive any more characters later.
+000190 0290                  ;*
+000191 0290                  ;*
+000192 0290                  
+000193 0290                  ATgetkey:
+000194 0290 780B                     mov     r0,#11          ;number of bits
+000195 0292 D290                     setb    Kclk
+000196 0294                  ATwaitC0:         
+000197 0294 2090FD                   jb      Kclk,ATwaitC0   ;wait for a clock pulse
+000198 0297 18                       dec     r0              ;decrement clock bit counter
+000199 0298 B80A02                   cjne    r0,#10,ATnstart ;test for startbit
+000200 029B 8029                     sjmp    ATwait  
+000201 029D                  ATnstart:
+000202 029D B8001A                   cjne    r0,#0,ATnstop   ;check for stopbit      
+000203 02A0                  ATwaitC1:
+000204 02A0 3090FD                   jnb     Kclk,ATwaitC1   ;wait for clock to go high                     
+000205 02A3 C290                     clr     Kclk            ;hold off more data
+000206 02A5 7814                     mov     r0,#20          ;small delay
+000207 02A7 D8FE             pause:  djnz    r0,pause
+000208 02A9                  ;**** now we check to see if the parity between
+000209 02A9                  ;**** Bit register P (which is set if Parity of Acc is odd)
+000210 02A9                  ;**** is compared to the received Parity Bit.
+000211 02A9 20D004                   jb      p,parityodd     ;test if parity of DATA is odd
+000212 02AC                  parityeven:
+000213 02AC 304805                   jnb     ATparity,ATerror
+000214 02AF 22                       ret                     ;Okay to return. A=valid
+000215 02B0                  parityodd:
+000216 02B0 204801                   jb      ATparity,ATerror
+000217 02B3 22                       ret                     ;Okay to return. A=valid
+000218 02B4                  ATerror:
+000219 02B4 74FE                     mov     a,#0feh         ;RESEND character
+000220 02B6 711F                     acall   SendtoAT
+000221 02B8 80D6                     sjmp    ATgetkey        ;now return to caller
+000222 02BA                  ATnstop:
+000223 02BA B80106                   cjne    r0,#1,ATdatab   ;check for paritybit
+000224 02BD A291                     mov     c,Kdat          ;error checking! (AT only)
+000225 02BF 9248                     mov     ATparity,c
+000226 02C1 8003                     sjmp    ATwait          ;
+000227 02C3                  ATdatab: 
+000228 02C3 A291                     mov     c,Kdat          ;get data bit
+000229 02C5 13                       rrc     a               ;shift it into accumulator
+000230 02C6 3090FD           ATwait: jnb     Kclk,ATwait     ;wait for clock line to go low
+000231 02C9 80C9                     sjmp    ATwaitC0        ;get another bit
+000232 02CB                  
+000233 02CB                  
+000234 02CB                  ;**************************************************
+000235 02CB                  ;* AT-STYLE
+000236 02CB                  ;*
+000237 02CB                  ;*     This waits for a keycode or two from the IBM and then calls
+000238 02CB                  ;* the appropriate transmit subroutine. The IBM keyboard sends 
+000239 02CB                  ;* out special codes in front of and behind some scancodes. This
+000240 02CB                  ;* routine will chop them out before doing a lookup on the 
+000241 02CB                  ;* code to see what to send to the AMIGA. The scancodes between 
+000242 02CB                  ;* the IBM and the AMIGA are of course, not the same!
+000243 02CB                  ;*
+000244 02CB                  ;**************************************************
+000245 02CB                  
+000246 02CB                  ATstyle:
+000247 02CB 5190                     acall   ATgetkey          ;get one scancode.
+000248 02CD B4E110                   cjne    a,#0e1h,ATnE1
+000249 02D0 5190                     acall   ATgetkey          ;(should be 14)
+000250 02D2 5190                     acall   ATgetkey          ;(should be 77)
+000251 02D4 5190                     acall   ATgetkey          ;(should be E1)
+000252 02D6 5190                     acall   ATgetkey          ;(should be F0)
+000253 02D8 5190                     acall   ATgetkey          ;(should be 14)
+000254 02DA 5190                     acall   ATgetkey          ;(should be F0)
+000255 02DC 5190                     acall   ATgetkey          ;(should be 77)
+000256 02DE 80EB                     sjmp    ATstyle
+000257 02E0                  ;PAUSE was pressed. Just ignore it.
+000258 02E0                  ATnE1:
+000259 02E0 9005D5                   mov     dptr,#ATtb1
+000260 02E3 B4E022                   cjne    a,#0e0h,ATnE0
+000261 02E6 900655                   mov     dptr,#ATtb2
+000262 02E9 5190                     acall   ATgetkey
+000263 02EB B4F00E                   cjne    a,#0f0h,ATnE0F0
+000264 02EE 5190                     acall   ATgetkey
+000265 02F0 B41203                   cjne    a,#12h,ATnEF12
+000266 02F3 0202CB                   ljmp    ATstyle         ;(E0F012....ignore it)
+000267 02F6                  ATnEF12:
+000268 02F6 B4591E                   cjne    a,#59h,ATup     ;(E0F0mk)
+000269 02F9 0202CB                   ljmp    ATstyle         ;(E0F059....ignore it)
+000270 02FC                  ATnE0F0:
+000271 02FC B41203                   cjne    a,#12h,ATnE012
+000272 02FF 0202CB                   ljmp    ATstyle         ;(E012....ignore it)
+000273 0302                  ATnE012:
+000274 0302 B4590A                   cjne    a,#59h,ATdown   ;(E0mk)
+000275 0305 0202CB                   ljmp    ATstyle         ;(E059....ignore it)
+000276 0308                  ATnE0:
+000277 0308 B4F004                   cjne    a,#0f0h,ATdown  ;(mk)
+000278 030B 5190                     acall   ATgetkey
+000279 030D 8008                     sjmp    ATup            ;(F0mk....normal key break)
+000280 030F                  
+000281 030F                  ;**************************************************
+000282 030F                  ;* ATdown and the rest here call a lookup table to change
+000283 030F                  ;* the AT scancodes into AMIGA scancodes. In the "down"
+000284 030F                  ;* routine, the "make" bit is asserted. In the "up" routine
+000285 030F                  ;* it is de-asserted.
+000286 030F                  ;**************************************************
+000287 030F                  ATdown:
+000288 030F 93                       movc    a,@a+dptr       ;indexed into table
+000289 0310 C2E7                     clr     acc.7           ;clear make/break bit
+000290 0312 71BF                     acall   transmit        ;transmit it
+000291 0314 0202CB                   ljmp    ATstyle
+000292 0317                  ATup:
+000293 0317 93                       movc    a,@a+dptr
+000294 0318 D2E7                     setb    acc.7           ;set make/break bit
+000295 031A 71BF                     acall   transmit        ;transmit it
+000296 031C 0202CB                   ljmp    ATstyle
+000297 031F                  
+000298 031F                  ;**************************************************
+000299 031F                  ;* SendtoAT is the subroutine that sends special codes
+000300 031F                  ;* to the keyboard from the controller. Codes include
+000301 031F                  ;* the command to reset (FF) or the command to change
+000302 031F                  ;* the lights (ED). It is advisable to keep the timing
+000303 031F                  ;* very close to how I have it done in this routine.
+000304 031F                  ;**************************************************
+000305 031F                  
+000306 031F                  SendtoAT:
+000307 031F D290                     setb    Kclk
+000308 0321 C291                     clr     Kdat
+000309 0323 7808                     mov     r0,#8
+000310 0325 2090FD           Send4:  jb      Kclk,Send4      ;data bit
+000311 0328 A2E0                     mov     c,acc.0
+000312 032A 9291                     mov     Kdat,c
+000313 032C 03                       rr      a 
+000314 032D 3090FD           Send5:  jnb     Kclk,Send5      ;data bit
+000315 0330 18                       dec     r0
+000316 0331 B800F1                   cjne    r0,#0,Send4
+000317 0334 A2D0                     mov     c,p
+000318 0336 B3                       cpl     c
+000319 0337 2090FD           Send6:  jb      Kclk,Send6      ;parity bit
+000320 033A 9291                     mov     Kdat,c
+000321 033C 3090FD           Send7:  jnb     Kclk,Send7      ;parity bit
+000322 033F 2090FD           Send77: jb      Kclk,Send77     ;stop bit
+000323 0342 D291                     setb    Kdat
+000324 0344 3090FD           Send78: jnb     Kclk,Send78     ;stop bit
+000325 0347 2090FD           Send79: jb      Kclk,Send79
+000326 034A 3090FD           Send7a: jnb     Kclk,Send7a
+000327 034D 7808                     mov     r0,#8           ;small delay
+000328 034F D8FE             Send8:  djnz    r0,Send8
+000329 0351 C290                     clr     Kclk            ;drive clock low
+000330 0353 7814                     mov     r0,#20          ;long delay
+000331 0355 D8FE             Send9:  djnz    r0,Send9
+000332 0357 D290                     setb    Kclk
+000333 0359 5190                     acall   ATgetkey        ;should check if response isbad.
+000334 035B 22                       ret                     ;who cares if it is? not me!
+000335 035C                  
+000336 035C                  XTgetkey:
+000337 035C D291                     setb    Kdat            ;let data flow!
+000338 035E 7808                     mov     r0,#8
+000339 0360 2090FD           XTw1:   jb      Kclk,XTw1       ;start bit1
+000340 0363 3090FD           XTw2:   jnb     Kclk,XTw2       ;start bit1
+000341 0366 2090FD           XTw3:   jb      Kclk,XTw3       ;start bit2
+000342 0369 3090FD           XTw4:   jnb     Kclk,XTw4       ;start bit2
+000343 036C 2090FD           XTw5:   jb      Kclk,XTw5       ;data bit
+000344 036F A291                     mov     c,Kdat
+000345 0371 13                       rrc     a
+000346 0372 3090FD           XTw6:   jnb     Kclk,XTw6       ;data bit
+000347 0375 D8F5                     djnz    r0,XTw5
+000348 0377 C291                     clr     Kdat            ;hold off data
+000349 0379 22                       ret
+000350 037A                  
+000351 037A                  XTstyle:
+000352 037A 715C                     acall   XTgetkey
+000353 037C B4E10C                   cjne    a,#0e1h,XTnE1
+000354 037F 715C                     acall   XTgetkey        ;(should be 1d)
+000355 0381 715C                     acall   XTgetkey        ;(should be 45)
+000356 0383 715C                     acall   XTgetkey        ;(should be e1)
+000357 0385 715C                     acall   XTgetkey        ;(should be 9d)
+000358 0387 715C                     acall   XTgetkey        ;(should be c5)
+000359 0389 80EF                     sjmp    XTstyle
+000360 038B                  XTnE1:
+000361 038B B4E029                   cjne    a,#0e0h,XTnE0
+000362 038E 715C                     acall   XTgetkey
+000363 0390 B4AA02                   cjne    a,#0aah,XTnAA
+000364 0393 80E5                     sjmp    XTstyle
+000365 0395                  XTnAA:
+000366 0395 B42A02                   cjne    a,#2ah,XTn2A
+000367 0398 80E0                     sjmp    XTstyle
+000368 039A                  XTn2A:
+000369 039A B4B602                   cjne    a,#0b6h,XTnB6
+000370 039D 80DB                     sjmp    XTstyle
+000371 039F                  XTnB6:
+000372 039F B43602                   cjne    a,#36h,XTn36
+000373 03A2 80D6                     sjmp    XTstyle
+000374 03A4                  XTn36:
+000375 03A4 900755                   mov     dptr,#XTtb2
+000376 03A7                  XTlookup:
+000377 03A7 A2E7                     mov     c,acc.7         ;(1=break)
+000378 03A9 924A                     mov     XT7bit,c
+000379 03AB C2E7                     clr     acc.7
+000380 03AD 93                       movc    a,@a+dptr
+000381 03AE A24A                     mov     c,XT7bit
+000382 03B0 92E7                     mov     acc.7,c
+000383 03B2 71BF                     acall   transmit
+000384 03B4 02037A                   ljmp    XTstyle
+000385 03B7                  XTnE0:
+000386 03B7 9006D5                   mov     dptr,#XTtb1
+000387 03BA 80EB                     sjmp    XTlookup
+000388 03BC                  
+000389 03BC                  ;**************************************************
+000390 03BC                  ;*
+000391 03BC                  ;* TRANSMIT first does some checking to take out repeating
+000392 03BC                  ;* keys and does the conversion on the Caps Lock Key and
+000393 03BC                  ;* then calls Actualtransmit.
+000394 03BC                  ;*
+000395 03BC                  ;**************************************************
+000396 03BC                  
+000397 03BC                  dontrans:                       ;jumps back if key is already
+000398 03BC D0E0                     pop     acc             ;held down.
+000399 03BE 22                       ret
+000400 03BF                  transmit:
+000401 03BF B55101                   cjne    a,Oldchar,transok
+000402 03C2 22                       ret
+000403 03C3                  transok:
+000404 03C3 B46205                   cjne    a,#62h,transok2 ;jump if not CapsLock=down
+000405 03C6 F551                     mov     Oldchar,a
+000406 03C8 D243                     setb    Capdown         ;set the flags for later
+000407 03CA 22                       ret
+000408 03CB                  transok2:                       
+000409 03CB B4E230                   cjne    a,#0e2h,transok3;jump if not CapsLock=up
+000410 03CE E551                     mov     a,Oldchar       ;see if Caps was just down
+000411 03D0 304B03                   jnb     Kstyle,XTcap    ;if XT, skip control feature.
+000412 03D3 B4621D                   cjne    a,#62h,transok4 ;if not, then it was a control
+000413 03D6                  XTcap:
+000414 03D6 C243                     clr     Capdown         ;clear flag
+000415 03D8 B242                     cpl     Capbit          ;toggle down/up-ness of Caplock
+000416 03DA 7462                     mov     a,#62h
+000417 03DC A242                     mov     c,Capbit
+000418 03DE B3                       cpl     c
+000419 03DF 92E7                     mov     acc.7,c
+000420 03E1 B16F                     acall   actualtransmit  ;(Caps to Amiga!)
+000421 03E3 304B0C                   jnb     Kstyle,skiplights ;(don't do lights if XT)
+000422 03E6 74ED                     mov     a,#0edh         ;set lights on next byte.
+000423 03E8 711F                     acall   SendtoAT
+000424 03EA 7402                     mov     a,#2            ;numlock on
+000425 03EC A242                     mov     c,Capbit
+000426 03EE 92E2                     mov     acc.2,c
+000427 03F0 711F                     acall   SendtoAT        ;maybe capslock light
+000428 03F2                  skiplights: 
+000429 03F2 22                       ret           
+000430 03F3                  transok4:
+000431 03F3 C244                     clr     CtrlDown        ;This sends out a Control Up.
+000432 03F5 C243                     clr     Capdown         ;Caps lock is done functioning as Ctl
+000433 03F7 7463                     mov     a,#63h          ;Control Key
+000434 03F9 D2E7                     setb    acc.7           ;break bit set.
+000435 03FB B16F                     acall   actualtransmit  ;send to Amiga.
+000436 03FD 22                       ret
+000437 03FE                  transok3:
+000438 03FE F551                     mov     Oldchar,a
+000439 0400 304B0E                   jnb     Kstyle,noControl
+000440 0403 30430B                   jnb     Capdown,noControl
+000441 0406 204408                   jb      CtrlDown,noControl
+000442 0409 D244                     setb    CtrlDown        ;Caps lock is beginning to function
+000443 040B 7463                     mov     a,#63h          ;as the Control Key.
+000444 040D B16F                     acall   actualtransmit  ;send Control Down to Amiga
+000445 040F E551                     mov     a,Oldchar       ;now send the actual key
+000446 0411                  
+000447 0411                  noControl:                      ;its not a controlled key
+000448 0411 A2E7                     mov     c,acc.7         ;c=make/break bit
+000449 0413 9249                     mov     Make,c          ;will be set if key up
+000450 0415 C2E7                     clr     acc.7           ;test for key only. NO make/break
+000451 0417 B40E19                   cjne    a,#0eh,noMup    ;special key mouse up
+000452 041A 30490B                   jnb     Make,kmupdown
+000453 041D                  kmupup:
+000454 041D 74CC                     mov     a,#0cch         ;cursor up break
+000455 041F B16F                     acall   actualtransmit
+000456 0421 9187                     acall   Smalldelay
+000457 0423 74E7                     mov     a,#0e7h         ;right amiga break
+000458 0425 B16F                     acall   actualtransmit
+000459 0427 22                       ret
+000460 0428                  kmupdown:
+000461 0428 7467                     mov     a,#67h          ;amiga make
+000462 042A B16F                     acall   actualtransmit
+000463 042C 9187                     acall   Smalldelay
+000464 042E 744C                     mov     a,#4ch          ;cursor up make
+000465 0430 B16F                     acall   actualtransmit
+000466 0432 22                       ret
+000467 0433                  noMup:
+000468 0433 B41C19                   cjne    a,#1ch,noMdown  ;special key mouse down
+000469 0436 30490B                   jnb     Make,kmdowndown
+000470 0439                  kmdownup:
+000471 0439 74CD                     mov     a,#0cdh         ;cursor down break
+000472 043B B16F                     acall   actualtransmit
+000473 043D 74E7                     mov     a,#0e7h         ;amiga break
+000474 043F 9187                     acall   Smalldelay
+000475 0441 B16F                     acall   actualtransmit
+000476 0443 22                       ret
+000477 0444                  kmdowndown:
+000478 0444 7467                     mov     a,#67h          ;amiga make
+000479 0446 B16F                     acall   actualtransmit
+000480 0448 9187                     acall   Smalldelay      ;cursor down make
+000481 044A 744D                     mov     a,#4dh
+000482 044C B16F                     acall   actualtransmit
+000483 044E 22                       ret
+000484 044F                  noMdown:
+000485 044F B42C19                   cjne    a,#2ch,noMleft  ;special key mouse left
+000486 0452 30490B                   jnb     Make,kmleftdown
+000487 0455                  kmleftup:
+000488 0455 74CF                     mov     a,#0cfh         ;cursor left break
+000489 0457 B16F                     acall   actualtransmit
+000490 0459 9187                     acall   Smalldelay      ;amiga break
+000491 045B 74E7                     mov     a,#0e7h
+000492 045D B16F                     acall   actualtransmit
+000493 045F 22                       ret
+000494 0460                  kmleftdown:
+000495 0460 7467                     mov     a,#67h          ;amiga make
+000496 0462 B16F                     acall   actualtransmit
+000497 0464 9187                     acall   Smalldelay
+000498 0466 744F                     mov     a,#4fh          ;cursor left make
+000499 0468 B16F                     acall   actualtransmit
+000500 046A 22                       ret
+000501 046B                  noMleft:                        ;special key mouse right
+000502 046B B4472B                   cjne    a,#47h,notspecial
+000503 046E 30490B                   jnb     Make,kmrhtdown
+000504 0471                  kmrhtup:
+000505 0471 74CE                     mov     a,#0ceh         ;cursor right break
+000506 0473 B16F                     acall   actualtransmit
+000507 0475 9187                     acall   Smalldelay
+000508 0477 74E7                     mov     a,#0e7h         ;amiga break
+000509 0479 B16F                     acall   actualtransmit
+000510 047B 22                       ret
+000511 047C                  kmrhtdown:
+000512 047C 7467                     mov     a,#67h          ;amiga make
+000513 047E B16F                     acall   actualtransmit
+000514 0480 9187                     acall   Smalldelay
+000515 0482 744E                     mov     a,#04eh         ;cursor right make
+000516 0484 B16F                     acall   actualtransmit
+000517 0486 22                       ret
+000518 0487                  Smalldelay:
+000519 0487 758C00                   mov     th0,#0
+000520 048A 758A00                   mov     tl0,#0
+000521 048D C28D                     clr     tf0
+000522 048F D28C                     setb    tr0
+000523 0491 308DFD           small1: jnb     tf0,small1
+000524 0494 C28D                     clr     tf0
+000525 0496 C28C                     clr     tr0
+000526 0498 22                       ret
+000527 0499                  notspecial:
+000528 0499 E551                     mov     a,Oldchar
+000529 049B B16F                     acall   actualtransmit  ;transmit the keycode
+000530 049D E551                     mov     a,Oldchar       ;get back same keycode, in A.
+000531 049F A2E7                     mov     c,acc.7         ;put make/break bit in Make
+000532 04A1 9249                     mov     Make,c
+000533 04A3 C2E7                     clr     acc.7           ;start testing for reset keys
+000534 04A5 B46306                   cjne    a,#63h,nrset1   ;held down
+000535 04A8 A249                     mov     c,Make
+000536 04AA 9245                     mov     CONTROL,c
+000537 04AC 8010                     sjmp    trset
+000538 04AE B46606           nrset1: cjne    a,#66h,nrset2
+000539 04B1 A249                     mov     c,Make
+000540 04B3 9246                     mov     LAMIGA,c
+000541 04B5 8007                     sjmp    trset
+000542 04B7 B46704           nrset2: cjne    a,#67h,trset
+000543 04BA A249                     mov     c,Make
+000544 04BC 9247                     mov     RAMIGA,c
+000545 04BE 304505           trset:  jnb     CONTROL,maybefree       ;if bit set, this key is up
+000546 04C1 204402                   jb      CtrlDown,maybefree      ;if bit set, this key is down
+000547 04C4 8008                     sjmp    free
+000548 04C6                  maybefree:
+000549 04C6 204605                   jb      LAMIGA,free     ;ditto
+000550 04C9 204702                   jb      RAMIGA,free     ;ditto
+000551 04CC 8004                     sjmp    resetwarn       ;OOPS! They are all down!
+000552 04CE 22               free:   ret
+000553 04CF                  dummy:
+000554 04CF 32                       reti
+000555 04D0                  resetint:
+000556 04D0 91CF                     acall   dummy
+000557 04D2                  resetwarn:
+000558 04D2 C28D                     clr     tf0             
+000559 04D4 E578                     mov     a,78h
+000560 04D6 7902                     mov     r1,#2           ;set up timer 0 watchdog
+000561 04D8 758A00                   mov     tl0,#0
+000562 04DB 758C00                   mov     th0,#0
+000563 04DE F4                       cpl     a               ;invert, don't know why.
+000564 04DF 7808                     mov     r0,#8
+000565 04E1                  wr1:
+000566 04E1 23                       rl      a
+000567 04E2 A2E7                     mov     c,acc.7
+000568 04E4 9294                     mov     Adat,c
+000569 04E6 75F008                   mov     b,#8
+000570 04E9                  wr2:
+000571 04E9 D5F0FD                   djnz    b,wr2             ; transmit it.
+000572 04EC C293                     clr     Aclk
+000573 04EE 75F008                   mov     b,#8
+000574 04F1                  wr3:
+000575 04F1 D5F0FD                   djnz    b,wr3
+000576 04F4 D293                     setb    Aclk
+000577 04F6 75F00A                   mov     b,#10
+000578 04F9                  wr4:
+000579 04F9 D5F0FD                   djnz    b,wr4
+000580 04FC D8E3                     djnz    r0,wr1
+000581 04FE D294                     setb    Adat
+000582 0500 D28C                     setb    tr0             ;start watchdog
+000583 0502                  wr5:
+000584 0502 309409                   jnb     Adat,caught1
+000585 0505 308DFA                   jnb     tf0,wr5
+000586 0508 C28D                     clr     tf0
+000587 050A D9F6                     djnz    r1,wr5
+000588 050C 8041                     sjmp    Hardreset
+000589 050E                  caught1:
+000590 050E C28C                     clr     tr0
+000591 0510 C28D                     clr     tf0
+000592 0512 E578                     mov     a,78h
+000593 0514 7904                     mov     r1,#4
+000594 0516 758A00                   mov     tl0,#0
+000595 0519 758C00                   mov     th0,#0
+000596 051C F4                       cpl     a    
+000597 051D 7808                     mov     r0,#8
+000598 051F                  wr11:
+000599 051F 23                       rl      a
+000600 0520 A2E7                     mov     c,acc.7
+000601 0522 9294                     mov     Adat,c
+000602 0524 75F008                   mov     b,#8
+000603 0527                  wr22:
+000604 0527 D5F0FD                   djnz    b,wr22   
+000605 052A C293                     clr     Aclk
+000606 052C 75F008                   mov     b,#8
+000607 052F                  wr33:
+000608 052F D5F0FD                   djnz    b,wr33
+000609 0532 D293                     setb    Aclk
+000610 0534 75F00A                   mov     b,#10
+000611 0537                  wr44:
+000612 0537 D5F0FD                   djnz    b,wr44
+000613 053A D8E3                     djnz    r0,wr11
+000614 053C D294                     setb    Adat
+000615 053E D28C                     setb    tr0             ;start watchdog
+000616 0540                  wr55:
+000617 0540 309409                   jnb     Adat,caught2
+000618 0543 308DFA                   jnb     tf0,wr55
+000619 0546 C28D                     clr     tf0
+000620 0548 D9F6                     djnz    r1,wr55
+000621 054A 8003                     sjmp    Hardreset
+000622 054C                  caught2:
+000623 054C 3094FD           hold:   jnb     Adat,hold
+000624 054F                  Hardreset:
+000625 054F C28C                     clr     tr0
+000626 0551 C28D                     clr     tf0
+000627 0553 C295                     clr     Areset
+000628 0555 C293                     clr     Aclk            ;clear both lines for A500/A1000
+000629 0557 790F                     mov     r1,#15          ;clock should go low for over 500ms
+000630 0559 758C00                   mov     th0,#0          ;timer 1 will overflow repeatedly
+000631 055C 758A00                   mov     tl0,#0
+000632 055F D28C                     setb    tr0
+000633 0561                  hsloop:
+000634 0561 308DFD                   jnb     tf0,hsloop      ;wait for overflow flag
+000635 0564 C28D                     clr     tf0             ;clear it again
+000636 0566 D9F9                     djnz    r1,hsloop
+000637 0568 C28D                     clr     tf0
+000638 056A C28C                     clr     tr0             ;stop the timer
+000639 056C 020200                   ljmp    start
+000640 056F                   
+000641 056F                  ;**************************************************
+000642 056F                  ;* 
+000643 056F                  ;* ActualTransmit sends the character out to the Amiga and waits
+000644 056F                  ;* for an acknowledge handshake. If it does not receive one in
+000645 056F                  ;* 143 ms, then it clocks out 1's on the data line until it 
+000646 056F                  ;* receives the acknowledge. If the Amiga is not connected up, 
+000647 056F                  ;* then it will hang here. The handshake is that the AMIGA 
+000648 056F                  ;* drives the clock line low.
+000649 056F                  ;*
+000650 056F                  ;*      The loops with register B are for timing delays. 
+000651 056F                  ;* There should be about 20usec between when the Data line is 
+000652 056F                  ;* set, the Clock line is driven low, and the Clock line
+000653 056F                  ;* is driven high.
+000654 056F                  ;*
+000655 056F                  ;**************************************************
+000656 056F                  
+000657 056F                  actualtransmit:
+000658 056F F552                     mov     Amigachar,a     ;set the character to transmit
+000659 0571                  
+000660 0571 7805                     mov     r0,#05          ;do a small delay
+000661 0573                  dly:
+000662 0573 75F000                   mov     b,#0
+000663 0576 D5F0FD           delay:  djnz    b,delay
+000664 0579 D8F8                     djnz    r0,dly
+000665 057B                  
+000666 057B                  actual2:
+000667 057B E552                     mov     a,Amigachar     ;restore it
+000668 057D C250                     clr     Charbad         ;character is not bad yet
+000669 057F 7902                     mov     r1,#2           ;set up timer 0 watchdog
+000670 0581 758B00                   mov     tl1,#0
+000671 0584 758D00                   mov     th1,#0
+000672 0587 F4                       cpl     a               ;invert, don't know why.
+000673 0588 7808                     mov     r0,#8
+000674 058A 23               f:      rl      a
+000675 058B A2E7                     mov     c,acc.7
+000676 058D 9294                     mov     Adat,c
+000677 058F 75F008                   mov     b,#8
+000678 0592 D5F0FD           g:      djnz    b,g             ; transmit it.
+000679 0595 C293                     clr     Aclk
+000680 0597 75F008                   mov     b,#8
+000681 059A D5F0FD           h:      djnz    b,h
+000682 059D D293                     setb    Aclk
+000683 059F 75F00A                   mov     b,#10
+000684 05A2 D5F0FD           i:      djnz    b,i
+000685 05A5 D8E3                     djnz    r0,f
+000686 05A7 D294                     setb    Adat
+000687 05A9 D28E                     setb    tr1             ;start watchdog
+000688 05AB                  waitshake:
+000689 05AB 2094FD                   jb      Adat,waitshake
+000690 05AE C28E                     clr     tr1             ;stop watchdog
+000691 05B0 3094FD           gotit:  jnb     Adat,gotit
+000692 05B3 22                       ret
+000693 05B4                  
+000694 05B4                  timer1int:
+000695 05B4 D91E                     djnz    r1,t3           ;we wait for 143 ms.
+000696 05B6 7902                     mov     r1,#2           
+000697 05B8 D250                     setb    Charbad         ;flag to resend the character
+000698 05BA C294                     clr     Adat            ;1 on the data line
+000699 05BC 75F008                   mov     b,#8
+000700 05BF D5F0FD           tt1:    djnz    b,tt1           ;wait for it
+000701 05C2 C293                     clr     Aclk            ;clock asserted
+000702 05C4 75F008                   mov     b,#8            ;sync up the controller to the
+000703 05C7 D5F0FD           tt2:    djnz    b,tt2           ;amiga
+000704 05CA D293                     setb    Aclk
+000705 05CC 75F00A                   mov     b,#10
+000706 05CF D5F0FD           tt3:    djnz    b,tt3
+000707 05D2 D294                     setb    Adat
+000708 05D4 32               t3:     reti                    ;return and send again.
+000709 05D5                  
+000710 05D5                  ATtb1: 
+000711 05D5 00                       .db     0               
+000712 05D6 58                       .db     58h             ;F9
+000713 05D7 00                       .db     0               
+000714 05D8 54                       .db     54h             ;F5
+000715 05D9 52                       .db     52h             ;F3
+000716 05DA 50                       .db     50h             ;F1
+000717 05DB 51                       .db     51h             ;F2
+000718 05DC 5B                       .db     5bh             ;F12=right parenthesis
+000719 05DD 00                       .db     0
+000720 05DE 59                       .db     59h             ;F10
+000721 05DF 57                       .db     57h             ;F8
+000722 05E0 55                       .db     55h             ;F6
+000723 05E1 53                       .db     53h             ;F4
+000724 05E2 42                       .db     42h             ;TAB
+000725 05E3 00                       .db     00h             ;~
+000726 05E4 00                       .db     0
+000727 05E5                  
+000728 05E5 00                       .db     0
+000729 05E6 64                       .db     64h             ;Left ALT
+000730 05E7 60                       .db     60h             ;Left SHIFT
+000731 05E8 00                       .db     0
+000732 05E9 66                       .db     66h             ;Left Ctrl=Left AMIGA
+000733 05EA 10                       .db     10h             ;Q
+000734 05EB 01                       .db     01h             ;1
+000735 05EC 00                       .db     0
+000736 05ED 00                       .db     0
+000737 05EE 00                       .db     0
+000738 05EF 31                       .db     31h             ;Z
+000739 05F0 21                       .db     21h             ;S
+000740 05F1 20                       .db     20h             ;A
+000741 05F2 11                       .db     11h             ;W
+000742 05F3 02                       .db     02h             ;2
+000743 05F4 00                       .db     0
+000744 05F5                  
+000745 05F5 00                       .db     0
+000746 05F6 33                       .db     33h             ;C
+000747 05F7 32                       .db     32h             ;X
+000748 05F8 22                       .db     22h             ;D
+000749 05F9 12                       .db     12h             ;E
+000750 05FA 04                       .db     04h             ;4
+000751 05FB 03                       .db     03h             ;3
+000752 05FC 00                       .db     0
+000753 05FD 00                       .db     0
+000754 05FE 40                       .db     40h             ;SPACE
+000755 05FF 34                       .db     34h             ;V
+000756 0600 23                       .db     23h             ;F
+000757 0601 14                       .db     14h             ;T
+000758 0602 13                       .db     13h             ;R
+000759 0603 05                       .db     05h             ;5
+000760 0604 00                       .db     0
+000761 0605                  
+000762 0605 00                       .db     0
+000763 0606 36                       .db     36h             ;N
+000764 0607 35                       .db     35h             ;B
+000765 0608 25                       .db     25h             ;H
+000766 0609 24                       .db     24h             ;G
+000767 060A 15                       .db     15h             ;Y
+000768 060B 06                       .db     06h             ;6
+000769 060C 00                       .db     0
+000770 060D 00                       .db     0
+000771 060E 00                       .db     0
+000772 060F 37                       .db     37h             ;M
+000773 0610 26                       .db     26h             ;J
+000774 0611 16                       .db     16h             ;U
+000775 0612 07                       .db     07h             ;7
+000776 0613 08                       .db     08h             ;8
+000777 0614 00                       .db     0
+000778 0615                  
+000779 0615 00                       .db     0
+000780 0616 38                       .db     38h             ;<
+000781 0617 27                       .db     27h             ;K
+000782 0618 17                       .db     17h             ;I
+000783 0619 18                       .db     18h             ;O
+000784 061A 0A                       .db     0Ah             ;0
+000785 061B 09                       .db     09h             ;9
+000786 061C 00                       .db     0
+000787 061D 00                       .db     0
+000788 061E 39                       .db     39h             ;>
+000789 061F 3A                       .db     3ah             ;/
+000790 0620 28                       .db     28h             ;L
+000791 0621 29                       .db     29h             ; ';'
+000792 0622 19                       .db     19h             ;P
+000793 0623 0B                       .db     0bh             ;-
+000794 0624 00                       .db     0
+000795 0625                  
+000796 0625 00                       .db     0
+000797 0626 00                       .db     0
+000798 0627 2A                       .db     2ah             ;'
+000799 0628 00                       .db     0
+000800 0629 1A                       .db     1ah             ;[
+000801 062A 0C                       .db     0ch             ;=
+000802 062B 00                       .db     0
+000803 062C 00                       .db     0
+000804 062D 62                       .db     62h             ;CAPS LOCK?
+000805 062E 61                       .db     61h             ;Right SHIFT
+000806 062F 44                       .db     44h             ;RETURN
+000807 0630 1B                       .db     1bh             ;]
+000808 0631 00                       .db     0
+000809 0632 0D                       .db     0dh             ;\
+000810 0633 00                       .db     0
+000811 0634 00                       .db     0
+000812 0635                  
+000813 0635                          .rs     6
+000814 063B 41                       .db     41h             ;Back SPACE
+000815 063C 00                       .db     0
+000816 063D 00                       .db     0
+000817 063E 1D                       .db     1dh             ;1 keypad
+000818 063F 00                       .db     0
+000819 0640 2D                       .db     2dh             ;4 keypad
+000820 0641 3D                       .db     3dh             ;7 keypad
+000821 0642 00                       .db     0
+000822 0643 00                       .db     0
+000823 0644 00                       .db     0
+000824 0645                  
+000825 0645 0F                       .db     0fh             ;0 keypad
+000826 0646 3C                       .db     3ch             ;dot keypad
+000827 0647 1E                       .db     1eh             ;2 keypad
+000828 0648 2E                       .db     2eh             ;5 keypad
+000829 0649 2F                       .db     2fh             ;6 keypad
+000830 064A 3E                       .db     3eh             ;8 keypad
+000831 064B 45                       .db     45h             ;ESCAPE!
+000832 064C 63                       .db     63h             ;Number Lock=CTRL
+000833 064D 5A                       .db     5ah             ;F11=( keypad
+000834 064E 5E                       .db     5eh             ;+ keypad
+000835 064F 1F                       .db     1fh             ;3 keypad
+000836 0650 4A                       .db     4ah             ;- keypad
+000837 0651 5D                       .db     5dh             ;* keypad
+000838 0652 3F                       .db     3fh             ;9 keypad
+000839 0653 67                       .db     67h             ;scroll Lock=Right AMIGA
+000840 0654 00                       .db     0
+000841 0655                  ATtb2:
+000842 0655                          .rs     3
+000843 0658 56                       .db     56h             ;F7
+000844 0659 66                       .db     66h             ;print screen=Left Amiga
+000845 065A                          .rs     11
+000846 0665                  
+000847 0665 00                       .db     0
+000848 0666 65                       .db     65h             ;Right ALT
+000849 0667 00                       .db     0
+000850 0668 00                       .db     0
+000851 0669 67                       .db     67h             ;Right CTL=RIGHT AMIGA
+000852 066A                          .rs     11
+000853 0675                  
+000854 0675                          .rs     10h
+000855 0685                          
+000856 0685                          .rs     10h
+000857 0695                  
+000858 0695                          .rs     10
+000859 069F 5C                       .db     5ch             ;/key, supposedly
+000860 06A0                          .rs     5
+000861 06A5                  
+000862 06A5                          .rs     10
+000863 06AF 43                       .db     43h             ;Numeric Enter
+000864 06B0                          .rs     5
+000865 06B5                  
+000866 06B5                          .rs     9
+000867 06BE 1C                       .db     1ch             ;End=Mouse down
+000868 06BF 00                       .db     0
+000869 06C0 4F                       .db     4fh             ;Cursor Left
+000870 06C1 0E                       .db     0eh             ;Home=Mouse up
+000871 06C2 00                       .db     0
+000872 06C3 00                       .db     0
+000873 06C4 63                       .db     63h             ;MACRO key=control
+000874 06C5                  
+000875 06C5 2C                       .db     2ch             ;Insert=Mouse Left
+000876 06C6 46                       .db     46h             ;Delete
+000877 06C7 4D                       .db     4dh             ;Cursor Down
+000878 06C8 00                       .db     0
+000879 06C9 4E                       .db     4eh             ;Cursor Right
+000880 06CA 4C                       .db     4ch             ;Cursor Up
+000881 06CB                          .rs     4
+000882 06CF 5F                       .db     5fh             ;Page Down=Help
+000883 06D0 00                       .db     0
+000884 06D1 66                       .db     66h             ;print screen=LEFT AMIGA
+000885 06D2 47                       .db     47h             ;Page up=mouse right
+000886 06D3 40                       .db     40h             ;Break=Space?
+000887 06D4 00                       .db     0
+000888 06D5                  XTtb1:
+000889 06D5 00                       .db     0
+000890 06D6 45                       .db     45h             ;esc
+000891 06D7 01                       .db     01h             ;1
+000892 06D8 02                       .db     02h             ;2
+000893 06D9 03                       .db     03h             ;3
+000894 06DA 04                       .db     04h             ;4
+000895 06DB 05                       .db     05h             ;5
+000896 06DC 06                       .db     06h             ;6
+000897 06DD 07                       .db     07h             ;7
+000898 06DE 08                       .db     08h             ;8
+000899 06DF 09                       .db     09h             ;9
+000900 06E0 0A                       .db     0ah             ;0
+000901 06E1 0B                       .db     0bh             ;-
+000902 06E2 0C                       .db     0ch             ;=
+000903 06E3 41                       .db     41h             ;Backspace
+000904 06E4 42                       .db     42h             ;Tab
+000905 06E5                  
+000906 06E5 10                       .db     10h             ;Q
+000907 06E6 11                       .db     11h             ;W
+000908 06E7 12                       .db     12h             ;E
+000909 06E8 13                       .db     13h             ;R
+000910 06E9 14                       .db     14h             ;T
+000911 06EA 15                       .db     15h             ;Y
+000912 06EB 16                       .db     16h             ;U
+000913 06EC 17                       .db     17h             ;I
+000914 06ED 18                       .db     18h             ;O
+000915 06EE 19                       .db     19h             ;P
+000916 06EF 1A                       .db     1Ah             ;[
+000917 06F0 1B                       .db     1Bh             ;]
+000918 06F1 44                       .db     44h             ;ENTER
+000919 06F2 66                       .db     66h             ;L.CTL=LEFT AMIGA
+000920 06F3 20                       .db     20h             ;A
+000921 06F4 21                       .db     21h             ;S
+000922 06F5                  
+000923 06F5 22                       .db     22h             ;D
+000924 06F6 23                       .db     23h             ;F
+000925 06F7 24                       .db     24h             ;G
+000926 06F8 25                       .db     25h             ;H
+000927 06F9 26                       .db     26h             ;J
+000928 06FA 27                       .db     27h             ;K
+000929 06FB 28                       .db     28h             ;L
+000930 06FC 29                       .db     29h             ;';'
+000931 06FD 2A                       .db     2Ah             ;'
+000932 06FE 00                       .db     00h             ;~
+000933 06FF 60                       .db     60h             ;Left Shift
+000934 0700 0D                       .db     0dh             ;\
+000935 0701 31                       .db     31h             ;Z
+000936 0702 32                       .db     32h             ;X
+000937 0703 33                       .db     33h             ;C
+000938 0704 34                       .db     34h             ;V
+000939 0705                  
+000940 0705 35                       .db     35h             ;B
+000941 0706 36                       .db     36h             ;N
+000942 0707 37                       .db     37h             ;M
+000943 0708 38                       .db     38h             ;<
+000944 0709 39                       .db     39h             ;>
+000945 070A 3A                       .db     3Ah             ;/
+000946 070B 61                       .db     61h             ;Right Shift
+000947 070C 5D                       .db     5dh             ;Numeric *
+000948 070D 64                       .db     64h             ;Left Alt
+000949 070E 40                       .db     40h             ;space
+000950 070F 62                       .db     62h             ;CapsLock
+000951 0710 50                       .db     50h             ;F1
+000952 0711 51                       .db     51h             ;F2
+000953 0712 52                       .db     52h             ;F3
+000954 0713 53                       .db     53h             ;F4
+000955 0714 54                       .db     54h             ;F5
+000956 0715                  
+000957 0715 55                       .db     55h             ;F6
+000958 0716 56                       .db     56h             ;F7
+000959 0717 57                       .db     57h             ;F8
+000960 0718 58                       .db     58h             ;F9
+000961 0719 59                       .db     59h             ;F10
+000962 071A 63                       .db     63h             ;Number Lock=Control
+000963 071B 67                       .db     67h             ;Scroll Lock=Right Amiga
+000964 071C 3D                       .db     3dh             ;Numeric 7
+000965 071D 3E                       .db     3eh             ;* 8
+000966 071E 3F                       .db     3fh             ;* 9
+000967 071F 4A                       .db     4ah             ;* -
+000968 0720 2D                       .db     2dh             ;* 4
+000969 0721 2E                       .db     2eh             ;* 5
+000970 0722 2F                       .db     2fh             ;* 6
+000971 0723 5E                       .db     5eh             ;* +
+000972 0724 1D                       .db     1dh             ;* 1
+000973 0725                  
+000974 0725 1E                       .db     1eh             ;* 2
+000975 0726 1F                       .db     1fh             ;* 3
+000976 0727 0F                       .db     0fh             ;* 0
+000977 0728 3C                       .db     3ch             ;* .
+000978 0729 63                       .db     63h             ;print screen=CONTROL
+000979 072A 00                       .db     0
+000980 072B 00                       .db     0
+000981 072C 5A                       .db     5ah             ;F11=Numeric (
+000982 072D 5B                       .db     5bh             ;F12=Numeric )
+000983 072E                          .rs     7
+000984 0735                  
+000985 0735                          .rs     10h
+000986 0745                  
+000987 0745                          .rs     10h
+000988 0755                  XTtb2:
+000989 0755                          .rs     10h
+000990 0765                  
+000991 0765                          .rs     12
+000992 0771 43                       .db     43h             ;Numeric Enter
+000993 0772 67                       .db     67h             ;Right Control=RIGHT AMIGA
+000994 0773                          .rs     2
+000995 0775                  
+000996 0775                          .rs     10h
+000997 0785                          
+000998 0785                          .rs     5
+000999 078A 5C                       .db     5ch             ;Numeric /key
+001000 078B 00                       .db     0
+001001 078C 66                       .db     66h             ;Print Screeen=Left Amiga
+001002 078D 65                       .db     65h             ;Right Alt
+001003 078E                          .rs     7
+001004 0795                  
+001005 0795                          .rs     6
+001006 079B 5F                       .db     5fh             ;BREAK=HELP!
+001007 079C 0E                       .db     0eh             ;Home=MOUSE UP
+001008 079D 4C                       .db     4ch             ;cursor up
+001009 079E 47                       .db     47h             ;pageup=mouse right
+001010 079F 00                       .db     0
+001011 07A0 4F                       .db     4fh             ;cursor left
+001012 07A1 00                       .db     0
+001013 07A2 4E                       .db     4eh             ;cursor right
+001014 07A3 00                       .db     0
+001015 07A4 1C                       .db     1ch             ;End=mouse down
+001016 07A5                  
+001017 07A5 4D                       .db     4dh             ;cursor down
+001018 07A6 5F                       .db     5fh             ;page down=HELP!
+001019 07A7 2C                       .db     2ch             ;insert=mouse left
+001020 07A8 46                       .db     46h             ;delete
+001021 07A9                          .rs     12
+001022 07B5                         
+001023 07B5                          .rs     15
+001024 07C4 63                       .db     63h             ;Macro=control
+001025 07C5                  
+001026 07C5                          .rs     10h
+001027 07D5                  
+001028 07D5                          .end    0
+
+AC      =00D6  ET2     =00AD  P0.0    =0080  RXD     =00B0  TMOD    =0089  
+ACC     =00E0  EX0     =00A8  P0.1    =0081  SBUF    =0099  TR0     =008C  
+ACC.0   =00E0  EX1     =00AA  P0.2    =0082  SCON    =0098  TR1     =008E  
+ACC.1   =00E1  EXEN2   =00CB  P0.3    =0083  SCON.0  =0098  TR2     =00CA  
+ACC.2   =00E2  EXF2    =00CE  P0.4    =0084  SCON.1  =0099  TRANSMIT=03BF  
+ACC.3   =00E3  F       =058A  P0.5    =0085  SCON.2  =009A  TRANSOK =03C3  
+ACC.4   =00E4  F0      =00D5  P0.6    =0086  SCON.3  =009B  TRANSOK2=03CB  
+ACC.5   =00E5  FREE    =04CE  P0.7    =0087  SCON.4  =009C  TRANSOK3=03FE  
+ACC.6   =00E6  G       =0592  P1      =0090  SCON.5  =009D  TRANSOK4=03F3  
+ACC.7   =00E7  GOTIT   =05B0  P1.0    =0090  SCON.6  =009E  TRSET   =04BE  
+ACLK    =0093  H       =059A  P1.1    =0091  SCON.7  =009F  TT1     =05BF  
+ACTUAL2 =057B  HARDRESE=054F  P1.2    =0092  SEND4   =0325  TT2     =05C7  
+ACTUALTR=056F  HOLD    =054C  P1.3    =0093  SEND5   =032D  TT3     =05CF  
+ADAT    =0094  HSLOOP  =0561  P1.4    =0094  SEND6   =0337  TXD     =00B1  
+AMIGACHA=0052  I       =05A2  P1.5    =0095  SEND7   =033C  WAITSHAK=05AB  
+ARESET  =0095  IE      =00A8  P1.6    =0096  SEND77  =033F  WR1     =04E1  
+ATDATAB =02C3  IE.0    =00A8  P1.7    =0097  SEND78  =0344  WR11    =051F  
+ATDOWN  =030F  IE.1    =00A9  P2      =00A0  SEND79  =0347  WR2     =04E9  
+ATERROR =02B4  IE.2    =00AA  P2.0    =00A0  SEND7A  =034A  WR22    =0527  
+ATGETKEY=0290  IE.3    =00AB  P2.1    =00A1  SEND8   =034F  WR3     =04F1  
+ATNE0   =0308  IE.4    =00AC  P2.2    =00A2  SEND9   =0355  WR33    =052F  
+ATNE012 =0302  IE.5    =00AD  P2.3    =00A3  SENDTOAT=031F  WR4     =04F9  
+ATNE0F0 =02FC  IE.7    =00AF  P2.4    =00A4  SKIPLIGH=03F2  WR44    =0537  
+ATNE1   =02E0  IE0     =0089  P2.5    =00A5  SM0     =009F  WR5     =0502  
+ATNEF12 =02F6  IE1     =008B  P2.6    =00A6  SM1     =009E  WR55    =0540  
+ATNSTART=029D  INIT    =0000  P2.7    =00A7  SM2     =009D  XT7BIT  =004A  
+ATNSTOP =02BA  INT0    =00B2  P3      =00B0  SMALL1  =0491  XTCAP   =03D6  
+ATPARITY=0048  INT1    =00B3  P3.0    =00B0  SMALLDEL=0487  XTGETKEY=035C  
+ATPOWERU=0277  IP      =00B8  P3.1    =00B1  SP      =0081  XTLOOKUP=03A7  
+ATSTYLE =02CB  IP.0    =00B8  P3.2    =00B2  START   =0200  XTN2A   =039A  
+ATTB1   =05D5  IP.1    =00B9  P3.3    =00B3  SYNC    =022D  XTN36   =03A4  
+ATTB2   =0655  IP.2    =00BA  P3.4    =00B4  SYNC2   =0237  XTNAA   =0395  
+ATUP    =0317  IP.3    =00BB  P3.5    =00B5  SYNC3   =023A  XTNB6   =039F  
+ATWAIT  =02C6  IP.4    =00BC  P3.6    =00B6  T2CON   =00C8  XTNE0   =03B7  
+ATWAITC0=0294  IP.5    =00BD  P3.7    =00B7  T2CON.0 =00C8  XTNE1   =038B  
+ATWAITC1=02A0  IT0     =0088  PARITYEV=02AC  T2CON.1 =00C9  XTPOWERU=0263  
+B       =00F0  IT1     =008A  PARITYOD=02B0  T2CON.2 =00CA  XTRESET =0269  
+B.0     =00F0  KCLK    =0090  PAUSE   =02A7  T2CON.3 =00CB  XTSTYLE =037A  
+B.1     =00F1  KDAT    =0091  PCON    =0087  T2CON.4 =00CC  XTTB1   =06D5  
+B.2     =00F2  KMDOWNDO=0444  PS      =00BC  T2CON.5 =00CD  XTTB2   =0755  
+B.3     =00F3  KMDOWNUP=0439  PSW     =00D0  T2CON.6 =00CE  XTTEST  =0257  
+B.4     =00F4  KMLEFTDO=0460  PSW.0   =00D0  T2CON.7 =00CF  XTW1    =0360  
+B.5     =00F5  KMLEFTUP=0455  PSW.1   =00D1  T3      =05D4  XTW2    =0363  
+B.6     =00F6  KMRHTDOW=047C  PSW.2   =00D2  TB8     =009B  XTW3    =0366  
+B.7     =00F7  KMRHTUP =0471  PSW.3   =00D3  TCLK    =00CC  XTW4    =0369  
+CAPBIT  =0042  KMUPDOWN=0428  PSW.4   =00D4  TCON    =0088  XTW5    =036C  
+CAPDOWN =0043  KMUPUP  =041D  PSW.5   =00D5  TCON.0  =0088  XTW6    =0372  
+CAUGHT1 =050E  KRESET  =0092  PSW.6   =00D6  TCON.1  =0089  
+CAUGHT2 =054C  KSTYLE  =004B  PSW.7   =00D7  TCON.2  =008A  
+CHARBAD =0050  KSWITCH =0097  PT0     =00B9  TCON.3  =008B  
+CONTROL =0045  LAMIGA  =0046  PT1     =00BB  TCON.4  =008C  
+CPRL2   =00C8  LL      =0272  PT2     =00BD  TCON.5  =008D  
+CT2     =00C9  MAKE    =0049  PX0     =00B8  TCON.6  =008E  
+CTRLDOWN=0044  MAYBEFRE=04C6  PX1     =00BA  TCON.7  =008F  
+CY      =00D7  NOCONTRO=0411  RAMIGA  =0047  TF0     =008D  
+DELAY   =0576  NOMDOWN =044F  RB8     =009A  TF1     =008F  
+DLY     =0573  NOMLEFT =046B  RCAP2H  =00CB  TF2     =00CF  
+DONTRANS=03BC  NOMUP   =0433  RCAP2L  =00CA  TH0     =008C  
+DPH     =0083  NOTSPECI=0499  RCLK    =00CD  TH1     =008D  
+DPL     =0082  NRSET1  =04AE  REN     =009C  TH2     =00CD  
+DUMMY   =04CF  NRSET2  =04B7  RESETINT=04D0  TI      =0099  
+EA      =00AF  OLDCHAR =0051  RESETWAR=04D2  TIMER1IN=05B4  
+ES      =00AC  OV      =00D2  RI      =0098  TL0     =008A  
+ET0     =00A9  P       =00D0  RS0     =00D3  TL1     =008B  
+ET1     =00AB  P0      =0080  RS1     =00D4  TL2     =00CC  
+@\Rogue\Monster\
+else
+  echo "shar: Will not over write key.list"
+fi
+if `test ! -s key.obj`
+then
+echo "x - key.obj"
+cat > key.obj << '@\Rogue\Monster\'
+:03000000020200F9
+:030003000204D024
+:03001B000205B427
+:1002000075891175880575A800D2AFD2ABD2A8D276
+:10021000B2D2B97581307590FFC28EC28FC28CC2C6
+:100220008DC243C244C242D245D246D247758B00EA
+:10023000758D007902D28E2094FD3094FDC28E74AB
+:10024000FDB16F74FEB16F30971920912A758C0043
+:10025000758A00C28DD28C208D093091FAC28CC271
+:100260008D8014C24BC28DC290308DFDD290C28C55
+:10027000C28D715C02037AD24B74FF711F74F671E8
+:100280001F74ED711F7402711F74F4711F0202CB91
+:10029000780BD2902090FD18B80A028029B8001A75
+:1002A0003090FDC2907814D8FE20D004304805224A
+:1002B0002048012274FE711F80D6B80106A29192D7
+:1002C000488003A291133090FD80C95190B4E11091
+:1002D000519051905190519051905190519080EB8C
+:1002E0009005D5B4E0229006555190B4F00E51908F
+:1002F000B412030202CBB4591E0202CBB4120302A1
+:1003000002CBB4590A0202CBB4F004519080089396
+:10031000C2E771BF0202CB93D2E771BF0202CBD218
+:1003200090C29178082090FDA2E09291033090FD58
+:1003300018B800F1A2D0B32090FD92913090FD202A
+:1003400090FDD2913090FD2090FD3090FD7808D83E
+:10035000FEC2907814D8FED290519022D2917808A3
+:100360002090FD3090FD2090FD3090FD2090FDA26A
+:1003700091133090FDD8F5C29122715CB4E10C71FB
+:100380005C715C715C715C715C80EFB4E029715CE4
+:10039000B4AA0280E5B42A0280E0B4B60280DBB4DD
+:1003A000360280D6900755A2E7924AC2E793A24A46
+:1003B00092E771BF02037A9006D580EBD0E022B5B8
+:1003C000510122B46205F551D24322B4E230E55125
+:1003D000304B03B4621DC243B2427462A242B39274
+:1003E000E7B16F304B0C74ED711F7402A24292E2C0
+:1003F000711F22C244C2437463D2E7B16F22F55128
+:10040000304B0E30430B204408D2447463B16FE587
+:1004100051A2E79249C2E7B40E1930490B74CCB12E
+:100420006F918774E7B16F227467B16F9187744CD5
+:10043000B16F22B41C1930490B74CDB16F74E791C0
+:1004400087B16F227467B16F9187744DB16F22B419
+:100450002C1930490B74CFB16F918774E7B16F22BB
+:100460007467B16F9187744FB16F22B4472B3049D5
+:100470000B74CEB16F918774E7B16F227467B16F5F
+:100480009187744EB16F22758C00758A00C28DD22F
+:100490008C308DFDC28DC28C22E551B16FE551A229
+:1004A000E79249C2E7B46306A24992458010B46658
+:1004B00006A24992468007B46704A2499247304594
+:1004C000052044028008204605204702800422328D
+:1004D00091CFC28DE5787902758A00758C00F47829
+:1004E0000823A2E7929475F008D5F0FDC29375F049
+:1004F00008D5F0FDD29375F00AD5F0FDD8E3D2947B
+:10050000D28C309409308DFAC28DD9F68041C28CDC
+:10051000C28DE5787904758A00758C00F47808231B
+:10052000A2E7929475F008D5F0FDC29375F008D556
+:10053000F0FDD29375F00AD5F0FDD8E3D294D28CB9
+:10054000309409308DFAC28DD9F680033094FDC203
+:100550008CC28DC295C293790F758C00758A00D2BA
+:100560008C308DFDC28DD9F9C28DC28C020200F58E
+:1005700052780575F000D5F0FDD8F8E552C25079F3
+:1005800002758B00758D00F4780823A2E7929475AC
+:10059000F008D5F0FDC29375F008D5F0FDD2937543
+:1005A000F00AD5F0FDD8E3D294D28E2094FDC28E0D
+:1005B0003094FD22D91E7902D250C29475F008D52C
+:1005C000F0FDC29375F008D5F0FDD29375F00AD511
+:1005D000F0FDD29432005800545250515B005957EC
+:1005E00055534200000064600066100100000031B5
+:1005F0002120110200003332221204030000403493
+:100600002314130500003635252415060000003795
+:10061000261607080000382717180A090000393A7B
+:100620002829190B0000002A001A0C0000626144FE
+:050630001B000D00009D
+:10063B004100001D002D3D0000000F3C1E2E2F3EE3
+:0A064B0045635A5E1F4A5D3F6700D9
+:020658005666E4
+:050665000065000067C4
+:01069F005CFE
+:0106AF004307
+:0D06BE001C004F0E0000632C464D004E4CFA
+:1006CF005F00664740000045010203040506070866
+:1006DF00090A0B0C41421011121314151617181991
+:1006EF001A1B4466202122232425262728292A0085
+:1006FF00600D3132333435363738393A615D644005
+:10070F00625051525354555657585963673D3E3FA7
+:0F071F004A2D2E2F5E1D1E1F0F3C6300005A5BDC
+:020771004367DC
+:04078A005C00666544
+:0E079B005F0E4C47004F004E001C4D5F2C4679
+:0107C40063D1
+:00000001FF

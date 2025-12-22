@@ -1,0 +1,272 @@
+                         PC-keyboard adapter for Amiga
+                      with hardware key-remapping features
+
+I.	Introduction.
+
+ This  adapter  is intended for attaching PC-keyboards to Amigas with or without
+its  native keyboard.  It has hardware feature of keymap changing (this requires
+employment  of  extra  nonvolatile  memory  chip).   The  adapter  is  primarily
+dedicated  to work with 'windows' keyboards, but with some tricks it can be used
+with  ordinary  keyboards  (without  LWIN & RWIN keys).  In particular, it would
+require  utilization  of  nonvolatile memory with its preceding programming from
+'windows' keyboard.
+
+II.	Design
+
+ Main  scheme  of  the  adapter  is  on fig.  1 (PCkb_rmp.scheme1).  Its base is
+ATMEL's   FLASH-based  microcontroller  AT89C2051  with  endurance  up  to  1000
+erase/write cycles.
+
+ There  are  2 types of PC-keyboard connectors available:  DIN-5 (AT standard) &
+MiniDIN  (PS/2  standard), while the interaction interface is the same.  You can
+install both connectors, joining corresponding lines directly, which would allow
+you  to  attach  both  types of keyboards.  Pinout of PS/2 connector is given on
+fig.  1.  (view to the female connector from attaching side).
+
+ Connector  for  attaching  to  A3/4000 has exact the same pinout as PC-keyboard
+one,  with  AMYreset  line staying unconnected.  It's recommended to use similar
+connector with A1200, routing AMYreset line through the remaining (3rd) pin.
+
+ Fig.   1  also  has  a  schematic partial view of A1200 motherboard with marked
+places to attach adapter.  Both lines AMYclk & AMYdata may be attached to any of
+depicted chips.
+
+ WARNING!!!   If  you are connecting this adapter to A1200 without removing main
+keyboard  controller  or you want to have both keyboards (native & PC), then you
+should  pull  pin 8 (port P3.4) of chip DD1 to earth.  Otherwise, if you have no
+amiga keyboard controller (on A3/4000), this pin should be left unconnected.
+
+ There  are  rather strong pull-up resistors on lines AMYclk & AMYdata in A1200,
+so  you  may  skip installing pull-up resistors on that lines in adapter scheme.
+Also  you may skip diode VD1 (causing to decrease reliability of resets at power
+glitches),  resistor R1 (increasing power-up reset time).  More, you can try not
+to  install capacitors C2 & C3, but, in general, quartz generator do not obliged
+to operate under such conditions.
+
+ To  powering  up  adapter  with  PC  keyboards, it is preferred to use separate
+'tale'  of  PSU  (if  you have AT or ATX PSU).  Usually the black wire is earth,
+while the red is +5v.  DO NOT MIX them UP!  Check it with multimeter!
+
+ If  your  adapter  is locking up frequently (bad power supply or buggy code ;),
+it's worth to install additional 'reset' button - any closing button in parallel
+with capacitor C1.
+
+ If  you are unable to find AT89C2051, you can utilize old & funny 8031, 8051 or
+other 'mcs51 - compatible' 40-pin chip (fig.  2:  PCkb_rmp.scheme2), but it will
+result  in  3  chips:   40-pin  MCU,  20-pin  latch  &  24-pin EPROM).  Data for
+programming both the AT89C2051 & 2716 EPROMs remains the same.
+
+ For  hardware  remmaping  feature  you  have to install one more chip - 24LC01B
+(fig.   3:   PCkb_rmp.scheme3).   It's  nonvolatile  128-byte memory, containing
+remap information.
+
+
+III.	Parts.
+
+ Chip  DD1 - AT89C2051, there are some additional information about package type
+after  this  label  on  the  chip.  Recommended types are:  -12PC, -12PI, -24PC,
+-24PI  (selection  should  be made with respect only of price ;).  Other package
+types are SOIC & poorly approaching for periodic upgrade of flash code.  This is
+also a reason for installing chip onto a socket.
+
+ Chip  DD4  (fig.  3) is MICROCHIP's 24LC01B.  In general, you can substitute it
+with any other nonvolatile memory chip, providing you obey next conditions:
+
+1) Chip must be compatible with clock frequencies 400kHz or more.
+
+2)  Chip  must have memory size ranging from 1 to 16 kbits (typical part name is
+24x01  - 24x16, where x stands for some letter(s)), nevertheless, just first 128
+bytes will be utilized.
+
+3)  Chip  must have standart interface protocol.  (Look datasheets on particular
+chips for details)
+
+In  particular,  adapter  has  been checked with FM24C04 (but it's rather exotic
+chip).   It's  worth  trying  ATMEL's  AT24C01A  (The  presence of letter 'A' is
+essential  since  AT24C01  has  different interface protocol, furthermore, there
+shouldn't be any numbers like -2.7, -2.5, -1.8 at the end of chip label, because
+such chips aren't 400kHz compatible).  Unfortunately, I cannot guarantee correct
+functioning of the adapter with any type of nonvolatile memory...  :(
+
+
+IV.	Using the adapter.
+
+
+ Default keymap of PC-keyboard is the following:
+
+	PC			|	AMIGA
+				|
+Lwin, Rwin			+>	Lamiga, Ramiga
+Lctrl, Rctrl			+>	Ctrl
+Menu				+>	Lamiga-M
+				|
+CapsLock			+>	CapsLock
+				|
+F11,F12				+>	Left blank, Right blank ('blank' keys on
+				|	international A1200 keyboard)
+				|
+Insert				+>	Help
+				|
+Home				+>	Rshift-CursorLeft
+End				+>	Rshift-CursorRight
+PgUp				+>	Rshift-CursorUp
+PgDn				+>	Rshift-CursorDown
+				|
+PrtScr				+>	keypad (
+ScrollLock			+>	keypad )
+
+Pause,Numlock,
+Power,Sleep,WakeUp (if any)	->	not used
+
+Other keys have meaning corresponding to their labels.
+
+
+ Keymap adjusting:
+
+1).   Enter  your  favourite  text  editor,  turn  to  latin  keymap, then press
+sequentially 'Pause' key for 6 times.  Next message should appear:
+
+SETUP MODE
+Change,cLear,Done,Erase all,cursor up/down
+
+ In the next string, there should be something like 'cell 00:  <anything here>'.
+
+ If  you've  got 'NO or BAD i2c device!' message, you haven't nonvolatile memory
+chip  connected,  or  it is out of order, or the communication with it cannot be
+established for any other reasons.
+
+2).   As it becomes obvious from the prompt, you can utilize 'c', 'l', 'd', 'e',
+'cursor up', 'cursor down' keys.
+
+More details:
+
+'e'  - erasing of everything written to chip (start working with a new chip with
+this command).
+
+'d'  -  finishing  of  setup mode:  adapter will be restarted & any changes will
+take effect.
+
+'cursor  up/down'  -  selecting of cell.  There are 32 cells available (00-1f in
+hexadecimal).
+
+'l' - clearing of current cell (message 'cell xx:  empty' should appear).
+
+'c' - changing of current cell.
+
+ As  fast as you've pressed 'c', message 'PC key:' should appear.  Press rapidly
+desired  key on PC keyboard.  Scancode of pressed key should then be printed (xx
+or  e0  xx),  and  a message 'AMIGA key(s):' arrived.  Further, you are to press
+from  1  to  3 'amiga' keys according to the default keymap table (see above) in
+desired  order,  not releasing any of them before pressing last in sequence.  Do
+not try to do it fast, giving adapter enough time to print each key's scancode.
+
+3).   After  you've  finished  adjusting  (by  pressing 'd'), pressing of any of
+remapped  keys  will  be  equivalent  to  pressing  corresponding  amiga keys in
+selected  order,  while  releasing will be equivalent to releasing amiga ones in
+reversed  sequence.  It's likely to remap in the same way so called 'multimedia'
+keys  on  currently  popular PC-keyboards, but there is no any standard for such
+keys.   Remapping  them  might fail in case they have too strange scancodes (not
+fitting into xx or e0 xx model).
+
+
+V.	Utilizing of non-'windows' keyboards.
+
+ To  employ  this  option,  you  have  to program nonvolatile memory chip, using
+'windows' keyboard.
+
+ Program  four  last  (for  convenience)  cells  with  the following remaps (see
+chapter IV):
+
+LCTRL (on PC board) -> LAMIGA (press LWIN),
+RCTRL -> RAMIGA (press RWIN),
+CapsLock -> CTRL (press any of CTRLs),
+NumLock -> CapsLock (press CapsLock itself ;)
+
+ As  you  can  see,  the  idea of this method implies that you set both LAMIGA &
+RAMIGA  keys  on  both CTRLs, making PC CapsLock key amiga CTRL, while utilizing
+NumLock  (which  is free in default keymap) as amiga CapsLock key.  You can vary
+this scheme as well.
+
+ Further try not to change programmed in such a manner cells....
+
+
+VI.	Programming chips.
+
+ The  easiest  way  to do that is to use any of commercial programmators, as its
+owner probably would program your AT89C2051 for a small reward.  Code is applied
+both  in  BINARY  form  (PCkb_rmp.bin), which should be written to chip starting
+from  ZERO  address  and  in  intelhex  format  (PCkb_rmp.obj),  which should be
+programmed ENTIRELY.  The same recommendations go for programming of 2716.
+
+ Also  you  can utilize my amiga programmator for AT89C2051.  Currently it isn't
+available on aminet, so just write me if you need it.
+
+
+VII.	Chronology...
+
+ July/august 2000: Initial version.
+
+ If  Amiga  have been stopped replying keyboard, you are unable to reset it from
+PC-keyboard.   Does  not  work  with  Slam  Tilt.   Simultaneous  functioning in
+parallel with the main keyboard is not allowed.
+
+
+ January/february 2001: Version 1.1
+
+ Now  reset  will  be  performed  under  any  circumstances.  Ability to work in
+parallel  with  main  controller  was added.  Still there are problems with Slam
+Tilt.
+
+
+ July 2001: Version 1.2
+
+ 'Slam  Tilt'  bug  fixed.   Remapping features were added (kewl!).  Features of
+monitoring  PC keyboard state were added:  approx.  every 3.5 secs of inactivity
+(no  pressed  keys)  adapter  sends echo-code ($EE) to PC keyboard, awaiting for
+reply.  If there is silence, adapter restarts & then tries to perform 'software'
+reset  of  keyboard.  Also approx.  every 15 mins of inactivity 'software' reset
+takes  place  regardless  the  state of keyboard.  Unfortunately, these features
+won't  help  if adapter have been locked up globally (there is no watchdog timer
+in  AT89C2051),  or  if  PC  keyboard  controller  have  been  stalled.  In next
+versions, hopefully, the ability of 'hardware' resetting of the PC keyboard will
+be added (by turning it off & on again).
+
+
+VIII.	Copyrights.
+
+ This   hard/software   product   is  intended  exclusively  for  non-commercial
+applications.   Any  commercial  application of this product or its parts can be
+allowed only by written permission of the author (see chapter IX).
+
+ Author does not carry any responsibility for any losses or damages, arising out
+of using, connecting or constructing this product.
+
+ Any  distribution  of  this  product is allowed (& encouraged), but only if you
+obey following terms:
+
+1).    It  is  forbidden  to  take  any  charge  for  distribution,  except  for
+transportation or carriers.
+
+2).   It  is  forbidden  to  make  any  changes or additions to original archive
+(PCkb_rmp.lha), and to REPACK it.
+
+3).   It  is  forbidden  to  distribute this product in any form, differing from
+original archive.
+
+ Distribution with violating of present terms is forbidden.
+
+ It is allowed to use any parts (source codes, schemes & others) of this product
+for  any  non-commercial  purposes,  as  far  as  there  is  a  reference  to my
+authorship.
+
+
+IX.	Author's coordinates.
+
+
+						 [c]  Vadik Akimoff
+					2:5022/115.37 (currently not available)
+				       -----------------------------------------
+					    lordvader@newmail.ru (preferred)
+
+
+$VER: pc kbd controller (c) LVD, ver 1.2

@@ -1,0 +1,197 @@
+------------------------------------------------------------------------
+AmigaScope  HELP  file     (C) 1990, Stephen L. Childress, (818)706-5247
+                                     PLINK: ops274
+------------------------------------------------------------------------
+
+WHAT IS AMIGASCOPE?
+
+  A program which makes your Amiga function like an eight channel digital
+  data analyzer or oscilloscope. The eight channels of data are 5V logic
+  signals connected to the Amiga's parallel port. When using AmigaScope,
+  the Amiga's parallel port is used as an INPUT port.
+  AmigaScope is digital; it will not accept analog signals.
+
+  An interlaced display is used. AmigaScope should run on any Amiga,
+  however to date I've only tested it on an A1000 with 1.5MB of RAM.
+
+  AmigaScope also writes and reads data files containing your acquired
+  data. To print a 'scope display, you may write your data to a disk
+  file, connect the parallel port to a printer, recall the disk data,
+  and click on PRINT.
+
+  I retain all commercial and educational rights to AmigaScope.
+  I grant a usary license only to not-for-profit users.
+  AmigaScope is written in C for Lattice 5.x.
+  AmigaScope was developed with Amiga OS 1.3.
+  It might run on 2.0.
+
+
+FOR A QUICK DEMO...
+
+  Run AmigaScope. A 640 x 480 screen/window will appear.
+  Click on the "60HZ CALIB" button.
+  Click on the "SINGLE SWEEP" button.
+  Click/Drag the two sliders which control the scope display.
+  Click somewhere on the waveforms to change the display start point.
+  Change the sample interval and duration as desired.
+  Leave TRIGGER MASK at 0 until you read the DATA TRIGGER instructions.
+
+
+GENERAL RULES OF USE...
+
+  When you key in numeric data, YOU MUST PRESS THE RETURN KEY.
+
+  Slide the MAGNIFICATION slider to the left of center to fit more
+  data onto the screen. Slide to the right of center to see sample detail.
+
+  At low magnification (slider to the left) the display may be wrong
+  because of data compression/subsampling for display purposes.
+
+  If you click to change the display start point or magnification,
+  the program redisplays immediately without reacquiring data.
+
+  The arrows left of the display start slider give you very fine control.
+
+  Click within the waveform display to change the start point.
+
+  The display start point slider ranges 0-500 as displayed to the right.
+  The magnification slider ranges 0-100.
+
+
+WHAT LOGIC SPEEDS CAN AMIGASCOPE HANDLE?
+
+  The limiting factor is the speed of the Amiga's CPU. An A1000 can
+  sample approx. every 5 microseconds. The other machines may be
+  extrapolated from this. I've not tested this program on other
+  machines. Please let me know if you do!
+
+  Fast sampling rates and long durations take lots of memory. AmigaScope
+  allocates and releases memory for every acquisition cycle, based upon
+  your sample interval and duration settings.
+
+  Beware that the program's estimate of the absolute sampling interval time
+  is a very rough estimate. Using the 60HZ CALIB. button, you can change
+  the sample rates, etc., and look at the effect given a known square wave.
+  The square wave is obtained from the 8520 chip's timer.
+
+  At sample rates of less than 10 miliseconds, the rate is contolled by a
+  software delay loop. While this is running, Amiga interrupts are disabled
+  to ensure a more accurate sample interval. Because of this, AmigaScope
+  should not be used when this would interfere with multitasked programs.
+
+  At sample rates of 10 miliseconds and slower, sampling is controlled by
+  the timer device in the Amiga. In this case, interrupts are not
+  disabled.
+
+  AmigaScope computes the proper CPU delay loop count by performing
+  a calibration when you do the first acquisition. The 8520 chip timer
+  is assumed to be 1/60 sec and the proper loop count is estimated. This
+  applies to the less than 10 milisecond sampling case only.
+
+  Unknown limitations are the speed of the 8520 chip and the
+  Amiga-internal capacitive load on the parallel port input pins.
+
+
+HOW TO USE AMIGASCOPE WITH REAL DIGITAL DATA...
+
+  Into your parallel port, plug in a cable which you've made which
+  connects up to 8 logic signals. BEWARE! If you connect an input pin
+  on your port to +5 or Ground, you *WILL* break the 8520 chip inside
+  the Amiga. It's true! I did it!
+
+  The connections are:
+    Ground is on pin 14,15, ... or 22
+    The inputs are pins 2,3, ... and 9
+
+  I urge you to connect 220 ohm resistors in series with your input
+  lines on pins 14...22 to limit the current in case of a boo-boo.
+  Be VERY careful about static discharges.
+
+
+DATA TRIGGERS...
+
+  If you need to delay the start of data acquisition/sampling until a
+  particular pattern occurs or a particular bit changes state, use
+  the data trigger capability. Set the TRIGGER MASK gadget to 00 to
+  disable DATA TRIGGERS.
+
+  The TRIGGER MASK is a two digit hexadecimal number. It is and'ed with
+  the sampled data as explained below.
+
+  The TRIGGER itself is a two digit hexadecimal number. It is and'ed with
+  the TRIGGER MASK.
+
+  When you start data acquisition (SINGLE SWEEP or BEGIN SAMPLING), and
+  if TRIGGER MASK is non-zero, the following happens:
+
+    AmigaScope does the following:
+
+      1. Read new input data from the parallel port.
+      2. AND the new data with TRIGGER mask.
+      3. Compare the result of (2) with the value in TRIGGER.
+      4. Go to step #1 if the comparison is unequal.
+      5. Start acquisition of all data if the comparison is equal.
+
+  Examples:
+
+    A. Trigger when the input data is 10001010.
+       Set TRIGGER MASK to FF.
+       Set TRIGGER      to 8A.
+
+    A. Trigger when the input data is 1xxx1010.
+       Set TRIGGER MASK to 9F.
+       Set TRIGGER      to 8A.
+
+    C. Trigger when bit 0 becomes 0.
+       Set TRIGGER MASK to 01.
+       Set TRIGGER      to 00
+
+    D. Trigger when bit 0 becomes 1.
+       Set TRIGGER MASK to 01.
+       Set TRIGGER      to 01
+
+
+  TO ABORT A HUNG-UP TRIGGER, merely click on STOP. This will happen if
+  you choose a trigger condition which is not happening.
+
+  Warning: Interrupts are enabled while waiting for the data to match
+  the trigger condition. Therefore, at fast sampling rates, the time
+  between the first and second sample may be quite long.
+
+
+PRINTING...
+
+  The PRINT SCREEN button does just that. The current program requires
+  an EPSON compatible printer connected to the parallel port. The
+  program uses the PAR: device. Thus, the PREFERENCES settings don't
+  matter.
+
+  BEWARE! If you click on PRINT SCREEN with your digital inputs
+  connected, your signals and the 8520 in output mode will "buck"
+  the data lines. This might damage something, though I've not found.
+  that to be true. Doing so *will* drive your circuit's signals
+  to the wrong state because of the wire-or.
+
+  Every time you acquire data, the 8520 chip is reprogrammed for input
+  mode. So if you accidentally PRINT SCREEN, just reacquire data.
+
+
+FILES...
+
+  Click on FILES. An Amiga-style file requestor appears. Choose SAVE
+  to write the current acquired data to a disk file. A file name
+  suffix of ".dat" is assumed.
+
+  Choose LOAD to recall and display saved ".dat" files. You can LOAD
+  and display any file. Doing so for program files is interesting.
+
+  To eliminate the ".dat" suffix, change the File Requestor's extension
+  data input box contents as desired.
+
+  AmigaScope files are simply a byte stream. Use TYPE opt H from
+  the CLI to view the data.
+
+
+GOOD LUCK!
+
+END.

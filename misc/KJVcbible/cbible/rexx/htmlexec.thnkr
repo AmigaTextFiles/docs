@@ -1,0 +1,93 @@
+/* */
+options results
+trace off
+parse arg str
+/* strip quotes */
+
+file=""
+name=""
+pre=""
+
+i=pos(",",str)
+if i > 0 then do
+	firstp=substr(str,1,i-1)
+	secondp=substr(str,i+1)
+	if firstp = "Thinker" then do
+		address "Thinker" value("secondp")
+		exit rc
+	end
+end
+
+i=pos('"',str)
+if i > 0 then str=delstr(str,i,1)
+i=pos('"',str)
+if i > 0 then str=delstr(str,i,1)
+
+i=pos("file://localhost/",str)  /* find prefix */
+if i > 0 then do
+	str=substr(str,18)
+	i=lastpos("/",str)
+	if i = 0 then i=lastpos(":",str)
+	if i > 0 then do
+		pre=left(str,i)
+		str=substr(str,i+1)
+	end
+end
+
+/* now find ',' */
+
+i = pos(',',str)
+
+if i > 1 then do   /*  both file and label */
+	if i > 1 then do
+		file=substr(str,1,i-1)
+		str=delstr(str,1,i)
+		name=str
+	end
+	else do
+		str=delstr(str,1,1)
+		name=str
+	end
+end
+else do    /* only a name? */
+	if i = 0 then name=str
+	else name=str
+end
+
+if length(file) == 0 then do 
+	jump label first name
+	exit
+end
+
+
+if exists(pre || file) == 0 then 
+	return "file '" || file || "' does not exist"
+
+ tfile=file
+
+ i=pos(':',tfile) 
+ if i > 0 then tfile=substr(tfile,i+1)
+
+ i=pos('/',tfile)
+ do while i > 0 
+	tfile=substr(tfile,i+1);
+	i=pos('/',tfile)
+ end
+
+thinkerfile="t:" || tfile || ".trans"
+
+if exists(thinkerfile) == 1 then do
+	jump label first thinkerfile || ',' || name
+	exit
+end
+
+create thinkerfile
+if rc ~= 0 then return "create failed"
+get origin thinkerfile
+import after 1 HTML pre || file
+if rc ~= 0 then return "Import Failed (not html)"
+get origin
+delete current
+save
+jump label first thinkerfile || "," || name
+

@@ -1,0 +1,524 @@
+@database 07096510-0
+@master tuning.guide
+@$VER: 1.0
+@author "Markus Marquardt"
+@(c) ""
+@index HeddleyAutoIndex
+@remark Created with Heddley v1.1 (c) Edd Dumbill 1994
+
+@node "Main" "A2232 Tuning"
+
+                              A2232 Tuning
+
+          Tuning/Umbauanleitung zur A2232 Multi-Seriell-Karte
+
+                       Version 1.03 vom 23.3.1997
+
+                 Idee & Umsetzung von @{"Markus Marquardt" link "Autor" 0}
+
+         Many thanks for support and inspiration to Jukka Marin
+
+
+   Allgemeines
+      @{" Hinweise       " link "Hinweise" 0}                  Allgemeine Hinweise
+      @{" Einleitung     " link "Einleitung" 0}                  Was ist das?
+
+   a2232.device
+      @{" Leistungsdaten " link "DevDaten" 0}                  Leistungsdaten der Device
+      @{" Installation   " link "DevInstall" 0}                  Installation der Device
+      @{" Technik        " link "DevTech" 0}                  Technische Informationen
+
+   Hardware-Umbau
+      @{" Wichtig!       " link "UmbauWichtig" 0}                  Bitte VOR dem Umbau lesen!
+      @{" Umbauvarianten " link "UmbauVar" 0}                  Die Umbaumöglichkeiten
+      @{" Material       " link "UmbauMat" 0}                  Benötigtes Material
+      @{" RTS/CTS Umbau  " link "UmbauShake" 0}                  RTS/CTS-Handshake Umbauanleitung
+      @{" Baudraten A    " link "UmbauBaudA" 0}                  Baudraten-Umbau Variante A
+      @{" Baudraten B    " link "UmbauBaudB" 0}                  Baudraten-Umbau Variante B
+      @{" Technik        " link "UmbauTech" 0}                  Technische Informationen
+@endnode
+
+@node "Hinweise" "A2232 Tuning - Hinweise"
+                              Einige Hinweise
+                              ===============
+
+Diese Anleitung und die dazugehörige Software duerfen nur kostenlos bzw.
+gegen einen Unkostenbeitrag für den Datenträger weitergegeben werden. Jede
+kommerzielle Nutzung dieser Anleitung ist untersagt. Der Autor übernimmt
+keine Haftung für die Richtigkeit der gemachten Angaben, noch für
+irgendwelche Schäden die durch diese Anleitung entstehen.
+
+Wenn Sie diese Anleitung bzw. die a2232.device nutzen und an der
+Weiterentwicklung der Anleitung oder Software interessiert sind, schicken
+Sie dem Autor bitte eine Postkarte oder eine Mail.
+
+
+                              Kontaktadresse:
+                              ===============
+
+                             Markus Marquardt
+                              Goerzallee 45a
+                               12207 Berlin
+
+                                  Germany
+
+                   EMail: adrock@h-raiser.tmb.sb.sub.de
+@endnode
+
+@node "Einleitung" "A2232 Tuning - Einleitung"
+                                Einleitung
+                                ==========
+
+Es war einmal... die 'A2232 Multi-Seriell-Karte für den Amiga 2000' (Zitat
+von der Verpackung). Diese Zorro-2 Steckkarte, die auch im A3000 und A4000
+funktioniert, kam ca. 1989 auf den Markt. Für damalige Verhältnisse hatte
+sie ein recht innovatives Konzept. Leider existieren einige Beschränkungen,
+die die Karte für heutige Anwendungen relativ unbrauchbar machen. So ist
+sie inzwischen auch völlig vom Markt verschwunden. In dieser Anleitung wird
+beschrieben, wie man aus diesem "guten alten Stück" noch einiges an
+Leistung herausholen kann.
+
+Dieses Paket umfasst sowohl eine neue Device ("a2232.device") als auch eine
+Umbauanleitung zur Modifizierung der Hardware.
+
+Mit Hilfe der neuen Device können bereits einige Fehler beseitigt bzw. die
+Performance der A2232 Karte verbessert werden.
+
+Um die Leistungsfähigkeit der Karte noch zu erhöhen und alle Probleme mit dem
+Handshaking (RTS/CTS) zu beheben, kann die Hardware mit relativ geringen
+Mitteln (ca. 10 bis 20 ,- DM) verändert werden.
+@endnode
+
+@node "DevDaten" "A2232 Tuning - Leistungsdaten der Device"
+                      Leistungsdaten der a2232.device
+                      ===============================
+
+Mit der a2232.device kann die A2232 Karte folgende Leistungsdaten
+aufweisen:
+
+o Geringere Prozessorauslastung
+
+  Die Device ist 100% in Assembler geschrieben und benutzt andere IRQ-
+  Techniken als die original Device der A2232 Karte. Viele oft nicht
+  genutzte Features werden zugunsten der Geschwindigkeit jedoch nicht
+  mehr unterstützt.
+
+o Funktionierendes RTS/CTS-Handshake bei unidirektionalem Transfer
+
+  Die original Device hatte Probleme mit dem RTS-Handshaking beim Empfang
+  von Daten. Dieses Problem wird durch die neue Device behoben. Allerdings
+  funktioniert das nur, wenn während des Empfangs von Daten nicht gleich-
+  zeitig Daten auf dem selben Port gesendet werden. Um ein voll funktions-
+  fähiges RTS/CTS-Handshake zu erreichen, müssen Hardwareveränderungen
+  vorgenommen werden.
+
+o Funktionsfähiger 115200 Baud Modus
+
+  Durch die Optimierung ist es möglich, auf maximal zwei Ports eine
+  Schnittstellengeschwindigkeit von 115200 Baud zu nutzen, der Rest der
+  Ports kann dann noch mit 19200 Baud genutzt werden.
+
+
+o Folgende Features der original serial.device werden NICHT unterstützt:
+
+  o DSR-Signal
+  o XON/XOFF Handshake (wird evtl. noch implementiert)
+  o Senden von BREAKs
+
+@endnode
+
+@node "DevInstall" "A2232 Tuning - Installation der Device"
+                       Installation der a2232.device
+                       =============================
+
+Die Installation der Device ist trivial. Die a2232.device ist nach DEVS: zu
+kopieren. That's it.
+
+                                 WICHTIG!
+                                 ========
+
+Man sollte darauf achten, daß nicht parallel zur neuen a2232.device die
+alte serial.device der A2232 Karte benutzt wird, da beide Devices versuchen
+würden, die Hardware anzusprechen und es so zu einem Konflikt kommt.
+
+Es ist außerdem darauf zu achten, daß bei der a2232.device, im Gegensatz
+zur original Device, die Unit 0 dem ersten Port auf der ersten A2232 Karte
+entspricht.
+
+   Unit      Karte     Port
+   ------------------------
+     0         1         1
+     1         1         2
+     2         1         3
+     3         1         4
+     4         1         5
+     5         1         6
+     6         1         7
+
+     7         2         1
+     8         2         2
+     9         2         3
+    10         2         4
+    11         2         5
+    12         2         6
+    13         2         7
+
+    14         3         1
+
+    usw...
+@endnode
+
+@node "DevTech" "A2232 Tuning - Technik der a2232.device"
+                 Technische Informationen zur a2232.device
+                 =========================================
+
+Die Device erkennt selbstständig, ob eine A2232 Karte umgebaut ist oder
+nicht. Zu diesem Zweck wird getestet, ob von der CIA auf der A2232 die
+Signale PA7 und PB7 verbunden sind. Ist dieses der Fall, handelt es sich um
+eine umgebaute Karte.
+
+Desweiteren erkennt die Software selbständig, mit welcher Taktrate die
+ACIAs auf der A2232 arbeiten. Zu diesem Zweck wird über einen Timer der CIA
+auf der Karte die Zeit ermittelt, die ein ACIA zum Senden eines Zeichens
+benötigt. Auf Port 0 jeder Karte wird folglich beim ersten Aufruf der
+Device bzw. nach einem "flush" jeweils ein Zeichen ausgegeben.
+
+Zur Kommunikation mit der A2232 Karte existiert für jeden Port
+
+o Ein Daten-Bereich zum einstellen von Parametern und zum Austausch von
+  Kontrollinformationen
+
+o Ein Sende-FiFo von 256 Bytes
+
+o Ein Empfangs-FiFo von 256 Bytes
+
+Die neue a2232.device verwendet zur Kommunikation mit der A2232 Karte keine
+speziellen Interrupts. Alle Ein/Ausgaben die nicht sofort vollständig
+bearbeitet werden können, werden innerhalb des vertical blank interrupts
+bearbeitet - bei einem "Standard"-Amiga also 50 mal pro Sekunde. Dadurch
+ergibt sich als maximal erreichbare Transferrate aus Bildwiderholfrequenz
+und der Fifo-Größe 50 * 256 = 12800 Bytes/Sek pro Port.
+@endnode
+
+@node "UmbauWichtig" "A2232 Tuning - Wichtige Informationen zum Umbau"
+
+                                 ACHTUNG!
+                                 ========
+
+Auf der A2232 befinden sich Bauteile, die gegenüber elektrostatischen
+Entladungen relativ empfindlich reagieren können!
+
+Deswegen bitte für alle Lötarbeiten entweder eine Löstation mit
+Potentialausgleich verwenden oder bei Verwendung eines Lötkolbens diesen an
+einem geerdeten Punkt (z.B. unlackierte Stelle am Heizkörper) vor dem
+Lötvorgang entladen!
+
+Sich selbst sollte man durch berühren eines geerdeten Punktes (s.o.) auch
+entladen, sofern man kein Antistatik-Armband verwendet.
+
+Die Positionen der ICs sind anhand des Aufdruckes auf der A2232 Karte zu
+finden. Zur Sicherheit sind noch in () die Bezeichnungen auf den ICs selbst
+angegeben. Der hier beschriebene Umbau wurde an einer A2232 Rev 6
+vorgenommen, evtl. verfügen andere Revisionen der A2232 über ein geändertes
+Platinenlayout, so daß die angegebenen Position nicht stimmen. Bei
+Seitenangaben (rechts/links) wird davon ausgegangen, daß die A2232 so vor
+einem liegt, daß die Aufschrift der ICs lesbar ist.
+
+Zum herausnehmen von ICs aus dem Sockel kann man entweder direkt dafür
+vorgesehenes Werkzeug oder einfach einen Schraubendreher verwenden. Auf
+jeden Fall sollte man dabei Vorsicht walten lassen, so daß keine Pins
+verbogen werden oder gar abbrechen - Ersatzteile dürften nicht ganz leicht
+zu bekommen sein!
+@endnode
+
+@node "UmbauVar" "A2232 Tuning - Umbauvarianten"
+                          Mögliche Umbauvarianten
+                          =======================
+
+
+o Modifikation des RTS/CTS-Handshakings
+
+  Diesen Umbau sollte man eigentlich IMMER vornehmen, da erst dadurch ein
+  bidirektionaler Datenaustausch mit funktionierendem RTS/CTS-Handshake
+  ermöglicht wird. Bidirektional heißt hier, daß auf einem Port
+  gleichzeitig Daten gesendet und empfangen werden koennen. Sollte man
+  das niemals vorhaben (z.B. wenn man eine Mailbox faehrt, die keine
+  bidirektionalen Transferprotokolle anbietet) kann man sich diesen Teil
+  sparen.
+  Für Internetanwendungen wie z.B. PPP oder SLIP-Protokolle ist dieser
+  Umbau notwendig!
+
+
+o Baudraten-Umbau
+
+  Durch diesen Umbau können die von der A2232 benutzbaren Baudraten
+  verändert werden. Es gibt folgende Möglichkeiten, von denen jeweils
+  immer nur EINE PRO KARTE möglich ist:
+
+  o Variante A
+
+    Mögliche Baudraten:
+       75,150,300,600,900,1200,1800,2400,3600,4800,9600 und 57600 Baud.
+
+    Es können alle 7 Ports mit 57600 Baud gleichzeitig benutzt werden!
+
+  o Variante B (bisher nicht getestet!)
+
+    Mögliche Baudraten:
+       100,150,220,270,300,600,1200,2400,3600,4800,7200,9600,14400,19200,
+       38400 und 230400 Baud.
+
+    Mit 230400 Baud kann maximal ein Port genutzt werden, da die A2232
+    sonst überlastet ist. Die mit 230400 Baud theoretisch mögliche
+    Transferrate von 23040 Byte/Sek. wird NICHT erreicht. Die maximal
+    erreichbare Transferrate beträgt bei 50 Hz Bildwiederholfrequenz
+    12800 Bytes/Sek. Weiteres dazu siehe unter Technik.
+@endnode
+
+@node "UmbauMat" "A2232 Tuning - Material für den Umbau"
+                     Benötigtes Material für den Umbau
+                     =================================
+
+o Für alle Umbauarbeiten benötigt man:
+
+  o Einen Lötkolben, besser: Eine Lötstation mit Potentialausgleich
+
+  o Elektronik-Lötzinn
+
+  o Standard-Werkzeug: Schraubendreher, Zange etc.
+
+
+o RTS/CTS-Handshake Umbau
+
+  Zum Umbau des RTS/CTS-Handshakes werden ca. 2 m dünne isolierte Litze
+  oder auch Fädeldraht benötigt.
+
+
+o Baudraten-Umbau Variante A
+
+  o 1 x IC 74LS74
+
+  o Entlötwerkzeug: Entlötpumpe oder Entlötlitze
+
+
+o Baudraten-Umbau Variante B
+
+  o 1 x Quarzoszillator mit 3.6864 MHz, TTL kompat. Ausgang
+
+  o Entlötwerkzeug: Entlötpumpe oder Entlötlitze
+@endnode
+
+@node "UmbauShake" "A2232 Tuning - RTS/CTS-Handshake Umbauanleitung"
+
+                          RTS/CTS-Handshake Umbau
+                          =======================
+
+Bei den folgenden ICs müssen Pins so zur Seite weggebogen werden, daß sie
+nach dem Züruckstecken des ICs in den Sockel seitlich herausstehen, also
+keinen Kontakt mehr mit dem IC-Sockel haben.
+
+Folgende ICs müssen bearbeitet werden:
+
+U78 (8520): Pin 9, 10, 11, 12, 13, 14, 15, 16 und 17
+
+U52, U54, U56, U58, U72, U74, U76 (6551 oder 8551): Pin 8 und 17
+
+Nachdem die ICs in ihre Sockel zurückgesteckt wurden, kann man sich daran
+machen, die neuen Verbindungen entweder mit Fädeldraht oder sonstiger
+isolierter dünner Litze herzustellen.
+
+   Neue Verbindungen
+   -----------------
+
+   Von                 Nach                Signal
+
+   U78 Pin 10          U59 Pin 10          /RTS #0
+    "   "  11          U60 Pin 10          /RTS #1
+    "   "  12          U61 Pin 13          /RTS #2
+    "   "  13          U61 Pin 10          /RTS #3
+    "   "  14          U79 Pin 10          /RTS #4
+    "   "  15          U80 Pin 10          /RTS #5
+    "   "  16          U81 Pin 10          /RTS #6
+
+   U52 Pin 17          U51 Pin 3           /CTS #0
+   U54 Pin 17          U53 Pin 3           /CTS #1
+   U56 Pin 17          U55 Pin 3           /CTS #2
+   U58 Pin 17          U57 Pin 3           /CTS #3
+   U72 Pin 17          U71 Pin 3           /CTS #4
+   U74 Pin 17          U73 Pin 3           /CTS #5
+   U76 Pin 17          U75 Pin 3           /CTS #6
+
+   U78 Pin 9           U78 Pin 17          /PA7 -> /PB7
+
+Diese Änderungen sind als Skizze in der IFF-Datei UMBAU.IFF dargestellt.
+
+
+                        Baudraten-Umbau Variante A
+                        --------------------------
+
+Über dem IC an der Position U18 (74LS74) befindet sich ein Bauteil, welches
+wie ein schwarzer Widerstand aussieht und die Bezeichnung FB1 trägt. Dieses
+Bauteil wird an der rechten Seite ausgelötet und das ausgelötete Ende etwas
+hochgebogen.
+
+Als nächstes bereitet man das neue IC 74LS74 so vor:
+
+Die Pins 1, 2, 3, 4, 5, 6, 10 und 13 werden mit einem Seitenschneider
+abgeschnitten. Die Pins 8, 11 und 12 werden nur etwas gekürzt (so daß man
+später dort noch ein Draht befestigen kann) und etwas zur Seite gebogen.
+Als nächstes wird von dem IC Pin 8 mit Pin 12 Verbunden.
+
+An Pin 10 des ICs an der Position U18 (74LS74) wird ein kurzes Stück (ca. 1
+cm) Litze angelötet. Das andere Ende der Litze sollte schon abisoliert
+sein.
+
+Danach lötet man das vorbereitete neue IC 74LS74 huckepack auf das IC bei
+U18 (74LS74), wobei die Pins 7 und 14 direkt mit dem unteren IC verbunden
+werden. Alle anderen Pins des oberen ICs dürfen keinen Kontakt mit dem
+unteren haben.
+
+Das andere Ende des Drahtes der an Pin 10 des unteren ICs angelötet wurde,
+wird mit Pin 11 des oberen ICs verbunden. Ausserdem wird Pin 9 des
+Huckepack-ICs so gebogen, daß er mit dem offenen Ende von FB1 verlötet
+werden kann.
+
+Die Verbindungen nochmal in Kurzform:
+
+   U18 74LS74      Huckepack 74LS74        FB1
+
+   8 mit 12
+
+   7               7
+   14              14
+   10              11
+                   9                       rechter Anschluß
+
+
+                        Baudraten-Umbau Variante B
+                        --------------------------
+
+Der Quarzoszillator an der Position Y1 wird ausgelötet und durch den neuen
+mit 3.6864 MHz ersetzt.
+@endnode
+
+@node "UmbauTech" "A2232 Tuning - Hardware-Umbau Technik"
+                         Technische Informationen
+                         ========================
+
+
+                          RTS/CTS-Handshake Umbau
+                          -----------------------
+
+Im ursprünglichen Zustand sieht die Zuordnung Funktion/Pin so aus:
+
+   Port    ACIA            RTS             CTS             DSR
+
+   0       U52             ACIA /RTS (8)   CIA PB0 (10)    ACIA /DSR (17)
+   1       U54               "    "   "    CIA PB1 (11)      "    "    "
+   2       U56               "    "   "    CIA PB2 (12)      "    "    "
+   3       U58               "    "   "    CIA PB3 (13)      "    "    "
+   4       U72               "    "   "    CIA PB4 (14)      "    "    "
+   5       U74               "    "   "    CIA PB5 (15)      "    "    "
+   6       U76               "    "   "    CIA PB6 (16)      "    "    "
+
+Die Signale RTS und DSR sind also direkt mit dem entsprechenden ACIA
+verbunden, die CTS-Signale werden über die CIA ausgewertet.
+
+Einige Tests haben gezeigt, daß die verwendeten ACIAs (8551 bzw. 6551)
+nicht in der Lage sind, das RTS-Signal unabhängig vom Sender zu steuern.
+
+Konkret treten folgende Probleme auf:
+
+o Wird /RTS auf logisch "0" gesetzt, kann keine Übertragung von Daten
+  begonnen werden - der Transmitter ist dann offenbar abgeschaltet.
+
+o Wird /RTS während des Sendens auf logisch "0" gesetzt, wird die
+  Änderung am Ausgang des ACIA erst wirksam, wenn sowohl das transmit
+  data register als auch das transmit shift register leer sind.
+
+Die Lösung dieses Problems besteht darin, die RTS-Signale nicht vom ACIA
+sondern über den CIA zu steuern. Da dafür der Port B des CIA verwendet
+werden soll, müssen die dort anliegenden CTS-Signale dann über die
+DSR-Eingänge der ACIAs ausgewertet werden.
+
+Nach dem Umbau sieht die Zuordnung so aus:
+
+   Port    ACIA            RTS             CTS             DSR
+
+   0       U52             CIA PB0 (10)    ACIA /DSR (17)  not connected
+   1       U54             CIA PB1 (11)      "    "    "    "    "   "
+   2       U56             CIA PB2 (12)      "    "    "    "    "   "
+   3       U58             CIA PB3 (13)      "    "    "    "    "   "
+   4       U72             CIA PB4 (14)      "    "    "    "    "   "
+   5       U74             CIA PB5 (15)      "    "    "    "    "   "
+   6       U76             CIA PB6 (16)      "    "    "    "    "   "
+
+
+                              Baudraten-Umbau
+                              ---------------
+
+Die höchste wählbare Baudrate der ACIAs beträgt 1/16 des externen Taktes.
+Bei 1.8432 MHz sind das 115200 Baud. Durch halbieren des Taktes mit einem
+FlipFlop (74LS74) werden daraus dann 57600 Baud für die Umbauvariante A und
+durch Taktverdopplung (anderer Quarzsozillator) dann 230400 Baud für die
+Umbauvariante B.
+@endnode
+
+@node "UmbauBaudA" "A2232 Tuning - Baudraten-Umbau Variante A"
+
+@endnode
+
+@node "UmbauBaudB" "A2232 Tuning - Baudraten-Umbau Variante B"
+
+@endnode
+
+@node "Autor" "A2232 Tuning - Autor"
+                              Kontaktadresse
+                              ==============
+
+                             Markus Marquardt
+                              Goerzallee 45a
+                               12207 Berlin
+
+                                  Germany
+
+                   EMail: adrock@h-raiser.tmb.sb.sub.de
+@endnode
+
+@node HeddleyAutoIndex "Index"
+@remark Index auto-generated by Heddley
+Index of database 07096510-0
+
+Documents
+
+@{"A2232 Tuning" link "Main"}
+@{"A2232 Tuning - Autor" link "Autor"}
+@{"A2232 Tuning - Baudraten-Umbau Variante A" link "UmbauBaudA"}
+@{"A2232 Tuning - Baudraten-Umbau Variante B" link "UmbauBaudB"}
+@{"A2232 Tuning - Einleitung" link "Einleitung"}
+@{"A2232 Tuning - Hardware-Umbau Technik" link "UmbauTech"}
+@{"A2232 Tuning - Hinweise" link "Hinweise"}
+@{"A2232 Tuning - Installation der Device" link "DevInstall"}
+@{"A2232 Tuning - Leistungsdaten der Device" link "DevDaten"}
+@{"A2232 Tuning - Material für den Umbau" link "UmbauMat"}
+@{"A2232 Tuning - RTS/CTS-Handshake Umbauanleitung" link "UmbauShake"}
+@{"A2232 Tuning - Technik der a2232.device" link "DevTech"}
+@{"A2232 Tuning - Umbauvarianten" link "UmbauVar"}
+@{"A2232 Tuning - Wichtige Informationen zum Umbau" link "UmbauWichtig"}
+
+Buttons
+
+@{" Baudraten A    " link "UmbauBaudA" 0}
+@{" Baudraten B    " link "UmbauBaudB" 0}
+@{" Einleitung     " link "Einleitung" 0}
+@{" Hinweise       " link "Hinweise" 0}
+@{" Installation   " link "DevInstall" 0}
+@{" Leistungsdaten " link "DevDaten" 0}
+@{" Material       " link "UmbauMat" 0}
+@{" RTS/CTS Umbau  " link "UmbauShake" 0}
+@{" Technik        " link "DevTech" 0}
+@{" Technik        " link "UmbauTech" 0}
+@{" Umbauvarianten " link "UmbauVar" 0}
+@{" Wichtig!       " link "UmbauWichtig" 0}
+@{"Markus Marquardt" link "Autor" 0}
+@endnode

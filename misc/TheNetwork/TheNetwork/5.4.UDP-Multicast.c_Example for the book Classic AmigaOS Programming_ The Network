@@ -1,0 +1,376 @@
+/**********************************************************************************
+;
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;
+***********************************************************************************/
+
+
+#include <stdio.h>
+#include <string.h>
+
+#include <proto/exec.h>
+#include <proto/dos.h>  // For the Delay() function
+
+#include <exec/lists.h>
+
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <proto/socket.h>
+
+// /opt/amiga/bin/m68k-amigaos-gcc Multicast.c -noixemul -Os -o Multicast
+
+// ---------------------------------------------------------------------------
+// Ensure that AmigaOS gives us enough stack
+
+#ifdef __VBCC__
+	__entry char StackCookie[] = "$STACK:10240";
+#endif
+#ifdef __GNUC__
+	__attribute__((used)) char StackCookie[] = "$STACK:10240";
+#endif
+
+// ---------------------------------------------------------------------------
+
+// The SocketBase is only required by GCC.
+#ifdef __GNUC__
+	struct Library * SocketBase = NULL;
+#endif
+
+// The variables used to store the socket error codes
+static long ErrNo=0;
+static long HErrNo=0;
+
+
+// ---------------------------------------------------------------------------
+// - Ensure the error number is within the expected range.
+// - Get the human readable string and print it after the provided message.
+
+void Error( char * pMsg )
+{
+	long Error = ErrNo;
+	
+	if ( Error < 0 ) Error = -Error;
+	if ( Error > 10000 ) Error -= 10000;
+	
+	struct TagItem tags[2];
+	tags[0].ti_Tag= SBTM_GETVAL(SBTC_ERRNOSTRPTR);
+	tags[0].ti_Data= Error;
+	tags[1].ti_Tag= TAG_END;
+	
+	if ( SocketBaseTagList( tags ) != 0 )
+	{
+		printf( "%s Unkown error: %ld\n", pMsg, ErrNo );
+	}
+	else
+	{
+		char * pErrStr = (char *)tags[0].ti_Data;
+		printf( "%s Error: %ld (%s)\n", pMsg, ErrNo, pErrStr );
+	}
+}
+
+
+// ---------------------------------------------------------------------------
+// - Open a socket of the requested type.
+// - Select the events that are of interest.
+// - Enable non-blocking. This will also enable asynchronous events.
+
+int PrepareSocket( int Type )
+{
+	int Socket = socket( AF_INET, Type, 0 );
+	if ( Socket < 0 )
+	{
+		Error( "PrepareSocket: Unable to open socket!" );
+		return -1;
+	}
+	
+	ULONG Temp = FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+	setsockopt( Socket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+	
+	ULONG Value = 1;
+	if ( IoctlSocket( Socket, FIONBIO, (char *)&Value ) < 0 )
+	{
+		CloseSocket( Socket );
+		Error( "PrepareSocket: Unable to set socket to non-blocking!" );
+		return -1;
+	}
+	
+	return Socket;
+}
+
+
+// ------------------------------------------------------------------------
+// Process socket events until stopped with Ctrl+C
+
+int Receiver( int Socket, ULONG SocketSignalMask, int Port, char * pAddress )
+{
+	printf( "Acting as a: Receiver\n" );
+	printf( "Using port: %d\n", Port );
+	printf( "Using address: %s\n", pAddress );
+	printf( "Use Ctrl+C to stop\n" );
+	
+	
+	// Bind the socket to the user specified port
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = Port;
+	SockAddr.sin_addr.s_addr = INADDR_ANY;
+	
+	int Result = bind( Socket, (struct sockaddr *)&SockAddr, sizeof( SockAddr ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to bind socket!" );
+		return 0;
+	}
+	
+	printf( "Socket bound!\n" );
+	
+	// Join the multicast group
+	struct ip_mreq MultiReq;
+	MultiReq.imr_multiaddr.s_addr = inet_addr( pAddress );
+	MultiReq.imr_interface.s_addr = INADDR_ANY;
+	Result = setsockopt( Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&MultiReq, sizeof( MultiReq ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to join the multicast group!" );
+		return 0;
+	}
+	
+	printf( "Added to the multicast group!\n" );
+	
+	int Continue = 1;
+	while ( Continue )
+	{
+		// Sleep until there is a socket event or a CTRL-C in the CLI/shell
+		int Signals = Wait( SocketSignalMask | SIGBREAKF_CTRL_C );
+		if ( Signals == SIGBREAKF_CTRL_C )
+		{
+			printf( "Break signal!\n" );
+			break;
+		}
+		
+		// Check which socket received which events
+		ULONG EventMask=0;
+		int EventSocket = GetSocketEvents( &EventMask );
+		if ( EventSocket == -1 )
+		{
+			printf( "No events!\n" );
+		}
+		else
+		{
+			if ( EventMask & FD_ERROR )
+			{
+				if ( ErrNo == 0 )
+				{
+					// Get the error from the socket
+					long Length = sizeof( ErrNo );
+					getsockopt( EventSocket, SOL_SOCKET, SO_ERROR, &ErrNo, &Length );
+				}
+				Error( "FD_ERROR!" );
+				Continue = 0;
+			}
+			
+			if ( EventMask & FD_READ )
+			{
+				printf( "FD_READ " );
+				
+				// There is data to be read
+				char Buffer[ 1501 ];
+				struct sockaddr SockAddr;
+				long SockLen = sizeof( SockAddr );
+				
+				int BytesDone = recvfrom( EventSocket, Buffer, 1500, 0, &SockAddr, &SockLen );
+				if ( BytesDone < 0 )
+				{
+					Error( "Receive error!" );
+				}
+				else
+				{
+					if ( SockLen == sizeof( struct sockaddr_in ) )
+					{
+						struct sockaddr_in * RxAddr = (struct sockaddr_in * )&SockAddr;
+						printf( "Received: %d bytes from: %s on port %u\n",
+						BytesDone, Inet_NtoA( RxAddr->sin_addr.s_addr ), RxAddr->sin_port );
+					}
+					else
+					{
+						printf( "Received: %d bytes\n", BytesDone );
+					}
+				}
+			}
+			
+			if ( EventMask & FD_CLOSE )
+			{
+				printf( "FD_CLOSE!\n" );
+				Continue = 0;
+			}
+		}
+	}
+	
+	// Drop the multicast group.
+	Result = setsockopt( Socket, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char *)&MultiReq, sizeof( MultiReq ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to drop the multicast group!\n" );
+	}
+	
+	
+	return 0;
+}
+
+// ------------------------------------------------------------------------
+// Send the same string a couple of times to the destination, then quit.
+// To keep it simple, don't use events.
+
+int Sender( int Socket, int Port, char * pAddress )
+{
+	printf( "Acting as a: Sender\n" );
+	printf( "Using port: %d\n", Port );
+	printf( "Using address: %s\n", pAddress );
+	printf( "Will send 4 datagrams and stop.\n" );
+	
+	// Convert the IP address string into a 32 bits number.
+	ULONG Addr = inet_addr( pAddress );
+	if ( Addr == INADDR_NONE )
+	{
+		printf( "Not a valid IP address!\n" );
+		return 0;
+	}
+	
+	// Setup the address and port of the destination.
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = Port;
+	SockAddr.sin_addr.s_addr = Addr;
+	
+	// Setup the data to be sent.
+	char * pString = "This is the string I'm sending...";
+	int StringLen = strlen( pString );
+	
+	for ( int Index=0; Index < 4; ++Index )
+	{
+		// Send the data to the destination.
+		int BytesDone = sendto( Socket, pString, StringLen, 0, (struct sockaddr*)&SockAddr, sizeof( SockAddr ) );
+		if ( BytesDone < 0 )
+		{
+			Error( "Unable to send data!" );
+			return 0;
+		}
+		
+		printf( "Sent %d bytes\n", BytesDone );
+		
+		Delay( 50 );
+	}
+	
+	
+	return 0;
+}
+
+// ------------------------------------------------------------------------
+// Use the command line arguments to control the program:
+// By default it will act as a receiver on port 2080.
+//
+// Examples:
+//     Receive on port 2080 on 228.0.0.1:UDP
+//     Receive on port 4100 on 228.0.0.1:UDP R 4100
+//     Receive on port 4100 on 232.0.0.1:UDP R 4100
+//
+// To act as a transmitter set the first argument to T.
+// It will then send to port 2080 on the 228.0.0.1 address
+//
+// Examples:
+//     Send to port 2080 on 228.0.0.1:UDP S
+//     Send to port 4100 on 228.0.0.1:UDP S 4100
+//     Send to port 4100 on 232.0.0.1:UDP S 4100 232.0.0.1
+
+int main( int argc, char *argv[ ] )
+{
+	// Default settings.
+	int Rx = 1;
+	int Port = 2080;
+	char * pAddress = "228.0.0.1";
+	
+	// Override the above defaults with the user's arguments
+	if ( (argc > 1) && (argv[ 1 ][ 0 ] == 'S') )
+	{
+		Rx = 0;
+	}
+	
+	if ( argc > 2 )
+	{
+		int NewPort = 0;
+		if ( sscanf( argv[ 2 ], "%d", &NewPort ) == 1 )
+		{
+			Port = NewPort;
+		}
+	}
+	
+	if ( argc > 3 )
+	{
+		pAddress = argv[ 3 ];
+	}
+	
+	
+	// Allocate an Exec signal
+	BYTE SocketSignal = AllocSignal( -1 );
+	ULONG SocketSignalMask = 1 << SocketSignal;
+	
+	#ifdef __GNUC__
+	// Open the BSD socket library
+	SocketBase = OpenLibrary( "bsdsocket.library", 4 );
+	if ( !SocketBase )
+	{
+		printf( "Unable to open bsdsocket.library!\n" );
+		return 0;
+	}
+	#endif
+	
+	// Use the signal for the socket asynchronous events and
+	// specify the variables that will receive socket library error codes.
+	SocketBaseTags( SBTM_SETVAL(SBTC_SIGEVENTMASK), SocketSignalMask,
+					SBTM_SETVAL(SBTC_ERRNOLONGPTR), (int)&ErrNo,
+					SBTM_SETVAL(SBTC_HERRNOLONGPTR), (int)&HErrNo, TAG_END );
+	
+	// Prepare a non-blocking UDP socket.
+	int Socket = PrepareSocket( SOCK_DGRAM );
+	if ( Socket >= 0 )
+	{
+		if ( Rx )
+		{
+			Receiver( Socket, SocketSignalMask, Port, pAddress );
+		}
+		else
+		{
+			Sender( Socket, Port, pAddress );
+		}
+		
+		CloseSocket( Socket );
+	}
+	
+	#ifdef __GNUC__
+	CloseLibrary( SocketBase );
+	#endif
+	FreeSignal( SocketSignal );
+	
+	
+	return 0;
+}

@@ -1,0 +1,149 @@
+5.2.6 Bus Operation
+The MC68020/EC020 bus is used in an asynchronous manner allowing external devices
+to operate at clock frequencies different from the MC68020/EC020 clock. Bus operation
+uses the handshake lines (AS, DS , DSACK0, DSACK1, BERR, and HALT) to control data
+transfers. AS signals the start of a bus cycle, and DS is used as a condition for valid data
+on a write cycle. Decoding SIZ1, SIZ0, A1, and A0 provides byte enable signals that select
+the active portion of the data bus. The slave device (memory or peripheral) then responds
+by placing the requested data on the correct portion of the data bus for a read cycle or
+latching the data on a write cycle and by asserting the DSACK0/DSACK1 combination that
+corresponds to the port size to terminate the cycle. If no slave responds or the access is
+invalid, external control logic asserts BERR to abort or BERR and HALT to retry the bus
+cycle.
+DSACK1/ DSACK0 can be asserted before the data from a slave device is valid on a read
+cycle. The length of time that DSACK1/DSACK0 may precede data is given by parameter
+#31, and it must be met in any asynchronous system to ensure that valid data is latched
+into the processor. (Refer to Section 10 Electrical Characteristics for timing
+parameters.) Note that no maximum time is specified from the assertion of AS to the
+assertion of DSACK1/DSACK0. Although the processor can transfer data in a minimum of
+three clock cycles when the cycle is terminated with DSACK1/DSACK0, the processor
+inserts wait cycles in clock period increments until DSACK1/DSACK0 is recognized.
+The BERR and/or HALT signals can be asserted after DSACK1/DSACK0 is asserted.
+BERR and/or HALT must be asserted within the time given (parameter #48), after
+DSACK1/ DSACK0 is asserted in any asynchronous system. If this maximum delay time is
+violated, the processor may exhibit erratic behavior.
+5.2.7 Synchronous Operation with
+DSACK1
+/
+DSACK0 Although cycles terminated with DSACK1/DSACK0 are classified as asynchronous, cycles
+terminated with DSACK1/DSACK0 can also operate synchronously in that signals are
+interpreted relative to clock edges. The devices that use these synchronous cycles must
+synchronize the responses to the MC68020/EC020 clock. Since these devices terminate
+bus cycles with DSACK1/DSACK0, the dynamic bus sizing capabilities of the
+MC68020/EC020 are available. In addition, the minimum cycle time for these synchronous
+cycles is three clocks.
+To support systems that use the system clock to generate DSACK1/DSACK0 and other
+asynchronous inputs, the asynchronous input setup time (parameter #47A) and the
+asynchronous input hold time (parameter #47B) are provided in Section 10 Electrical
+Characteristics. (Note: although a misnomer, these “asynchronous” parameters are the
+setup and hold times for synchronous operation.) If the setup and hold times are met for
+the assertion or negation of a signal, such as DSACK1/ DSACK0, the processor can be
+guaranteed to recognize that signal level on that specific falling edge of the system clock.
+If the assertion of DSACK1/ DSACK0 is recognized on a particular falling edge of the clock,
+valid data is latched into the processor (for a read cycle) on the next falling clock edge
+provided the data meets the data setup time (parameter #27). In this case, parameter #31
+
+
+
+
+
+5.3 DATA TRANSFER CYCLES
+The transfer of data between the processor and other devices involves the following
+signals:
+• Address Bus (A31–A0 for the MC68020) (A23–A0 for the MC68EC020)
+• Data Bus (D31–D0)
+• Control Signals
+The address and data buses are both parallel, nonmultiplexed buses. The bus master
+moves data on the bus by issuing control signals, and the bus uses a handshake protocol
+to ensure correct movement of the data. In all bus cycles, the bus master is responsible
+for de-skewing all signals it issues at both the start and end of the cycle. In addition, the
+bus master is responsible for de-skewing DSACK1/DSACK0, D31–D0, BERR, HALT, and,
+for the MC68020, DBEN from the slave devices. The following paragraphs define read,
+write, and read-modify-write cycle operations.
+Each of the bus cycles is defined as a succession of states. These states apply to the bus
+operation and are different from the processor states described in Section 2 Processing
+States. The clock cycles used in the descriptions and timing diagrams of data transfer
+cycles are independent of the clock frequency. Bus operations are described in terms of
+external bus states.
+
+
+
+
+3.2 FUNCTION CODE SIGNALS (FC2–FC0)
+These three-state outputs identify the address space of the current bus cycle. Table 2-1
+shows the relationships of the function code signals to the privilege levels and the address
+spaces. Refer to Section 2 Processing States for more information.
+
+3.3 ADDRESS BUS (A31–A0, MC68020)(A23–A0, MC68EC020)
+These three-state outputs provide the address for the current bus cycle, except in the
+CPU address space. Refer to Section 2 Processing States for more information on the
+CPU address space. A31 is the most significant address signal for the MC68020; A23 is
+the most significant address signal for the MC68EC020. The upper eight bits (A31–A24)
+are used internally by the MC68EC020 to access the internal instruction cache address
+tag. Refer to Section 5 Bus Operation for information on the address bus and its
+relationship to bus operation.
+
+3.4 DATA BUS (D31–D0)
+These three-state bidirectional signals provide the general-purpose data path between the
+MC68020/EC020 and all other devices. The data bus can transfer 8, 16, 24, or 32 bits of
+data per bus cycle. D31 is the most significant bit of the data bus. Refer to Section 5 Bus
+Operation for more information on the data bus and its relationship to bus operation.
+
+3.5 TRANSFER SIZE SIGNALS (SIZ1, SIZ0)
+These three-state outputs indicate the number of bytes remaining to be transferred for the
+current bus cycle. Signals A1, A0, DSACK1, DSACK0, SIZ1, and SIZ0 define the number
+of bits transferred on the data bus. Refer to Section 5 Bus Operation for more
+information on SIZ1 and SIZ0 and their use in dynamic bus sizing.
+
+
+3.6 ASYNCHRONOUS BUS CONTROL SIGNALS
+The following signals control synchronous bus transfer operations for the
+MC68020/EC020. Note that OCS, ECS, and DBEN are implemented in MC68020 and not
+implemented in the MC68EC020.
+Operand Cycle Start (OCS, MC68020 only)
+This output signal indicates the beginning of the first external bus cycle for an instruction
+prefetch or a data operand transfer. OCS is not asserted for subsequent cycles that are
+performed due to dynamic bus sizing or operand misalignment. Refer to Section 5 Bus
+Operation for information about the relationship of OCS to bus operation.
+OCS is not implemented in the MC68EC020.
+External Cycle Start (ECS, MC68020 only)
+This output signal indicates the beginning of a bus cycle of any type. Refer to Section 5
+Bus Operation for information about the relationship of ECS to bus operation.
+ECS is not implemented in the MC68EC020.
+
+Read/Write (R/W)
+
+This three-state output signal defines the type of bus cycle. A high level indicates a read
+cycle; a low level indicates a write cycle. Refer to Section 5 Bus Operation for
+information about the relationship of R/W to bus operation.
+Read-Modify-Write Cycle (RMC)
+This three-state output signal identifies the current bus cycle as part of an indivisible
+read-modify-write operation; it remains asserted during all bus cycles of the read-modify-
+write operation. Refer to Section 5 Bus Operation for information about the
+relationship of RMC to bus operation.
+
+Address Strobe (AS)
+This three-state output signal indicates that a valid address is on the address bus. The
+FC2–FC0, SIZ1, SIZ0, and R/W signals are also valid when AS is asserted. Refer to
+Section 5 Bus Operation for information about the relationship of AS to bus operation.
+
+Data Strobe (DS)
+During a read cycle, this three-state output signal indicates that an external device
+should place valid data on the data bus. During a write cycle, DS indicates that the
+MC68020/EC020 has placed valid data on the bus. During two-clock synchronous write
+cycles, the MC68020/EC020 does not assert DS. Refer to Section 5 Bus Operation for
+more information about the relationship of DS to bus operation.
+
+Data Buffer Enable (DBEN, MC68020 only)
+This output signal is an enable signal for external data buffers. This signal may not be
+required in all systems. Refer to Section 5 Bus Operation for more information about
+the relationship of DBEN to bus operation.
+DBEN is not implemented in the MC68EC020.
+Data Transfer and Size Acknowledge (DSACK1, DSACK0)
+These input signals indicate the completion of a requested data transfer operation. In
+addition, they indicate the size of the external bus port at the completion of each cycle.
+These signals apply only to asynchronous bus cycles. Refer to Section 5 Bus
+Operation for more information on these signals and their relationship to dynamic bus
+sizing.
+
+

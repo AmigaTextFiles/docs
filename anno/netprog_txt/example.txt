@@ -1,0 +1,415 @@
+                   TorqueWare(TM) vs. Sockets Programming
+                   ======================================  
+                           Copyright 1993 AugmenTek
+
+  This document is freely-redistributable if not modified.  The source code
+  presented herein is hereby placed in the public domain for whatever
+  benefit anyone or any institution may derive from the source code.
+  
+  TorqueWare makes it easy to do network programming -- much easier than    
+  writing code usng sockets.                                                
+  
+  As an example, sending an arbitrary file across the network is partially  
+  implemented using both TorqueWare and sockets.                            
+  
+  
+  Using TorqueWare
+  ----------------
+  
+  Here is all the relevant and necessary code to do this in TorqueWare      
+  after the file is open, the file size has been extracted, and the buffer  
+  is allocated (and ignoring some file error conditions):                   
+  
+  
+  lmain()                                                                  
+  {                                                                        
+  #define BUFFER_SIZE 8192                                                 
+    linda char * name;                                                     
+    char * buffer;                                                         
+    BPTR file;                                                             
+    LONG file_size, i, current_size;                                       
+    int success;                                                           
+                                                                           
+    /* ... (Allocate buffers, open input file) */                          
+                                                                           
+    out("file info", name, file_size);                                     
+                                                                           
+    for (i=0; ; i += current_size)                                         
+    {                                                                      
+      if ((current_size = Read(file, buffer,                               
+                               BUFFER_SIZE) == 0)                          
+        break;                                                             
+                                                                           
+      out("file block", i, buffer : current_size);                         
+    }                                                                      
+                                                                           
+    Close(file);                                                           
+                                                                           
+    eval(receive_file());                                                  
+                                                                           
+    in(? &success);                                                        
+                                                                           
+    if (success == 0)                                                      
+      printf("File could not be written.\n");                              
+                                                                           
+    lexit(0);                                                              
+  }                                                                        
+  /* continued... */                                                       
+  
+  
+  int                                                                      
+  receive_file()                                                           
+  {                                                                        
+    linda char name[1024];                                                 
+    char * buffer;                                                         
+    BPTR file;                                                             
+    LONG file_size, i, current_size;;                                      
+                                                                           
+    rd("file info", ?name, ? &file_size);                                  
+                                                                           
+    /* ... (Allocate buffer, open output file) */                          
+                                                                           
+    for (i=0; file_size > 0 ;i += current_size)                            
+    {                                                                      
+      rd("file block", i, ? buffer : &current_size);                       
+                                                                           
+      if (Write(file, buffer, current_size) != current_size)               
+      {                                                                    
+        Close(file);                                                       
+        return 0;                                                          
+      }                                                                    
+                                                                           
+      file_size -= current_size;                                           
+    }                                                                      
+                                                                           
+    Close(file);                                                           
+    return 1;                                                              
+  }                                                                        
+  
+  
+  That's pretty simple, isn't it?  And with replacement of the              
+  Amiga-specific Read, Write, and Close with SAS/C®'s fread(), fwrite(),  
+  and fclose(), this program would work on a Unix system supporting         
+  TorqueWare as well.                                                       
+  
+  After entering the program, for both TorqueWare and the later sockets     
+  example, it is assumed that either AS225 v2 or AmiTCP is operational.     
+  
+  You would compile and link the file using the TorqueWare User Interface   
+  (TWUI) or a supplied makefile, and place the executable on each system    
+  that is to receive the file. On each remote system, the Tuplex Listener   
+  -- the critical piece of General TCP/IP Networking -- would be started    
+  (normally, it always is running and listening for requests).  On the      
+  system that owns the file, TWUI can be used (or a simple shell script     
+  written) to specify the remote system(s) that will receive the file.      
+  Then, executing the program will cause the file to be sent.               
+  
+  That's it!  Two additional benefits to using the above code:              
+  
+      1.  broadcasting a file                                               
+  
+          The code as written is set up to send that file to as many Amigas 
+          as desired.  However, due to the use of "rd()" as opposed to "in()"   
+          function calls, the entire file is saved in RAM.  This can be     
+          programmed around fairly easily by providing a counter for each   
+          buffer, or synchronizing the sends of a buffer with the receipt   
+          by all systems. In the latter casee, a new buffer woud not be     
+          sent until the old one was received by all remote systems, at     
+          which point that buffer is freed in the main program using an     
+          "in()" call.                                                        
+  
+      2.  writing to multiple volumes                                       
+  
+          If you don't have a network, and for some strange reason you want 
+          to write the same file to your floppy drive, your hard disk,      
+          RAM:, and to the console, a small modification is all that is     
+          required.  When running on one system, Tuplex Listeners aren't    
+          necessary and the executable need not be copied anywhere.         
+  
+  
+  Using Sockets
+  -------------
+  
+  Now let's look at what it would take to use a sockets package.  Let's use 
+  AmiTCP; the differences between it and AS225 v2 are very small.           
+  
+  Note that there is a lot of preparatory and cleanup work necessary for    
+  sockets: TorqueWare did not requre any (though in the future, a shared    
+  library may need to be opened). Socket include files are omitted (there   
+  are none for TorqueWare).                                                 
+  
+  Sockets are stream-based, and that means they have no support for data    
+  types other than characters. Therefore, "you" have to define a protocol for 
+  passing integers and the lengths of the characters passed.  This is yet   
+  another inconvenience, and often a source of  hard to find bugs.          
+  
+  The last major issue before looking at the actual code is how you are     
+  going to get the remote system to detect and handle a request from a      
+  remote system. This requires a custom server, similar in concept to what  
+  the Tuplex Listener provides. Servers can be tricky to write correctly    
+  for general use, but a specific, one-shot "server" as needed here is      
+  easier.                                                                   
+  
+  A hard-coded port for communication will be used for convenience. Also,   
+  the remote host name is hardcoded. Note that a lot of proper error        
+  recovery is missing to shorten this example.                              
+  
+  First, the client code is written.  This is the code that will request    
+  that the server read the information sent and create the file.            
+  
+  
+  main()                                                                   
+  {                                                                        
+  #define PORT 6772  /* a fairly arbitrary number */                       
+  #define HOSTNAME "Mickey"                                                
+  #define BUFFER_SIZE 8192                                                 
+    char * name;                                                           
+    char * buffer;                                                         
+    BPTR file;                                                             
+    LONG file_size, i, current_size;                                       
+    int success;                                                           
+    short int len;                                                         
+    struct sockaddr_in socket_address;                                     
+    struct hostent *host;                                                  
+    int this_socket;                                                       
+                                                                           
+    if (SocketBase = OpenLibrary("bsdsocket.library",                      
+                                 1L) == NULL)                              
+      exit(20);                                                            
+                                                                           
+    SetErrnoPtr(&errno, sizeof(errno));                                    
+    SetSocketSignals(0L, 0L, 0L);                                          
+  
+    bzero(&socket_address, sizeof(socket_address));                        
+    socket_address.sin_addr.s_addr=inet_addr(HOSTNAME);                    
+                                                                           
+    if (socket_address.sin_addr.s_addr == INADDR_NONE )                    
+    {                                                                      
+      if ((host = gethostbyname(HOSTNAME)) == NULL)                        
+        exit(20);                                                          
+                                                                           
+      bcopy(host->h_addr, (char *)&(socket_address.sin_addr),              
+            host->h_length );                                              
+    }                                                                      
+    else                                                                   
+      socket_address.sin_addr.s_addr = INADDR_ANY;                         
+                                                                           
+    socket_address.sin_port = PORT;                                        
+    socket_address.sin_family = AF_INET;                                   
+                                                                           
+    if ((this_socket = socket( AF_INET, SOCK_STREAM, 0 )) < 0)             
+       exit(20);                                                           
+                                                                           
+    if (connect(this_socket, (struct sockaddr *) &socket_address,          
+                     sizeof(socket_address) ) < 0 )                        
+       exit(20);                                                           
+  
+
+  At this point, a client has successfully connected to the remote server,  
+  so the file transfer can begin.  The code using "send()" is not robust, but 
+  it gives you an idea of what is required.                                 
+  
+  
+    /* ... (Allocate buffers, open input file) */                          
+                                                                           
+    len = strlen(name)+1;                                                  
+                                                                           
+    if (send (this_socket, (char *) &len, sizeof(len), 0) <= 0)            
+      exit(20);                                                            
+                                                                           
+    if (send (this_socket, name, len, 0) <= 0)                             
+      exit(20);                                                            
+                                                                           
+    if (send (this_socket, (char *) &file_size,                            
+              sizeof(file_size), 0) <= 0)                                  
+      exit(20);                                                            
+                                                                           
+    for (;;)                                                               
+    {                                                                      
+      if ((current_size = Read(file, buffer,                               
+                               BUFFER_SIZE) == 0)                          
+        break;                                                             
+                                                                           
+      if (send (this_socket, (char *) &current_size,                       
+                sizeof(current_size), 0) <= 0)                             
+        exit(20);                                                          
+                                                                           
+      if (send (this_socket, buffer, current_size, 0) <= 0)                
+        exit(20);                                                          
+    }                                                                      
+                                                                           
+    Close(file);                                                           
+                                                                           
+    if (recv (this_socket, (char *) &success,                              
+              sizeof(success), 0) <= 0)                                    
+      exit(20);                                                            
+                                                                           
+    if (success == 0)                                                      
+      printf("File could not be written.\n");                              
+                                                                           
+    /* Proper cleanup with no errors */                                    
+                                                                           
+    CloseSocket(this_socket);                                              
+    CloseLibrary(SocketBase);                                              
+                                                                           
+    exit(0);                                                               
+  }                                                                        
+  
+  
+  This client code would be compiled and linked into an executable program  
+  for the originating system (the one that owns the file).                  
+  
+  Now the server code, which listens for the connection request, accepts    
+  it, then processes the request. Once again, errors are not handled well   
+  for brevity's sake. Most of the server code should look "very" familiar.    
+  
+  
+  main()                                                                   
+  {                                                                        
+  #define PORT 6772  /* Arbitrary number > 1024  and < 65536 */            
+  #define BUFFER_SIZE 8192                                                 
+    char * name;                                                           
+    char * buffer;                                                         
+    BPTR file;                                                             
+    LONG file_size, i, current_size;                                       
+    int success;                                                           
+    struct sockaddr_in socket_address;                                     
+    struct hostent *host;                                                  
+    int listen_socket;                                                     
+    fd_set sockets;                                                        
+                                                                           
+    if (SocketBase = OpenLibrary("bsdsocket.library",                      
+                                 1L) == NULL)                              
+      exit(20);                                                            
+                                                                           
+    SetErrnoPtr(&errno, sizeof(errno));                                    
+    SetSocketSignals(0L, 0L, 0L);                                          
+  
+    bzero(&socket_address, sizeof(socket_address));                        
+    socket_address.sin_addr.s_addr = INADDR_ANY;                           
+                                                                           
+    socket_address.sin_port = PORT;                                        
+    socket_address.sin_family = AF_INET;                                   
+                                                                           
+    if ((listen_socket = socket( AF_INET, SOCK_STREAM, 0 )) < 0)           
+       exit(20);                                                           
+                                                                           
+    if (bind(listen_socket, (struct sockaddr *) &socket_address,           
+                sizeof(socket_address)) < 0)                               
+       exit(20);                                                           
+                                                                           
+    if (listen(listen_socket, 5) < 0)                                      
+      exit(20);                                                            
+                                                                           
+    FD_ZERO(&sockets);                                                     
+    FD_SET(listen_socket, &sockets);                                       
+                                                                           
+    if (WaitSelect(1, &sockets, NULL, NULL, NULL, NULL) < 0)               
+      exit(20);                                                            
+                                                                           
+    if (FD_ISSET(listen_socket, &sockets) == 0)                            
+      exit(20);                                                            
+                                                                           
+    receive_file(listen_socket);                                           
+                                                                           
+    CloseSocket(listen_socket);                                            
+    CloseLibrary(SocketBase);                                              
+  }                                                                        
+                                                                           
+  void                                                                     
+  receive_file(int listen_socket)                                          
+  {                                                                        
+    char name[1024];                                                       
+    char * buffer;                                                         
+    BPTR file;                                                             
+    LONG file_size, i, current_size;;                                      
+    short int len;                                                         
+    struct sockaddr_in socket_address;                                     
+    int this_socket;                                                       
+    int success=1; /* presume success */                                   
+                                                                           
+    i = sizeof(socket_address);                                            
+                                                                           
+    if ((this_socket = accept(listen_socket,                               
+                              (struct sockaddr *)&socket_address, &i)) < 0)
+      exit(20);                                                            
+                                                                           
+    if (recv(this_socket, (char *) &len, sizeof(len), 0) <= 0)             
+      exit(20);                                                            
+                                                                           
+    if (recv(this_socket, name, len, 0) <= 0)                              
+      exit(20);                                                            
+                                                                           
+    if (recv(this_socket, (char *) &file_size,                             
+              sizeof(file_size), 0) <= 0)                                  
+      exit(20);                                                            
+                                                                           
+    /* ... (Allocate buffer, open output file) */                          
+                                                                           
+    for (; file_size > 0; file_size -= current_size)                       
+    {                                                                      
+      if (recv(this_socket, (char *) &current_size,                        
+                sizeof(current_size), 0) <= 0)                             
+        exit(20);                                                          
+                                                                           
+      if (recv(this_socket, buffer, current_size, 0) <= 0)                 
+        exit(20);                                                          
+                                                                           
+      if (Write(file, buffer, current_size) != current_size)               
+      {                                                                    
+        success = 0;                                                       
+        break;                                                             
+      }                                                                    
+    }                                                                      
+                                                                           
+    Close(file);                                                           
+                                                                           
+    if (send(this_socket, (char *) &success,                               
+             sizeof(success), 0) <= 0)                                     
+      exit(20);                                                            
+  }                                                                        
+  
+  
+  This server program would be compiled and linked, then placed on the      
+  "Mickey" host system, and then executed. If properly coded, it would just 
+  wait for the client program to connect to it. Then on the system          
+  containing the executable client program, that program is executed, and   
+  would perform the copy, all things being correct.                         
+  
+  Daunting, isn't it?  With some generalization of the opening code and the 
+  reading and writing code, it is not as bad, but you still have to do      
+  that, add the proper reading/writing code for streams, and tack on robust 
+  error recovery.                                                           
+  
+  What happens if the remote machine crashes during operation?  One has to  
+  know more detail about socket operation and how to set options to detect  
+  this. What if the remote machine is not an Amiga and uses a different     
+  byte order for integers? You must handle that whenever you read/write an  
+  integer.                                                                  
+  
+  More importantly, what happens if you have a bug? TorqueWare provides     
+  execution time tracing and allows use of a source code debugger such as   
+  SAS/C's CodeProbe. AS225 and AmiTCP provide some help, but it is very     
+  low-level and requires indepth knowledge of TCP/IP.                       
+  
+  Which code do you think has a better chance of getting to market more     
+  quickly and with less errors?  As the size of code increases, the         
+  complexity normally increases,  taking more time to create and allowing   
+  more possibilities for error.                                             
+  
+  There are many more issues, much more than can be discussed in this       
+  simple example. Keep in mind that most programmers don't want to worry    
+  about the communications; they want to focus on their application and     
+  what it does.                                                             
+  
+  That's why TorqueWare is available.                                       
+  
+                      TorqueWare for the Amiga
+                                                                             
+                      AugmenTek                  
+                      3606 S. 180th St. C-22     
+                      SeaTac, WA 98188-4339      
+                      USA                        
+                                                                             
+      Contact: Stephen Rondeau · 206-246-6077 · sbr@halcyon.com                
+  

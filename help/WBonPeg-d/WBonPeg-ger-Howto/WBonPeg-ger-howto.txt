@@ -1,0 +1,914 @@
+
+Inhaltsverzeichnis:
+
+01. Vorwort
+02. AREXX einrichten
+03. Die Prefs-Programme einrichten
+04. Die Tools ( die dank unserer Modifikation nun laufen)
+05. Hinweise zu den Commodities
+06. Utilities einrichten
+07. OS3.9-Programme in SYS:System
+08. Programme in der WBStartup
+09. Der WB ein ordentliches Menü verpassen!
+10. Die lang ersehnten DefIcons! (Installation und Einrichtung)
+11. Die PNG-Icons - PowerIcons im Einsatz!
+12. Hinweise zur Arbeit auf der Workbench
+13. Die Startup-Skripte
+14. Diverse MUI-Programme nutzen
+
+
+01. Vorwort
+
+OK, zur Erklärung warum dieses HOWTO wenn es doch AmiWBonPegasOS gibt?
+
+Nun zu aller erst vielen herzlichen Dank an Elena für ihre großartigen Tips,
+die mir geholfen haben, einen um vieles besseren Desktop auf meinem MorphOS zu
+installieren.
+
+Wir schreiben dieses HOWTO, weil es nach der Einrichtung der AmiWBonPegasOS noch
+viele offene Fragen zu diversen AddOns und WB-Programmen gibt. Wir hoffen euch
+damit jede Menge Testerei und Enttäuschungen zu ersparen.
+
+Ich sollte dennoch auf den experimentellen Charakter der AmiWBonPegasOS hinweisen,
+ich verspreche auch keine Lösung aller Probleme, sondern nur hilfreiche Tips, die helfen
+die tägliche Arbeit zu erleichtern, und doch noch etwas Spaß aufkommen zu lassen,
+denn MorphOS ist nach wie vor eine Beta, d.h. eben hoch experimentell!
+
+Was also wird euch dieses HOWTO bringen? Nun wir werden euch erklären wie man die
+meisten von der Workbench bekannten Programme auch unter AmiWBonPegasOS zum
+Laufen bringt und die Arbeit auf dem neuen Desktop sicherer gestaltet. Wir zeigen Euch
+auch wie man widerspenstige Programme durch andere bessere Programme ersetzen
+kann. Der Desktop wird mit DefaultIcons und konfigurierbarem WB-Menü laufen.
+
+Noch eine Bitte, lest euch diese HOWTO "genau" durch, wir haben viel Zeit und
+Mühe in die Konfiguration und die Tests investiert um es euch so einfach wie möglich
+zu machen! 
+
+Der wesentlichste Hinweis von mir ist, nicht per Installer installieren sondern von Hand!
+Ok, das ist nicht gerade fair aber unumgänglich! Lest euch wenn notwendig die Installskripte
+in einem Editor durch um heraus zu bekommen, was und wohin zu kopieren ist und welche
+Einträge in den Startup-Skripten notwendig werden.
+
+Dieses HOWTO setzt voraus, daß ihr im Besitz einer OS3.5- und/oder OS3.9-CD seid und
+die Arbeitsschritte aus AmiWBonPegasOS detailiert ausgeführt habt! Also auch das ihr
+auch die RA-Classes installiert habt. Deutsche Anleitungen gibts auf www.djbase.de,
+vielen Dank an dieser Stelle für die umfangreiche Hilfe an DJBase.
+
+------------------------------------------------------------------------------------
+Ich weise hiermit ausdrücklich darauf hin, daß die nachfolgenden Modifikationen
+gegen geltendes Recht verstoßen und somit nicht legal sind. Eine Weitergabe oder
+Nutzung der Modifikation ist strafbar. Ich hafte nicht für etwaige daraus resul-
+tierende Schäden oder sonstige Ansprüche. Jeder handelt auf eigene Verantwortung.
+------------------------------------------------------------------------------------
+
+Ok, das trifft die Sache nicht ganz. Die HOWTO an sich ist keine Modifikation des
+MorphOS, aber sie setzt auf der AmiWBonPegasOS-Modifikation auf und erklärt wie
+man die ganze Sache sicherer und umfangreicher gestaltet, somit wurde der obige Text
+doch notwendig. Kurzum die Jungs vom MorphOS-Developer-Team werden die Sache in
+keinem Fall gut heißen! Mein schwacher Einwand, diese Modifikation wäre nicht
+notwendig wenn wir einen voll-funktionsfähigen Desktop zur Verfügung hätten, wird
+wohl bei der MDC auf taube Ohren stoßen. Vorerst ist dies die einzige Möglichkeit
+dem MorphOS ein voll-funktionsfähiges Desktop- und Datei-Management für 
+professionelles Arbeiten zu verpassen. Nur dumm, daß wir User es wiedereinmal
+selbst machen müssen.
+
+Also denkt daran, ihr modifiziert euer MorphOS auf eigenes Risiko! Es wird nicht
+einfach werden und mit Sicherheit ist es nicht an einem Tag gemacht.
+
+02. AREXX einrichten
+
+Als erste Erweiterung zu AmiWBonPegasOS muß ein funktionierendes AREXX etabliert
+werden. Dazu bedient man sich am besten der AREXX-Bibliotheken von der jeweilig
+zur Verfügung stehenden OS3.x-CD.
+
+Benennt als erstes die rexxsyslib.library in MOSSYS:Libs nach rexxsyslib.library_MOS
+um.
+
+Kopiert nun die rexxsyslib.library und alle anderen euch zur Verfügung stehenden
+AREXX-libraries nach SYS:Libs.
+
+Hier eine Liste der möglichen AREXX-Libs:
+
+  rexxapp.library
+  rexxarplib.library
+  rexxdos.library
+  rexxdossupport.library
+  rexxextreq.library
+  rexxhost.library
+  rexxidentify.library
+  rexxmathlib.library
+  rexxreqtools.library
+  rexxserdev.library
+  rexxsupport.library
+  rexxsyslib.library
+  rexxtools.library
+  rexxtricks.library
+  rexxutil.library
+
+Obwohl alle Befehle zur Ausführung von AREXX schon in MOSSYS:C integriert sind gibt
+es diverse AREXX-Applikationen die diese Befehle in SYS:REXXC erwarten. Es ist daher
+sinnvoll diesen Ordner in SYS: zu erstellen und alle für AREXX notwendigen Befehle 
+aus MOSSYS:C dahin zu kopieren (nicht verschieben!!)! Hier die Liste:
+
+  HI
+  RX
+  RXC
+  RxHelp
+  RXLIB
+  RXSET
+  TCC
+  TCO                             
+  TE
+  TS
+  WaitForPort 
+
+                 
+Nun muß AREXX noch sauber in die startup-Dateien eingetragen werden:
+
+In der startup-sequence in MOSSYS:S/ :
+
+Dazu muß nach der Zeile "Assign >NIL: CLIPS: RAM:Clipboards"
+die Zeile "Assign >NIL: REXX: S:" eingetragen werden.
+
+In der user-startup in SYS:S/ :
+
+Hier können an beliebiger Stelle die Zeilen:
+
+MOSSYS:C/RexxMast >NIL:
+wait 1 >NIL: ;Verhindere das Arexx bei Start crasht
+
+eingetragen werden, die Zeile "wait 1 ... " kann Crashes beim Aufstarten von AREXX
+verhindern!
+
+MUIREXX
+
+Um auch noch MUIREXX-Applikationen nutzbar zu machen, kann man
+MUIREXX (in diesem Falle die Version 3.0) einrichten.
+
+Dazu kann man das Programm-Verzeichnis nach C: kopieren und mit dem Editor
+in der S:user-startup den Assign
+
+Assign MUIREXX: Sys:C/MUIREXX
+
+einrichten! Nach einem Reboot, kann man dann auch MUIREXX-Applikationen nutzen.
+
+RMH
+
+Wer Tools wie PixLoad nutzen will sollte das RMH-Paket installieren, hier ist es ebenfalls
+besser dies von Hand zu erledigen! Programme die auf RMH basieren wurden von mir nicht getestet!
+Nutzt jemand von Euch RMH-Programme? Dann meldet Euch.
+
+
+03. Die Prefs-Programme einrichten
+
+Sicher wurde in AmiWBonPegasOS erwähnt, daß ihr nach der dort beschriebenen
+Modifikation alle OS3.5/3.9-Programme nutzen könnt. Aber es gibt dabei eine Menge zu
+beachten, denn ganz so sorglos wie auf der richtigen Amiga-WB laufen die Programme
+denn dann doch nicht!
+
+Um die Standard-OS3.x-Prefs-Programme in eurer Sprache nutzen zu können, müßt ihr
+die normalerweise nach SYS:Locale/catalogs/your-language/sys installierten Cataloge nach
+MOSSYS:Locale/catalogs/your-language/sys kopieren. Auf der OS3.5-CD findet ihr die in
+AmigaOS35:OS-Version3.5/Locale/Catalogs/Deutsch/sys.
+
+Wichtiger Hinweis:     Alle Prefs-Programme, die die Workbench refreshen wollen wie z.B.
+                           Font-Prefs, können zwar die Einstellungen speichern, aber es kann 
+                           durchaus sein, daß sich zwar der Screen aber nicht mehr die 
+                           Workbench öffnet! Hier gilt es einen Reset auszuführen und schon
+                           startet die WB sauber mit den neuen Einstellungen.
+
+Erklärend sei hier noch erwähnt, es ist ein MUI-PublicScreen aktiv! Man kann sich davon
+überzeugen wenn man entweder Scout oder Sysinspektor zur Analyse verwendet! Für
+eilige sei es daran erklärt, daß Ambient auf MUI basiert, ihr seht das am aktiven Skin.
+
+Das bietet natürlich die Chance, daß ihr statt der RA-Prefs-Programme deren MUI-
+Pendants nutzen könnt, doch deren Einrichtung hier zu beschreiben würde den Rahmen
+dieser HOWTO sprengen. 
+
+WBPattern-Prefs:
+
+hier ist zu beachten, daß für den WB-Background nur ein Fullscreen-Bitmap zu
+verwenden ist, sonst Absturz! Alles andere sollte sauber funktionieren!
+
+Pointer-Prefs:
+
+damit man dieses Setting ändern kann. Ihr könnt somit eure alten Amiga-Pointer-Prefs
+weiter verwenden, das Programm läuft sicher und stabil.
+
+IControl-Prefs:
+
+festlegen diverser Shortcut-Key's und soweiter, Vorsicht mit der 1:1-Display-Einstellung
+kann bei den Skins Probleme machen, überlaßt das besser dem SkinManager!
+
+Time-Prefs:
+
+klar wozu man die nutzt, sind aber nicht unbedingt erforderlich (MOS-TimePrefs).
+
+ReAction-Prefs:
+
+logisch um RA auf eure Bedürfnisse anzupassen, auch hier sollten keine Probleme
+auftauchen.
+
+Workbench-Prefs:
+
+um die Settings der WB anzupassen, Achtung Fuelgauge läßt sich hier nicht abschalten!!
+Setzt bitte die Default-StackSize mindestens auf 8192 oder besser auf 16368 für alle
+Programme! Der Schalter "No Titlebar" wurde von mir nicht getestet.
+
+Wie man die Fuelgauge der WB auszuschaltet, lest ihr bitte weiter unten in der Sektion
+"12. Hinweise zur Arbeit auf der Workbench" nach!
+
+Font-Prefs:
+
+klar wozu die gebraucht werden, hat kleine Darstellungsfehler die von den
+Ambient-Skins herrühren! Das Programm lief bei mir! 
+
+ASL-Prefs:
+
+zum Einstellen der ASL-Requester, ihr braucht dazu noch die ASL.library von OS3.5 
+oder 3.9 und in MOSSYS:Locale/catalogs/your-language/sys den OS3.9-libs.catalog!
+(hat den Vorteil, daß nun das Kontext-Menü in eurer Sprache ausgeführt wird und ihr 
+den ASL-Requester gut auf dem Screen positionieren könnt!) Klar ist auch, daß ihr
+die mos-asl.library in MOSSYS:Libs nach asl.library_MOS umbenennen müßt!
+
+Screen-Mode-Prefs:
+
+laufen zwar, haben aber keine rechte Auswirkung und freezen die WB, da im 
+Hintergrund ja der MUI-PublicScreen "Ambient" aktiv ist! Nutzt dafür besser
+MOSSYS:Prefs/Preferences.
+
+Input-Prefs:
+
+kann man nutzen muß man aber nicht, da sich sonst die WB-Input-Prefs mit denen der 
+MophOS-Input-Prefs überschneiden. Für Experimentier-Freaks, kann man hier versuchen
+Euro-Keymaps ein zubinden, ich hatte bis jetzt keine Zeit dies zu testen!
+
+Locale-Prefs:
+
+um die Workbench auf die passende Sprache einzustellen! Hierzu müßt ihr die Datei 
+worldmap aus eurem Amiga oder von der OS3.x-CD aus dem Prefs-Ordner nach
+SYS:Prefs/kopieren, sieht einfach besser aus.
+
+Dank der von uns nach MOSSYS:Locale/catalogs/deutsch/sys kopierten Cataloge gibt's
+die WB nun auch wieder in deutscher Sprache! Die Cataloge für die anderen Programme
+notwendigen Cataloge kopiert ihr bitte nach SYS:Locale/catalogs/deutsch.
+
+Palette-Prefs:
+
+vom OS3.5 oder OS3.9 bitte nicht verwenden, die stürzen ab bzw. freezen euren 
+PegasOS! Nutzt anstatt dessen folgende von mir getestete Replacements!
+
+Palette-Prefs:
+
+diesmal die Version von OS3.1, dazu muß im Prefs-Ordner ein neues Verzeichnis 
+"WBPalette" erzeugt und das Palette-Programm und der entsprechende Catalog
+(Sprache beachten!) z.B. catalogs/deutsch/sys/prefs.catalog mit hinein kopiert werden,
+der Pfad muß erhalten bleiben! Also WB-Palette/catalogs/deutsch/sys/prefs.catalog!
+
+So kann das alte Palette-Programm sauber laufen ohne mit den Catalogen der neueren
+OS3.9-Prefs-Programmen zu kollidieren! Ich weiß es ist umständlich aber erst einmal
+der sauberste Weg, die WB-Grundpalette sicher Einstellen und Speichern zu können!
+
+(Achtung die Palette-Prefs brauchen sehr lange für den Fenster-Aufbau, 
+laufen dann aber sicher und speichern sauber!)
+
+Ersatzweise kann man auch auf das Programm FullPalette zurückgreifen!
+
+FullPalette:
+
+dazu muß das Prefs-Programm nach Sys:Prefs und das Commodity "FPPrefs" nach Sys:C kopiert
+werden. Solltet ihr Fullpalette schon auf eurem Amiga genutzt haben könnt ihr noch 
+eure fullpalette.prefs nach Sys:Prefs/Env-Archive/Sys kopieren und diese Palette 
+nutzen! Dazu muß noch die MOSSYS:S/startup-sequence editiert werden und zwar tragt
+Ihr gleich nach dem Befehl IPrefs in einer neuen Zeile "Run >NIL: FPPrefs" ein, nach 
+einem Reboot sollte nun eure Amiga-Fullpalette zur Verfügung stehen.
+
+MUI-WBPalette:
+
+Sicher gibt es dieses MUI-Replacement, aber ich weiß nicht mehr wo. Wer's hat, testen!
+Ich gehe davon aus, daß es unproblematisch einzusetzen ist.
+
+Sound-Prefs:
+
+Das Sound-Prefs-Modul von "Preferences" (MorphOS-Preferences!) hat einen Fehler,
+ein Test des eingestellten Sounds gibt keinen Sound aus! Hier kann man das OS3.x-
+Sound-Prefs-Programm nutzen mit dem Vorteil, daß nun die Sound-Ausgabe des 
+Testbuttons funktioniert, egal ob Beep oder Soundfile! Allerdings habe ich bis heute
+weder mit Ambient noch mit der WB eine Sound-Ausgabe bei Fehlermeldungen! Wer hier
+einen Bugfix hat, bitte melden.
+
+WarpOS-Prefs:
+
+für die Glücklichen die Amithlon/AmigaOSXL auf dem PC genutzt haben, dieses
+Prefs-Programm wurde dort mitgeliefert und ist nun auch unter AmiWBonPegasOS
+einsetzbar, diejenigen die dieses Prefs-Programm genutzt haben wissen wofür sie es
+brauchen. 
+
+Hinweis:   AmigaOSXL-Prefs würde auch laufen macht aber keinen Sinn, da keine
+             Amithlon/AmigaOSXL-Emulation aktiv ist!
+
+CacheCDFS-Prefs:
+
+macht leider wenig Sinn, da CacheCDFS nicht mit dem IDE.device startet! 
+Ich habe noch nicht herausgefunden warum? Dasselbe gilt auch für AsimCDFS
+anscheinend sind die MOS-Devices nicht mehr mit diesen Datei-Systemen kompatibel?
+Oder es liegt an dem unter MorphOS fehlenden NSDPatch?
+
+DefIcons-Prefs:
+
+Das Programm läuft, ich gehe aber in einem speziellen Kapitel weiter unten noch 
+genauer darauf ein!
+
+Für erweiterte Funktionen könntet ihr noch folgende Prefs-Programme gebrauchen: 
+PopupMenu-Prefs, Triton-Prefs(MakeCD) und Reqtools-Prefs. Ihr braucht dazu jeweils die 
+passenden Libs und Catalogs.
+
+
+04. Die Tools ( die dank unserer Modifikation nun laufen)
+
+HD-ToolBox:
+
+Als größter Vorteil gegenüber MOS ist hier HD-ToolBox (OS3.9) zu nennen. Man kann
+ohne gleich neu partitionieren zu müssen die Größen der Partitionen ändern. Was SCSI-Config
+nicht kann, hier mußte ich bis jetzt immer die nachfolgenden Partitionen
+neu anlegen um nur deren Größen verändern zu können.
+
+Mounter:
+
+Der Mounter funktioniert ebenfalls, wenn ihr in den ToolTypes die richtigen d.h. 
+MorphOS-typischen Devices eintragt, z.B. Device=ide.device!
+
+IconEdit
+
+IconEdit funktioniert und speichert in gewohnter Weise, aber die Zeichen-Fläche stellt
+alles mit Antialias dar??? Wer einen Bugfix für dieses Problem hat, bitte melden. Ich
+sollte noch erwähnen, daß ihr mit IconEdit keine PNG-Icons bearbeiten könnt!
+
+Keyshow funktioniert.
+
+ShowConfig funktioniert.
+
+Unarc:
+
+Unarc läuft und entpackt alle Formate, wenn ihr den Ordner Libs/xad und die
+xadmaster.library von der OS3.9-CD nach SYS:Libs kopiert.
+
+Editpad:
+
+Editpad funktioniert nicht (!) und muß durch ein passendes MUI-Programm ersetzt werden!
+
+Hier empfehle ich entweder peditor1.0a oder Wordpad 1.6, oder für GoldEd-Freaks
+eben den MorphEd (der im SuperBundle enthalten ist!)
+
+peditor1.0a:
+
+Hier muß etwas in die Trick-Kiste gegriffen werden, und zwar kopiert man das Programm
+und das Verzeichnis "ToolIcons" frecher-weise nach C:!
+
+Man kann peditor1.0a durchaus als Standard-Ed verwenden, dazu benennt ihr das Prog
+einfach in C: nach Ed um!
+
+Wordpad 1.6:
+
+Der bessere von beiden Editoren, aber auch mit kleinen Macken behaftet. Hier muß das
+herunter geladene Archiv an beliebiger Stelle entpackt werden und dann der Unter-
+Ordner "bin" nach "Wordpad" umbenannt und an eine beliebige Stelle z.B. Sys: kopiert
+werden. Wichtig ist nur, daß ihr in der s:user-startup einen Assign Wordpad: mit eurem
+Pfad erstellt, in diesem Beispiel würde die Zeile
+
+Assign Wordpad: Sys:Wordpad
+
+lauten.
+
+Warnhinweis: Wordpad hat die Eigenart sporadisch für Abstürze des PegasOS zu sorgen,
+aus welchen Gründen auch immer, werden im ramdebug jede Menge Hits erzeugt. Ich mache
+eine oder mehrere von Wordpad genutzte MUI-Classes dafür verantwortlich. peditor1.0a
+hat diesen Fehler nicht. Es ist also durchaus sinnvoll beide Editoren im System zu
+haben.
+
+
+MorphEd:
+
+Wenn ihr wie ich das SuperBundle inkl. MOSSDK installiert habt, sollte MorphEd ab der
+Installation als "Ed" laufen, damit hat man keine Nacharbeit, nur wem MorphEd nicht 
+gefällt, der sollte auf die obengenannten Editoren ausweichen.
+
+BenchTrash:
+
+BenchTrash (OS3.9) läuft macht aber nur Sinn wenn ihr Trashscan's verwendet!
+
+Mehr habe ich von den alten Tools nicht übernommen! Ich habe mehr MUI-Freeware-
+Programme im Einsatz! MUI-Programme sind ohnehin die bessere Wahl, weil dank
+Ambient-Skin grafisch ansprechender!
+
+
+05. Hinweise zu den Commodities
+
+Blanker funktioniert definitiv nicht!
+
+BlueEyes, AutoPoint, NoCapsLock, MouseBlanker, FKey und Exchange funktionieren.
+
+CrossDOS sollte laufen wurde aber noch nicht getestet, da es mit den Devices vom
+Amiga noch Probleme gibt! Für CrossDOS müssen der Ordner FileSystem_Trans noch
+nach SYS:L kopiert werden! Vielleicht kann hier ja jemand weiter helfen, der CrossDOS
+mittlerweile auf MorphOS zum Laufen gebracht hat? Jede Hilfe ist willkommen.
+
+
+06. Utilities einrichten
+
+Multiview:
+
+Hier habe ich aus Gründen der Kompatibilität das "alte" OS3.9-MultiView im Einsatz,
+warum? Nun das neue MOS-Multiview weist diverse Fehler beim Darstellen von Amiga-
+Guides auf, die recht störend wirken können, und außerdem unterstützt das "alte"
+Multiview eben auch eure Sprache, was dem neuen Multiview ebenfalls fehlt! Mir fiel
+außerdem auf, daß das "alte" Multiview schneller läuft als das MOS-Multiview!
+
+WBClock:
+
+ja genau die, die man auf der WB plazieren kann, diese läuft auch mit den alten
+Amiga-Einstellungen, ich weiß, mir wäre eine MOS-Clock im neuen MOS-Design auch
+lieber gewesen, aber zumindest auf der MOS1.4-CD-Christmas-Edition war außer den
+Time-Prefs gar keine Uhr!!! Really bad!!! :-((
+
+Action:
+
+Ok, nicht das beste Proggy aber es läuft! Action kann nun genutzt werden! Einziges
+Manko (Amithlon-User werden das Problem kennen!) es gibt keine Sound-Ausgabe,
+denn Action will das paulaaudio.device haben, oder aber im Falle von Amithlon die
+Sound-Umleitung über NallePUH bzw. Puhderbaer. Beide funktionieren nicht unter
+MorphOS! (Probleme mit dem MMU-Support!) Action ist der einzige AVI/MOV-Player
+der direkt auf das Öffnen von DefIcons per Doppel-Klick reagiert. Vergeßt bitte nicht
+s:start_action.rexx nach SYS:S/ zu kopieren!
+
+PlayCD:
+
+Ja auch ein Schwach-Punkt von MorphOS, es gibt auf der MOS-CD keinen CD-Player!
+PlayCD würde laufen, arbeitet aber nicht mit dem ide.device von MOS zusammen: 
+"Device-Error not an SCSI-2-Standard-Device!" Das läuft auf dem selben Wege wie
+CacheCDFS!
+
+Wenn hier irgendjemand Fortschritte erzielt hat und PlayCD oder CacheCDFS zum
+Laufen gebracht hat, laßt es uns wissen.
+
+Der Ersatz - Songplayer_MOS v. 1.62
+
+Alternativ kann man hier den neuen Songplayer_MOS zum Einsatz bringen, der es
+gestattet Audio-CD's über das ide.device abzuspielen, sicher er ist grafisch nicht so
+schön wie PlayCD, aber er erfüllt seine Funktion. Aber mit einer wesentlichen Ein-
+schränkung, er spielt keine kopiergeschützten Audio-CD's ab dem Herstellungsjahr
+2001 ab, entweder wird gar nichts oder nur verstümmelte Trackdaten angezeigt.
+
+
+07. OS3.9-Programme in SYS:System
+
+CLI:
+
+Die Jungs von Genesi mögen mir verzeihen, aber ich mag ihre Fullscreen-Shell nicht!
+Also verwende ich die WB-Shell von OS3.9! Logisch, daß hierzu CLI und das Icon
+Shell.info aus OS3.9 hier nach SYS:System kopiert werden müssen!
+
+Anbei sei hier noch erwähnt, daß der von AmigaOS3.x bekannte Ed (CLI-Programm) auf
+MorphOS nicht sauber läuft.
+
+Gleichzeitig müssen in MOSSYS:S die Dateien CON-Menu und shell-startup
+nach CON-Menu-MOS und shell-startup-MOS umbenannt werden und die Datei
+s:shell-startup von der OS3.9-CD nach MOSSYS:S kopiert werden!
+
+IntelliFonts:
+
+IntelliFonts (OS3.9) läuft, vermauliert sich aber über die unkomplette Intellifont-
+Installation in MOSSYS:FONTS! Da ich meine Intellifonts anders einbinde, brauche
+ich dieses Tool nicht!
+
+Auch hier ein Tip von meiner Seite, ich nutze die Wordworth7-Tools um meine TTF- und
+Intellifonts systemweit einzurichten, wobei ein spezieller Ordner und nicht SYS:Fonts
+verwendet wird. Diesen speziellen Ordner kann ich dann per "Assign" zugänglich
+machen, oder per "Assign REMOVE" aus dem System nehmen, was mit einer Intellifont-
+Installation nach SYS:Fonts nicht geht!
+
+Find:
+
+Find (OS3.9) funktioniert einwandfrei, ich nutze aber SimpleFind, mit dem ich besser
+arbeiten kann (Yes, that's a TIP!) ;-)
+
+RexxMast:
+
+RexxMast (OS3.9) würde funktionieren, kommt aber bei mir nicht zum Einsatz. Hier
+habe ich wie schon im Kapitel "AREXX" schon erwähnt, den RexxMast von MOS im
+Einsatz!
+
+FixFonts:
+
+FixFonts (OS3.9) habe ich noch nicht getestet, aber es sollte laufen, wenn ihr mit 
+Intellifonts die Intellifont-Installation bereinigt habt.
+
+Format:
+
+Format (OS3.9) bitte nicht nutzen! Der WB-Menu-Befehl "Piktogramm/Disk formatieren"
+funktioniert auch nicht fehlerfrei! 
+
+Zum Formatieren muß ich bis jetzt immer noch ein sauberes MOS-System starten, ich bin
+dankbar für jede Hilfe, wenn einer von Euch das OS3.9-Format zum Laufen gebracht hat,
+dann meldet Euch bitte.
+
+Für das Formatieren von FFS- bzw. SFS-Partitionen gilt hier ebenfalls der für Amithlon
+gültige Hinweis, daß sich ein richtiges Formatieren nicht lohnt, sondern hier sollte
+QuickFormat zum Einsatz kommen, gerade bei Partitionen mit 30GB und mehr!
+
+Ich habe keine weiteren Programme in SYS:System, NoFASTMEM würde wohl auch 
+wenig Sinn machen! ;-))
+
+
+08. Programme in der WBStartup
+
+Hier muß ich als erstes alle Patch-Freaks WARNEN! Bittet verzichtet auf TweakWB, 
+MagicMenu und ToolsDaemon. Diese Programme freezen euren Desktop, d.h. der
+ganze PegasOS steht!
+
+Sind diese Programme in der WBStartup habt ihr keine Chance mehr von Eurer
+System-Partition zu booten! Für den Fall, daß ihr doch schlau genug wart eines dieser
+Proggy's in die WBStartup zu legen, dann nehmt die MOS-CD, bootet von dieser und
+nehmt um himmels willen das jeweilige Programm aus der WBStartup!!!!!!!!!!!!!
+
+StormScreenManager:
+
+Die Verwendung des StormScreenManager's (wichtig für AmigaWriter!) ist nicht ganz
+sicher, also verzichtet besser darauf wen ihr ihn nicht unbedingt braucht! Aus meiner
+Erfahrung läuft die WB instabil wenn StormScreenManager aktiv ist! AmigaWriter ist
+trotzdem nutzbar, läuft dann aber direkt auf der WB.
+
+Ohnehin an dieser Stelle ein wichtiger Hinweis zur Einrichtung der WBStartup unter
+AmiWBonPegasOS! Anders als auf der OS3.9-WB muß hier die Start-Priorität der
+einzelnen Programme genau festgelegt werden!!!!! Ich liefere euch dazu die passenden
+Icons, lest euch einfach die ToolTypes durch und ihr werdet verstehen warum!
+
+AmiDock:
+
+Och nö! ;-)) Ja, doch es läuft in gewohnter Weise, aber dank des wundervollen
+Programmes PowerIcons (von Elena, many thanks!) nun auch mit PNG-Icons!
+Wichtig ist hier die genaue Start-Priorität festzulegen, AmiDock sollte ganz zum Schluß
+aus der WBStartup gestartet werden! (Icon liegt bei!)
+
+PegasOSMixer:
+
+Last but not Least: Der PegasOSMixer, ich habe einen Tag gebraucht um das Teil
+QUIET laufen zu lassen, d.h. Das ToolType CX_POPUP=NO schien keine Wirkung zu
+haben, auch hier half mir nur das Rücksetzen auf ein OS3.9-Icon und die zusätzliche
+Vergabe des ToolType NOCONTEXT!
+
+
+09. Der WB ein ordentliches Menü verpassen!
+
+RxTDMenu (Das! ToolsDaemon-Replacement):
+
+Das Teil findet ihr auf eurer OS3.9-CD in Contribution/Workbench/Tools/RxTD.
+
+Was zur Hölle ist das? Ja richtig, mit diesem kleinen netten AREXX-Tool bekommt
+man ein WB-Menü ala ToolsDaemon. Ihr braucht in L: den toolsdaemon-handler, in s:
+euer Amiga-Toolsdaemon.menu und in Prefs: das dazugehörige Tools-Prefs-Programm!
+Zwar verwendet ToolsPrefs die reqtools.library vom MorphOS ohne Probleme, aber hier
+zahlt es sich aus wenn ihr die ReqTools-Prefs installiert habt, da man dieses Prog
+damit beeinflussen kann!
+
+Wie man RxTDMenu installiert und verwendet ist der Dokumentation von RxTDMenu zu
+entnehmen! Ihr müßt hier nur wissen, bevor ihr RxTDMenu das erste Mal aus der
+WBStartup verwenden könnt, solltet ihr ToolsPrefs einmal starten und dessen
+Konfiguration speichern! Das Programm wird zwar beim Speichern der Konfiguration
+eine Fehlermeldung bringen (ToolsDaemon ist momentan nicht aktiv!), die kann
+aber getrost weg geklickt werden.
+
+Wichtig ist es außerdem ein OS3.9-Icon zu vergeben, und dessen ToolTypes auf:
+
+DONOTWAIT
+DONOTPROMPT
+WINDOW=>NIL:
+
+Standardprogramm: rx
+
+StackSize: 8192
+
+Start durch: Workbench
+
+festzulegen!
+
+Als Beispiel liefere ich euch eine Sys/S/Example-toolsdaemon.menu-Datei mit, damit
+ihr es einfacher habt diverse Programm-Starts sauber einzurichten! Sicher, ich weiß daß
+Ihr alle da draußen clevere PegasOS-User seid, aber glaubt mir wenn ich euch sage, die
+Erarbeitung eines sauberen RxTDMenu artet in langwieriger Arbeit aus, wenn man jedes
+einzelne Programm eintragen und dessen Start testen muß.
+
+Manche Programme starten auf MOS nur sicher wenn man sie per CLI-Option startet
+aber andere wiederum brauchen den 'C:RxTDFix []' um sauber zu starten usw.
+
+Meine Example-toolsdaemon.menu ist noch nicht fertig, das wird sie wohl nie werden,da
+sich im alltäglichen Gebrauch noch Fehler zeigen können, aber im Großen und Ganzen
+funktionieren die Menü-Aufrufe mittlerweile.
+
+Einen Bug hat das RxTDMenu, Aufrufe mit Dateien aus einem geöffneten CDROM-Fenster
+melden einen Fehler über die WB-Console, starten aber in der Regel, das Fenster ver-
+schwindet, sobald ihr das gestartete Programm beendet!
+
+Wichtig sind hier, wie generell unter MOS, die höher festgelegten Stacksizes der Programme!
+
+
+10. Die lang ersehnten DefIcons! (Installation und Einrichtung)
+
+Ich liefere mit diesem Archiv auch meine NewAge-Default-Icons für MorphOS aus, die
+darin enthaltenen Default-Icons sind alle auf das MorphOS-Environment angepaßt, ich
+kann natürlich nicht wissen wie und wo ihr eure Lieblings-Programme installiert habt,
+aber im wesentlichen basiert meine System-Installation auf dem Standard-MorphOS
+mit dem Unterschied, daß ich den Ordner "Sys:Apps" nach Work: aufgelöst habe. Es
+sind also alle SuperBundle-Programme in gewohnter AmigaOS-Manier nach Work:
+installiert (z.B. Work:fxpaint-Lite). Außer Voyager und Apdf die habe ich nach eigenem
+Ermessen nach Sys:Internet installiert. Logischer-weise können meine DefIcons für
+die entsprechenden Datei-Typen in diese Verzeichnisse verweisen, obwohl ich sorgfältig
+darauf geachtet habe, die Default-Icons im MorphOS-Standard zu halten.
+
+Hier kann es helfen, wenn ihr eine AmigaOS-LeserCD im Hause habt, dort findet ihr
+das Tool in CD0:START/C allerdings fehlt auf den LeserCD's das DefIcons-Prefs-Programm.
+Also wird euch nichts anderes übrig bleiben, als das Archiv im Aminet zu suchen.
+
+Dank dem Programm DefIcons und dessen Prefs-Programm könnt ihr direkt aus dem
+Prefs-Programm die Icons aufrufen (Doppel-Klick auf einen Eintrag!) und euer Wunsch-
+Programm per Drag'nDrop in die Option "Standardprogramm:" eintragen.
+
+Die Stackwerte sind mit Absicht so hoch eingestellt, denn MOS hat Probleme mit
+Programmen die mit zu niedrigen Stackwerten starten!
+
+Ich sollte noch die Implementierung der verschiedenen Datatypes erwähnen!
+
+Ok um die Funktionalität von DefIcons auch wirklich ausreizen zu können, habe ich
+noch folgende Amiga-Datatypes installiert!
+
+Der wichtigste!
+icon.datatype v. 44.0 ersetzt icon.datatype v. 42.2 in MOSSYS:Classes/Datatypes
+newicon.datatype v. 39.0 wurde von mir ebenfalls in MOSSYS:Classes/Datatypes
+plaziert! (dafür bitte keinen Descriptor verwenden!)
+
+alle anderen in SYS:Classes/Datatypes
+jpeg.datatype v. 44.4
+xbm.datatype v. 43.1
+tiff.datatype v. 40.5
+targa.datatype v. 43.1
+script.datatype v. 40.2
+gifanim.datatype v. 1.2
+macpict.datatype v. 39.1
+macpaint.datatype v. 43.1
+ico.datatype v. 43.6
+font.datatype v. 39.1
+faxx.datatype v. 43.3
+exe.datatype v. 39.4
+cdxl.datatype v. 44.16
+animation.datatype v. 44.18
+anim.datatype v. 44.17
+amigaguide.datatype v. 45.5
+
+Ein Hinweis für Tests: Plaziert im jeweiligen Ordner einen weiteren Ordner "Disabled"
+z.B. DEVS:Classes/Datatypes/Disabled und legt dort Datatypes oder Descriptoren ab
+die ihr test-weise deaktivieren wollt. In manchen Fällen kann es sinnvoll sein die
+Descriptoren von diversen Datatypes auszuschalten, damit diese einwandfrei
+funktionieren!
+
+Ja ich weiß es sind mitunter nicht die allerneusten, aber diese Konstellation
+funktioniert bei mir bis jetzt einwandfrei! Ihr dürft diese Liste gerne erweitern, aber nur
+sichere Datatypes sollten hier Einzug halten, ich habe bei meinen Test's schon erlebt,
+daß manch verrückter Datatype, die ganze WB lahmgelegt hat, deswegen hier nur eine
+Positiv-Liste!
+
+Folgende Descriptoren für die Datatypes wurden in Sys:Devs installiert!
+
+AmigaGuide
+Anim
+Bitmap_Font
+CDXL
+Exe
+Faxx
+ICON (der aus MOSSYS:Devs!)
+Macintosh_PICT2
+MacPaint
+Outline_Font
+Targa
+TIFF
+TIFF_II
+TIFF_MM
+Windows Icon
+X-Bitmap
+
+Hinweis: Es kann sinnvoll sein die Stackwerte für diverse Datatypes auf
+MophOS-Niveau anzuheben um das System insgesamt sicherer zu bekommen.
+
+Diese Liste der Datatypes ist der momentane Stand der Dinge, und kann sich im Laufe
+der Zeit immer wieder ändern!
+
+Ok, setzen wir die DefIcons ein. Im Ordner MorphOS-DefIcons findet ihr einerseits
+meine deficons.prefs, diese Datei kopiert ihr nach Sys:Prefs/Env-Archive. Andererseits
+findet ihr im Ordner Default-Icons die NewAge-DefIcons die ihr nach Sys:Prefs/Env-archive/Sys
+kopiert, beachtet aber das eure bisherigen DefIcons garantiert von diesen überschrieben werden
+macht also vorher bitte ein Backup! 
+
+Ich liefere in meinem DefIcons-Ordner 367 - Datei-Typ-Icons im OS3.9-Format. Nun gut
+angesichts der PNG-Icons sind meine Icons vielleicht nicht die Aller-schönsten, aber
+schnell! Schnell auch in dem Sinne, daß ihr über DefIcons-Prefs auch die Icons per 
+Drag'nDrop auf neuere PNG-Icons ändern könnt.
+
+Wie? Nun wählt in DefIcons-Prefs einen Typ-Eintrag im linken Listen-Feld, einen Doppel-
+Klick auf den Eintrag und schon startet der Icon-Informationsrequester. Jetzt euer ge-
+wünschtes PNG-Icon einfach auf das Icon-Bild im Informationsrequester ziehen und den
+Spaß speichern.
+
+
+11. Die PNG-Icons - PowerIcons im Einsatz!
+
+Es ist nicht so, daß es mit diesem Programm Probleme gäbe. Aber ich hätte ein paar
+Tips wie man klug damit umgeht.
+
+Als Wichtigstes! NEIN PowerIcons läuft nicht mit Scalos, zumal Scalos PNG-Icon-Support
+bietet, der aber nicht sauber läuft, d.h. regelmäßige Abstürze sind keine Seltenheit.
+Mal ein Ordner mit einem PNG-Icon zu viel = Absturz.
+
+Ich hatte es anfangs schwer eine passende Markerfarbe für die angewählten PNG-Icons
+zu finden, hierzu ein Tip:
+
+Legt man im Start-Befehl für PowerIcons die Selectionsfarbe auf z.B.
+
+SELR=0 SELG=0 SELB=80
+
+fest, ergibt das in diesem Fall eine leichte Blau-Tönung, die nicht mehr so stark leuchtet.
+Ich will damit andeuten, stellt die Farbe niedriger ein, wenn ihr einen dem MOS 
+ähnlichen Tint-Effekt nachahmen wollt.
+
+Der massive Einsatz von PNG-Icons kann auch Nachteile auf G3/600MHz-PegasOS
+Rechnern haben. Nun die CPU-Last von hunderten Icons in einem Verzeichnis kann so
+hoch werden, daß ein paralleles Abspielen von MP3-Dateien ins Stocken geraten kann.
+
+Auf 1GHz-PegasOS-Rechnern sollte das Problem nicht auftauchen!
+
+Um PNG-Bilder, die man z.B. von www.kdelook.org herunter laden kann, in PNG-Icons
+zu verwandeln, hilft das einfache Umbenennen von *.png nach *.info um die PNG-Icons
+auf der WB zu sehen! Ist allerdings eine Fleißaufgabe.
+
+12. Hinweise zur Arbeit auf der Workbench
+
+Ich weiß das manche von Euch lieber RAWBInfo als Informations-Requester verwenden
+würden, aber damit gibt es noch Probleme. Einerseits klappt das Kopieren der Icons 
+per Drag'nDrop nicht 100%ig, d.h. ich habe gerade bei OS3.9-Icons mitunter Pen-
+Probleme in den gespeicherten Icons beobachtet, die mit der OS3.9-Information nicht
+auftreten. Andererseits kann man die ToolTypes nicht ändern, da RAWBInfo für den
+ToolType-Editor das auf MOS bösartig-reagierende "texteditor.gadget" verwendet, was
+mit einem Einfrieren des PegasOS quittiert wird. Also bis auf weiteres empfehle ich die
+Finger von RAWBInfo zu lassen!
+
+Übrigens Editpad (von OS3.5 - 3.9) basiert ebenfalls auf dem "texteditor.gadget", auch
+hier Finger weg, jede Texteingabe bedeutet - Rechner geht fest!
+
+Ach so, liebe Patch-Freaks Finger weg von MCP, nicht auf MorphOS, noch nicht!
+Wenn jemand weiß wie man MCP sicher unter AmiWBonPegasOS zum Laufen bringt, dann
+meldet euch.
+
+Fuelgauges und DrawerNotify
+
+Tja, wie schaltet man nun die Fuelgauges aus und den DrawerNotify an? Das ist
+eigentlich sehr einfach. Auf der OS3.5-CD befindet sich das kleine Tool WBCtrl, 
+im Ordner CD0:Contribution/Workbench/Tools/WBCtrl - kopiert das Programm nach 
+Sys:C und legt in der WBStartup eine neue Text-Datei "WBCtrl-Start" incl. Piktogramm
+mit z.B. Ed an.
+
+Hinweis: Versucht bitte nicht mit TweakWB zu arbeiten, ich habe bösartige Abstürze
+festgestellt die sich direkt auf TweakWB zurückführen lassen.
+
+Gebt nun die Befehls-Zeile:
+
+C:WBCtrl DN G
+
+ein und speichert die Datei. Jetzt widmet ihr euch noch dem Icon! Also die Piktogramm-
+Informationen aufrufen und als zusätzliches Schutzbit das Script-Bit aktivieren, dann
+als Standard-Programm C:IconX eintragen, die Option "bis zum Beenden warten" deaktivieren
+das Teil speichern. Bevor ihr neu startet, könnt ihr das Teil mal per Doppel-Klick starten
+und mit dem Öffnen eines Disk-Icons z.B. "Work" testen ob die Fuelgauge noch aktiv ist oder
+nicht! Wichtig ist, daß bei einem Start von der WB aus keine bereits geöffneten Disk-Fenster
+erneuert werden. Fehlt bei einem der Disk-Fenster jetzt die Fuelgauge so ist das 
+WBCtrl-Start-Script in Ordnung und ihr könnt den Rechner per Reboot neu starten.
+
+Weitere Informationen zu WBCtrl entnehmt dem WBCtrl.doc.
+
+Die WB-Information
+
+Ach so, irgendwie ist die Icon-Erstellung auf der Workbench fehlerhaft, aus irgendeinem
+mir nicht erklärbaren Grund werden die über die WB-Information geänderten Icons aus
+SYS: beim Speichern auf der WB (wie aus-gelagerte Icons) angezeigt, das gilt nur für
+Icons auf SYS, und nach einem Reboot liegen die Icons wieder im Sys: Auf den
+anderen Datenträgern geschieht dies nicht!
+
+Das gute alte DirectoryOpus v. 4.14-GPL
+
+Hier gibt es zwei wesentliche Einschränkungen. Da wäre als erstes die powerpacker.library
+zu erwähnen, die unter keinen Umständen zum Einsatz kommen darf, denn aus mir nicht bekannten
+Gründen, geht der Rechner mit dem Start von DirOpus zunehmend fest, wenn diese Library im
+System installiert ist. Doch nur diese Library erlaubt den Einsatz der deutschen Sprache
+in den DirOpus-Requestern. Also müssen alle deutschen User mit einem zweisprachigen DirOpus
+arbeiten.
+
+Es gibt außerdem Änderungen in der Konfiguration, mir sind Inkompatibilitäten mit den
+diversen MOS-Packern aufgefallen, so daß sich manche gepackten Archive nicht mehr
+entpacken lassen, ich lege zum besseren Verständnis meine DOpus-Config aus Sys:s bei!
+
+Ach so, DirOpus hat Probleme mit großen Fonts im Zusammenhang mit den MOS-Skins, d.h. es kann
+in den TitleBar's der Verzeichnis-Fenstern zu Fehl-Darstellungen kommen, die aber auch unter
+einem sauber installierten MOS auftreten.
+
+
+13. Die Startup-Skripte
+
+Lest Euch bitte dazu auch die von mir mitgelieferte
+
+MOSSYS/S/Example-startup-sequence
+
+durch, dort findet ihr Beispiele wie man PowerIcons, FPPrefs und LoadWB einrichtet.
+
+Unter MOSSYS/S findet ihr auch die Shell-Modifikation, um die MOS-Fullscreen-Shell
+abzuschalten!
+
+In Sys/S findet ihr die für die DefIcons notwendigen .rexx-Skripte, AREXX
+ist etwas wunderbares, besonders wenn man unter MOS Datei-Aufrufe damit sicher
+einrichten kann.
+
+Außerdem findet ihr eine Example-user-startup, anhand der ihr diverse Einstellungen
+in eurer user-startup vornehmen könnt.
+
+
+14. Diverse MUI-Programme nutzen
+
+RO - der andere Datei-Manager
+
+Lobenswert sollte hier der Datei-Manager "RO" erwähnt werden, jetzt dank des neuen
+MUI-Ambient-Skins avanciert "RO" zum grafisch wertvollen DirOpus4-Ersatz, zumal wenn
+man wie ich die Freeware-Version des RO nutzt. Bis jetzt konnte ich keine Fehler bei der
+Nutzung von RO feststellen. RO hat zudem den Vorteil mit den für SFS typischen längeren
+Dateinamen einwandfrei klar zukommen, wobei DirOpus 4.14 GPL streikt. Andererseits hat
+RO aber ein Problem mit großen Festplatten, es werden immer nur 4GB sauber erkannt,
+sind die ausgeschöpft meldet RO "Disk is full" obwohl in Wirklichkeit noch 30 GB auf der
+Platte frei sind. Hier ist das MorphOS Developer-Team gefragt, diesen Fehler der wahrscheinlich
+aus dem ide.device und/oder dem SFS-Datei-System kommt zu beheben, denn er tritt auch mit
+einem sauber installierten MorphOS auf.
+
+Misc - Notes
+
+Für mich ein gutes und vorallem auf MOS stabil laufendes Programm, ebenfalls ein
+Freeware-Programm, daß mir half dieses HOWTO auf die Beine zu stellen. Auch hier
+habe ich bis jetzt keine Fehler festgestellt.
+
+CDCat - Release 3
+
+An sich ein wirklich schöner CD-Katalog, aber die Suchfunktion crasht, bis jetzt sind
+keine Bugfixes gefunden, alle anderen Funktionen sollten laufen. Schade ich würde
+dieses Programm gerne nutzen. Wer einen Bugfix oder eine lauffähige Version mit
+funktionierender Suchfunktion hat, bitte bei mir melden.
+
+Voyager -3.4.4
+
+Es gibt für diesen Voyager, ja genau den von MOS einen Patch um den CManager per
+AREXX ein zubinden, das dumme ist der hat negative Auswirkungen, zwar startet der
+CManager, aber mit minutenlanger Verzögerung und Voyager arbeitet danach nicht
+mehr sicher. Also laßt die Skripte vorerst draußen, bis ein Bugfix für dieses Problem
+gefunden ist!
+
+Zumal der Voyager 3.4.4 sehr allergisch auf neuere Websites reagiert, neuestes Java
+bedeutet Absturz, grafisch aufwendige Sites bedeuten Absturz! Hier bedarf es noch jeder
+Menge Nacharbeit, bevor Voyager.MOS mit AWeb-APL mithalten kann!
+
+Ein Rücksetzen auf Voyager3.2 kann manchmal wahre Wunder bewirken, zumindest was
+die Lauf-Sicherheit angeht!
+
+Vorerst ist MorphOS noch sehr weit davon entfernt einen guten eigenen Internet-Browser
+zu haben! Bleibt zu hoffen, daß das nächste MOS-Update da Abhilfe schafft. Vielleicht
+könnten sich die Distributoren ja auch darauf einigen den AWeb-APL als Alternative anzu-
+bieten?
+
+SimpleMail v. 0.13
+
+Ein wunderschönes und geniales Programm, und vor allem ich konnte keine Fehler entdecken.
+Wesentlich ist, daß die passenden MUI-Classes im System liegen, aber bitte überschreibt nicht
+die vorhandenen MOS-MUI3.9-Classes in MOSSYS:Classes/MUI, sondern kopiert die notwendigen 
+MUI-Classes nach Sys:Classes/MUI.
+
+Allgemeiner Hinweis:
+
+Ich mußte feststellen, daß ähnlich wie bei den RA-Classes, es auch bei den MUI-Classes
+diverse Vertreter gibt die partout nicht unter MOS laufen wollen. Das bedeutet aber
+auch je mehr MUI-Classes nach MOS portiert werden, um so mehr MUI-Programme
+könnten wir in Zukunft nutzen!
+
+Ein Hinweis noch! Diese HOWTO befindet sich in ständiger Weiterentwicklung bei der
+ihr mithelfen könnt. Laßt es uns wissen wenn ihr neue oder andere Erkenntnisse ge-
+wonnen habt. Beschreibt nach Möglichkeit mit welchen Arbeitsschritten und in welcher
+Systemumgebung (Libs, Classes usw.)ihr die Progs zum Laufen gebracht habt.
+
+Ein Tip noch, schön wäre es wenn sich einer der Administratoren der beiden Pegasos-
+foren dazu entschließen könnte eine MorphOS-Supportdatenbank auf die Beine zu-
+stellen. Dort könnten dann zentral alle Tips und Tricks in Sachen MOS und AmiWB-
+onPegasos verwaltet werden.
+
+Mit besten Wünschen
+
+Raoul.

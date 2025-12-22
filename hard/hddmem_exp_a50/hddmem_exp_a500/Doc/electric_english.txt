@@ -1,0 +1,187 @@
+ 2. The description of the electrical basic circuit of the memory expansion
+    module.
+
+  The development of the electrical basic circuit is reduced to realization
+of separate blocks of a function chart, connections between blocks and
+additional connections ensuring work of elements in proper mode.
+
+  The given circuit is constructed on the basis of the system bus of
+Amiga500, which includes the system bus of the microprocessor 68000
+(described above) and additional control signals. The following signals
+used as additional control signals:
+
+* CDAC - this signal is rotated by 90 degrees (off 68000 frequency signal
+ (CPUCLK)), this means that the front of this signal is late off CPUCLK
+ by 70 ns;
+
+* /OVR - when active, it cancels decoding of some address spaces in Amiga500
+  (it is used for PLA FX740LC68);
+
+  This scheme starts working with reset (/RESET), which clears interrupt
+flag that was set at output of DD12.2 chip. Also RS-trigger, made with
+DD3.5,DD3.6,DD5.3,DD5.4 chips, is set, which leads to selecting system ROM
+at any address space until the first ROM select. This is necessary to get
+the reset vector located at $000004  in ROM, not in RAM.
+
+  The further necessary initialization of the necessary circuit's triggers
+occurs due to initial high (inactive) level on an input /AS after reset of
+Amiga500. Then address decoding block becomes waiting for active low level
+of address getting signal (/AS).
+
+
+  Address decoding block is made of chips DD1, DD2.1, DD2.2. DD1 decoder
+splits 16Mb address space into 8 parts of 2Mb: $000000-$1FFFFF,
+$200000-$3FFFFF, $400000-$5FFFFF, $600000-$7FFFFF, $800000-$9FFFFF,
+$A00000-$BFFFFF, $C00000-$DFFFFF, $E00000-$FFFFFF. This helps to reduce
+the number of decoders in other parts of the scheme. Signals of selecting
+the last two spaces come from output of DD1 chip to HD controller and ROM
+control block. Logical gates DD2.1 and DD2.2 join four address spaces
+$200000-$3FFFFF, $400000-$5FFFFF, $600000-$7FFFFF, $800000-$9FFFFF in two
+$200000-$5FFFFF, $600000-$9FFFFF of 4Mb each, which are used by dynamic
+memory controller.
+
+  Fixable switcher, shown as KN1 at the scheme, when circuited, allows to
+switch off decoding of all the address spaces by DD1; that turns off all
+the scheme blocks of Amiga500.
+
+
+  Harddisk controller is made with DD2.4, DD4.3, DD4.4, DD10-DD13 chips.
+/C0 signal, which comes from address decoding block, goes to DD10 decoder,
+which gives 64kb of address space ($DA0000-$DAFFFF) from a range of 2åb.
+To make (/CS0 and /CS1) active while accessing harddrive ports you
+need narrower address space, and that is made by DD11.1 decoder and DD12.1
+trigger (it holds /CS0 low in relation to /IOW and /IOR). /CS0 signal
+becomes active when accessing $DA2000-$DA2FFF address, and /CS1 - when
+acessing $DA3000-$DA3FFF. /IOR and /IOW signals are made at the output
+of DD11.2 decoder while reading or writing to $DA0000-$DA3FFF. Signal of
+register writing (DD12.2 trigger) of interrupt flag goes from DD4.3 output.
+This signal resets the trigger and deactivates the interrupt signal /INT2,
+connected to the system bus of Amiga500.
+
+  Reading of interrupt flag register is made while output of DD4.4 is low.
+Information on interrupt flag is tranferred to the data bus through D15
+line if reading $DA9000-$DA9FFF addresses. Interrupt flag is set if IRQ
+signal transerred from harddrive connector to the input 11 of DD12.2
+trigger, is switched positive. The ë1 capacitor is used to remove errors
+from IRQ line. IRQ signal is connected to the ground through R2 resistance
+to get a logical 0 when harddrive is disconnected. DD13.1 is used as a
+buffer with the third output condition, and avoids possible conflicts
+at data bus. DD13.2 makes collector at /INT2 line open.
+
+
+ Dynamic memory controller is made with DD2.3,DD3.1-DD3.4, DD4.1,DD4.2,
+DD5.1,DD5.2,DD6-DD9,DD13.1 chips. The contoller gets two signals from
+address decoding block which are used by DD2.3 for making the /RAMSEL
+signal, used for selecting address space of 8Mb ($200000-$9FFFFF) of the
+memory. The DD6.1 trigger makes /RAMSEL signal latch at the trird processor
+clock using the next negative switching. It allows to get (/RASC) signal
+at this trigger's output from the middle of the third cycle of åë68000 to
+the end of /AS signal.
+
+  The /RASC signal takes part in forming signals that are responsible
+for selecting rows in dynamic memory module. The middle of åë68000's
+third cycle is a beginning of dynamic memory reading/writing cycle.
+DD3.3-DD3.4, DD13.3 chips allow to form the ADR_SW signal. It happens
+due to /RASC signal delay, which is necessary for address switching front's
+delaying in multiplexers block off row selection signals (/RAS1, /RAS0).
+Next CDAC front (positive) latches the low level at DD6.2 trigger.
+This results in forming /RASC signal at the output of this trigger,
+which longs from the beginning of the fourth cycle to the end of /AS
+signal (the end of sixth cycle). The /CASC signal takes part in forming
+/CAS0, /CAS1, /CAS2 ® /CAS3 signals, which are used for dynamic memory's
+row selection.
+
+  This scheme uses "0 wait states" type of memory regeneration (without
+CPU waiting cycles; this makes memory speed not less than 70ns).
+It needs constant regenration with cycles' frequency equal to frequency
+of REGCLK signal, which comes from the high bit of DD20 counter. This
+counter divides Ö frequency by 128. When the counter gets 1 in the high
+bit (REGCLK), this 1 latches in DD7.1 trigger with negative CDAC signal
+switching (7MHz frequency). Trigger's direct output gets signal switching
+from low to high. This output is connected to the input of DD20 counter's
+reset. When this input gets a high level voltage, the counter resets
+to zero.
+
+  The inverse output of DD7.1 forms a single negative impulse one CPU cycle
+long (140ns), which activates all /CAS signals through DD9 chip, beginning
+dynamic memory regeneration. When coming through DD7.2 trigger, this signal
+lags by the half of the CPU cycle, and the resulting signal activates all
+the /RAS signals using DD5.1 and DD5.2. That ensures /CAS regeneration
+before /RAS. The regeneration is made while there's no active low /AS
+signal, i.e. ‚Æ between memory access cycles.
+
+  The memory block has 32 data lines in four groups by 8 bit, with every
+group activated by its own /CAS signal. This allows pairwise joining
+of the linesèÆÌ‚Æ¨„ to the one 16-bit one. DD8 decoder should activate
+the correspondong /CAS signal pairs. /UDS and /LDS signals that come to
+DD8's input ensure reading/writing high or low data byte of the 16-bit bus
+or its simultaneous output. See details in the table 2.1.
+
+  Table 2.1
+
+  Memory selection signals' distribution
+
+-----------------------------------------
+|  $800000-$9FFFFF  |  $400000-$5FFFFF  |
+-----------------------------------------
+| /UDS    | /LDS    | /UDS    | /LDS    |
+|---------|---------|---------|---------|
+| /RAS1   | /RAS1   | /RAS0   | /RAS0   |
+| /CAS3   | /CAS2   | /CAS3   | /CAS2   |
+| D31-D24 | D23-D16 | D31-D24 | D23-D16 |
+-----------------------------------------
+
+-----------------------------------------
+|  $600000-$7FFFFF  |  $200000-$3FFFFF  |
+-----------------------------------------
+| /UDS    | /LDS    | /UDS    | /LDS    |
+|---------|---------|---------|---------|
+| /RAS1   | /RAS1   | /RAS0   | /RAS0   |
+| /CAS1   | /CAS0   | /CAS1   | /CAS0   |
+| D15-D08 | D07-D00 | D15-D08 | D07-D00 |
+-----------------------------------------
+
+  DD16-DD18 chips ensure multiplexing of the addresses of the system
+address bus using ADR_SW signal, which is active between /RAS and /CAS
+signals. When ADR_SW is high, dynamic memory row address is latched by
+the negative front of /RAS signal; When ADR_SW is low, dynamic memory
+column address is latched by the negative front of /CAS signal. R3-R18
+resistors ensure electrical coordination of multiplexers' outputs with
+dynamic memory module inputs.
+
+
+  ROM control block is made with DD13.4, DD3.5, DD3.6, DD5.3, DD5.4 chips.
+RS-trigger, made of DD3.5, DD3.6, DD5.3, DD5.4, after reset forms the
+signal to select a reset vector from location $000004 of the system ROM,
+not the chip RAM of Amiga500. Therefore DD13.4 gets switched to the third
+mode. /ROM_OE output gets then attracted through the resistor to the common
+output, to select a CPU reset vector, which holds the first command's
+address. Command's address is located at the ROM address space to make
+/Ö0 signal by the address decoding block within the next memory reading
+cycle. This signal ensures switching RS-trigger to operation mode, when
+DD13.4 switches its /ROM_OE output from the third mode to /Ö0 signal
+passing mode.
+
+  /ROM_OE signal goes to the 'permit data transfer' input of DD14-DD15
+chips' bus. Chip select input is connected to the ground to ensure
+permanent data address selecting to the end of the sixth CPU cycle.
+Ä1-Ä18 signals are used to select the data inside an address space of 512Kb.
+There is no Ä0 signal in åë68000, so it's replaced by /UDS and /LDS signals
+when writing. There's no need to use these signals when reading, as the
+åë68000 latches the needed data from the data bus in the end of the sixth
+cycle. This allows to connect two 8-bit ROM chips to 16-bit data bus and to
+select them both even if CPU needs to read 1 byte of data.
+
+  When reading ROM DD14 chip outputs the even (high) data byte D15-D8,
+and the DD15 chip gives the odd (low) data byte D7-D0. Contents of ROM chips
+has to be split into odd and even part.
+
+
+  This scheme uses power supply of +5V transferred through the system
+connector of Amiga500, shown as ï1 at the scheme. The ground bus is taken
+of the same connector of 11 pins, uniformly distributed on the connector.
+It is used to reduce noise at the ground bus. That is why ground bus is
+located next to +5V line, and they both are wider that other signal
+conductors. ë3-ë14 capacitors are located near the chips' power output to
+avoid local noise on these chips. +12V suuply is not used by the scheme,
+but it is needed for HDD to work.

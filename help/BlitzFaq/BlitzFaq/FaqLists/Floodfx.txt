@@ -1,0 +1,94 @@
+; #Code Start
+; ***************************************
+; ***        Flood effect V1.0        ***
+; ***   From the effects library by   ***
+; ***           Alex Moon             ***
+; ***************************************
+
+; This routine does the flood effect known from several demos,
+; and looks quite good.
+
+; First of all, load a bitmap:)
+
+f$="Source:dune/gfx/64/tiles.lbm"      ; Insert your own filename here
+
+ILBMInfo f$                             ; Get bitmap info
+w=ILBMWidth:  h=ILBMHeight: d=ILBMDepth
+
+BitMap 0,w,h,d                          ; Setup the correct bitmap
+BitMap 1,w,h,d                          ; Setup a matching bitmap
+LoadBitMap 0,f$,0                       ; load it
+
+tpe.l=d: If(CheckAGA)  tpe+$13000       ; define coplist type
+                                        ; and use AGA palette mode, if
+                                        ; AGA chipset present
+InitCopList 0,44,256,tpe,0,2^d,0        ; Init the coplist
+VWait 50
+BLITZ
+; do display stuff
+CreateDisplay 0
+DisplayBitMap 0,1
+DisplayPalette 0,0
+
+;Flood from bottom to top
+
+Use BitMap 1
+; loop from 0 to bitmap height -1 (for each line)
+For i=0 To h-1
+  ; draw the current line from bottom to i
+  For j=h-1 To i+1 Step -1
+    ; using blockscroll for speed
+    BlockScroll 0,i,w,1,0,j,0
+  Next
+  VWait;  equalize the speed.
+Next
+
+;UnFlood from bottom To top
+
+Use BitMap 1
+; loop from 0 to bitmap height -1 (for each line)
+For i=h-1 To 0 Step -1
+  ; draw the current line from bottom to i
+  For j=h-1 To i+1 Step -1
+    ; using blockscroll for speed
+    BlockScroll 0,i,w,1,0,j,0
+  Next
+  VWait;  equalize the speed.
+Next
+Cls 0
+
+;Flood from top To bottom
+
+Use BitMap 1
+; loop from 0 to bitmap height -1 (for each line)
+For i=h-1 To 0 Step -1
+  ; draw the current line from top to i
+  For j=0 To i
+    ; using blockscroll for speed
+    BlockScroll 0,i,w,1,0,j,0
+  Next
+  VWait;  equalize the speed.
+Next
+
+;Flood from top&bottom to the middle
+
+Use BitMap 1
+; loop from 0 to bitmap height / 2 (for half the number of lines)
+For i=0 To h/2
+  ; draw the current line from bottom to i
+  ti=h/2+i; There's no reason to calculate this every cycle, is there?
+  For j=h-1 To ti+1 Step -1
+    ; using blockscroll for speed
+    BlockScroll 0,ti,w,1,0,j,0
+  Next
+  ; draw the current line from top to h/2-i
+  ti=h/2-i; There's no reason to calculate this every cycle, is there?
+  For j=0 To ti
+    ; using blockscroll for speed
+    BlockScroll 0,ti,w,1,0,j,0
+  Next
+Next
+
+MouseWait;  wait, so you can see the result:)
+End
+;# Code End

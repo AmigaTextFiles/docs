@@ -1,0 +1,454 @@
+/**********************************************************************************
+;
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;
+***********************************************************************************/
+
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/amissl.h>
+#include <proto/amisslmaster.h>
+
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <proto/socket.h>
+
+#include <amissl/amissl.h>
+#include <libraries/amisslmaster.h>
+#include <libraries/amissl.h>
+
+// ---------------------------------------------------------------------------
+// Ensure that AmigaOS gives us enough stack
+
+#ifdef __VBCC__
+	__entry char StackCookie[] = "$STACK:20480";
+#endif
+#ifdef __GNUC__
+	__attribute__((used)) char StackCookie[] = "$STACK:20480";
+#endif
+
+// ---------------------------------------------------------------------------
+
+// The SocketBase is only required by GCC.
+#ifdef __GNUC__
+	struct Library * SocketBase = NULL;
+#endif
+
+// Library bases of the AmiSSL libraries.
+struct Library *AmiSSLMasterBase, *AmiSSLBase, *AmiSSLExtBase;
+
+// The variables used to store the socket error codes
+static long ErrNo=0;
+static long HErrNo=0;
+
+
+// ---------------------------------------------------------------------------
+// - Ensure the error number is within the expected range.
+// - Get the human readable string and print it after the provided message.
+
+void Error( char * pMsg )
+{
+	long Error = ErrNo;
+	
+	if ( Error < 0 ) Error = -Error;
+	if ( Error > 10000 ) Error -= 10000;
+	
+	struct TagItem tags[2];
+	tags[0].ti_Tag= SBTM_GETVAL(SBTC_ERRNOSTRPTR);
+	tags[0].ti_Data= Error;
+	tags[1].ti_Tag= TAG_END;
+	
+	if ( SocketBaseTagList( tags ) != 0 )
+	{
+		printf( "%s Unkown error: %ld\n", pMsg, ErrNo );
+	}
+	else
+	{
+		char * pErrStr = (char *)tags[0].ti_Data;
+		printf( "%s Error: %ld (%s)\n", pMsg, ErrNo, pErrStr );
+	}
+}
+
+
+// --------------------------------------------------------------------------
+// Get the human readable string and print it after the provided message.
+
+void SSLError( const char * pMsg )
+{
+	char Buffer[ 256 ];
+	ERR_error_string_n( ERR_get_error(), Buffer, 255 );
+	
+	printf( "%s: %s\n", pMsg, Buffer );
+}
+
+
+// --------------------------------------------------------------------------
+// - Create a context object for a server.
+// - Load the certificate from file.
+// - Load the private key from file and use the certificate to check it.
+
+SSL_CTX * PrepareCtx( char * pCert, char * pKey )
+{
+	SSL_CTX * pCtx = SSL_CTX_new( TLS_server_method() );
+	if ( !pCtx )
+	{
+		SSLError( "PrepareCtx: Unable to create new CTX" );
+		return NULL;
+	}
+	
+	// Load certificate first to allow the private key to be checked
+	if ( SSL_CTX_use_certificate_file( pCtx, pCert, SSL_FILETYPE_PEM ) != 1 )
+	{
+		SSLError( "PrepareCtx: Unable to use certificate" );
+		SSL_CTX_free( pCtx );
+		return NULL;
+	}
+	
+	if ( SSL_CTX_use_PrivateKey_file( pCtx, pKey, SSL_FILETYPE_PEM ) != 1 )
+	{
+		SSLError( "PrepareCtx: Unable to use private key" );
+		SSL_CTX_free( pCtx );
+		return NULL;
+	}
+	
+	
+	return pCtx;
+}
+
+
+// --------------------------------------------------------------------------
+// - Create a TCP socket.
+// - Keep it blocking but enable asynchronous events.
+// - Specify the events to be used for the socket.
+// - Bind the socket to port 443 (the https: port).
+// - Start listening for incoming connections.
+
+int PrepareSocket()
+{
+	int Socket = socket( AF_INET, SOCK_STREAM, 0 );
+	if ( Socket < 0 )
+	{
+		Error( "Unable to open socket!" );
+		return -1;
+	}
+	
+	ULONG Value = 1;
+	if ( IoctlSocket( Socket, FIOASYNC, &Value ) < 0 )
+	{
+		Error( "Unable to get asynchronous messages on the socket!" );
+		CloseSocket( Socket );
+		return -1;
+	}
+	
+	ULONG Temp = FD_ACCEPT | FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+	setsockopt( Socket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+	
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = 443;
+	SockAddr.sin_addr.s_addr = INADDR_ANY;
+	
+	int Result = bind( Socket, (struct sockaddr *)&SockAddr, sizeof( SockAddr ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to bind socket!" );
+		CloseSocket( Socket );
+		return -1;
+	}
+	
+	long Success = listen( Socket, 1 );
+	if ( Success == -1 )
+	{
+		Error( "Unable to listen on socket!" );
+		CloseSocket( Socket );
+		return -1;
+	}
+	
+	
+	return Socket;
+}
+
+
+// --------------------------------------------------------------------------
+
+static int NewSocket = -1;
+static SSL * pSSL = NULL;
+
+int ProcessSocketEvent( SSL_CTX * pCtx )
+{
+	ULONG EventMask=0;
+	int EventSocket = GetSocketEvents( &EventMask );
+	if ( EventSocket == -1 )
+	{
+		printf( "No socket events?!\n" );
+		return 0;
+	}
+
+	printf( "Event for socket: %d, Mask: %lx\n", EventSocket, EventMask );
+	
+	if ( EventMask & FD_ERROR )
+	{
+		if ( ErrNo == 0 )
+		{
+			long Length = sizeof( ErrNo );
+			getsockopt( EventSocket, SOL_SOCKET, SO_ERROR, &ErrNo, &Length );
+		}
+		Error( "FD_ERROR!" );
+	}
+	
+	
+	if ( EventMask & FD_ACCEPT )
+	{
+		printf( "FD_ACCEPT\n" );
+		
+		if ( NewSocket < 0 )
+		{
+			NewSocket = accept( EventSocket, NULL, 0 );
+			if ( NewSocket == -1 )
+			{
+				Error( "Accept error on socket!" );
+			}
+			else
+			{
+				printf( "Incoming connection. New socket %d.\n", NewSocket );
+				
+				// Get a new SSL object
+				pSSL = SSL_new( pCtx );
+				if ( !pSSL )
+				{
+					printf( "Unable to create SSL object!\n" );
+					CloseSocket( NewSocket );
+					return -1;
+				}
+				
+				// Use the socket for the SSL connection
+				SSL_set_fd( pSSL, NewSocket );
+				
+				// Do any renegotiation in the background
+				SSL_set_mode( pSSL, SSL_MODE_AUTO_RETRY );
+				
+				// Prepare for the handshake from the client
+				if ( SSL_accept( pSSL ) != 1 )
+				{
+					SSLError( "SSL: accept error!" );
+					SSL_free( pSSL );
+					pSSL = NULL;
+					CloseSocket( NewSocket );
+					NewSocket = -1;
+				}
+				else
+				{
+					// Specify the asynchronous events
+					ULONG Temp = FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+					setsockopt( NewSocket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+				}
+			}
+		}
+	}
+	
+	if ( EventMask & FD_WRITE )
+	{
+		printf( "FD_WRITE\n" );
+	}
+	
+	if ( EventMask & FD_READ )
+	{
+		printf( "FD_READ " );
+		
+		// Read the data from the socket via the SSL object
+		char Buffer[ 1024 ];
+		int BytesRead = SSL_read( pSSL, Buffer, 1023 );
+		if ( BytesRead < 0 )
+		{
+			SSLError( "SSL: Unable to read data!" );
+		}
+		
+		if ( BytesRead > 0 )
+		{
+			printf( "%d Bytes\n", BytesRead );
+			
+			// Show what has been received
+			//Buffer[ BytesRead ] = '\0';
+			//printf( "%s\n", Buffer );
+			
+			// Send data back via the SSL object
+			char * pStr = "The data to be sent back to the connecting client\n\n";
+			int BytesDone = SSL_write( pSSL, pStr, strlen( pStr ) );
+			if ( BytesDone  < 0 )
+			{
+				SSLError( "SSL: Unable to write data!" );
+			}
+			else
+			{
+				printf( "Written %d Bytes\n", BytesDone );
+			}
+			
+			// End the connection on the SSL layer
+			SSL_shutdown( pSSL );
+			
+			// Not sending any more data
+			shutdown( EventSocket, 1 );
+		}
+	}
+	
+	if ( EventMask & FD_CLOSE )
+	{
+		printf( "FD_CLOSE\n" );
+		
+		if ( EventSocket == NewSocket )
+		{
+			if ( pSSL )
+			{
+				SSL_free( pSSL );
+				pSSL = NULL;
+			}
+			
+			CloseSocket( NewSocket );
+			NewSocket = -1;
+		}
+	}
+	
+	return 0;
+}
+
+
+// --------------------------------------------------------------------------
+
+void Server( ULONG SocketSignalMask )
+{
+	printf( "Preparing context..\n" );
+	
+	// Prepare the SSL context object
+	SSL_CTX * pCtx = PrepareCtx( "My.cert", "My.key" );
+	if ( !pCtx )
+	{
+		return;
+	}
+	
+	printf( "Preparing the socket..\n" );
+	
+	// Prepare the listening socket
+	int Socket = PrepareSocket();
+	if ( Socket >= 0 )
+	{
+		printf( "Socket open!\n" );
+		
+		int Result = 0;
+		while ( Result >= 0 )
+		{
+			printf( "Waiting for a signal..\n" );
+			
+			ULONG Signals = Wait( SocketSignalMask | SIGBREAKF_CTRL_C );
+			if ( Signals & SIGBREAKF_CTRL_C )
+			{
+				printf( "Break signal!\n" );
+				break;
+			}
+			
+			if ( Signals & SocketSignalMask )
+			{
+				printf( "That's the Socket event signal!\n" );
+				Result = ProcessSocketEvent( pCtx );
+			}
+		}
+		
+		CloseSocket( Socket );
+		if ( NewSocket != -1 )
+		{
+			if ( pSSL )
+			{
+				SSL_free( pSSL );
+				pSSL = NULL;
+			}
+			
+			CloseSocket( NewSocket );
+			NewSocket = -1;
+		}
+	}
+	
+	SSL_CTX_free( pCtx );
+}
+
+
+
+// --------------------------------------------------------------------------
+
+int main( int argc, char *argv[] )
+{
+	#ifdef __GNUC__
+	SocketBase = OpenLibrary( "bsdsocket.library", 4 );
+	if ( !SocketBase )
+	{
+		printf( "Unable to open bsdsocket.library!\n" );
+		return 0;
+	}
+	#endif
+	
+	AmiSSLMasterBase = OpenLibrary( "amisslmaster.library", AMISSLMASTER_MIN_VERSION );
+	if ( !AmiSSLMasterBase )
+	{
+		printf( "Unable to open amisslmaster.library\n" );
+		#ifdef __GNUC__
+		CloseLibrary( SocketBase );
+		#endif
+		return 0;
+	}
+	
+	// Allocate an Exec signal
+	BYTE SocketSignal = AllocSignal( -1 );
+	ULONG SocketSignalMask = 1 << SocketSignal;
+	
+	// Specify the variables that will receive socket library error codes.
+	SocketBaseTags( SBTM_SETVAL(SBTC_SIGEVENTMASK), SocketSignalMask,
+					SBTM_SETVAL(SBTC_ERRNOLONGPTR), (int)&ErrNo,
+					SBTM_SETVAL(SBTC_HERRNOLONGPTR), (int)&HErrNo,
+					TAG_END );
+	
+	// Setup the AmiSSL libraries for use with the bsdsocket.library
+	OpenAmiSSLTags( AMISSL_CURRENT_VERSION,
+					AmiSSL_UsesOpenSSLStructs, FALSE,
+					AmiSSL_GetAmiSSLBase, (int)&AmiSSLBase,
+					AmiSSL_GetAmiSSLExtBase, (int)&AmiSSLExtBase,
+					AmiSSL_SocketBase, (int)SocketBase,
+					AmiSSL_ErrNoPtr, (int)&ErrNo,
+					TAG_END );
+	
+	Server( SocketSignalMask );
+	
+	FreeSignal( SocketSignal );
+	
+	CloseAmiSSL();
+	CloseLibrary( AmiSSLMasterBase );
+	#ifdef __GNUC__
+	CloseLibrary( SocketBase );
+	#endif
+	
+	
+	return 0;
+}

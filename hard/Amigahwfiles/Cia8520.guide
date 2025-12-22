@@ -1,0 +1,264 @@
+@database "6526"
+@master "CHIPS"
+@version 0.0
+
+
+@node main "CIA8520"
+
+
+		CIA 8520		deutsch
+
+@{" >>bemerkung<<" link "bemerkung"}
+
+@{"+5V         1" link "+5v"}			@{"40    CNT" link "cnt"}
+@{"pa0         2" link "io-port"}			@{"39    SP " link "sp"}
+@{"pa1         3" link "io-port"}			@{"38    rs0" link "rsx"}
+@{"pa2         4" link "io-port"}			@{"37    rs1" link "rsx"}
+@{"pa3         5" link "io-port"}			@{"36    rs2" link "rsx"}
+@{"pa4         6" link "io-port"}			@{"35    rs3" link "rsx"}
+@{"pa5         7" link "io-port"}			@{"34   _rst" link "rst"}
+@{"pa6         8" link "io-port"}			@{"33    db0" link "datenbus"}
+@{"pa7         9" link "io-port"}			@{"32    db1" link "datenbus"}
+@{"pb0        10" link "io-port"}			@{"31    db2" link "datenbus"}
+@{"pb1        11" link "io-port"}			@{"30    db3" link "datenbus"}
+@{"pb2        12" link "io-port"}			@{"29    db4" link "datenbus"}    
+@{"pb3        13" link "io-port"}		        @{"28    db5" link "datenbus"}
+@{"pb4        14" link "io-port"}			@{"27    db6" link "datenbus"}
+@{"pb5        15" link "io-port"}			@{"26    db7" link "datenbus"}
+@{"pb6        16" link "io-port"}			@{"25    phi2" link "phi2"}
+@{"pb7        17" link "io-port"}			@{"24   _flag" link "handshaking"}
+@{"_pc        18" link "handshaking"}			@{"23   _cs " link "_cs"}
+@{"TOD        19" link "TOD"}			@{"22   r/w " link}
+@{"gnd        20" link "gnd"}			@{"21   _irq" link "_irq"}
+
+@endnode
+
+@node "+5v"
+	
+	power
+
+@endnode
+@node "gnd"
+	ground 0V
+@endnode
+
+@node "phi2"
+
+	ttl compatible clock for internal function, timing for DATA bus 
+
+@endnode
+@node "_cs"
+
+The chip acts only if Phi2=high and _cs low (surprise!).
+@endnode
+
+@node "RSx"
+
+	Internal data @{"register" link "register"}
+@endnode
+
+@node "datenbus"
+
+	This is the connection with the outher world and open-drain.
+	if cs=0, r/w=1, phi2=1 then it read data from bus.
+@endnode
+
+@node "_irq"
+	
+	Interrupt request, open drain
+@endnode
+
+@node "rst"
+
+	reset
+@endnode
+@node "io-port"
+
+
+everyone of two port A and B consists of an 8-bit data pointer (pra/prb) and data direction
+register (ddra/ddrb). is in GDR the unity law, that to correspond bits in pr is output; 
+
+the bit is in GDR zero to input is in such a way switched. Leg place pr at output
+(pa0-7/pb0-7) valid bits read, independently whether the pin concerned as output or input
+is switched both port is sowahl ttl and CMOS kompartible (by active & pasive pullup
+items) and can zeill ttl units drive additionally to the normal function to take over pb6&7
+the function of an interval timer output. 
+@endnode
+
+@node "handshaking"
+
+Handshaking with the Signal _PC and _FLAG implements.
+
+@endnode
+
+@node "cnt"
+with the input cnt the counters can measure external impulses and frequencies, pulse
+lengths and deceleration time. 
+@endnode
+
+@node "register"
+
+rs3	rs2	rs1	rs0	|reg	name	
+--------------------------------+------------
+0	0	0	0	|0	@{"PRA" link "io-port"}
+0	0	0	1	|1	@{"PRB" link "io-port"}
+0	0	1	0	|2	@{"DDRA" link "io-port"}
+0	0	1	1	|3	@{"DDRB" link "io-port"}
+0	1	0	0	|4	@{"TA LO" link "Timer"} 
+0	1	0	1	|5	TA HI
+0	1	1	0	|6	TB LO
+0	1	1	1	|7	TB HI
+1	0	0	0	|8	TOD 10THS
+1	0	0	1	|9	TOD SEC
+1	0	1	0	|A	TOD MIN
+1	0	1	1	|B	TOD HR
+1	1	0	0	|C	@{"SDR" link "SDR"}
+1	1	0	1	|D	@{"ICR" link "ICR"}
+1	1	1	0	|E	@{"CRA" link "CRA"}
+1	1	1	1	|F	@{"CRB" link "CRB"}
+
+@endnode
+
+
+
+
+@node "timer"
+
+there are 2 interval timers a&b. both consists of ever eiem 16bit interval timers (only read)
+and one latch (only write) with the data will shouting-evenly write in latch, during leg read
+contents of the interval timer are displayed the timers to be able used both independently
+and together those differently types of operation to permit zeitverzoegerug, variable pulse
+lengths, pulse rates of and signals of different frequency with the input cnt can the
+counters external impulses and frequencies, pulse lengths and deceleration time
+measure to each counter have especially a control register for the independent
+monitoring of the functions. 
+@endnode 
+
+@node "ICR"
+
+	Interrupt control register
+
+The 5 causes of ain Interrupt:
+
+1.	Underflow of @{"timer" link "timer"} A or B;
+3.	TOD Alarm
+4.	Serial Port Buffer Empty/Full
+5.	_FLAG
+
+ The masking and INTERRUPT info. FCS ions aind in register together-chamfered. The
+ INTERRUPT control register consists of a mask register, into which can be only written,
+ and a data pointer, which can be only read. Each INTERRUPT sets a entspechendes bit
+ in the data pointer to the INTERRUPT by the mask register closed, the MSB of the data
+ pointer set (IR bits) and the pin _ IRQ low is switched. More mehrer if 6526 is hooked up,
+ the IRC bits can be queried around too experience which chip the INTERRUPT
+ ausgeloesst after the data pointer were read, it deleted and _ irq goes on high. 
+
+Reading ICR
+
+	IR  0 0 FLG SP ALRM TB TA
+
+Writing (interrupt mask)
+
+	S/C X X FLG SP ALRM TB TA
+
+
+@endnode
+@node "SDR"
+
+The serial port is transferred by the data at frame gefuettern and 
+reacted to positive flanks of CNT. 
+after 8 impulses to the data pointer. 
+
+
+@endnode
+@node "CRA"
+
+Der 6526 hat 2 steuerregister die wie folgt belegt sind:
+
+BIT	NAME	FUNKTION
+
+0	START	1=start timer A		this picture becomes automatically
+		0=stop  timer A		reset, if it comes in the ONE SHOT to an underflow.
+
+1	PBON	1= the timer A underflow is situated on PB6 on, 
+		   the DDRB is overwritten
+		0= pb6 in normal operation
+
+2	OUTMODE 1=toggle		Hier wird die art des ausgangssignals	
+					festgelegt. entweder wechselt der 
+					ausgang von high nach low oder umgekert
+		0=pulse			Oder es wird ein einzelner, positiver
+					impuls der länge PHI2 erzeugt.
+
+3	RUNMODE	1=ONE-SHOT		Im one-shot-mode by the value in latch to zero, an INTERRUPT is counted is worth again loaded produced that
+                             		and the counter is getoppt. 
+		0=CONTINUOUSLY           or count continuously repeats.
+
+4	LOAD	1= force load		das ist ein strobe eingang, keine
+					datenspeicherung, bit4 liest stets 0
+					das screiben von 1 bewirkt nichts.
+					Man läd den inhalt des latches in den
+					zeitzähler egal ob der zähler läuft
+					oder nicht.
+
+5	INMODE	1=timer A zählt positive CNT übergänge
+		0=timer A zählt mit phi2
+
+6	SPMODE  1= ausgabe serieller port
+		0= serieller port mit externem takt
+
+7	TODIN	1=50 Hz
+		0=60 Hz
+
+@endnode 
+
+@node "CRB"
+
+Der 6526 hat 2 steuerregister die wie folgt belegt sind:
+
+BIT	NAME	FUNKTION
+
+0	START	1=start timer B		dieses bild wird automatisch
+		0=stop  timer B		rückgestellt, wenn es im ONE-SHOT
+					zu einem unterlauf kommt
+
+1	PBON	1=timer B liegt ab PB7 an 
+		0= pb7 im normalbetrieb
+
+2	OUTMODE 1=toggle
+		0=pulse
+
+3	RUNMODE	1=ONE-SHOT
+		0=KONTINUIERLICH
+
+4	LOAD	1= force load		das ist ein strobe eingang, keine
+					datenspeicherung, bit4 liest stets 0
+					das screiben von 1 bewirkt nichts.
+
+5,6	INMODE  es existiern 4 Eingabe modi:
+
+	0	0	Timer B zählt phi2
+	0	1	Timer B zählt positive CNT Flanken
+	1	0	Timer B zähle unterläufe von timer A
+	1	1	timer B zählt unterläufe von timer A, 
+			solange CMT high ist.
+
+7	ALARM	1=Alarm setzen durch schreiben in TOD
+		0=TOD-Clock setzen duch Schreiben in TOD
+@endnode
+
+
+@node "bemerkung"
+
+	als mit diesem dink hier (noch unvollständig) möchte ich alle
+	auffordern und anregen die custom-chips im amiga zu beschreiben.
+	es solle eine echte online hilfe mit allem drum und dran werden.
+	das kann ich natürlich nicht alleine leisten. es gibt in 
+	deutschland tausende amiga-user ich hoffe dsa sich wenigstens 
+	einige erbarmen und noch etwas schreiben.
+
+	A1000
+
+	PS:	die texte habt ihr eigendlich SLATI zu verdanken, denn er hat
+		CIA`s ohne die ich nicht weitermachen kann.
+@endnode

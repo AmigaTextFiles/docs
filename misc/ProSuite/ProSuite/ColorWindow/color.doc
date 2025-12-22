@@ -1,0 +1,102 @@
+
+ColorWindow Programmer Manual
+From the Amiga Programmer's Suite Book 1, by RJ Mical
+Copyright (C) 1987, Robert J. Mical
+
+
+
+
+
+*** DoColorWindow() ******************************************************
+
+NAME
+    DoColorWindow  --  Allows the user to change a screen's colors
+
+
+SYNOPSIS
+    BOOL DoColorWindow(Screen, Left, Top, FirstPen, UseRGB);
+
+
+FUNCTION
+    This routine creates a window, called the ColorWindow, which has 
+    gadgets that allow the user to change the colors of any screen.  
+    After opening the ColorWindow, this routine interacts with the 
+    user until the user is satisfied with the current colors, at which 
+    time the window is closed and control is returned to you.  
+
+    The ColorWindow will open in the specified Screen.  The Screen 
+    argument can be equal to NULL; if it is, the ColorWindow will be 
+    opened in the Workbench screen.  The ColorWindow automatically 
+    adapts itself to any screen.  
+
+    With the Top and Left arguments you specify the position of the 
+    ColorWindow's top-left corner.  Note that no position-error 
+    checking is done, so you must take care to not place the window 
+    outside of the bounds of your screen.  Currently, the Left argument 
+    can range from 0 to 88 on low-resolution screens, and 0 to 408 
+    on high-resolution screens.  The Top argument can range from 
+    0 to 109 on a 200-line screen, and 0 to 309 on an interlaced screen.  
+    These figures don't include overscan, which most programmers 
+    don't use.  The width and height of the ColorWindow are defined 
+    by the constants COLORWINDOW_WIDTH and COLORWINDOW_HEIGHT in the 
+    color.h file.  
+
+    The FirstPen argument is used to initialize the color that's 
+    displayed when the ColorWindow is first created.  
+
+    The ColorWindow is capable of allowing the user to modify the 
+    colors using either an RGB or an HSL technique.  The RGB technique 
+    involves three proportional gadgets, one for each of Red, Green 
+    and Blue.  By adjusting one of these gadgets, the user adjusts 
+    the amount of the associated color component in the final color.  
+    Some people feel that this is the most intuitive way to change 
+    colors on the Amiga, as this is how colors are represented 
+    internally by the Amiga.  The other technique, HSL, allows the 
+    user to adjust the Hue, Saturation and Luminance of the final color.  
+    Some people feel that *this* is the most intuitive way for users 
+    to change color, because it's based on color theory and because 
+    these are the types of controls that people used on their 
+    color televisions in the old days.  
+
+    You decide which mode is first used when the ColorWindow is created 
+    by setting the UseRGB argument to TRUE or FALSE.  If TRUE, 
+    the RGB technique will be used.  If FALSE, HSL is used.  
+
+    But regardless of which technique you specify, the user can switch 
+    to using the other technique by clicking on the RGB / HSL characters 
+    that appear to the left of the proportional gadgets.  
+
+    On return from this function, this routine returns TRUE if all 
+    went well.  If anything went wrong (usually out of memory) and 
+    the ColorWindow was never created, this routine returns FALSE.  
+
+    NOTE:  This routine is not re-entrant.  What this means 
+    is that if you have created a program that has more than one task,
+    this routine cannot be called by more than one task at a time.
+    This was done for the sake of memory efficiency.
+    This restriction is not a problem for the grand majority of programs.
+    But if you have some application that would require calling this 
+    routine asynchronously from multiple tasks, you'll have to 
+    implement some quick semaphore arrangement to avoid collisions.
+    No big deal, actually.  See Exec semaphores for everything you need.
+
+
+INPUTS
+    Screen = address of the screen in which the ColorWindow will open.
+        Can be NULL; if so, the ColorWindow will open in the Workbench
+
+    Left = position of the left edge when the ColorWindow opens
+
+    Top = position of the top edge when the ColorWindow opens
+
+    FirstPen = pen number of the color displayed when the ColorWindow
+        first opens
+
+    UseRGB = TRUE if you want the RGB technique displayed first, 
+        FALSE if you want the HSL technqiue.  See the discussion above
+
+
+RESULT
+    Returns TRUE if all went well.  If the window couldn't be opened for
+    any reason, returns FALSE.
+

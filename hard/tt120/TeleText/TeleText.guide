@@ -1,0 +1,1213 @@
+@database "TeleText.guide"
+@width 80
+
+## $VER: TeleText.guide 1.20 (29.12.93)
+## Copyright (c) 1993 Jan Leuverink
+##
+## TeleText AmigaGuide documentation
+##
+
+##
+## Contents
+##
+@node main "TeleText Documentation"
+
+                  TeleText V1.20 (29.12.1993)
+                   
+                    © 1993 by Jan Leuverink
+
+                          Documentation
+
+                 @{" Disclaimer                  " link disclaimer }
+                 @{" Preface                     " link preface }
+                 @{" System Requirements         " link systemreq }
+                 @{" Hardware                    " link hardware }
+                 @{" Assembling                  " link assembling }
+                 @{" Installation                " link installation }
+                 @{" Software                    " link software }
+                 @{" Acknowledgements            " link acknow }
+                 @{" Planned future enhancements " link future }
+                 @{" How to reach the author     " link reachme }
+                 @{" Version information         " link versioninfo }
+                 @{" List of components          " link complist }
+                 @{" Registration                " link registration }
+                 @{" PCB Service                 " link pcb_service }
+@endnode
+
+##
+## Preface
+##
+@node preface "Preface"
+
+This project makes it possible to view Teletext (also know as Teletekst, 
+Videotext, Ceefax, Skytext, Supertext etc.) on your Amiga. It is 
+suitable for any PAL Amiga (read @{" System requirements " link systemreq } for more info, 
+because it uses the parallel port to interface with the hardware. 
+An electronic switch is provided to easily switch between the TeleText 
+decoder and a printer.
+The project consists of a small piece of hardware and some software.
+
+The software is Shareware. This means that if you use to program longer
+than 3 weeks, you have to register or stop using it.
+Also all commercial use of the program without permission of the author
+(Jan Leuverink) is prohibited. The program may be freely distributed, and
+a fee, covering the costs of distributing it, may be asked for.
+This fee, however, may not exceed US$ 5,- or equvalent in your local
+money.
+Read the @{" Registration " link registration } section for more information 
+on how to register.
+Some features will one be available to registered users.
+
+Some features:
+
+  - fully localized
+      languages currently supported: english, nederlands, deutsch, dansk,
+      italiano and français
+  - needs KS2.04 or higher and a PAL Amiga to run
+  - can hold up to 4 teletext-pages, each page can contain a maximum
+    of 50 subpages
+  - saves pages in IFF, ASCII, ANSI and its own TT format
+  - loads pages in TT format
+  - Arexx port (see Arexx.guide)
+  - uses reqtools.library (included in archive) for requesters
+  - the hardware needs a PAL-encoded CVBS-videosignal containing 
+    teletext-information 
+    (can be obtained from the SCART/AV connector of a TV/VCR)
+    The PAL-system is used in the following countries:
+      Australia, Austria, Belgium, China, Denmark, Finland, Germany, Great
+      Britain, Holland, Hong Kong, Italy, Kuwait, Malaysia, New Zealand,
+      Norway, Portugal, Singapore, Spain, Sweden, Switzerland, Thailand,
+      etc.
+    
+@endnode
+
+##
+## System requirements
+##
+@node systemreq "System requirements"
+
+Commodore Amiga (should work on any PAL Amiga)
+ (the program needs a 640x256 Hires screen, so you cannot use it on
+  a NTSC Amiga)
+Kickstart 2.04 or higher.
+Workbench 2.0 or higher
+Approximately 200kb of free memory (incl. 80k CHIP mem, without ViewScreen)
+
+The software was tested on:
+  A500, A500/68030 accelerator, A2000, A4000/030 and A4000/040
+  Workbench 2.0, 2.1 and 3.0
+  Kickstart 2.04 and 3.0
+
+This project was developed on:
+  A500 with KickStart 2.04 and 1MB Chip-RAM
+  A590 harddrive (20MB XT) + 2MB Fast-RAM
+
+Yes, I know, it's sad.... ;-))
+@endnode
+
+##
+## Disclaimer
+##
+@node disclaimer "Disclaimer"
+
+Although this project was thouroughly tested on my Amiga 500, I cannot be
+held responsible for any damages caused by using/building this project.
+If you damage your Amiga, or have other problems, they're your problems.
+I may be able to offer some advice for your problems, but cannot 'repair'
+your board/Amiga. If you do not have any soldering-experience, don't even
+get started.
+While every effort has been made to make these instructions as accurate 
+and complete as possible, I (Jan Leuverink) do not accept
+any responsibility arising from any inaccuracies contained herein.
+@endnode
+
+##
+## Hardware
+##
+@node hardware "Hardware"
+
+How it works:
+-------------
+
+The hardware consists of two functional parts:
+   - CCT decoder     (Schematic1.iff)
+   - I2C interface   (Schematic2.iff)
+   
+The CCT decoder is a standard application of the single-chip decoder
+SAA5246 (made by Philips ®). The RAM-chip (U2, 6264-120ns) is used to
+store up to 8 teletext pages. The oscillator-circuit needs some extra
+attention. This circuit differs for the 2 types of SAA5246 chips.
+When using a SAA5246P/x (were x can be E,H,T,J,K,L,R,I or S) the circuit
+can be build as drawn. When a SAA5246AP/x is used (newer version), the
+alternative oscillator-circuit (as shown in the blue box) should be used.
+The PCB-design can handle both.
+
+The SAA5246 chip is controlled by a I2C bus.
+This is a serial bus, that allows several standard chips to be connected.
+Example chips are: a 8-bit bi-directional IO-port, a real-time clock,
+a 8-bit AD/DA converter, EEPROM memory etc.
+The I2C bus uses a clock-line (SCL) and a data-line (SDA). The I2C standard
+also defines an interrupt-line, which is not implemented, because very few
+I2C-chips actually use it.
+
+SW1 switches between the TeleText hardware and a printer. When SW1 is 
+closed the printer (or any other parallel device that is connected at J1) 
+is selected. When SW1 is open (as drawn) the TeleText hardware is active.
+Switching is done by a triple 2 channel analog multiplexer/demultiplexer,
+type 74HC(T)4053. It is absolutely essential that you use a HC or HCT
+version of the 4053. This is due to the high "ON" resistance of the normal
+CMOS types (250 ohm against 70 ohm at 5V supply voltage).
+
+The only extra thing needed to get started is a CBVS (in Germany FBAS) 
+videosignal containing teletext-information.
+Such a signal can be obtained from the SCART-connector of a TV/VCR etc.
+This signal must be connected to J3/J4.
+
+Note that the fact wether or not the CVBS-signal contains TeleText
+information, has nothing to do with the TV/VCR being capable of displaying
+TeleText. It purely depends on the broadcast-station that is tuned in on.
+
+Also note that previously recorded tapes do no longer contain TeleText
+information. An exeption is made by the S-VHS and Hi-8 systems, which do
+record the TeleText information.
+
+
+Solder-side of SCART-plug (male):
+
+  20  18  16  14  12  10   8   6   4   2
++------------------------------------------+
+|  |   |   |   |   |   |   |   |   |   |   |
+ \                                         |
+  |  |   |   |   |   |   |   |   |   |   | |
+  +----------------------------------------+
+    19  17  15  13  11   9   7   5   3   1 
+
+Videoground: pin 17
+CVBS out   : pin 19 
+
+See VideoCable.iff for information on how the cable should be connected.
+
+Some sets have a special AV-output, which delivers a CVBS signal.
+Check your manual to find out.
+
+Note that this CVBS signal has to be a PAL-encoded one !
+NTSC or SECAM will not work.
+
+The PAL-system is used in the following countries:
+ Australia, Austria, Belgium, China, Denmark, Finland, Germany, Great
+ Britain, Holland, Hong Kong, Italy, Kuwait, Malaysia, New Zealand,
+ Norway, Portugal, Singapore, Spain, Sweden, Switzerland, Thailand, etc.
+@endnode
+
+##
+##Assembling
+##
+@node assembling "Assembling"
+
+Building the TeleText hardware is a pretty straight forward job.
+I've included two HPGL plotter-files (TeleText/HPGL/Layout100.Hpgl and
+TeleText/HPGL/Layout200.Hpgl) of the PCB-layout (PCB=Printed Circuit 
+Board). This file was created using a PCB-design package, plotting to a 
+file at respectively 100% and 200%. 
+The 100% is handy for people who can use a photoplotter to get a
+negative/positive for making the PCB.
+The 200% is handy for printing/plotting on paper and then use photo-
+technics to make a 100% negative/positive.
+You may try to make a 100% plot directly on paper, but I doubt it will 
+work. (traces will probably overlap). 
+The size of a 100% plot should be 80 x 96.5 mm and 160 x 193 mm for a 200%
+plot. I guess these files are only useful when using photo-technics for 
+PCB-production.
+
+The circuit isn't that big, so it should be easy to build on a 
+prototype board. It took me about three hours to build 
+my prototype (using an epoxy PCB board, with 3 holes/pad) and it 
+worked at once !
+
+You can also get PCB's directly from me.
+These are expoxy boards, drilled and the traces are tinned (?, I do not
+know the exact english word for it, but what I mean is that the traces
+are covered with tin to protect them, and make soldering a lot easier).
+See the @{" PCB Service " link pcb_service } section for information about 
+how to order, prices etc.
+
+Note that the oscillator-circuit is different for the SAA5246P and 
+the SAA5246AP, so check what type of decoder-chip you have !
+The PCB design can handle both, check the componentlist and the Assembly
+section to see which components should be installed.
+
+(If you have already build the 'old' V1.10 board, check the last part
+of this section ("Adjusting your V1.10 board") to see how you can 
+upgrade it.)
+
+You need the following tools:
+ 1. A small (15-25 Watt) soldering pencil
+ 2. Good electronic quality 60/40 alloy rosin core solder
+ 3. small needle-nose pliers
+ 4. small diagonal cutters
+ 5. wire stripper 
+
+Some general hints:
+ - use a few solder as possible
+ - be carefull not to overheat the components/solder-pads
+ - keep the soldering pencil tip clean and well tinned
+ - the components are intended to be inserted into the side of
+   the printed circuit board that does not contain copper traces
+   (called the component side)
+ - Integrated circuits, diodes, electrolytic capacitors, transistors and
+   the voltage regulator can only be placed in one orientation, so read
+   the description carefully.
+ - I strongly recomment that you place the integrated circuits in sockets
+   Do not use the low-cost types, it is better to spend a little more
+   on quality sockets.
+ - Before placing the ic's in the sockets, carefully bend the pins to an
+   approximately 90 degree angle. This can best be done by the use of a
+   pin straightener. Alternatively you can use the small needlenose pliers
+   for this job, be carefull to bend only one pin at a time. This in order
+   to avoid electrical discharge, which may destroy the IC.
+
+
+Start assembly
+==============
+
+For both types of U1 (SAA5246AP and SAA5246P):
+
+[ ] solder the 48 pin socket at U1
+[ ] solder the 28 pin socket at U2
+[ ] solder the 16 pin socket at U3
+[ ] solder the wire above R5
+[ ] solder R1 and R5, the 10k resistors
+[ ] solder R2, the 10 ohm resistor
+[ ] solder R3, the 27k resistor
+[ ] solder R6, the 4k7 resistor
+[ ] solder D1, the 1N4001 diode
+      Note that the cathode of D1 is marked by a white stripe on one side
+      of the black body. This side should point towards U3.
+[ ] solder U4, the 7805 voltage regulator
+      The 'metal side' of U4 should face R3, the black body with the text
+      on it should point towards U3.
+[ ] solder T1, the BC547 transistor
+      The shape of the transistor should match the shape of T1 in the 
+      picture Componentside.iff. So the round side towards U1, and the 
+      flat side towards R5.
+[ ] solder C5, C6, C7  and C9, the 100nF capacitors
+[ ] solder C8, the 10µF / 16V radial electrolytic capacitor
+      The negative wire (mostly marked with a - (minus) sign) should point
+      towards the edge of the board.
+      The positive wire (mostly not marked) should point towards C2.
+
+
+For SAA5246AP only:
+
+[ ] solder X2, the 27MHz crystal
+[ ] solder a wire for X1 (thus connecting the 2 pads for X1)
+[ ] solder R7, the 3k3 resistor
+[ ] solder C2, the 10pF capacitor
+[ ] solder C10, the 15pF capacitor
+[ ] solder C11, the 1nF capacitor
+[ ] solder L1, the 4µ7H coil (watch out: it looks like a resistor)
+
+For SAA5246P only:
+
+[ ] solder X1, the 27MHz crystal
+[ ] solder a wire for X2 (thus connecting the 2 pads for X2)
+[ ] solder C2, the 22pF capacitor
+[ ] solder C1, the 22pF capacitor
+[ ] solder C3, the 22pF capacitor
+[ ] solder L1, the 3µ3H coil (watch out: it looks like a resistor)
+
+For both:
+
+[ ] solder all soldering pins (16 pins)
+
+[ ] connect the pin marked GND (placed on the left side of U1) to pin 25 of
+    J2 (25p-subd male (A1000: female) connector)
+[ ] connect the pin marked D2A to pin 4 of J2
+[ ] connect the pin marked POUTA to pin 12 of J2
+[ ] connect the pin marked SELA to pin 13 of J2
+[ ] connect the pin marked D2P to pin 4 of J1 
+    (25p-subd female (A1000: male) connector)
+[ ] connect the pin marked POUTP to pin 12 of J1 
+[ ] connect the pin marked SELP to pin 13 of J1
+[ ] connect pin 25 of J1 to pin 25 of J2   (*)
+[ ] connect the pin 'x' of J1 to pin 'x' of J2 (*)
+    where 'x' is 1,2,3, 5-11, 14-24 
+
+(*) the wires between J1 and J2 should be as short as possible, to
+    avoid conflicts with long printercables. The total length of the cables
+    (from Amiga to Printer) may not exceed approx. 5 metres.
+    See ParCable.iff for more info.
+    
+[ ] connect the positive wire of DC adapter (7.5 - 12 Volts) to the pin
+    marked 7V5 (this pin is placed between GND and D2P on the left side of 
+    U1)
+[ ] connect the negative or ground wire to the pin marked GND (placed on 
+    the (left side of U1)
+
+Note: most (all ?) DC adapters have a connector attached to their output-
+      wires.
+      You can use this connector to connect the adapter to the board, but
+      you're on your own: because there are many kinds of plugs, I cannot
+      give a general description.
+      You can also cut off the plug and strip the wires, so that you can
+      solder them right on the pins.
+      Be sure that you have the positive and negative wires right.
+      Although D1 protects the board for this kind of errors, it is better
+      not the rely on it.
+      You can check which wire is positive and which is negative by 
+      measuring it with a voltmeter. Just connect one wire to the 
+      - terminal of the meter and the other to the + terminal. If the 
+      connection is oke, the meter will show a positive value. If not, 
+      a negative value will be shown so the wires were switched.
+      Note that some adapters have a switch, allowing you the reverse the
+      + and - wires.
+      
+[ ] connect the middle of the cinch chassis connector to the pin marked 
+    CVBS
+[ ] connect the 'outside' of the cinch chassis connector to the pin marked
+    GND (next to CVBS)
+
+Note: keep these wires as short as possible (maximum of approx. 10 cm)
+
+[ ] connect the switch SW1 to the pins marked SW1 using two wires (approx.
+    10cm long, depending on the case you build the board in)
+
+Before continuing, you should test if the supply voltage is ok.
+You can do this by plugging the DC adapter into the mains, switch it on 
+(most adapters don't have a power-switch, just plug it in and it's on).
+Note that the TeleText circuit must _NOT_ BE CONNECTED to your Amiga yet !
+Now measure between the following pins:
+   pin 7V5 (+) and GND (-), should be between 7.5 and 12 Volts
+   pin 8 (-) of U3 and pin 16 (+) of U3, should be 5 Volts
+   pin 25 (-) of U1 and pin 1 (+) of U1, should be 5 Volts
+   pin 14 (-) of U2 and pin 28 (+) of U2, should be 5 Volts
+When this is oke, proceed. If not, check your board for component-
+misplacements, bad connections, connections between two pads that should 
+not have been connected (e.g. to much solder) etc.
+Especially check if the diode D1 and the regulator U4 are placed ok.
+
+[ ] place U1 (SAA5246AP or SAA5246P) in the socket at U1
+[ ] place U2 (6264) in the socket at U2
+[ ] place U3 (74HC(T)4053) in the socket at U3
+
+Note on placing these IC's:
+ On all IC's there is a mark on one of the short sides (not containing 
+ pins). This mark should be aligned with the mark (half a circle) as 
+ shown in the picture ComponentSide.iff.
+ If you do not place the IC's in the correct orientation, you most 
+ certainly will damage them ! So check ! 
+
+[ ] Last thing to do: place the board and the connectors in a case of your
+    choice.
+
+[ ] Very last thing to do: make a cable to connect your video source
+    (e.g. TV or VCR with Scart connector) to the decoder.
+    See VideoCable.iff for more information.
+    It is best to use shielded cable (the type used for audio) for this 
+    connection.
+
+If everything went well, you can now connect your TeleText decoder to 
+the parallel port of your Amiga.
+BE SURE TO TURN OFF THE POWER OF YOUR AMIGA AND THE DECODER BEFORE MAKING
+THE CONNECTION !!!
+If you do not power down, you will most certainly damage your Amiga.
+
+After this, you can connect the video-source (e.g a VCR) to the decoder.
+Again: ONLY DO THIS WITH THE DECODER AND THE VCR SWITCHED OFF !!!!
+You can seriously damage the decoder chip (U1) when you don't !
+
+Now you can power up the decoder and the Amiga.
+Start the TeleText programm, and try to request a page.
+The best page to try is page number 100, because that one is always 
+present.
+If you get an I2C error (status box below the page-box) check the decoder
+and the connections to the Amiga (power down !!). If everything is ok,
+check the "Bug in SAA5246 ?" section below.
+If you get a video poor / teletext poor message, check if you VCR is on,
+and that the cable from the vcr to the decoder is ok.
+When video is ok, but teletext is poor, the channel you have chosen does
+not transmit teletext information or is too weak.
+
+Also check the @{" A word about I2C-bus timing " link tooltypes } section
+before banging the decoder :-)) 
+
+
+Bug in SAA5246 ?
+================
+
+There appears to be a bug in the SAA5246P IC's.
+Some decoders do not work even if they are build exactly as the
+schematics show. The TeleText software will occaisionally reports I2C 
+errors and the Video and TeleText status will be marked as poor, although 
+the  cable is ok, and the station does transmit teletext information.
+The problem is probably caused by the internal oscillator-circuit of the 
+SAA5246; it does not always start. This bug is know by Philips 
+(the manufacture) and should be fixed in the SAA5246AP IC's, but 
+unfortunately some SAA5246AP decoders also have this problem. 
+The fix is the same for both versions.
+
+If you get the symptoms mentioned above, do not panic, there is a fix 
+for this !
+
+It has turned out that dropping the supply voltage of the decoder downto
+approximately 4 - 4.7 Volts fixes the problem, and the decoder will work 
+alright !
+This can easily be done be mounting a 1N4001 diode in the 5V output of the
+voltageregulator U4. This is the rightmost pin of the 7805.
+The anode of the diode is connected to the output of U4, the cathode (white
+stripe) goes to the rest of the decoder.
+See the IFF picture "Decoder7805.iff" and the schematics for more 
+information. (note that the wire, soldered to the 7805, is not part of 
+the fix, but supplies some external stuff (future plans))
+
+Lots of thanks goes to Marco Valk for reporting this bug and presenting 
+the fix for it.
+
+
+Ajusting your V1.10 board
+=========================
+
+If you have already build the 'old' design (V1.10), don't panic.
+You can easily add the extra components.
+You'll need to get D1 (1N4001), U4 (7805) and a 7V5 DC adapter see
+@{" List of components " link complist } for more information.
+Connect the + wire of the DC adapter to the anode of D1 (side without
+the white stripe). Connect the cathode of D1 to the left pin of U4.
+(U4 lies with the text above and the pins pointing towards you).
+The - wire of the DC adapter goes to the middle pin of U4.
+This middle pin is also to be connected to the GND pin (to one near the
+crystal X1 or X2) on the PCB board.
+The right pin of U4 goes to the +5V pin (near D2P) of the 'old' 
+V1.10 board.
+
+@endnode
+
+##
+## Installation
+##
+@node installation "Installation"
+
+Software:
+---------
+
+If you read this you have already unpacked the archive, so I can skip
+that part. :-)
+
+Start the Install script by double-clicking the Install Icon.
+This script will install reqtools.library, tele.font and the catalogs for
+TeleText and Reqtools.
+
+Manual installation:
+  Copy TeleText/Fonts/ FONTS: all
+  Copy TeleText/Catalogs/ Locale:Catalogs/ all
+  Copy TeleText/Libs/ LIBS:
+
+Copying Catalogs is only necessary if you have WB2.1 or higher and want
+to use TeleText localized.
+
+
+Hardware:
+---------
+
+Plug the 25p-subd male (this is the female subd when you have a A1000)
+connector into your Amiga's parallel port.
+
+ONLY DO THIS WHEN THE POWER OF BOTH THE AMIGA AND THE TELETEXT HARDWARE IS
+SWITCHED OFF !!!!
+
+If you make this connection with the power on, you will most definately
+destroy the CIA (complex interface adapter) in your Amiga !
+Note that it is absolutely legal to switch between printer and decoder,
+using SW1, during operation.
+
+Connect the video-source to the TeleText decoder.
+Note: only do this when the TeleText decoder and the video-source are both
+switched off !! You could destroy the SAA5246 chip if you don't.
+
+
+Using TeleText with modems
+--------------------------
+
+Due to the fact that some pins on the parallel port are shared with the
+serial port, you will get I2C errors when you have a modem connected
+to the serial port and the RI gets active (e.g. the phone rings).
+As far as I can see, this cannot damage your Amiga.
+
+
+Some extra stuff
+----------------
+
+If you want to check the communication with the decoder, you can build
+the circuit shown in I2Cindicate.iff.
+This little circuit monitors the SCL (clock) and SDA (data) lines of the
+I2C interface. When TeleText is active and has succesfully allocated the
+parallel port, both LED's (Light Emitting Diode) should be on.
+During transfer these lights will flicker. For instance, when you have
+set Retry Delay to 500ms, the LED's will flicker every 0.5 seconds 
+(=500ms) when searching for a page.
+There is no PCB for this little circuit, it's a gadget for who wants it 
+/ needs it. It is very simple to build on a small piece of prototype board.
+@endnode
+
+##
+## Software
+##
+@node software "Software"
+
+                 @{" Startup                          " link startup }
+                 @{" ToolTypes                        " link tooltypes }
+                 @{" Commandline parameters           " link cmdline }
+                 @{" A word about I2C-bus timing      " link tooltypes }
+                 @{" Menu's of TeleText               " link menus }
+                 @{" Gadgets and keyboardcontrol      " link gadgets }
+@endnode
+
+##
+## Startup
+##
+@node startup "Startup"
+
+When TeleText is started it first checks if a preference file is present.
+It will check ENV:TeleText.prefs first, then ENVARC:TeleText.prefs.
+If no preference file is present it will use it's defaults.
+
+After that the @{" Tooltypes " link tooltypes} (Workbench start) or @{" Commandline parameters " link cmdline }
+(CLI start) will be checked. These will override the preferences.
+
+Then TeleText will check for a keyfile (TeleText.Key) in it's homedirectory.
+If this keyfile is present and valid, TeleText will be fully functional.
+If not, some functions will be blocked. E.g. saving files is not possible.
+
+TeleText also tries to open it's own font, called 'tele.font', it should
+be present in FONTS: When this font is not found, TeleText will pop up
+a warning requester. The pages will then be shown as ASCII, so no graphics
+characters etc. are displayed.
+
+If TeleText is started by a default tool of an icon, it will attempt to
+load that file into catalog 1. When multiple icons are selected, TeleText
+will attempt to load the first four into catalogs 1..4.
+@endnode
+
+##
+## ToolTypes
+##
+@node tooltypes "ToolTypes / I2C-bus timing"
+
+  TIMEOUT=[0..300]
+    Value in seconds, to wait until a page arrives (default = 30 sec.)
+    
+  RETRYDELAY=[0..1000]
+    Value in milli-seconds (1/1000 seconds) between checking if a page
+    has arrived (default = 100 ms)
+    
+  I2CDELAY=[0..2^32]
+    Delay value to control the timing on the I2C bus (default = 0)
+    
+  TIMER=[YES/NO]
+    Use timer.device for controlling timing on the I2C bus 
+    (I2CDELAY will be ignored, default = NO)
+
+  VIEWSCREEN=[ON]
+    This tells TeleText to open een second screen (320x256x8 LORES)
+    on which the current TeleText page will be displayed fullscreen
+    
+Note on timing: 
+On a plain A500/A600/A2000 (68000 at approx. 7MHz) you can set I2CDELAY=0 
+and TIMER=NO (or leave out).
+For fast Amiga's (e.g. A4000/040) the TIMER=YES was build in.
+However, it has turned out, that even on fast Amiga's the TIMER=NO and 
+I2CDELAY=0 setting can be used without problems.
+
+Generally spoken: first try TIMER=YES, when the speed of reading pages
+from the hardware is acceptable, do not change anything.
+If everything gets very slow, choose TIMER=NO (or leave out) and specify
+I2CDELAY=0. If the pages are read ok, leave it that way. If not increase
+I2CDELAY until pages are read ok.
+
+This ugly way was necessary, because using the timer.device on slow amiga's
+(as my own.. :-(( ) causes so much overhead, that it slows down the
+performance of the I2C bus a lot. A plain Amiga (500/600/2000) can never
+reach the maximum speed allowed on a I2C bus, therefor I made it possible
+to ignore the timer.device.
+@endnode
+
+##
+## Commandline parameters
+##
+
+@node cmdline "Commandline parameters"
+
+  See @{" Tooltypes " link tooltypes}.
+  example: TeleText TIMEOUT=10 TIMER=YES
+    Starts TeleText with a Timeout of 10 sec. and I2C timing is done with
+    timer.device
+@endnode
+
+##
+## Menu's of TeleText
+##
+@node menus "Menu's of TeleText"
+
+Project Menu
+------------
+
+   Open...       This menu-item pops up a file-requester, allowing you
+                 to select a TT-file. The file will be loaded in the
+                 current catalog.
+   Save as TT    Saves the page (and all subpages in it) from the current 
+                 catalog using the TT-format.
+                 These files can later be loaded back into TeleText using
+                 Open...
+   Save as ASCII Saves the page (and all subpages in it) from the current
+                 catalog using the ASCII-format. All graphics characters
+                 will be blanked (replace be spaces).
+                 When the Reveal option is on, the hidden information will
+                 also be saved.
+   Save as IFF   Saves the page (only the currently displayed one) in
+                 IFF graphics format.
+   Save as ANSI  Saves the page (only the currently displayed one) in
+                 ANSI format. (for use with BBS's etc.)
+                 When the Reveal option is on, the hidden information will
+                 also be saved.
+   About         Displays information about TeleText, @{" registration " link registration } info and
+                 some info about the current settings and the decoder chip
+                 that is being used.
+   Quit          Quits the program (an 'Are you sure ?' requester will pop
+                 up before quiting)
+
+TT Menu
+-------
+
+   Show Status of CCT  Reads the status of the teletext decoder chip (CCT)
+                       This status will appear in the box below the
+                       teletext page.
+   Initialize          Clears all pages from memory and resets the decoder
+                       chip.
+   Clear Catalogs      Allows you to selectively clear the catalogs.
+                       The memory used by the catalogs that are cleared,
+                       will be freed.
+   Time->Amiga         Will attempt to get a valid time from the decoder
+                       and sets the Amiga software clock to that time.
+                       (uses c:date for that purpose)
+                       Note that only the software clock is changed !
+   Update Pageno.      Determines wether the status box (below the teletext
+                       page) will show pagenumbers during a page-search 
+                       or not.
+   Set Retry Delay     See @{" Tooltypes " link tooltypes} section
+   Set I2C delay       See @{" Tooltypes " link tooltypes} section
+   Set Timeout         See @{" Tooltypes " link tooltypes} section         
+
+
+Settings Menu
+-------------
+
+   Create Icons        Determines wether the save operations (See Project
+                       Menu) create an icon for the saved file or not.
+                       as soon as a page is read into that catalog.
+   Default Tool »      Allows you to set the default tool for the TT,
+                       ASCII, ANSI and IFF Icons.
+                       Defaults:  TT:    TeleText
+                                  ASCII: SYS:Utilities/More
+                                  IFF:   SYS:Utilities/Display
+                                  ANSI:  SYS:Utilities/More
+   Save Settings       Saves all settings to ENV:TeleText.prefs and
+                       ENVARC:TeleText.prefs
+                       Saved are: Timer Yes/No, I2Cdelay, RetryDelay,
+                                  TimeOut, Update Pageno, CreateIcons,
+                                  ViewScreen On/Off and the default tools.
+@endnode
+
+##
+## Gadgets and control
+##
+@node gadgets "Gadgets and keyboardcontrol"
+
+The teletext-page is dispayed in a box in the middle of the TeleText screen.
+Below this box, there is a small box, called the status-box.
+This box contains, information about pages, status of the decoder etc.
+
+To the left of the teletext-page there are two gadgets.
+One slider gadget for stepping through the subpages of a teletext-page and
+one numeric gadget for directly displaying any subpage.
+These gadgets are active only when the current teletext-page has subpages
+(thus exists of more than 1 page).
+One can also step through the subpages, using the Cursor Left (decrease
+subpagenumber) or Cursor Right (increase subpagenumber) keys.
+
+A window, displaying which subpages are present, will be opened below the
+subpage-gadgets when subpages are present.
+
+To the right of the teletext-page there are several gadgets, starting with
+four gadgets which allow you to choose one of the four catalogs.
+A catalog can contain one teletext-page (with a maximum of 50 subpages), so
+a mamimum of four teletext-pages with subpages can be stored.
+Behind the catalog gadget, there are 3 characters containing the number
+of the teletext-page that is present in that catalog (e.g. 100). When the
+catalog is empty three dashes (---) will be shown.
+Selecting a different catalog can also be done with the Cursor Up (previous
+catalog) or Cursor Down (next catalog) keys.
+
+Below these four gadgets, there is a numeric gadget. This gadget allows you
+to enter a pagenumber (allowed are 100-899). After pressing return/enter
+this page will be searched for.
+
+It is also possible to request a page by double-clicking a pagenumber in
+a displayed TeleText page. When this is a valid number, the software 
+will fetch the page and put it in the next free catalog.
+If all catalogs are full, a requester will pop up, asking you in which
+catalog the page should be placed.
+Note that this feature is only available for registered users.
+
+The stop-gadget (just below the Page-gadget) allows you to interrupt this
+search-process.
+
+The last gadget is the Reveal-gadget. This gadget allows you to view hidden
+characters in the teletext-page. This feature is useful for puzzles etc.
+Note that this gadget will be ghosted (not active) when there is no
+information to reveal.
+
+Keyboard control
+================
+
+There are several keyboard shortcuts in TeleText:
+
+  F1           toggles the ViewScreen (ViewScreen is put to front if
+               it is opened)
+  0..9         allows you to enter a pagenumber without selecting the
+               page-numbergadget. Just try and see what happens 
+               (the current number is displayed in the page-numbergadget)
+  'enter' or   starts searching a page (takes the number displayed in
+  'return'     the page-numbergadget)
+  b            break, identical to the Stop gadget (stops a search)
+  cursor up    previous catalog (cycles)
+  cursor down  next catalog (cycles)
+  cursor left  previous subpage (if any)
+  cursor right next subpage (if any)
+  + on keypad  increments the pagenumber by 1
+  - on keypad  decrements the pagenumber by 1
+  r            reveal, identical to the Reveal gadget (only when there is
+               something to reveal)
+
+The cursor keys can also be used on the ViewScreen.
+
+@endnode
+
+##
+## Acknowledgements
+##
+@node acknow "Acknowledgements"
+
+Acknowledgement
+---------------
+
+This program uses Reqtools.library (c) by Nico François.
+It requires at least version 38 of that library.
+A recent version of reqtools.library is included in the distribution 
+archive.
+
+
+Special thanx to (in random order)
+----------------------------------
+
+  - Brian Ipsen for all the hints/tips and Danish translation
+  - Raymond Penners for the support on Amiga C-programming, hints/tips
+    and beta-testing
+  - Richard Schiffelers for the support on Amiga C-programming, hints/tips
+    and beta-testing
+  - Bert Stronks for beta-testing
+  - Robert Udo for having such a great Amiga BBS
+  - Paul Kolenbrander for bug-reports and hints/tips
+  - Marco Valk for the SAA5246 bug-report + fix
+  - Ugo Paternostro for the Italian translation
+      please contact him directly, if there is a bug in the italiano
+      catalog. Fido: 2:332/112.3  Amy: 39:102/503.3
+               Internet: {uunet|rutgers}!cmbvax!cbmehq!cmbita!glub!cip!ugo
+               University: paterno@aguirre.ing.unifi.it
+               cbmnet: ugo@glub.adsp.sub.org
+               ham: IW5DAC (@IK5MEP.#FI.ITA.EURO)
+  - Gerwin Reuling for beta-testing
+  - Florent Monteilhet for the French translation
+
+@endnode
+
+##
+## Future enhancements
+##
+@node future "Future enhancements"
+
+* more AREXX support (registered users only)
+  (more Arexx functions, execute Arexx as macro)
+- graphics/ascii-hardcopy of currently displayed page
+- Iconify
+* number of subpages userdefinable (unreg. users will still have a fix
+   number of subpages)
+* much more catalogs (possibly only depending on available memory)
+  (non reg. users will still have a maximum of 4 catalogs)
+- continiously update mode (this will allow you to let certain pages,
+  such as subtitles, indexes etc.) to be continiously updated. Instead of
+  read once.
+- seperate program that will get the time from teletext and set the
+  Amiga clock (for use in Startup-sequence etc.)
+- support for double-height fonts
+- more support for country-dependant characters in TeleText pages
+
+If you have ideas/hints for additional features and/or improvements,
+please let me know (see @{" How to reach the author " link reachme}).
+
+The features marked with * will only be available to registered users.
+Features marked with - will be available to all users.
+
+I also plan to move the I2C-interface routines to a shared library.
+This will make the I2C-bus available for other programs.
+
+@endnode
+
+##
+## How to reach the author
+##
+@node reachme "How to reach the author"
+
+If you have FIDO, NLA (Netherlands only) or AMY_NET access, you can reach 
+me by netmail at: 
+
+  2:283/402.14 (FIDO)
+  14:105/2.14 (NLA) 
+  39:157/101.14 (AMY_NET)
+
+If you cannot send/receive netmail, you can leave a message for me in the
+local areas of "The Amiga Workbench" (+31-5430-24097) or "DLA Network"
+(+31-5430-23561).
+
+You can also send me snail-mail, but you will only get a reply if you send
+an envelope with your adress and sufficient stamps (or money for the
+return post when sending mail from outside Holland) on it, with it.
+
+My adres is:
+
+   Jan Leuverink
+   Esweg 2-B
+   7151 ZM  Eibergen
+   Holland
+@endnode
+
+##
+## Version information
+##
+@node versioninfo "Version information"
+
+V1.01ß   first release to beta testers
+
+V1.02ß   second release to beta testers
+
+V1.10    first public release
+
+V1.11    Bug-fixes:
+          - the programm would crash if using the cursor-left/right keys
+            when the page had no subpages, fixed.
+
+         Hardware update:
+          - due to a modification in my Amiga, the current-limiter for
+            the supply voltage on the parallel port did not work.
+            Therefor the TeleText circuit worked well on my machine, but 
+            will most certainly NOT work on any other Amiga, because it 
+            draws to much power from the parallel port.
+            Solution: an external DC adapter is now used as power-supply.
+            This has the advantage of having enough power left to connect
+            future devices to the I2C bus.
+          - due to the above, the PCB design and the schematics have been
+            updated
+  
+         Documentation:
+          - on some Amigaguide viewers, the buttons were not visible,
+            fixed (thanx Paul !)
+          - a better description of how to build the hardware
+            (the previous one really was very, very bad... :-(( )
+          - in previous documentation I mentioned plans for making a
+            gameport-version of TeleText. It turned out that this is
+            not possible, because of the lack of 2 'normal' outputs on the
+            gameport (there are 3 ports which can be used as output, but
+            2 of them are loaded with large capacitors :-(( ).
+
+V1.20    Release date: 29-12-1993
+
+         Bugfixes:
+          - Save as TT did not save last line, fixed.
+          - hold graphics code not supported, this would cause some
+            graphics in a TeleText page to be incorrect, fixed.
+         
+         Hardware:
+          - some SAA5246 IC's have oscillator problems, fixed.
+         
+         New features:
+          - Save as ANSI + added default tool stuff for that
+              (reg. users only)
+          - '+' and '-' gadget for subpage selection replaced by a slider
+            gadget
+          - fullsize ViewScreen for displaying TeleText pages.
+          - added keyboard shortcuts for often uses functions
+          - reveal gadget is now ghosted when there is nothing to reveal
+          - added selection of a pagenumber by doubleclicking a number in
+            a displayed page
+          - added an AREXX port
+          - some small fixes          
+
+@endnode
+
+##
+## List of components
+##
+@node complist "List of components"
+
+See the @{" Assembling " link assembling } section for more information !
+
+
+When using a SAA5246AP for U1:
+------------------------------
+
+R1    10k, 1/4 Watt, 5%, resistor (color-code: brown-black-orange)
+R2    10 ohm, 1/4 Watt, 5%, resistor (brown-black-black)
+R3    27k, 1/4 Watt, 5%, resistor (red-purple-orange)
+R4    does not exist
+R5    10k, 1/4 Watt, 5%, resistor (brown-black-orange)
+R6    4k7, 1/4 Watt, 5%, resistor (yellow-purple-red)
+R7    3k3, 1/4 Watt, 5%, resistor (orange-orange-red)
+
+C1    not needed
+C2    10pF, keramic capacitor
+C3    not needed
+C4    100nF, keramic capacitor
+C5    100nF, keramic capacitor
+C6    100nF, keramic capacitor
+C7    100nF, keramic capacitor
+C8    10µF/16V, electrolytic capacitor, radial
+C9    100nF, keramic capacitor
+C10   15pF, keramic capacitor   
+C11   1nF, keramic capacitor     
+
+X1    not needed (replace with a wire see @{" Assembling " link assembling })
+X2    27MHz crystal
+
+L1    4µ7 H coil (looks like a resistor)
+
+U1    SAA5246AP teletext decoder chip
+U2    6264 RAM (min. 200ns) or FCB61C65L (replacement for 6264)
+U3    74HC(T)4053 3-channel multiplexer
+U4    7805 voltage regulator
+T1    BC547 or equivalent
+D1    1N4001 diode or equivalent
+
+J1    25p Sub-D female connector (male for A1000)
+J2    25p Sub-D male connector (female for A1000)
+J3/J4 Cinch-chassis connector
+
+SW1   switch (make-contact)
+
+Note: instead of J1 and J2, you can also use a 25p male - 25p female
+      cable (rs232 type, fully wired) and cut it in two.
+      (if you are a bit handy, you can remove the plastic in the middle
+      of the cable and only cut the wires you need for TeleText. The
+      rest will the automatically be passed thru) This is what I did
+      for the prototype (see directory IFF for pictures of it)
+
+Extras:
+
+1  TeleText printed circuit board (PCB)
+   see the @{" PCB Service " link pcb_service } section for information
+   on how to get one.
+
+1  DC adapter, DC output voltage between 7.5 and 12 Volt, minimal 
+   supply current of 100mA (300mA is prevered)
+
+1  16-pin IC-socket
+1  28-pin IC-socket
+1  48-pin IC-socket
+16 solder pins
+
+some wiring, depending on your needs.
+
+
+
+
+When using a SAA5246P for U1:
+------------------------------
+
+R1    10k, 1/4 Watt, 5%, resistor (color-code: brown-black-orange)
+R2    10 ohm, 1/4 Watt, 5%, resistor (brown-black-black)
+R3    27k, 1/4 Watt, 5%, resistor  (red-purple-orange)
+R4    does not exist
+R5    10k, 1/4 Watt, 5%, resistor (brown-black-orange)
+R6    4k7, 1/4 Watt, 5%, resistor (yellow-purple-red)
+R7    not needed
+
+C1    22pF, keramic capacitor
+C2    22pF, keramic capacitor
+C3    22pF, keramic capacitor
+C4    100nF, keramic capacitor
+C5    100nF, keramic capacitor
+C6    100nF, keramic capacitor
+C7    100nF, keramic capacitor
+C8    10µF/16V, electrolytic capacitor, radial
+C9    100nF, keramic capacitor
+C10   not needed
+C11   not needed
+
+X1    27MHz crystal 
+X2    not needed (replace with a wire see @{" Assembling " link assembling })
+
+L1    3µ3 H coil (looks like a resistor)
+
+U1    SAA5246P teletext decoder chip
+U2    6264 RAM (min. 200ns) or FCB61C65L (replacement for 6264)
+U3    74HC(T)4053 3-channel multiplexer
+U4    7805 voltage regulator
+T1    BC547 or equivalent
+D1    1N4001 diode or equivalent
+
+J1    25p Sub-D female connector (male for A1000)
+J2    25p Sub-D male connector (female for A1000)
+J3/J4 Cinch-chassis connector
+
+SW1   switch (make-contact)
+
+Note: instead of J1 and J2, you can also use a 25p male - 25p female
+      cable (rs232 type, fully wired) and cut it in two.
+      (if you are a bit handy, you can remove the plastic in the middle
+      of the cable and only cut the wires you need for TeleText. The
+      rest will the automatically be passed thru) This is what I did
+      for the prototype (see directory IFF for pictures of it)
+
+Extras:
+
+1  TeleText printed circuit board (PCB)
+   see the @{" PCB Service " link pcb_service } section for information
+   on how to get one.
+
+1  DC adapter, DC output voltage between 7.5 and 12 Volt, minimal 
+   supply current of 100mA (300mA is prevered)
+
+1  16-pin IC-socket
+1  28-pin IC-socket
+1  48-pin IC-socket
+16 solder pins
+
+some wiring, depending on your needs
+
+
+
+An extra 1N4001 diode could be needed to fix a bug in the SAA5246.
+See the @{" Assembling " link assembling } section ("Bug in SAA5264 ?") for
+more information.
+
+
+@endnode
+
+##
+## Registration
+##
+@node registration "Registration"
+
+You can register TeleText by sending the registration fee and 
+a filled-in registration form (See file RegistrationForm.doc) to:
+
+   Jan Leuverink
+   Esweg 2-B
+   7151 ZM  Eibergen
+   HOLLAND
+
+Send money by EuroCheck (ammount only in Dutch guilders !!), 
+postal money order or cash.
+Currency's accepted: Dutch guilder, Deutsch Mark, English Pound, 
+                     US Dollar
+
+Within Europe eurochecks are prevered.
+
+Within The Netherlands you can also do a bank or giro-transfer.
+ Bankaccount: 3164.36.445 (Rabobank Oost-Achterhoek)
+ Giroaccount: 6682346
+
+Please state "TeleText registration" as subject.
+
+Please note that my receipts do not have your address on it, so send
+a letter or netmail to let me know were the registration is supposed to go
+to.
+
+Registration fee:
+
+    Dutch guilders   fl. 25.-
+    Deutsch Mark     DM  25.-
+    English Pound    £   10.-
+    US Dollar        $   15.-
+
+If you send cash, note that I can only accept paper-money, because I cannot
+exchange coins.
+
+If you register you will receive a keyfile, which will make your copy of
+TeleText fully registered. 
+Note that this keyfile is personal, you may not give or sell it to others.
+New versions of TeleText will be available at my NLA/AMY boss 
+"The Amiga Workbench" and I will try to get it distributed via the 
+ADS/SAN network.
+Newer versions will automagically be registered, if you have a valid
+keyfile.
+
+"The Amiga Workbench", Winterswijk, Holland (24 hours online)
+Sysop: Robert Udo
+Using: Zyxel+, max. speed 19k2 bps
+Telephone: +31-5430-24097
+
+NLA node:  14:105/2
+AMY node:  39:157/1
+FIDO node: 2:283/410
+
+Check out this great Amiga BBS !
+@endnode
+
+##
+## pcb service
+##
+@node pcb_service "PCB Service"
+
+As a reaction on TeleText V1.10 and V1.11 I got a lot of requests from
+people wanting to know if I could supply pcb's (printed circuit boards).
+I have now found a way of getting pcb's for a reasonable price.
+
+These are expoxy boards, drilled and the traces are tinned (?, I do not
+know the exact english word for it, but what I mean is that the traces
+are covered with tin to protect them, and make soldering a lot easier).
+
+Prices (until 31-1-1994):
+                                  post & package
+                    
+                      |  PCB    | europe  | outside 
+                      |         |         | europe
+                 -----|---------|---------|--------                   
+dutch guilders   hfl. | 17,50   |   4,-   |   8,-
+US dollars       $    | 12,-    |   3,-   |   6,-
+Deutsche Mark    DM   | 16,-    |   3,50  |   7,-
+English pounds   £    |  6,-    |   1,50  |   3,-
+
+
+Prices (after 1-2-1994):
+                                  post & package
+                    
+                      |  PCB    | europe  | outside 
+                      |         |         | europe
+                 -----|---------|---------|--------                   
+dutch guilders   hfl. | 22,-    |   4,-   |   8,-
+US dollars       $    | 15,-    |   3,-   |   6,-
+Deutsche Mark    DM   | 20,-    |   3,50  |   7,-
+English pounds   £    |  7,50   |   1,50  |   3,-
+
+
+See the @{" Registration " link registration } section for information on
+how you can reach me, and how to send me the money.
+Please state "TeleText PCB" as subject if you do a bank- or girotransfer.
+(only possible from within Holland, send a letter/netmail to tell me your
+address)
+
+It is also possible to order a complete build decoder or a do-it-yourself
+package (pcb+components).
+Contact me to for more information about ordering, postage, costs etc.
+(see @{" How to reach the author " link reachme})
+
+@endnode

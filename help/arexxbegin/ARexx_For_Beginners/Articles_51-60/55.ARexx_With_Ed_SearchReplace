@@ -1,0 +1,485 @@
+@DATABASE "ARB55"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 55 - A Search & Replace Function For ED"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 55 - A SEARCH & REPLACE FUNCTION FOR ED
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Discussion         " LINK "General"}
+@{" Description Of The Program " LINK "Description"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 55 - A Search & Replace Function For ED - Discussion"
+
+@{B}@{U}@{JCENTER}A SEARCH & REPLACE FUNCTION FOR ED - DISCUSSION@{UB}@{UU}
+@{JLEFT}
+Ed's @{"extended commands" LINK "ARB:Articles_51-60/53.ARexx_With_Ed_pt-2/Extended"} allow you to:-
+
+- search for strings in a forwards or backwards direction:-
+
+   F  "String"   for forwards search
+   BF "String"   for backwards search
+
+- set whether the search will be case sensitive or not:-
+
+   LC            for case sensitive search (default)
+   UC            for case insensitive search
+
+- replace one string with another:-
+
+   E "s1"s2"     replace string "s1" with string "s2"
+
+However, using these commands has certain drawbacks:-
+
+- the commands must be entered as extended commands by pressing ESC and
+  typing them in at the asterisk,
+
+- strings used must have proper @{"Ed Style String Delimiters" LINK "ARB:Articles_51-60/52.ARexx_With_Ed_Pt-1/Delimiters"} around them,
+
+- the search starts from the cursor position so if a search from the top
+  of the file is required the user must position the cursor there before
+  searching.
+
+- to do another search and/or exchange you have to reenter the command or
+  press CTRL-G to repeat the last extended command.
+
+The program I will @{"describe here" LINK "Description"} provides a requester window which will
+prompt you for:-
+
+- the string to search for,
+
+- whether the search is to be case sensitive or not,
+
+- whether the search is to start from the top of the file or from the
+  current cursor position,
+
+- whether a search only or a search and replace is required,
+
+- if replace, the string to be used as the replacement,
+
+- when found, whether to:-
+   - replace then find next (if replacement option selected)
+   - find next, no replacement
+   - quit searching
+
+There is one problem with searches that is a fault in the "Ed" program
+itself. If the cursor is on the first character of the file and the string
+to be found starts at the first character of the file, then that occurrence
+of the string @{B}will NOT be found@{UB}. If there is another occurrence of the
+string then that will be the first one displayed as being found. If it
+is the only occurrence then a "Search Failed" message is given.
+
+It would be possible to put coding into this program to overcome the problem
+but it would become a bit complex and if you cannot see that the very
+first few characters of a file are the ones you want then things are a
+bit crook!
+
+The "E" (exchange) command does @{B}not@{UB} have this problem.
+
+The "Ed" extended commands that I have used in this program are:-
+
+  RV "stem"   - to retrieve information in a stem array
+  LC          - to specify case sensitivity in searches
+  UC          - to specify case insensitivity in searches
+  F "string"  - to start forward search for "string"
+  BF "string" - to start backward search for "string"
+  T           - to move cursor to top of file (first character)
+  E "s1"s2"   - to exchange strings - s2 replaces s1
+  CL          - to move cursor one character to left
+  CE          - to move cursor to end of current line
+
+@{"Click here" LINK "Description"} for the description of the program.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Description" "Article 55 - A Search & Replace Function For ED - Description"
+
+@{B}@{U}@{JCENTER}A SEARCH & REPLACE FUNCTION FOR ED - DESCRIPTION@{UB}@{UU}
+@{JLEFT}
+The "Search & Replace" program @{"as discussed earlier" LINK "General"} is described in parts
+below. However, if you wish to read the program in full then @{"click here" LINK "ARB:Articles_51-60/Example55-1.ed/MAIN"}.
+
+/* Example55-1.ed */
+
+/* Search and Replace in ED */
+
+@{B}Lines 1-4@{UB}:-
+
+ 1. Esc     = '1b'x
+ 2. Down    = 'a'x
+ 3. Colour2 = Esc'[32m'
+ 4. Reset   = Esc'[0m'
+
+set up the symbols to be used. The use of "Colour2" allows the display
+of some text in a different colour (See @{"Lines 50" LINK "Description"231} and @{"Line 62" LINK "Description"294}).
+
+@{B}Line 5@{UB}:-
+
+ 5. OPTIONS FAILAT 21
+
+sets the @{"FailAt" LINK "ARB:Articles_21-30/25.Options/FailAt"} option to 21 as the search and replace extended commands
+will return non zero codes in @{"RC" LINK "ARB:Articles_31-40/33.Signalling/SiglRC"} if the search is unsuccessful:-
+
+@{B}Lines 6-10@{UB}:-
+
+ 6. Host = ADDRESS()
+ 7. IF LEFT(Host,2) ~= 'Ed' THEN DO
+ 8.   SAY 'a'x'This program can only be used when started from within ED.'
+ 9.   EXIT
+10. END
+
+find the @{"particular host address" LINK "ARB:Articles_21-30/24.Talking-Programs-2/Address()"116} (Line 6) then determine if it is an "Ed"
+address (Line 7). If not, the appropriate message is given (Line 8) and
+the program exits (line 9).
+
+@{B}Line 11@{B}@{B}@{UB}:-
+
+11. ADDRESS VALUE Host
+
+addresses the @{"particular `Ed'" LINK "ARB:Articles_21-30/24.Talking-Programs-2/Address()"116} being used.
+
+@{B}Lines 12-13@{UB}:-
+
+12. CALL CLOSE('STDIN')
+13. CALL OPEN('STDIN','CON:100/150/440/80/Ed Search Message
+Window')
+
+close the @{"STDIN stream" LINK "ARB:Misc/Glossary/Streams"} so that I can @{"open my own window" LINK "51.ARexx_With_Other_Progs/Creating"} for input.
+
+This window will be an @{B}input only@{UB} window as it is STDIN. However, this
+is no problem as the only messages that I want to give to the user will
+be about the input needed. The messages can therefore be the string
+contained in the @{"OPTIONS PROMPT" LINK "ARB:Articles_21-30/25.Options/Prompt"} instruction. This prompt string is always
+displayed in the STDIN window in which the user is to enter the input.
+
+@{B}Lines 14-18@{UB}:-
+
+14. DO FOREVER
+15.   OPTIONS PROMPT 'Please enter the string to search for'Down
+16.   PARSE PULL String
+17.   IF String ~= '' THEN LEAVE
+18. END
+
+get the string to be searched for, making sure that, if the user enters
+a null string (= '') then the prompt is reissued.
+
+@{B}Lines 19-22@{UB}:-
+
+19. DO WHILE Case ~= 'C' & Case ~= 'N' & Case ~= ''
+20.   OPTIONS PROMPT Down'Do you want search to be'Down'<C>ase sensitive',
+      '<N>on case sensitive'Down'RETURN = Non case sensitive:- '
+21.   PULL Case
+22. END
+
+ask whether the search should be case sensitive or not. The response is
+held in the symbol "Case" as a value of "C" or "N" or "Null" if RETURN
+is pressed in lieu of "N". The coding is within a loop that repeats whenever
+the user does @{B}not@{UB} enter one of these three alternatives.
+
+Two things to note about the OPTIONS PROMPT at Line 20 and other lines:-
+
+- It is a rather long string so I have used a @{"comma" LINK "ARB:Misc/Glossary/Special_Characters"34} (,) at the end of the
+  first line which tells ARexx that the next line is to be taken as an
+  extension of the program line.
+
+- It has the symbol "Down" embedded in it a few times. This will cause the
+  string to be displayed on three separate lines as follows:-
+
+    Do you want search to be
+    <C>ase sensitive <N>on case sensitive
+    RETURN= Non case sensitive:-
+
+@{B}Lines 23-24@{UB}:-
+
+23. IF Case = 'C' THEN 'lc'
+24. ELSE 'uc'
+
+send to "Ed" the command:-
+
+-  "LC" if the search is to be case sensitive, or
+-  "UC" if it is not to be case sensitive.
+
+@{B}Lines 25-28@{UB}:-
+
+25. DO WHILE Exchange ~= 'S' & Exchange ~= 'R' & Exchange ~= ''
+26.   OPTIONS PROMPT Down'<S>earch only or <R>eplace when find',
+      Down'RETURN = Search only:- '
+27.   PULL Exchange
+28. END
+
+are a loop to ascertain whether a @{B}search only@{UB} is to be made or a @{B}search
+and replace@{UB}.
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 26 will display:-
+
+  <S>earch only or <R>eplace when find
+  RETURN= Search only:-
+
+@{B}Lines 29-32@{UB}:-
+
+29. IF Exchange = 'R' THEN DO
+30.   OPTIONS PROMPT Down'Enter the replacement string',
+      Down'or just press RETURN if replacing with a null string'Down
+31.   PARSE PULL RepString
+32. END
+
+operate only if a replacement is required and ask for the string that
+is to be used as the replacement.
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 30 will display:-
+
+  Enter the replacement string
+  or just press RETURN if replacing with a null string
+
+The symbol "Exchange" will be used at @{"Line 47" LINK "Description"204} to determine whether the
+"Search & Replace" loop or the "Search Only" loop is used.
+
+@{B}Lines 33-36@{UB}:-
+
+33. DO WHILE Start ~= 'T' & Start ~= 'C' & Start ~= ''
+34.   OPTIONS PROMPT Down'Start the search from'Down'<T>op of file',
+      '<C>ursor Position'Down'RETURN = Top of file:- '
+35.   PULL Start
+36. END
+
+ask whether the search is to start at the top of the file or at the current
+cursor position. The answer is held in the symbol "Start".
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 34 will display:-
+
+  Start the search from
+  <T>op of file <C>ursor Position
+  RETURN= Top of file:-
+
+@{B}Lines37-40@{UB}:-
+
+37. IF Start = 'T' | Start = '' THEN DO
+38.   't'
+39.   Direction = 'F'
+40. END
+
+only operate if the user asks for the search is to be from the top of
+the file and send to "Ed" the command "T" which places the cursor at the
+top of the file. The program flow then skips over the next ELSE DO loop
+as there is no need to ask if a backwards search is wanted if the user
+asked to start from the top!!
+
+Direction is therefore set to "F" for a forward search.
+
+@{B}Lines 41-44@{UB}:-
+
+41. ELSE DO WHILE Direction ~= 'F' & Direction ~= 'B' & Direction ~=
+''
+42.   OPTIONS PROMPT Down'Searching from current cursor'Down'<B>ackwards',
+      '<F>orwards Search?'Down'RETURN = Forwards:- '
+43.   PULL Direction
+44. END
+
+is the ELSE DO loop that relates to the IF at @{"Line 37" LINK "Description"158}. This loop operates
+if the user asked for a search from the current position.
+
+The user's request for forwards or backwards is stored in
+"Direction"
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 42 will display:-
+
+  Searching from current cursor
+  <B>ackwards <F>orwards Search?
+  RETURN= Forwards:-
+
+@{B}Lines 45-46@{UB}:-
+
+45. IF Direction = 'F' | Direction = '' THEN Direction = 'F'
+46. ELSE Direction = 'BF'
+
+set the "Direction" symbol to one of Ed's commands:-
+
+-  "F"  for forwards  search, or
+-  "BF" for backwards search.
+
+@{B}Line 47@{UB}:-
+
+47. IF Exchange = 'R' THEN DO FOREVER
+
+is the start of a loop that operates if the user requested "Replace" at
+@{"Line 27" LINK "Description"106}.
+
+@{B}Line 48@{UB}:-
+
+48.   Direction '!'String'!'
+
+sends one of these command strings to "Ed" depending on the value held
+by "Direction":-
+
+  F !string!
+  BF !string!
+
+where "String" is the search string entered by the user and ! is used
+as the @{"string delimiters" LINK "ARB:Articles_51-60/52.ARexx_With_Ed_Pt-1/Delimiters"}.
+
+@{B}Line 49@{UB}:-
+
+49.   IF RC > 0 THEN SIGNAL End
+
+checks RC for a non zero value which will indicate an unsuccessful search.
+If so, the program will signal the "End" function:-
+
+@{B}Lines 50-51@{UB}:-
+
+50.   OPTIONS PROMPT Down'FOUND: 'Colour2||String||Reset,
+      Down'Replacing with: 'Colour2||RepString||Reset,
+      Down'<R>eplace then find next <F>ind next, no replace',
+      Down'<Q>uit the search '
+51.   PULL Again
+
+operate if the the search is successful (RC will be 0)
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 50 will display:-
+
+  FOUND: (search string)
+  Replacing with: (replace string)
+  <R>eplace then find next <F>ind next, no replace
+  <Q>uit the search
+
+with the search and replace strings being shown in colour 2.
+
+In the actual ED window, the cursor will be sitting on the first letter
+of the found string. Unfortunately, as the ED window is no longer active
+(the search window is now the active one) the cursor will be a bit hard
+to see.
+
+@{B}Lines 52-55@{UB}:-
+
+52.   SELECT
+53.     WHEN Again = 'Q' THEN SIGNAL End
+54.     WHEN Again = 'F' THEN ITERATE
+55.     WHEN Again = 'R' THEN 'e !'String'!'RepString'!'
+
+select various actions depending on the user's input.
+
+The second WHEN (Line 54) calls for an iteration of the loop. The next
+search command will start its search at the character one @{B}past@{UB} the current
+cursor position so that it does not again find the same string.
+
+The last WHEN (Line 55) sends to "Ed" the command "E" which is the exchange
+command. The previous "F" command will have put the cursor on the first
+character of the string. However, "E" will look for the original string
+starting @{B}at@{UB} the character the cursor is on (which is different to the
+"F" and command which starts it search at the character one @{B}past@{UB} the cursor
+position) so it does not matter that the cursor already is on the first
+character of the string.
+
+@{B}Line 56@{UB}:-
+
+56.   OTHERWISE CALL BackSpace
+
+operates if a wrong entry is made at @{"Line 51" LINK "Description"231}. The function @{"BackSpace" LINK "Description"323} is
+called to move the cursor to the previous character so that the "F" command
+can find the same string over again. This is a safe guard in case the
+user missed out on the string found by pressing a wrong key before properly
+looking at the found string.
+
+@{B}Lines 57 & 58@{UB}:-
+
+57.  END
+58. END
+
+are for the "SELECT" (@{"Line 52" LINK "Description"255}) and the "IF Exchange = 'R'.... (@{"Line 47" LINK "Description"204})
+respectively.
+
+@{B}Lines 59-70@{UB}:-
+
+59. ELSE DO FOREVER
+60.   Direction '!'String'!'
+61.   IF RC > 0 THEN SIGNAL End
+62.   OPTIONS PROMPT Down'FOUND: 'Colour2||String||Reset,
+      Down'<R>epeat search <Q>uit RETURN = Repeat:- '
+63.   PULL Again
+64.   SELECT
+65.     WHEN Again = 'Q' THEN SIGNAL End
+66.     WHEN Again = 'R' THEN ITERATE
+67.     WHEN Again = '' THEN ITERATE
+68.   OTHERWISE CALL BackSpace
+69.   END
+70. END
+
+operate if "Exchange" is @{B}not@{UB} "R". It can only be reached if @{"Line 47" LINK "Description"204} is
+@{B}not true@{UB}, i.e. if the user did not select the replace text option.
+
+It is very similar to the last DO FOREVER replacement loop (starting at
+@{"Line 47" LINK "Description"204}) except that there are no replacement options.
+
+The @{"OPTIONS PROMPT" LINK "Description"83} at Line 62 will display:-
+
+  FOUND: (search string)
+  <R>epeat search <Q>uit RETURN = Repeat:-
+
+with the "search string" being in "Colour 2".
+
+@{B}Lines 71-75@{UB}:-
+
+71. BackSpace:
+72.   'rv "Curr"'
+73.   IF Curr.X = 1 THEN 'p ; ce'
+74.   ELSE 'cl'
+75. RETURN
+
+are the "BackSpace" function called from @{"Line 56" LINK "Description"276} and @{"Line 68" LINK "Description"294}.
+
+Our problem here is that ED's "CL" (cursor left) command will move one
+to the left until the start of the current line is reached. Then the cursor
+stays put. "CL" will @{B}not@{UB} move the cursor to the end of the previous line.
+Nor will it give an RC value greater than 0 when the cursor is on the
+first character. So we have to have our own "BackSpace" function in case
+the cursor is on the first character of the line. It works like
+this.
+
+@{B}Line 72@{UB} uses Ed's @{"RV command" LINK "ARB:Articles_51-60/53.ARexx_With_Ed_pt-2/Rv"} to find the cursor position on the current
+line which will be held by the Curr.X symbol.
+
+If the cursor @{B}is@{UB} on the first character of a line then Curr.x will be
+equal to 1 and @{B}Line 73@{UB} operates and Ed's "P" command moves the cursor
+up a line and the "CE" command moves the cursor to the end of that line.
+
+If the cursor is @{B}not@{UB} on the first character then Curr.x will be greater
+than 1 and @{B}Line 74@{UB} operates and Ed's "CL" command moves the cursor one
+to the left.
+
+@{B}Lines 76-79@{UB}:-
+
+76. End:
+77.   IF Again = 'Q' THEN OPTIONS PROMPT Down'User aborted! - Press RETURN
+      to exit'
+78.   ELSE OPTIONS PROMPT Down'Last search failed - Press RETURN to exit'
+79.   PULL End
+
+are the "End" function called from @{"Line 49" LINK "Description"224} and @{"Line 53" LINK "Description"255}, and
+@{"Lines 61 & 65" LINK "Description"294}.
+
+All this does is to display one of two messages. If the user pressed "Q"
+then I display:-
+
+  User aborted! - Press RETURN to exit
+
+but if the search failed I display:-
+
+  Last search failed - Press RETURN to exit
+
+and in both cases the program does not exit until return is pressed.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

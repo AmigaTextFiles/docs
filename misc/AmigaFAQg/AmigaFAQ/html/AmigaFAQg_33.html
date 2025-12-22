@@ -1,0 +1,75 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQg.texinfo on 24 October 1995 -->
+
+<TITLE>Amiga-FAQ - Fehlende Funktionen</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQg_32.html">Pragmas</A>
+&gt;&gt; <A HREF="AmigaFAQg_34.html">Welche Funktionen</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX79"></A>
+<A NAME="IDX80"></A>
+<A NAME="IDX81"></A>
+<A NAME="IDX82"></A>
+<A NAME="IDX83"></A>
+<H2><A NAME="SEC33" HREF="AmigaFAQg_toc.html#SEC33">Mein Compiler/Linker vermi&szlig;t Symbole.</A></H2>
+Zun&auml;chst sollte man sich versichern, da&szlig; die Funktion tats&auml;chlich fehlt:
+Z.B. Floating-Point-Funktionen befinden sich in einer speziellen
+Link-Library, die erst mit der Option <SAMP>`-lm'</SAMP> eingebunden wird.
+Ferner kann es eine fehlende Variable sein: Wenn man z.B. ohne es zu
+bemerken eine Intuition-Funktion benutzt, dann wird der Linker &uuml;ber das
+Fehlen eines Symbols <CODE>IntuitionBase</CODE> klagen. In diesem Fall mu&szlig;
+man also lediglich das Folgende irgendwo im globalen Teil seines
+Quelltextes einbauen:
+<PRE>
+    struct Library *IntuitionBase;
+</PRE>
+(Und vergessen Sie nicht, die Library mit OpenLibrary() zu er&ouml;ffnen und
+mit CloseLibrary() zu schlie&szlig;en!) :-)
+<P>
+Allerdings k&ouml;nnte die Funktion nat&uuml;rlich tats&auml;chlich fehlen. Wenn man zum
+Beispiel nur die Version 2.0 der amiga.lib hat, dann fehlen etwa die
+Locale-Funktionen oder die Memory-Pool-Funktionen, obwohl sie prinzipiell
+verwendbar sind. <A NAME="FOOT4" HREF="AmigaFAQg_foot.html#FOOT4">(4)</A>
+Die einfachste (und beste) L&ouml;sung ist, das sogenannte NDU zu kaufen.
+Siehe Abschnitt <A HREF="AmigaFAQg_25.html#SEC25">Wo bekomme ich die Amiga-Include-Dateien?</A>. Wer nicht solange warten m&ouml;chte, f&uuml;r den ist die Frage,
+welche Art von Funktion in seiner Link-Library fehlt:
+<UL>
+<LI>Einfache Amiga-Library-Funktionen (z.B. <SAMP>`exec/AllocPooled'</SAMP> oder
+<SAMP>`locale/OpenCatalogA'</SAMP>) kann man mit Pragmas aufrufen und braucht
+dann lediglich Informationen &uuml;ber die Aufrufkonventionen (Library-Base,
+Library-Vektor-Offset und Argumentregister)
+<LI>Tag-Funktionen sind meistens einfach Zwischenfunktionen, die ihre
+Argumente auf dem Stack erwarten und dann die eigentliche Library-Funktion
+aufrufen. Wenn man z.B. die Funktion <SAMP>`dos/AllocDosObject'</SAMP>, die eine
+Konstante und einen Zeiger auf ein Array als Argumente erwartet, nach
+der obigen Methode konstruiert hat, dann hat man damit auch ihre
+Stack-Variante! Dazu erzeugt man einfach die folgende Funktion:
+<PRE>
+    #include &#60;clib/dos_protos.h&#62;
+    #include &#60;pragmas/dos_pragmas.h&#62;	/*  Evtl. anderer Name	*/
+
+    void *AllocDosObjectTags(ULONG objtype, Tag tag1, ...)
+    { return(AllocDosObject(objtype, (struct TagItem *) &#38;tag1);
+    }
+</PRE>
+Mit fd2pragma kann das auch automatisch geschehen. Siehe Abschnitt <A HREF="AmigaFAQg_32.html#SEC32">Was sind Pragmas?</A>.
+<LI>Einige Funktionen bleiben aber noch &uuml;brig: Amiga.lib enth&auml;lt n&auml;mlich
+auch Funktionen, die f&uuml;r sich selbst interessant sind, z.B. die
+BOOPSI-Funktionen (<SAMP>`DoMethod'</SAMP>, <SAMP>`DoSuperMethod'</SAMP>), die
+Memory-Pool-Funktionen (<SAMP>`LibAllocPooled'</SAMP>, <SAMP>`LibCreatePool'</SAMP>, die
+Ersatz f&uuml;r entsprechende 3.0-Funktionen sind) oder <SAMP>`HookEntry'</SAMP>, das
+sehr hilfreich bei der Programmierung von Hooks ist. Diese kann man nur
+durch entsprechende, disassemblierte und neu assemblierte oder compilierter
+Versionen ersetzen. Im AmigaFAQ-Archiv sind einige dieser Funktionen
+bereits enthalten.
+</UL>
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQg_32.html">Pragmas</A>
+&gt;&gt; <A HREF="AmigaFAQg_34.html">Welche Funktionen</A>
+</I></PRE>

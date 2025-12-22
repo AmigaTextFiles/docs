@@ -1,0 +1,384 @@
+
+            -----------------------------------------------------
+              _               _         _      _     Dec.14th 1992
+             (        /|     |_)       |_     |_)
+             _)imple /~|miga | arallel |_prom | rogrammer
+                                                            v2.0
+            -----------------------------------------------------
+  Hardware and software (c)1992  Silicon Synapse Electronics & John Kamchen
+                   ReqTools is Copyright (c) Nico François.
+
+
+******************************************************************************
+*   This is SHAREWARE.  The fee is a mere $15.  If you use it, please pay.   *
+*                                                                            *
+*                        - What do I get for my $15 ? -                      *
+*                                                                            *
+*                     For the $15 Shareware fee, you get:                    *
+* A disk FULL of more great hardware projects (memory, video, audio & more)  *
+*          The lastest version of the software, and more TYPE files          *
+*                 Complete documented source code for SAPEP                  *
+*                     Laser printed schematic of circuit                     *
+*                                                                            *
+*                   Mail the money (in American funds) to:                   *
+*                                 John Kamchen                               *
+*                              41 Matheson Avenue                            *
+*                              Winnipeg Manitoba                             *
+*                               Canada   R2W 0C1                             *
+******************************************************************************
+
+                            ----------------------
+                            Before you do anything
+                            ----------------------
+    Some things to note before you go further.  I use words 'part' & 'type'
+alot.  These mean the same thing.  When you read the section on TYPE FILES,
+you will understand.
+
+    You must have reqtools.library (supplied) in your LIBS: directory.
+ReqTools is Copyright (c) Nico François.
+
+                               ---------------
+                               What is SAPEP ?
+                               ---------------
+    SAPEP is a semi-complex package consisting of control software, and
+programming hardware used to program eprom memory chips.  Unlike some OTHER
+eprom hacks floating around, this hardware will program a large variety of
+chips without the use 'personality moduals'.  All programming characteristics
+are controlled though the software.
+
+
+    About a year ago, I designed a fairly simple eprom programmer for the
+Amiga.  There was nothing fancy about it really, and could only program 21v
+2764 & 27128 type chips.  These days, eproms use lower programing voltages,
+come in larger capacity and, much to many people's dismay, different pin
+definitons.
+
+                            ----------------------
+                            What eproms can it do?
+                            ----------------------
+    Every eprom maker has thier own idea of how the chips should be programmed.
+Sure, the pinouts are all the same (in the majority of cases), but the
+programming steps & voltages vary from maker to maker.  As luck would have it,
+these odd voltages and timing pulse requirements are fairly simple to meet.
+
+    The hardware limits what can be programmed.  As long as you follow this
+guide, you can't go wrong.
+
+Capacity (K)  : 4Kx8, 8Kx8, 16Kx8, 32Kx8, 64Kx8, 128Kx8, 256Kx8, 512Kx8  *
+Vpp Voltages  : +12.00v +12.50v +12.75v +13.00v +21.00v
+Vcc Voltages  :  +5.00v  +6.00v  +6.25v  +6.50v
+PGM Widths    :  1.4us to 91.6ms
+
+* The hardware supports the soon-to-be-released 1024Kx8 eproms as well.
+
+
+    Each manufacturer employs a custom programming sequence (called an
+algorythm).  TI uses Snap!, SGS has Presto II, and so on.  Many of these
+programming methods are a variation of the Snap! algorythm.  However, there is
+one algoythm supported by most (if not all) makers- FAST.  As far as speed
+goes, FAST is damn slow compared to Snap! (a 32k x8 chips take about 10
+seconds to program using Snap!, but 131 seconds with FAST).  If the chip
+supports FAST, then it may say something like  PGM @ 12.5v  or VPP 12.75v on
+the top.  See the section on the 'TYPE:'  files later on.
+
+                                --------------
+                                Signature Mode
+                                --------------
+    All eprom manufacturers support what is known as 'Signature Mode'.  When
+you power up the eprom, and apply 12.00v to A9, the chip outputs 2 bytes
+(depending on A0).  The first byte is the manufacture's number, the second is
+the device number.  Bit 7 (MSB) contains the parity bit.  An example is the
+TMS27C256 from Texes Instruments.  The code comes back as:
+
+Manufacturer:151 ($97)
+Device      :004 ($04)
+
+    Suppose you have a chip with the part numbers scratched off.  As long as
+you are VERY sure the part is an eprom, you could try the get the signature to
+find out who made it, and it's capacity (assuming you have many data books to
+look up the codes).
+
+    The CMOS type chips seem to be more likely to support this feature, but
+I've seen some NMOS devices (from SGS Thomson) that do as well.  The program
+allows you to read the chip's signature.
+
+                                    *Note*
+With a part name like 27C (C for Cmos), we can assume it will have a
+signature, but if there is no C, then a signature test MIGHT damage the chip.
+
+                                 -----------
+                                 TYPE: files
+                                 -----------
+    In order to know the specific voltages for each eprom device, I came up
+with TYPE files.  These have the following format:
+
+Part :TMS27C32          ; Part number as it appears on the chip              1
+Name :Texas Instruments ; Manufacturer's name                                2
+Size :4                 ; Size in Kilobytes (this is a 4k x 8 eprom)         3
+Vpp  :1300              ; Vpp during programming                             4
+Vcc  :650               ; Vcc during programming                             5
+twPGM:100               ; Initial (prime) pulse width (in MICRO seconds)     6
+twMUL:0                 ; Multiplication factor for Final Pulse tw(FPGM)     7
+Xcnt :10                ; Number of times pulse can be applied               8
+Algth:SNAP!             ; Programming algorithm                              9
+User :0                 ;                                                   10
+;  John Kamchen SSE (204)589-1078 v32bis Oct.27th 1992 TI MOS Memory (1989) 11
+
+Line 1 : This is the part number as it appears on the chip. Do not include the
+         chip speed, or package details.
+Line 2 : Manufacturer's name ( AMD  or  American Micro Devices is fine).
+Line 3 : The TMS27C32 is 4 kilobytes in size (BYTES, not BITS)
+Line 4 : Vpp   used for programming algorythm
+Line 5 : Vcc   used for programming algorythm
+Line 6 : twPGM used for programming algorythm
+Line 7 : twMUL used for programming algorythm
+Line 8 : Xcnt  used for programming algorythm
+Line 9 : Algorythm
+Line 10: RESERVED Just leave it at 0 (Used for future expansion).
+Line 11: Name/Phone # who wrote this file plus the date and source of info
+
+                Algorythms supported (as of December 1st 1992)
+   Name:    User:                               Speed: (best case) Eg.32k x8
+   FAST     Generic, most chips support it.        4s per K        131 seconds
+   SLOW     Used for 2732A type chips           10.2s per K        328 seconds
+   CRAWL    Old 50ms per byte, for 21v proms    51.2s per K       27.5 minutes
+   Snap!    Texas Instruments.  Very quick      102ms per K        3.3 seconds
+Presto II   SGS Thomson         Very quick      102ms per K        3.3 seconds
+
+    The above speeds are best case.  In reality, the programmer hardware &
+software need some time to transfer the data to and fro, so an 32k x8 SNAP!
+eprom might really takes about 1 minute to program and verify.  If the
+algorythms were written in pure ML, then that time is sure to drop to 20
+seconds.
+    What does a programming algorythm look like?  Most look like this (from
+the TI Memory Databook):
+              _______
+             ( START )               TI's Snap! algorythm
+              ~~~|~~~
+     ____________V____________
+    | Address =First Location |
+     ~~~~~~~~~~~~|~~~~~~~~~~~~
+     ____________V____________  For TYPE files, Vcc is 650 & Vpp is 1300
+    | Vcc= 6.50v, Vpp= 13.0v  | (to avoid floating point operations)
+     ~~~~~~~~~~~~|~~~~~~~~~~~~
+     ____________V____________           ___________________
+    | Program one pulse 100us | <-------| Increment Address |
+     ~~~~~~~~~~~~|~~~~~~~~~~~~           ~~~~~~~~~~^~~~~~~~~~
+            _____V____        100us is             |
+           /   Last   \ No    the twPGM            |
+           \ Address? /~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+        Yes ~~~~~|~~~~
+     ____________V____________
+ .> |          X = 0          |
+ |   ~~~~~~~~~~~~|~~~~~~~~~~~~          _________________________
+ |               | <-------------------| Program one pulse 100us |
+ |               |                      ~~~~~~~~~~~~~^~~~~~~~~~~~
+ |          _____V____          __________       ____|____No
+ |         /  Verify  \ Fail   | X = X + 1|     / X = 10? \  ; Xcnt factor
+ |         \   Byte   /~~~~~~~~~~~~~~~~~~~~~~~~~\_________/
+ |          ~~~~~|~~~~                               |
+ |          _____V____Pass                           | Yes
+ |    No   /   Last   \                              |
+ '---------\ Address? /                              |
+            ~~~~~|~~~~                               |
+                 | Yes                               |
+     ____________V____________                       |
+    |     Vcc = Vpp = 5.00    |                      |
+     ~~~~~~~~~~~~|~~~~~~~~~~~~                       |
+         ________|________                  _________|________
+        /Compare all bytes\  Fail          | Device is faulty |
+        \to original data /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         ~~~~~~~~|~~~~~~~~
+                 |  Pass
+           ______V______
+          /Device Passed\
+          \Ready to use /
+           ~~~~~~~~~~~~~
+
+    To sum up, this is the basic configuration for the different algorythms:
+
+FAST     :  Vcc=600  Vpp=1250  twPGM=1000  twMUL=3  Xcnt=25
+SNAP!    :  Vcc=650  Vpp=1300  twPGM=100   twMUL=0  Xcnt=10
+Presto II:  Vcc=625  Vpp=1275  twPGM=100   twMUL=0  Xcnt=25
+
+    As you can see, even though SNAP! & Presto2 work the same way, the
+voltages the chip needs vary.  That's why I used the type files.
+The GenericNNk type files assume FAST.  Study the type files before you write
+your own.  Read the EXAMPLE file, and use the TEMPLATE to make your own files.
+Don't use the ; comments in your files (after line 10, enter anything you
+want).
+
+                                --------------
+                                Warning Lights
+                                --------------
+    There are 4 LEDs on the programmer.  D1 & D2 are the socket power
+indicators. If D1 is lit (red), that means keep your hands off, the socket
+has power, and you can't insert or remove anything when there is power.
+When D2 is lit (green), then the socket it totally powered down, and it's safe
+to insert/remove a chip.  D3 (yellow) is lit when high voltage (12 and up) is
+present on the socket. Finally, D4 (red) is lit when the programmer is turned
+on.
+
+                                 ------------
+                                 Construction
+                                 ------------
+    See the file 'SAPEP_Built_It.txt' for details on how to build the hardware.
+
+
+                              ------------------
+                              Using the software
+                              ------------------
+
+    There is nothing fancy about this software, it does the basic tasks.  If
+you run it from CLI, then certain functions will print values to the CLI.
+Run it from Workbench, and you don't get these values.  I tried to get
+ReqTools to show some kind of 'status', but that is a bit beyond my programming
+scope.  All I can say is, best run it from CLI.
+
+    The first thing the software does is ask you to verify that you indeed
+have the SAPEP hardware plugged in (and powered up).
+
+                 The main menu has a few options. These are:
+
+                     - 1. Select Source/Destination file -
+    A file requester pops up, asking you for a path/file.  This is the
+standard ReqTools FileReq.  This file name will will be WRITTEN to and READ
+from, depending on your actions.  Keep this in mind.
+
+                               * release note *
+Program can only work with DEVICE:FILE , not DEVICE:DIR/FILE .  This bug will
+be corrected next version.  Seems to be because I'm using ANSI file routines,
+not AmigaDOS.  Keep files in RAM disk, you can't go wrong.
+
+                              - 2. Select part -
+    Assuming you have assigned TYPES: to the directory where your type files
+reside, you should get a file requester listing all your known part numbers.
+The info in this type file will setup the eprom characteristics.  ALL tasks
+you can do (read/program, compare, etc) will depend on this type file.  The
+only exception is Signature mode.
+
+                            - 3. Signature Mode -
+    This function will present you with four choices. 3 package sizes, and a
+cancel.  Since address pin 9 is on the same ZIF pin no matter what chip you
+have, all we need to know is how many pins the chip has (so that +5v can be
+applied to the Vcc pin).  The result will be manufactuters ID and device ID.
+Both are shown in decimal and hex.  If the device doesn't support signature
+mode, but you forget to hit cancel, 255 ($FF) will come up.  Did you damage
+the chip? Who knows.  In the TYPES: dir, there is a file called Signatures,
+which contains a few examples of what can be learned from these two bytes.
+Feel free to add to this file (and the type files as well).
+
+                            - 4. Compare 2 File -
+    Sometimes, you may want to compare the contents of a file to an eprom.
+This fuction will do that.  Select your source file, then your type file.  You
+can select one of the Generic types file for this application.  The first
+instance of a non-match will stop the checking, and report this error
+condition to you.  This works like a verify, in a way.
+
+                           - 5. Save Part To File -
+    Select your file (remember, we are making a new file, so it doesn't have
+to exist yet on the disk), then select the part (again, since we are just
+reading a chip, a Generic part will do fine).  Click OK, and in a short while,
+the eprom contents are saved to the file.  The current software only saves in
+BINARY form, but the next major update will have support for an IFF-PROM
+format.
+
+                         - 6. Program File to Prom -
+    Here's the fun part.  Select your source binary file, then your type file.
+In most cases, you will want to use the same type file as your part, because
+the Generic versions default to FAST programming, but the other type files
+support the fastest programming algorythm availible (for example, the TMS2732A
+doesn't support FAST, so selecting the Generic4k would be all worng).
+
+    When your ready, press PROGRAM, then hold your breath.  LED D1 will light
+up, and so will LED D3 (Using certain sized eproms, LED D3 will flicker during
+programming.  This is because Vpp must be taken off the socket to verify the
+byte.  Don't worry, everything is OK).
+
+    If the program was run though CLI, the current address is printed out every
+1024 bytes.  You cannot abort this task.
+
+  Two things can go wrong at this point:
+
+    1.  Error during programming (this is REALLY fatal).  Assuming the type
+        file contains the correct data, this error means that it tried to
+        program one location at least 10-25 times, with no success.  This
+        usually indicates a faulty eprom.  Clear it under the UV lamp, then
+        try again.  If you still get the error, try the Generic type.  I use
+        the FAST algorythm as a last resort.  Though it takes much longer,
+        it usually gets the job done.  Only throw the chip away if your sure
+        that it's toast (eproms still cost a few bucks each, not like a dead
+        74LS00!).
+
+    2.  File error.  Maybe you were programming a 16k x8 chip, but only
+        supplied a file 8192 bytes long.  Or you took out the disk.  Future
+        versions of this program will use real AmigaDOS file handling, and
+        at least take care of mis-matched file sizes.
+
+    If the chip passed the intial programming sequence, D3 will turn off
+(indicating that the Vpp was taken off the socket, and the final verification
+is taking place.  Two things can go wrong at this point:
+
+    1.  Error during final verify.  This shouldn't happen, but soemtime does.
+        Again, like the above error, this could mean the chip is faulty.
+        Clear it under the UV lamp, then try again.  If you still get the
+        error, throw the chip away.  If a chip doesn't pass final verify, then
+        the chip is damaged.
+
+    2.  File error.  Same as the above file error.
+
+    Assuming everything is OK, then you have a fully functional eprom.
+
+                                - 7. Cleared -
+    One thing the hardware cannot do is clear the eprom.  When you get the
+chip from the store, all the bits are set to 1, so reading a byte will provide
+255 ($FF).  Before you program any eprom, you should run this test (on new
+chips and ones that have just come from under your UV lamp).  The amount of
+addresses checked depends again on your type file.  While the routine could
+report exactly how many bits are still at logic 0, it doesn't help.  A cleared
+bit is a cleared bit. It takes the same time under the UV lamp to set 1 bit,
+or 65536 bits.
+
+                               - 8. Calibrate -
+    I suppose this test need only be run once, after the hardware is
+completed, but I suggest you do this a few times a year.  The voltage tests
+are more important than anything else.
+
+    The tests assume you have a cabable power supply.  Most people will opt
+not to support the 21v programming mode (because it's so stupid).
+
+                   * DON'T have a chip in the ZIF socket *
+   The voltages go everywhere, and you will either erase a chip, or blow it
+              up (which is, by far, the more visual of the two).
+
+                                 - 9. About -
+           This will display some info about the program. Big Deal.
+
+                                   - Quit -
+    Quit the program.
+
+                           - Other Software Notes -
+
+    Assign TYPES: to the directory where the type files are kept.  I know this
+software sucks, but I've been working on this project for the past few months,
+and the software part really strained my patience.
+
+    The program ties up the PAR: device so that no other program can change
+the CIA registers (thus killing the hardware, I suppose).  If by some chance
+you have the programmer plugged in, and try to print to the printer, don't
+worry.  Every parallel device I design is 'idiot proofed'.  The hardware will
+be invisible under the printer.device.  But run DigiView, or some audio
+sampling software, and there could be problems.
+
+    Why is the software so lame?
+
+       'I would rather have my fingers on a breadboard than a keyboard'
+
+    I think that sums it up pretty well.
+
+
+                        Call the SAPEP support board:
+    Silicon Synapse Electronics BBS  (204)589-1078  24hrs 1200-14.4 v32bis
+                 Megs and megs of Amiga electronic projects.
+
+-EOF-

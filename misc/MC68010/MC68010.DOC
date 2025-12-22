@@ -1,0 +1,345 @@
+                        AMIGA (tm) TECHNICAL NOTE                  29-Mar-86
+
+          Upgrading an AMIGA A1000 with a Motorola MC68010L8
+
+                            by Thad Floryan
+
+
+For quite awhile now, I've been experimenting using an MC68010L8 in place of
+the MC68000 in my Amiga.  The benefits of the MC68010 are great, but several
+"problems" with the MC68010 upgrade have held me back from recommending this
+simple enhancement to everyone.  Now, the final quirk has been solved, and I
+am recommending the upgrade to everyone!
+
+This document has several parts, ALL of which must be read and understood by
+anyone wishing to perform the upgrade or contract for someone to perform the
+upgrade for you.  Additionally, there are several files which accompany this
+technical note:
+
+                       CHOP.BAS
+                       CHOP.C
+                       DeciGEL
+                       DeciGEL.asm
+                       DeciGEL.make
+
+The several parts of this document are:
+
+         I.  The MC68010 hardware upgrade
+
+        II.  The MC68010 software upgrade 
+
+       III.  Copy of Motorola's MC68000 Micro Minutes MM-444-02, entitled
+             "Advantages of Upgrading an MC68000 to an MC68010".
+
+        IV.  Side notes
+
+         V.  Trademark notices
+
+--------------------------------------------------------------------------
+
+                           ** DISCLAIMER **
+
+The modification and details described in this technical note are provided
+"as is", without warranty of any kind, either expressed or implied, inclu-
+ding, but not limited to, the implied warranties of fitness for a particu-
+lar purpose.  The entire risk as to the results and performance of the mo-
+dification is assumed by you.  In no event will I, Thaddeus P. Floryan Jr,
+be liable for direct, indirect, incidental or consequential damages resul-
+ting from the use or application of this information.
+
+--------------------------------------------------------------------------
+
+I. The MC68010 hardware upgrade
+
+The MC68010 is pin-for-pin compatible with the MC68000 installed in all
+Amiga Model A1000 PCs.  The hardware upgrade consists of replacing the
+MC68000 with the MC68010.
+
+
+                            ** CAUTION **
+
+         The internals of the Amiga are sensitive to static
+         and are fragile; working on a computer is not like
+         working on your car.  Also, opening the Amiga will
+         void your warranty.  It may be worth your peace of
+         mind to contract an experienced technician for the
+         hardware part of this upgrade.  Common sense and a
+         good mechanical aptitude are essential.  Take your
+         time and do not rush; restrain your excitement for
+         later, after the MC68010 is installed.
+
+To open the Amiga, the five screws on the underside of the case must be
+removed.  Releasing the cover can be tricky; examine the left side of the
+case near the power switch (front side corner) and also 10 inches further
+back along the seam and note the tabs: push in until they separate, then
+lift the cover up toward the right side of the case and release the tabs
+there.  The metal RFI shield covers the entire PC board and must be removed
+to gain access to the MC68000.  Remove all the screws along its edge, and
+also straighten out the tabs which protrude upwards through the shield, then
+lift and remove the shield; be sure to note where each screw is supposed to
+be located as there are several types of screws.  The disk drive must also
+be removed since it sits over one edge of the MC68000.  First unplug the
+two cables (power and signal) after noting the orientation so that they can
+be replaced correctly later.  Now remove all screws fastening the disk
+drive and lift it up and out: NOTE that the wires to the LED are still
+fastened; these do not need to be removed if you turn the drive upside down
+and lay it on a thick book alongside the right side of the Amiga case.  Pry
+the MC68000 out and replace it with a MC68010L8.  Reverse all the previous
+steps to reassemble the Amiga; the tabs which protrude through the RFI
+shield need not be twisted back into place.
+
+Reconnect all the cables to the Amiga.  Powerup the Amiga and boot with your
+usual Kickstart and Workbench disks.  Verify that the system appears to be
+working as normal.  Now, either from the Workbench or CLI, startup the
+CALCULATOR tool, and perform the operation:  " 9 * 3 = ".  There should be
+a software failure; this indicates the MC68010 is running correctly because
+the CALCULATOR supplied with V1.1 uses a "MOVE SR,ea" instruction which is
+invalid in user-mode with a MC68010.  Reboot the Workbench and proceed now
+to section II, software upgrade.
+
+If you do not experience the symptoms as described above, there may be
+several reasons:
+
+      1.  you re-installed the MC68000 instead of the MC68010,
+
+      2.  the MC68010 is "dead", or
+
+      3.  something else inside the Amiga has been damaged.
+
+At this point, you are on your own.  My advice is to re-install the MC68000
+and verify that your system works again; if it does, then your MC68010 chip
+may be bad.  If your system still does not operate with the MC68000 back in,
+then you gotta heap of trouble.  Re-read the DISCLAIMER above, and seek
+competent technical service.
+
+---------------------------------------------------------------------------
+
+II. The MC68010 software upgrade
+
+
+Beginning with V1.1 of Kickstart and Workbench, Commodore-Amiga "officially"
+supports operation of the MC68000, MC68010 and MC68020 CPU chips in the
+Amiga Model A1000 per:
+
+       "With the exception of the Calculator, software in the 1.1 release
+        is compatible with the 68010 and 68020 processors.  Application
+        programmers wishing to take advantage of such products should be
+        sure to use the Exec GetCC() function to get the processor condi-
+        tion codes.  (GetCC() handles the differences between the proces-
+        sors such as the fact that "MOVE SR," is an invalid user mode
+        operation in the 68010 and 68020.)  In addition, programmers
+        should be sure to NOT use the upper 8 bits of a pointer for
+        storing unrelated information, since the 68020 uses all 32 bits
+        for addressing.
+
+        = For those doing systems work, Exec maintains flags in the
+          AttnFlags field of ExecBase which describe the type of processor
+          in your machine.  Exec's coldstart procedure will update certain
+          library entry vectors as neccessry to maintain compatibility.
+          If you write code that uses the Supervisor() function, keep in
+          mind that your stack frame is processor dependent.  Use the
+          SuperState() function for processor independent supervisor mode
+          entry.
+
+        = V1.1 ROMWack will correctly display information for 68010/68020
+          address and bus errors.
+        "
+
+OK, as you can see, simply by having installed the MC68010, you will be able
+to use most Amiga system software without any problems.  But, the CALCULATOR
+and other programs loaded with libraries using "MOVE SR,ea" will cause your
+system to go to lunch with the Guru.  This is the reason I haven't
+encouraged people to upgrade their Amigas until now; only a knowledgeable
+person would have been able to either live with the occasional problem, or
+rebuild the software to not use the "MOVE SR,ea" instructions.
+
+So what happened all of a sudden to change my mind?  Simply that one clever
+person has developed a short and elegant software solution that prevents
+the "MOVE SR,ea" instructions from crashing your system.  "How," you may
+ask, "is this done?".  It's done by inserting a "wedge" that intercepts
+instruction privilege violations, examining the offending instruction for
+the presence of "MOVE SR,ea" and, if found, replacing that instruction in
+memory with a "MOVE CCR,ea" and resuming at the point of failure.  Since the
+only valid use of the system status register (SR) in a user-mode program
+would be to get the condition codes, the assumption made by the "wedge" is
+a reasonable one.  And, it works!  I've been testing ALL the cases that
+failed previously with the MC68010 in the Amiga and they ALL perform
+correctly now.
+
+I have included 5 programs with this technical note:
+
+                CHOP.BAS        public domain, author: Anonymous
+                CHOP.C          public domain, author: J S Plegge
+                DeciGEL         public domain, author: Scott Turner
+                DeciGEL.asm     public domain, author: Scott Turner
+                DeciGEL.make    public domain, author: Scott Turner
+
+DeciGEL is the "wedge" program that needs to be placed in the "c" directory
+of your workbench disk; DeciGEL.asm is the Assembler source file, and the
+DeciGEL.make is an EXECUTE file that will recreate DeciGEL from DeciGEL.asm.
+If you don't have the Amiga Assembler, you can simply download DeciGEL and
+use it immediately.  It is best to include a line in "s/startup-sequence" on
+your Workbench disk that will call DeciGEL.  For example:
+
+               echo "Workbench disk.  Release 1.1"
+               echo " "
+               echo "Use Preferences tool to set date"
+               echo " "
+               DeciGEL
+                 .
+                 .
+
+The CHOP.BAS and CHOP.C programs are used if you download DeciGEL and use
+the progam directly, without rebuilding.  The CHOP programs must be used
+to make SURE the DeciGEL program is exactly 168 bytes long.  You can
+determine the size of DeciGEL on your system by using the CLI's LIST
+program.  If the size is greater than 168 bytes, CHOP will allow you to
+truncate (or chop) the file to 168 bytes.   CHOP.BAS operates with ABasiC
+(not AmigaBASIC), and CHOP.C is the source of a "C" program; use either one
+as appropriate for your needs.
+
+With the MC68010 installed and DeciGEL "wedged", your Amiga should operate
+anywheres from 4% to 50% faster depending on what you're doing.  Note that
+the "Boing!" demo will not be faster since its timing is synchronized to
+the vertical framing of the monitor's clocking which is FIXED per NTSC TV
+standards!  The biggest benefits of the MC68010 upgrade will occur with
+heavy number-crunching applications, such as spread sheets and Mandelbrot
+picture generations.   Enjoy!
+
+--------------------------------------------------------------------------
+
+III. M68000 MICRO MINUTES         (c) Motorola                   MM-444-02
+
+           Advantages of Upgrading an MC68000 to an MC68010
+
+
+There are several ways a system's performance can be upgraded.  Some are
+software related, such as lowering operating system overhead, obtaining
+better quality language compilers, wisely designing application programs,
+and coding applications more efficiently.  Others are hardware related,
+such as adding memory, improving I/O channel data rates, increasing mass
+storage speed and capacity, reducing memory access times, and upgrading
+the system processor's clock frequency.
+
+When considering an MC68000 system upgrade to higher performance, the
+obvious thought is to redesign for a higher frequency MC68000.  For example,
+a current MC68000 system running at 10 MHz could be redesigned to run at
+12.5 MHz, thereby increasing system throughput by 25%.  The "obvious solu-
+tion", however, is not necessarily the most appropriate or cost-effective
+once several factors are taken into consideration and alternative solutions
+examined.
+
+The speed-up of a system clock will not be effective unless the system's
+memory access time is also improved.  The performance of the MC68000 is
+strictly limited by the bus speed, and if no improvement in memory speeds
+are available, then an increase in system clock speed will lead to 
+negligible improvement in the overall result.  A 10 MHz processor running
+with no "wait states" utilizes a 400 nS bus cycle (4 clocks x 100 nS/clock).
+This same bus cycle timing, however, leads to a wait cycle on a 12.5 MHz
+processor (4 clocks x 80 nS/clock + 80 nS of idle time).  Thus, the bus
+performance is exactly the same, but the faster processor is idled for one
+complete clock cycle.  Since a decrease in the bus cycle time provides a
+directly proportional increase in processor throughput (until, of course,
+the memory cycle becomes faster than the fastest processor bus cycle), the
+12.5 MHz processor has no relative performance advantage over the 10 MHz
+system.  The bottom line, then, is that in order to be effective, a higher
+speed processor must run with fewer or the same number of "wait states".
+This normally requires a redesign of the memory subsystem to improve the
+memory access time.
+
+Referring to the MC68000 Data Manual (ADI-814-R4), the memory access re-
+quirements for the various speed processors can be examined.  The effective
+memory access time (Taccs) of the MC68000 to a memory array (from assertion
+of Address Strobe [-AS] to data valid) is:
+
+        Taccs = Tch + 2Tcyc - Tchs1 - Tdic1 + (n * Tcyc)
+
+where:
+        Tch     is the clock high time (system dependent)
+        Tcyc    is the clock period of the processor clock
+        Tchs1   is the delay time from the rising edge of the clock to the
+                assertion of address strobe
+        Tdic1   is the data input set-up time prior to the falling edge of
+                the clock
+        n       is the number of wait cycles in the system
+
+Assuming a symmetric clock (50% duty cycle), the memory speed required for
+a no "wait-state" bus cycle for a 19 Mhz MC68000 processor is 185 nS (50 +
+200 - 55 -10 + 0).  This bus speed can be easily realized with readily
+available 150 nS dynamic RAMs and careful system design.  However, with the
+same assumptions, the memory speed required for a no "wait-state" bus cycle
+on a 12.5 Mhz processor is reduced to 135 nS (40 + 160 - 55 - 10 + 0) which
+presents an obvious problem to the cost-conscious system designer -- lack of
+cost-effective, large capacity 100 nS RAMs!
+
+Memory access times are not the only difficulty encountered with the faster
+clock speeds.  In a similar vein, the design of an efficient 12.5 MHz system
+is more difficult than that of a 10 MHz system, since more careful attention
+must be paid to the physical design of the board in order to account for the
+higher frequency signals present, and the increased sensitivity to transient
+phenomena.
+
+A "painless" alternative means to EFFECTIVELY increase system performance
+is to upgrade to the MC68010 processor.  The MC68010 at equal clock fre-
+quencies will run from 8% to 50% faster than an MC68000 without any user
+code changes.  The speed-ups are due to several microcode enhancements:
+many 32-bit operations, conditional branches, multiply, divide and other
+miscellaneous instructions run faster.  Systems which use memory management
+can have dramatic improvements with slight operating system changes 
+utilizing a few new MC68010 instructions such as "Move to/from Address
+Space" (MOVES).
+
+Systems may see a significant improvement if they heavily utilize multiply,
+divide and looping operations.  Loops run from 23% to 80% faster once the
+microcode sets up the automatic "loop mode".  Such loops benefit particular
+functions such as block moves, character matching and general string
+manipulation operations, and multiple-precision binary and packed BCD
+arithmetic.  The new MC68010 multiply is 14 clocks faster, and the divide
+is 32 clocks faster than the MC68000.  Programs utilizing (or with the
+potential of utilizing) such operations can obtain an increase in perfor-
+mance easily exceeding 10%.
+
+An additional "plus" of the MC68010 is the provision of a clear path for 
+the upgrade of current operating systems to full virtual operating systems
+utilizing the sophisticated virtual memory processing capabilities of the
+MC68010 (which is the same virtual environment offered by the 32-bit
+MC68020).
+
+Since the MC68010 is pin-for-pin compatible with the MC68000, *NO* hardware
+redesign is necessary.  Only very minor software changes may have to be
+made depending on operating system conventions.  The MC68010 differs from
+the MC68000 in that: 1) a generic "vector word" has been added to the
+MC68010 stack frame; and 2) the MC68000's "MOVE SR,ea" has been made a
+privileged operation.
+
+Easy software solutions for these two minor differences are: 1) any routines
+which build exception stacks (e.g. those which dispatch a routine via an
+RTE instruction) are modified to account for the four word stack frame (the
+MC68000 uses a three word stack frame); and 2) an exception handler is added
+to provide for privilege violations generated by the execution of the
+"MOVE SR,ea" instructions in the USER state (local Motorola representatives
+can supply a debugged handler to suit the requirements of any OS).  Major
+operating systems have been ported from the MC68000 to the MC68010 in less
+than a single day, reflecting the trivial changes required in the super-
+visory level code.
+
+The bottom line is, by upgrading an MC68000 system to an MC68010 system, an
+increase in system performance is obtained which is equal to that which a
+system redesign from 10 MHz to 12.5 MHz would provide, but with signifi-
+cantly less design cost and effort.  The "speed-only" upgrade could only
+achieve, at best, a 25% system improvement, and only if the system memory
+access time is significantly improved.  The MC68010 upgrade offers from
+8% to 50% improvement.  Note that the speed gained by changing to the
+MC68010 is achieved with NO change in memory speeds, NO board redesign,
+and NO higher speed parts installed in the system as would be required to
+upgrade a system to a 12.5 MHz part.
+
+---------------------------------------------------------------------------
+SIDE NOTES:
+
+(1)  Commodore-Amiga has provided for the four word stack frame in Exec.
+
+(2)  the DeciGEL program is the privilege violation exception handler.
+
+---------------------------------------------------------------------------
+Amiga is a registered trademark of Commodore Business Machines, Inc.

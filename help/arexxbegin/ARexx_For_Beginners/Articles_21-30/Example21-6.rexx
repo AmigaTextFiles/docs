@@ -1,0 +1,7 @@
+/* Example21-6.rexx */
+
+CALL RANDOM(,,TIME('S'))
+
+DO FOR 10
+  SAY RANDOM(150,250)/100
+END

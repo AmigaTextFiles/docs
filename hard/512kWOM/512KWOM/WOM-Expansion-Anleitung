@@ -1,0 +1,268 @@
+
+/*************************************************************************/
+/*                                                                       */
+/*                 WOM-Expansion für Amiga 1000                          */
+/*                (512KByte Kickstarts im A1000)                         */
+/*                                                                       */
+/*                Eine Bauanleitung von Jörg Huth                        */
+
+                 quick english translation by judas
+
+/*                                                                       */
+/*************************************************************************/
+
+
+
+needed parts:
+----------------------
+
+ 1) 8 Stück: Speicherchips 41464 (120ns)
+ 2) 2 Stück: Eproms 27C256 (120ns)
+            (Ersetzen die alten BootRoms im A1000)
+ 3) 1 Stück: 74LS32
+ 4) 1 Stück: 74LS74
+ 5) 1 Stück: 74F86
+ 6) 2 Stück: 74F138
+ 7) 8 Stück: Widerstände 39 Ohm (1/4 Watt)
+ 8) 1 Stück: Widerstand 1 kOhm (1/4 Watt)
+ 9) 1 Stück: Leuchtdiode (3mm, gelb - die Farbe betrachte man als befohlen!)
+10) 1 Stück: Schalter (1*UM)
+11) 5 Stück: Abblockkondensatoren (0.1 MyFarad, keramisch)
+12) 1 Stück: Elko 47 MyFarad / 16 Volt
+13) Sockel für die 74'er nach Bedarf, ein Stück Lochrasterplatine, etwas
+    Schaltlitze
+14) Software (Inhalt für die Eproms) der neuen BootRoms
+
+
+new kickstartdisks:
+------------------
+
+
+- original 256k disks should work as before.
+
+- 512k kicks show the "f8-kick"-sequence on the first block, where normally
+  "KICK" is found.
+
+
+building it
+------------
+
+- if you can`t solder, let it be !
+
+This text only descripbes the modification of the A1000 without piggy-board.
+
+- burn the new bootroms and replace them with the original roms.
+
+amiga must boot as before.
+
+- build the PCB.
+
+Apply 5V and GND to the PCB.
+
+
+Nun können Sie die Widerstände R119-R122 durchknipsen und damit den F139 
+außer Betrieb setzen. Sie brauchen natürlich nur einen Anschluß zu durch-
+trennen. Wählen Sie dabei den Anschluß, der mit dem Pin 16 der RAMs verbunden
+ist. Die Widerstände bleiben somit an dem F139 und nicht an den RAMs hängen.
+Zur Not können die Widerstände dann wieder relativ einfach angelötet werden.
+
+Löten Sie nun die Ausgänge der vier 39 Ohm Widerstände, die sich auf der
+Schaltung befinden und mit 'Original' bezeichnet sind, an die RAMs. Dabei 
+können Sie sinnvollerweise die abgeschnittenen Enden der Widerstände auf
+dem Motherboard verwenden. Jetzt kann wieder ein Test erfolgen. Der Amiga
+muß ganz normal hochfahren. Wenn Sie einen Monitor zur Hand haben, können
+Sie ja mal nachsehen, ob der Speicherbereich $fc0000-$ffffff ab $f80000
+noch gespiegelt ist. Er darf es nicht mehr sein! Steht ab $f80000
+ziemlicher Mist (eben ein nicht belegter Speicherbereich), so ist alles 
+in Ordnung.
+
+Bereiten Sie nun die RAM-Chips zum Auflöten auf die Chips U2J-U1M des
+Motherboards vor: Die Pins leicht zusammendrücken, jeweils Pin 16
+abbiegen und diesen zur Hälfe abschneiden (da die RAMs nachher sehr nahe
+beieinander stehen und der abgebogene Pin sonst im Wege sein würde).
+
+Beim Auflöten der Chips gehen Sie bitte äußerst sorgfältig vor. Auf der
+einen Seite sollte das Zinn schon ordentlich fließen - nicht damit sparen,
+sonst erhält man später schwierig zu lokalisierende Fehler, weil die RAMs dann
+evtl. keinen guten Kontakt haben. Auf der anderen Seite dürfen aber auch
+keine Kurzschlüsse zwischen den IC-Pins entstehen. Außerdem dürfen die RAMs
+auch nicht zu stark erwärmt werden, sonst werden sie zerstört. Fazit:
+Arbeiten Sie sorgfältig, nehmen Sie sich Zeit, um die RAMs immer wieder 
+abkühlen zu lassen und halten Sie Entlötlitze bereit, falls doch einmal ein
+Kurzschluß entstehen sollte. Kontrollieren Sie alle Lötstellen peinlich
+genau, und untersuchen Sie die Pins auf Kurzschlüsse. Danach können Sie auch
+die abgebogenen Pins mit den entsprechenden Widerständen der Schaltung
+verbinden. Vertauschen Sie die Verbindungen dabei nicht!  
+
+So, jetzt ist der Umbau eigentlich beendet. Bootet der Amiga nach diesem
+letzten Schritt nicht mehr, so ist davon auszugehen, daß doch irgendwo
+zwischen den RAM-Bausteinen ein Kurzschluß entstanden ist. Oder Sie haben
+die RAMs zerbraten!
+
+Steht der Schalter in Stellung 'Neu', so muß die Zeit zwischen dem Blinken
+der Power-LED nach dem Einschalten und dem Anlaufen der Laufwerke deutlich
+länger sein sollte als vorher, da jetzt doppelt soviel WOM-Speicher
+getestet werden muß. Nach der Hälfe der Zeit müssen beide LEDs (Power-LED
+und die neue) eingeschaltet werden. Geschieht all dies, so können Sie sich
+schon mal beruhigt gratulieren.
+
+
+Erstellen der neuen Kickstart-Diskette:
+---------------------------------------
+
+Um Kickstart 2.0 auf ihrem A1000 fahren zu können, brauchen Sie jetzt
+nur noch eine Kickstart-Diskette im neuen Format. Prinzipiell ist dies kein
+Problem. Auf Block 0 muß der Text 'f8-KICK' stehen. In den Blocks 1 bis
+einschließlich 1024 folgen dann die eigentlichen Kickstart-Daten, die 
+später ab Adresse $f80000-$ffffff abgelegt werden. Dabei wird auf Adresse
+$f80000 der Code $11144ef9 erwartet. Dies ist die, von Commodore festgelegte,
+Kennung für 512KByte Kickstarts. (D.h. in 2.0 ist dies automatisch der
+Fall). Außerdem muß die Checksumme über den gesamten Bereich den Wert
+$ffffffff (entspricht -1) haben.
+
+Da auf der Kickstart 2.0 natürlich ein Copyright von Commodore liegt und
+zumindest im Moment auch nur mit den 3000'ern ausgeliefert wird, darf ich
+leider keine fertige Kickstart-Diskette für 2.0 zur Verfügung stellen. Sie
+brauchen also ein Kick 2.0, welches im Bereich ab $f80000 liegt und z.B.
+auf einem 2000'er oder 500'er läuft. Da es mittlerweile für die 2000'er und
+500'er Kickstart-Umschaltplatinen gibt, die für 2.0 geeignet sind und somit
+auf vielen 2000'er und 500'er schon Kick 2.0 installiert ist, sollte dies
+aber kein unüberwindliches Problem sein. Sie brauchen auf einem solchen
+Rechner nur den Bereich von $f80000 - $fffffff auszulesen und
+abzuspeichern. Diese File hat dann eine Länge von genau 524288 Bytes. Mit
+einem entsprechenden Tool können sie das File auf die Blöcke 1 bis
+1024 einer Diskette schreiben.
+
+Damit die BootRoms nach einem RESET feststellen können, ob die Kickstart
+noch in Ordnung bzw. schon geladen ist, muß die Checksume den Wert
+$ffffffff haben. Stimmt dieser Wert nicht, so funktioniert zwar alles, da
+die Checksumme nach dem Einlesen einer Kickstart-Diskette nicht geprüft
+wird, aber nur bis zum nächsten RESET. Dann meckern die BootRoms nämlich die
+falsche Checksumme an und fordern zum Einlegen einer Kickstart-Diskette auf.   
+
+Dieser Hinweis ist besonders wichtig, da die Checksumme beim 2000'er oder
+500'er nicht geprüft wird und deshalb meist auch nicht stimmt. Was sollte
+das System beim Feststellen einer falschen Checksumme in den ROMs (bzw.
+Eproms) auch machen? 
+
+Erstellen Sie aber ruhig zunächst eine Kickstart-Diskette mit evtl.
+falscher Checksumme. Mit dieser Anleitung stelle ich ein kleines Utilities 
+zur Verfügung, mit dem Sie die Checksumme der Kickstart automatisch anpassen
+können. Dieses Utilities schreibt dann auch den Wert 'f8-KICK' auf Block 0.
+
+Außerdem müssen die RESET-Routinen des Kick 2.0 auf den A1000 angepasst
+werden, sonst startet der Amiga nach einem Guru nicht mehr selbststaendig,
+sondern es müßte mit dem Klammergriff nachgeholfen werden. Das Utilitie
+erledigt aber auch dies:
+
+Legen Sie dazu die Kickstart-Diskette, auf die Sie auf die Blöcke 1 bis 1024 
+das Kick 2.0 kopiert haben, in ein Laufwerk DFX: und geben das
+Kommando: AdaptKick dfX: -r -h -c
+ein. AdaptKick liest dann die Kickstart-Diskette ein, adaptiert die
+RESET-Routinen, berechnet die Checksumme und schreibt schließlich noch den
+Header-Block auf die Disk.  
+ 
+
+Erstellen der neuen Kickstart-Diskette:
+---------------------------------------
+
+Um Kickstart 2.0 oder 2.1 auf ihrem A1000 fahren zu können, brauchen Sie jetzt
+nur noch eine Kickstart-Diskette im neuen Format. Prinzipiell ist dies kein
+Problem. Auf Block 0 muß der Text 'f8-KICK' stehen. In den Blocks 1 bis
+einschließlich 1024 folgen dann die eigentlichen Kickstart-Daten, die 
+später ab Adresse $f80000-$ffffff abgelegt werden. Dabei wird auf Adresse
+$f80000 der Code $11144ef9 erwartet. Dies ist die, von Commodore festgelegte,
+Kennung für 512KByte Kickstarts. (D.h. in 2.0 oder 2.1 ist dies automatisch der
+Fall). Die Checksumme über den gesamten Bereich muß den Wert
+$ffffffff (entspricht -1) haben.
+
+Sie brauchen ein Kickstart 2.0 oder 2.1, welches im Bereich ab $f80000 liegt und 
+z.B. auf einem 2000'er oder 500'er läuffähig ist. Dazu kaufen sie sich das
+Umrüstkit 2.0 von Commodore. Dieses ROM, stecken Sie in einen
+2000'er oder 500'er und lesen den Bereich von $f80000 - $fffffff aus und 
+speichern ihn abschließend ab. Das File hat dann eine Länge von genau 
+524288 Bytes. Mit einem entsprechenden Tool (sihe unten) 
+können sie das File auf die Blöcke 1 bis 1024 einer Diskette schreiben.
+
+Danach müssen Sie das zu dieser Bauanleitung gehörige Utilities
+Adaptkick starten, daß die Checksumme der Kickstart automatisch anpaßt und
+den Wert 'f8-KICK' auf Block 0 der Diskette schreibt.
+
+Außerdem werden von Adaptkick die RESET-Routinen des Kick 2.0 oder 2.1
+auf den A1000 angepasst. Dies ist notwendig, da der Amiga sonst nach einem Guru 
+nicht mehr selbststaendig booten würde,
+sondern es müßte mit dem Klammergriff nachgeholfen werden.
+AdaptKick ist für die Kickstartversionen 37.59, 37.175 und 37.210 geeignet.
+
+Legen Sie die Kickstart-Diskette, auf die Sie auf die Blöcke 1 bis 1024 
+das Kick 2.0 kopiert haben, z.B. in das Laufwerk DF0: und geben das
+Kommando: AdaptKick df0: -r -h -c
+ein. AdaptKick liest die Kickstart-Diskette ein, adaptiert die
+RESET-Routinen, berechnet die Checksumme neu und schreibt schließlich noch den
+Header-Block auf die Disk.  
+ 
+
+Noch einige Anmerkungen zum Schluß:
+-----------------------------------
+
+Um die Kickstart von
+einem auf 2.0 umgerüsteten 500'er oder 2000'er auslesen zu können und
+mit diesem File dann eine Kickstart-Diskette erzeugen zu können, eignet
+sich das Programm 'TrackDos' von Nic Wilson. Dieses befindet sich auf der
+Fish-Disk 365 von Fred Fish.
+Den meisten 1000'er Besitzern ist wohl das Utilities ChangeKick bekannt,
+mit dem man eine Kickstart aus dem WOM werfen kann. Die neuen BootRoms
+machen ein neues ChangeKick notwendig. Dieses wird mit dieser Bauanleitung
+ebenfalls zur Verfügung gestellt.  
+
+Referenzliste benutzter Chips auf dem Mainboard:
+------------------------------------------------
+
+Wie bereits oben erwäht, beziehen sich alle IC-Angaben auf den 1000'er mit
+integriertem WOM. Damit Sie die entsprechenden Lötpukte auch auf anderen
+1000'ern finden, hier die Beschreibung der Chips:
+
+Referenzliste benutzter Chips auf dem Mainboard:
+------------------------------------------------
+
+Wie bereits oben erwäht, beziehen sich alle IC-Angaben auf den 1000'er mit
+integriertem WOM. Damit Sie die entsprechenden Lötpukte auch auf anderen
+1000'ern finden, hier die Beschreibung der Chips:
+
+U6T: CIAA (8520), ist mit den Data-Leitungen des  Centronics-Port verbunden 
+U2H: F399, davon gibt es nur einen
+U1R: F139, auch hiervon gibt es nur einen
+U1H: F138, es gibt zwei Chips mit dieser Bezeichnung. Pin 4 ist bei beiden
+           aber gleich belegt.
+U2J, U1J: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 5 U1R verbunden.
+U2K, U1K: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 7 U1R verbunden.
+U2L, U1L: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 11 U1R verbunden.
+U2M, U1M: WOM-Speicherchips, Pin16 ist über 39 Ohm mit Pin 9 U1R verbunden.
+U5N: ROM 23256 (even)
+U5S: ROM 23256 (odd)
+
+Die Informationen in der vorliegenden Bauanleitung habe ich ohne Rücksicht 
+auf einen eventuellen Patentschutz oder Copyright erstellt und sind nur für
+den privaten Gebrauch bestimmt. Warennamen werden ohne Gewährleistung der
+freien Verwendbarkeit benutzt. Ich bin beim Zusammenstellen der Anleitung 
+mit größter Sorgfalt vorgegangen. Trotzdem können Fehler nicht vollständig 
+ausgeschlossen werden. Ich kann für fehlerhafte Angaben und deren Folgen 
+weder eine juristische Verantwortung, noch irgendeine Haftung übernehmen. 
+
+
+Copyright (c) 1991 by Jörg Huth
+
+Kaiserslautern, den 23.05.91
+
+
+Meine Adresse:
+
+Jörg Huth
+Trippstadter Str. 121-1315
+W-6750 Kaiserslautern
+Tel: (0631) 13796 (Voice)
+E-Mail: J_Huth@JoKL.ZER
+	jhuth@scooter.informatik.uni-kl.de
+
+
+

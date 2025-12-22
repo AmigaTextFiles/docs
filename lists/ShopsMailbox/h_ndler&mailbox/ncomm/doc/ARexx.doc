@@ -1,0 +1,726 @@
+Documentation for the ARexx functions implemented in NComm V3.0
+===============================================================
+
+Introduction
+~~~~~~~~~~~~
+You need the programming language ARexx to use NComm's ARexx interface.
+If you don't already have it, either buy it or just forget about it. You
+will probably manage fine with the internal script language, but ARexx
+adds a few things that the internal script language lacks, for example
+numerical variables, arithmetics, string functions etc. Please read the
+ARexx documentation carefully before using NComm's ARexx interface.
+
+NOTE: ARexx is automatically supplied with AmigaDOS 2.0 so don't waste
+      any money by purchasing ARexx alone.
+
+ARexx  scripts  can  be  started from the menu, from the phonebook (at
+CONNECT),  from  "Shell"  via  the RX command or from a standard NComm
+script. You may also Shift-Select an ARexx script when starting NComm.
+
+Port Name
+~~~~~~~~~
+NComm's port name is 'ncomm' for the first copy of NComm and 'ncomm-x'
+for further copies of NComm (x is 1 or more). So if you wanted to
+send commands to NComm, you would normally start your script-file
+with the following two lines:
+
+/* script name */
+address 'ncomm'
+
+Result codes
+~~~~~~~~~~~~
+All the ARexx functions in NComm either return result codes in the
+special variable RC (Result Code) or in the string variable 'result'
+...or both. Remember to check the result codes carefully. If RC is not
+equal to zero, the command was somehow not successful. How serious the
+result code is depends on which functions that returns it.
+
+NOTE: All commands return 20 if user selected "Quit" from NComm
+
+How to read strings
+~~~~~~~~~~~~~~~~~~~
+If you want to use any of the functions that return string variables,
+you have to add another line to your ARexx script:
+
+options results
+
+Note!
+~~~~~
+Arexx commands that you send to NComm must be either upper or lower case.
+Please see below for a list of commands. Also take a look at the few ARexx
+scripts that have been included. They especially demonstrate the WAIT and
+INACTIVITY commands in further detail.
+
+Important!
+~~~~~~~~~~
+Do not run two ARexx scripts simultaneously if both try to fetch input
+from  the  same serial port.  This will cause a loss of data/lines and
+the  scripts  will  not work as expected.  For example:  If you try to
+start  one  of  the  example "rxread" scripts from the NComm menu, you
+will  not  get  any  output  since  they  use  the 'say()' command for
+displaying  the  text.   However,  these  scripts loop forever and the
+script  will  still  be running although you don't see the output.  If
+you  now  try  to start the same script from a Shell window via the RX
+command  (without  quitting  NComm  first), some lines will be missing
+from  the output since two scripts now to try fetch data from the same
+serial  port...   Several  of  the  bugs  that have been reported have
+probably been caused by this misunderstanding.
+
+==========================================================================
+
+ASCSEND
+~~~~~~~
+This functions sends a text file to the serial port with the menu
+function "ASCII Send".
+
+Arguments: filename to send
+
+Example: ASCSEND "s:startup-sequence"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+AUTODOWN
+~~~~~~~~
+This function will turn Zmodem auto-download on or off.
+
+Arguments: ON | OFF
+
+Example: AUTODOWN ON
+
+Returns: 0 if successful
+         1 if missing argument
+
+AUTOUP
+~~~~~~
+This function will turn Zmodem auto-upload on or off.
+
+Arguments: ON | OFF
+
+Example: AUTOUP ON
+
+Returns: 0 if successful
+         1 if missing argument
+
+AUTOXFER
+~~~~~~~~
+This function will turn G&R commands on or off.
+
+Arguments: ON | OFF
+
+Example: AUTOXFER ON
+
+Returns: 0 if successful
+         1 if missing argument
+
+BEEP
+~~~~
+This function beeps the display / makes a beep signal / pops screen
+to front. This all depends on what you have selected in the menu.
+
+Arguments: none
+
+Example: BEEP
+
+This functions is always successful and therefore always returns 0
+
+BREAK
+~~~~~
+This command sends a break to the serial port.
+
+Arguments: none
+
+Example: BREAK
+
+This functions is always successful and therefore always returns 0
+
+CAPTURE
+~~~~~~~
+This commands selects the menu function "ASCII Capture". All data
+that is received through the serial port will be added to a file.
+
+Arguments: filename to open for writing
+
+Example: CAPTURE "t:tempcap.txt"
+
+Returns: 0 if successful
+         1 if capture was already on (could not open capture file)
+
+See also: STOPCAPTURE
+
+CD
+~~
+This command sets the current working directory for the CLI command.
+
+Arguments: directory name
+
+Example: CD "LIBS:"
+
+Returns: 0 if successful
+         1 if directory not found or invalid argument
+
+CHECKCARRIER
+~~~~~~~~~~~~
+This commands checks for a hardware carrier signal.
+
+Arguments: none
+
+Example: CHECKCARRIER
+         IF RC = 0 THEN SAY "GOT CARRIER SIGNAL"
+
+Returns: 0 if carrier signal detected
+         1 if no carrier
+
+CHECKRING
+~~~~~~~~~
+This command checks for a hardware ring signal.
+
+Arguments: none
+
+Example: CHECKRING
+         IF RC = 0 THEN SAY "GOT RING SIGNAL"
+
+Returns: 0 if ring signal detected
+         1 if no ring signal
+
+CLEARBUFFER
+~~~~~~~~~~~
+This command clears the ring-buffer. The 'Wait' command uses a ring-buffer
+that works on a first-in -> first-out basis (FIFO) to keep up with the
+latest 100 lines of data. The buffer takes up a maximum of 10K when it has
+been totally filled up. Normally the buffer takes up an average of 4-5K.
+You ought to clear the ring-buffer when your ARexx script has finished
+since this will release the memory that has been allocated. This will also
+make NComm run just a little faster... It may be a good idea to also use this
+command before your first 'Wait' command if you want to skip unwanted data
+that might exist in the buffer...
+
+Arguments: none
+
+Example: CLEARBUFFER
+
+This functions is always successful and therefore always returns 0
+
+CLI
+~~~
+This command executes a CLI command and displays the output (if any)
+on the NComm screen. NOTE: The ARexx "address command" function does
+the same thing but normally causes a lot of burns and crashes. It uses
+the Amiga Execute() function, which has several serious bugs. Among
+other things, Execute() will try to write output to the current CLI
+window even if the CLI window has been closed or never existed. This
+normally results in a GURU. NComm contains a bugfix that makes it
+almost safe to execute commands via Execute() so please use this
+command instead of "address command" if you want to avoid a GURU
+when executing external commands from ARexx.
+
+Arguments: command to send
+
+Example: CLI "DELETE WORK:JRCOMM QUIET ALL" ; ~:-)
+
+Returns: 0 if successful
+         1 if command failed or invalid argument
+
+See also: CD
+
+CONFIG
+~~~~~~
+This function loads in a new config file.
+
+Arguments: config-file filename
+
+Example: CONFIG "ncomm:ncomm.config"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+DIAL
+~~~~
+This function dials one or more entries in the phonebook.
+
+Arguments: one or more board names seperated by pipes (|)
+
+Example: DIAL "rode|media|oslohd"
+
+Returns: 0 if connect
+         1 if no connect or entry not found
+
+DIALNUMBER
+~~~~~~~~~~
+This function dials one or more numbers.
+
+Arguments: one or more numbers seperated by pipes (|)
+
+Example: DIALNUMBER "22380949|22687176"
+
+Returns: 0 if connect
+         1 if no connect
+
+DOWNLOAD
+~~~~~~~~
+This function selects the download function from the menu.
+
+Arguments: file to open for writing or "foobar" if protocol does
+           not need a filename.
+
+Example: DOWNLOAD "ram:rtfm.lzh"
+
+This function always returns 0 even if download failed.
+
+See also: SETPROTO
+
+DTENTHS
+~~~~~~~
+This function waits for the specified number of 1/10th seconds. NOTE: This
+command ties up the system. The best thing is to use the ARexx timer functions
+for this purpose since you may then continue to use NComm while waiting. Only
+use this command for small delays or when this accuracy is needed. If you
+want a long delay, use the ARexx Time() function.
+
+Arguments: number of 1/10th seconds to wait
+
+Example: DTENTHS 10 /* wait for one second */
+
+Returns: 0 if successful
+         1 if no argument
+
+FILEREQ
+~~~~~~~
+This function opens up the reqtools.library filerequester.
+
+Arguments: the directory that should be displayed
+
+Example: FILEREQ "ncomm:"
+         IF RC = 0 THEN SAY RESULT
+
+Returns: 0 if successful, variable 'result' contains the path/filename
+         1 if no argument or if filerequester was already in use
+
+GETBOARDNAME
+~~~~~~~~~~~~
+This function fetches the current board name.
+
+Arguments: none
+
+Example: GETBOARDNAME
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETBOARDNUM
+~~~~~~~~~~~
+This function fetches the current board phone number.
+
+Arguments: none
+
+Example: GETBOARDNUM
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETDATE
+~~~~~~~
+This function fetches the NComm creation date.
+
+Arguments: none
+
+Example: GETDATE
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETDLDIR
+~~~~~~~~
+This function fetches the current download dir.
+
+Arguments: none
+
+Example: GETDLDIR
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETLOGTIME
+~~~~~~~~~~
+This function fetches the current logon time.
+
+Arguments: none
+
+Example: GETLOGTIME
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETULDIR
+~~~~~~~~
+This function fetches the current upload dir.
+
+Arguments: none
+
+Example: GETULDIR
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+GETVERSION
+~~~~~~~~~~
+This function fetches the NComm version number.
+
+Arguments: none
+
+Example: GETVERSION
+         SAY RESULT
+
+This functions is always successful and therefore always returns 0
+
+HANGUP
+~~~~~~
+This function hangs up the phone by either lowering DTR or sending
+the hangup string to the modem.
+
+Arguments: none
+
+Example: HANGUP
+
+This functions is always successful and therefore always returns 0
+
+INACTIVITY
+~~~~~~~~~~
+This command specifies the inactivity timeout for the 'Wait' command.
+If nothing has been received through the serial port in the specified
+number of seconds, the 'Wait' command will return with the last line
+that was received.
+
+Arguments: number of seconds that can elapse without receiving data
+           through the serial port or 0 if you want to disable the
+           inactivity timeout
+
+Example: INACTIVITY 2 /* Wait command will return after two seconds
+                         of inactivity */
+
+This functions is always successful and therefore always returns 0
+
+LOADKEYS
+~~~~~~~~
+This function loads in a new set of macrokeys.
+
+Arguments: macro-file filename
+
+Example: LOADKEYS "ncomm:ncomm.keys"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+LOADPHONE
+~~~~~~~~~
+This function loads in a new phonebook.
+
+Arguments: phonebook filename
+
+Example: LOADPHONE "ncomm:ncomm.phone"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+MENUSELECT
+~~~~~~~~~~
+This function selects a function from the menu
+
+Arguments: menuname,itemnumber[,subitemnumber]
+
+Example: MENUSELECT "TRANSFER,6,2" /* Select Kermit CD from the menu */
+
+Returns: 0 if successful
+         1 if invalid argument or too few arguments
+
+MESSAGE
+~~~~~~~
+This function displays a message in the NComm window. Nothing is sent
+through the serial port.
+
+Arguments: text to display in the window
+
+Example: MESSAGE "yoohoo"
+
+Returns: 0 if successful
+         1 if missing argument
+
+MSGSEND
+~~~~~~~
+This functions sends a message to the serial port with the menu
+function "Message Send".
+
+Arguments: message filename to send
+
+Example: MSGSEND "ram:mymsg.txt"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+NCOMMTOFRONT
+~~~~~~~~~~~~
+This function brings the current NComm screen to front.
+
+Arguments: none
+
+Example: NCOMMTOFRONT
+
+This functions is always successful and therefore always returns 0
+
+PADLINES
+~~~~~~~~
+This function will turn padding of blank lines on or off.
+
+Arguments: ON | OFF
+
+Example: PADLINES ON /* turn padding on */
+
+Returns: 0 if successful
+         1 if missing argument
+
+PALETTE
+~~~~~~~
+This function opens up the palette requester.
+
+Arguments: none
+
+Example: PALETTE /* open palette */
+
+This function is always successful and therefore always returns 0.
+
+PRINTER
+~~~~~~~
+This function will turn the printer function on or off.
+
+Arguments: ON | OFF
+
+Example: PRINTER ON /* turn on output to the printer */
+
+Returns: 0 if successful
+         1 if missing argument
+
+REDIAL
+~~~~~~
+This function turns redial on or off.
+
+Arguments: ON | OFF
+
+Example: REDIAL ON /* turn redial on */
+
+Returns: 0 if successful
+         1 if missing argument
+
+REQUEST
+~~~~~~~
+This function toggles system and NComm-requesters. You probably want
+to turn off requesters if the script is run without human assistance.
+It will then not be preferrable that "disk full" requesters etc. show up
+on screen and interrupts the script. NComm will automatically overwrite
+existing files instead of asking if requesters have been turned off.
+
+Arguments: ON | OFF
+
+Example: REQUEST OFF /* Turn off requesters */
+
+Returns: 0 if successful
+         1 if missing argument
+
+RESUME
+~~~~~~
+This function will turn Zmodem resume on or off.
+
+Arguments: ON | OFF
+
+Example: RESUME ON
+
+Returns: 0 if successful
+         1 if missing argument
+
+SEND
+~~~~
+This function sends the supplied text to the serial port and also
+translates the output in case they contain control-characters,
+C-notation etc. Text will also be displayed on screen if half-
+duplex has been selected.
+
+Arguments: the text that should be sent to the serial port
+
+Example: SEND "\p\n^K" /* Send password stored in phonebook
+                          followed by linefeed and a Control-K */
+
+Returns: 0 if successful
+         1 if missing argument
+
+SETBAUD
+~~~~~~~
+This function changes the current baud-rate.
+
+Arguments: new baud rate
+
+Example: SETBAUD "2400"
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SETCHARSET
+~~~~~~~~~~
+This function changes the current character set.
+
+Arguments: new character set
+
+Example: SETCHARSET "IBN"
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SETLENGTH
+~~~~~~~~~
+This function changes the current data length.
+
+Arguments: new data length
+
+Example: SETLENGTH "8" /* 8 data bits */
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SETPARITY
+~~~~~~~~~
+This function changes the current parity.
+
+Arguments: new parity
+
+Example: SETPARITY "N" /* No parity */
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SETPROTO
+~~~~~~~~
+This function changes the current transfer protocol.
+
+Arguments: new transfer protocol
+
+Example: SETPROTO "Z" /* Select the Zmodem protocol */
+
+X == Xmodem, Y == Ymodem, B == Ymodem-B, G == Ymodem-G, Z == Zmodem,
+K == Kermit, E == External XPR (as defined in config file),
+I == Bimodem, P == BModem Plus, J == Jmodem, Q == QuickB,
+V == VMS, U == Uue-Ascii
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SETSTOPBITS
+~~~~~~~~~~~
+This function changes the current number of stop-bits.
+
+Arguments: new number of stop-bits
+
+Example: SETSTOPBITS "2" /* Two stop-bits */
+
+Returns: 0 if successful
+         1 if invalid or missing argument
+
+SIMPLEREQ
+~~~~~~~~~
+This function displays a simple text requester.
+
+Arguments: the text to display
+
+Example: SIMPLEREQ "Could not load phonebook"
+
+Returns: 0 if successful
+         1 if missing argument
+
+SPAWN
+~~~~~
+This function sends an asynchronous ARexx command. This function is
+supposed to be used for running macros in parallel but I've never
+actually tried this. Use it with care.
+
+Arguments: the command to send
+
+Example: SPAWN "SPAWN" /* :-) */
+
+This functions is always successful and therefore always returns 0
+
+STOPCAPTURE
+~~~~~~~~~~~
+This function stops ASCII Capture.
+
+Arguments: none
+
+Example: CAPTURE "RAM:file.txt"
+         WAIT "hello"
+         STOPCAPTURE
+
+Returns: 0 if successful
+         1 if no capture to close
+
+STRINGREQ
+~~~~~~~~~
+This function opens up the reqtools.library stringrequester.
+
+Arguments: the default stringrequester title
+
+Example: STRINGREQ "Enter your name"
+         IF RC = 0 THEN SIMPLEREQ "HELLO "result"!"
+
+Returns: 0 if successful, variable 'result' contains string that was entered
+         1 if no argument or if stringrequester was already in use
+
+TWOGADREQ
+~~~~~~~~~
+This function opens up the reqtools.library two-gadget requester.
+
+Arguments: the default two-gadget requester question
+
+Example: TWOGADREQ "Really quit NComm?"
+         IF RC = 0 THEN QUIT
+
+Returns: 0 if user responded with 'Yes'
+         1 if user responded with 'No'
+
+UPLOAD
+~~~~~~
+This function selects the upload function from the menu.
+
+Arguments: file to send or "foobar" if protocol does not need a filename.
+
+Example: UPLOAD "ram:rtfm.lzh"
+
+Returns: 0 if successful
+         1 if file not found or could not be opened
+
+See also: SETPROTO
+
+WAIT
+~~~~
+This is the most powerful ARexx function currently implemented. It
+waits for text from the serial-port. If no argument is specified
+it will wait for "anything". You may also specify a string to wait
+for or '0A'X if you want to wait for the next line. This function
+always returns the current line.
+
+Note: The string is not case sensitive.
+
+Arguments: ['0A'X | string]
+
+Example: WAIT        /* Wait for anything */
+         WAIT '0A'X  /* Wait for next line */
+         WAIT string /* Wait for string */
+
+Function returns 0 if command ok, 1 if timed out by inactivity command
+
+See also: INACTIVITY, CLEARBUFFER
+
+QUIT
+~~~~
+This function sets the exit flag, i.e quits NComm.
+
+Arguments: none
+
+Example: QUIT
+
+This functions is always successful and therefore always returns 0

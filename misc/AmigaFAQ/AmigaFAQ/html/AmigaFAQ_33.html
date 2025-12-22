@@ -1,0 +1,85 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQ.texinfo on 26 September 1995 -->
+
+<TITLE>Amiga-FAQ - WindowPtr</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQ_32.html">Localizing</A>
+&gt;&gt; <A HREF="AmigaFAQ_34.html">Pragmas</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX74"></A>
+<H2><A NAME="SEC33" HREF="AmigaFAQ_toc.html#SEC33">How to obtain a pointer to a console's window</A></H2>
+The following function returns the window pointer of a CON
+window. It can be executed safely under all versions of the
+Amiga's OS.
+<P>
+<PRE>
+  struct Window *getConWindowPtr(BPTR fh)
+  {
+    struct Window *w;
+    struct FileHandle *cfh;
+    struct StandardPacket *sp;
+    struct InfoData *id;
+    struct MsgPort *mp;
+
+    w = NULL;
+
+    if ((cfh = BADDR(fh))-&#62;fh_Type != NULL) {
+      if (sp = AllocMem(sizeof (struct StandardPacket),
+                        MEMF_PUBLIC | MEMF_CLEAR)) {
+        if (id = AllocMem(sizeof (struct InfoData),
+                          MEMF_PUBLIC | MEMF_CLEAR)) {
+          if (mp = CreatePort(NULL, 0)) {
+            sp-&#62;sp_Msg.mn_Node.ln_Name = (char *) &#38;sp-&#62;sp_Pkt;
+            sp-&#62;sp_Pkt.dp_Link         = &#38;sp-&#62;sp_Msg;
+            sp-&#62;sp_Pkt.dp_Port         = mp;
+            sp-&#62;sp_Pkt.dp_Type         = ACTION_DISK_INFO;
+            sp-&#62;sp_Pkt.dp_Arg1         = MKBADDR(id);
+
+            PutMsg(cfh-&#62;fh_Type, &#38;sp-&#62;sp_Msg);
+            (void) WaitPort(mp);
+            (void) GetMsg(mp);
+
+            if (sp-&#62;sp_Pkt.dp_Res1)
+              w = (struct Window *) id-&#62;id_VolumeNode;
+
+            DeletePort(mp);
+          }
+          FreeMem(id, sizeof (struct InfoData));
+        }
+        FreeMem(sp, sizeof (struct StandardPacket));
+      }
+    }
+
+    return w;
+  }
+</PRE>
+<P>
+Notes:
+<UL>
+<LI>Accessing a console's window directly may interfere with operations
+performed by the CON handler. Be careful!
+<LI>To obtain the window pointer of a CLI's console, pass the FileHandle
+returned by Open("*", MODE_OLDFILE) to the above function.
+<LI>The result of the above function may well be NULL, e.g. in case of
+an AUX handler or if an AUTO CON handler is unable to open its window.
+<LI>Sending an ACTION_DISK_INFO packet to an AUTO CON handler (2.0+)
+causes its window to lose its special AUTO properties (i.e. it can no
+longer be closed at any time by clicking on its Close gadget), as the
+window pointer returned in id_VolumeNode must remain valid from now on.
+<LI>All in all: Don't use this function. :-)
+</UL>
+<P>
+For more information, please refer to pages 273, 276, 435,
+463, 485, and 629 in "The Amiga Guru Book" (see  <A HREF="AmigaFAQ_25.html#SEC25">What documentation do I need as an Amiga programmer?</A>).
+<P>
+Ralph Babel, rbabel@babylon.pfm-mainz.de
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQ_32.html">Localizing</A>
+&gt;&gt; <A HREF="AmigaFAQ_34.html">Pragmas</A>
+</I></PRE>

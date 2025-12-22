@@ -1,0 +1,275 @@
+@node Graphics
+@chapter How about Graphics?
+@cindex Graphics
+Graphics is one of the major strengths of the Amiga. Why don't we have more
+answers here? :-(
+
+@menu
+* Chunky vs. Planar:: What are chunky and planar displays?
+* Doublebuffering::  What is doublebuffering?
+* Monitors:: What Monitors will work on my Amiga 1200/4000?
+* PAL/NTSC:: How do I switch between PAL and NTSC?
+@end menu
+
+
+@node Chunky vs. Planar
+@section What are chunky and planar displays?
+@cindex Chunky displays
+@cindex Planar displays
+Simply put, the terms @code{chunky} and @code{planar} (short for
+@code{bitplanar}) refer to different ways of storing graphics information in
+a computer's memory. They are rather easy to understand, as far as things go,
+but incredibly difficult to explain:
+
+Computer images are arranged as a grid of pixels, each of which can be
+thought of as a number representing the color number of the pixel, sort
+of like a paint-by-numbers scheme.  For example, here's a simplified
+example image, in four colors:
+
+@example
+   00302132
+@end example
+
+The Amiga stores this image in a @code{bitplane} mode. That is, it is
+represented by several planes of bits (binary digits, 1s or 0s). This
+is a four-color image, so each color number could be represented by two
+bits.  Therefore there are two bitplanes:
+
+@example
+   00100110    Here's bitplane 0
+   00101011    And here's bitplane 1
+   --------    Now, let's add them up, binary style:
+   00302132
+@end example
+
+Which is the final image. If the image was in two dimensions, it would
+truly be composed of bit planes. However, I'd need three dimensions to
+show multiple bitplanes overlayed, and therefore for simplicity we're
+working in one dimension (which is all we need).
+
+Now, there's another way of storing this image.  How about if we
+localize the bit data in little chunks?
+
+@example
+   00 00 11 00 01 10 11 01 = 00302132
+@end example
+
+This is the principle of the @code{chunky} pixel mode.
+
+Both methods of image storage are perfectly logical, and no one can say
+that one is better than the other. However, there are certain
+technical aspects which cause certain advantages and disadvantages.
+
+First, if you've seen colored text scroll on your Amiga, you know there
+is a bit of "flicker" that arises. Specifically, what happens is that
+while the text is scrolling, its color temporarily changes to something
+completely different. What's happening is that the computer's moving
+several bitplanes of data while the raster (monitor electron gun) is
+sweeping across the screen. What that means is that, if the raster
+catches the data while it's being moved, you can end up with some
+bitplanes being moved and some not. What if we filled bitplane 1 in the
+example above with 0s? Instantly all the 3s become 1s, and the 2s
+become 0s! This is what causes "flicker" when certain colors are
+scrolled. By contrast, if a chunky pixel display is caught while
+scrolling, all we see is a partially-scrolled image; the colors are
+preserved (since their units are the small ones).
+
+That's a disadvantage to planar pixels, but what about chunky pixels?
+Well, recall that a computer organizes information in terms of 8 bit
+bytes. These groups are static; you cannot decide to all of a sudden
+organize data in terms of three bytes or something! Therefore, when
+using chunky pixels, things get complicated if we decide to use a
+nonconvenient number of bits per pixel. In practice, the 8-bit
+(256-color) mode, and 24-bit (16 million color) modes are the most
+common candidates for chunky pixel displays.
+
+Finally, certain effects can be accomplished with the different systems.
+Bitplanar mode is particularly useful for things like shadows (where
+an extra bitplane is set with 1s instead of 0s), and chunky mode is
+great for perspective and "mapping" (since the data for each pixel is
+localized in a single "chunk"). The latter advantage makes chunky
+pixel mode really great for games, and is what made Wolfenstein 3-D
+possible.
+
+We all know that Amigas use the bitplane system for storing images.
+However, the Macintosh and PC(VGA) both use chunky pixel modes. While
+we can optimize our RAM usage with "bizarre" modes like 8- and
+128-color, they gain the advantages of non-flicker scrolling, and
+the programming simplicity of just writing a byte where you want the
+pixel to go.
+
+The difference between the two modes becomes problematic in things like
+emulation. EMPLANT has a "chunky to planar" routine which it uses to
+convert a Macintosh display into an Amiga one. "Chunky to planar"
+routines are also useful for getting chunky-inclined things to run on
+Amigas (see TMAPDemo, rotdemo). On a side note, there was some
+confusion as to what EMPLANT used the MMU for with regard to chunky to
+planar. The MMU itself is incapable of performing the algorithm
+for the conversion; rather, it is used to detect what portions of
+the display memory are updated from the Mac side, and therefore the
+processor is saved from having to perform the chunky to planar
+conversion for the entire display.
+
+I sincerely hope that helped clear up most of the mystery concerning
+the terms "Chunky" and "Planar"!
+
+(Joseph Luk, jluc@@eis.calstate.edu)
+
+
+@node Doublebuffering
+@section What is doublebuffering?
+@cindex Doublebuffering
+Don't be ashamed if you haven't a clue as to what this is. It's rather
+simple, really. Imagine you wanted to animate something by drawing out
+each frame. Now imagine you had only one piece of paper. Even if you
+drew pretty fast, it would be difficult to see what the animation looks
+like because you'd have to erase the frame you just drew, in order to
+draw the next one!
+
+What if you had two pieces of paper? Why, then, you could see the difference
+between two adjacent frames. First you'd draw your first frame on the
+first piece of paper, then you'd draw the second frame on the other piece.
+Then you'd erase the picture on the first piece of paper, and draw in the
+third frame. Then you'd erase the picture on the second piece of paper,
+and draw in the fourth frame, and so forth.
+
+This is the principle of doublebuffering. The computer shows you the
+picture it just drew, then turns around and draws the next one. It
+then swaps the picture in front of you with the one it just drew, and
+repeats the process. The result is a smooth animation, because you
+never need to see the computer draw; all you see is each finished
+product.
+
+(Joseph Luk, jluc@@eis.calstate.edu)
+
+
+@node Monitors
+@section What monitors will work on my Amiga 1200/4000?
+@cindex Monitors
+@cindex VGA
+@cindex Multiscan
+Monitors can be classified after the horizontal scan frequency they require.
+TVs, as well as C='s 1084 monitor, need frequencies around 15 kHz. VGA/SVGA
+need approx. 30 kHz. Multisync monitors can take many frequencies.
+
+In short: You can use any monitor you want with an A1200. BUT:
+
+@itemize @minus
+@item
+If you use a regular VGA/SVGA monitor, you can only use a few display modes
+(like DblPAL, DblNTSC and/or Productivity). I.e. (320|640) x (256|512|1024)
+for DblPAL. This is great for Workbench and all "serious" utilities (DTP etc),
+but don't expect any games to work... they don't use your preferences, just
+take over the machine and assume a 15 kHz monitor. Also, you cannot utilize
+the  "Early Startup Control" screen (you know, disable cache, and that stuff),
+which also requires a 15 kHz monitor. Furthermore, VGA monitors don't have
+speakers. And the VGA-type modes don't support Genlocks. But for a lot of
+"serious" work, a VGA monitor is quite adequate.
+
+@item
+You already know what happens with a 15 kHz monitor; the flickering in
+Interlace mode. A small tip: Try to use NTSC instead of PAL. This increases
+the refresh rate from 25 Hz to 30 Hz, at the expense of lower vertical
+resolution (482 lines maximum). The NTSC and PAL modes aren't as bad as many
+people think. If your monitor has a lot of phosphorous (long afterglow),
+PAL Laced can be quite OK, and it gives you a resolution of 1448x566 in
+SuperHiRes. That's the highest resolution currently supported on AGA Amigas,
+in _any_ display mode.
+
+@item
+A Multisync gives you the best of both worlds. The 1940 and 1942 monitors
+from C= are quite OK, although rather cumbersome to use... The h/v size and
+offset must be set manually each time you switch display mode.
+@footnote{A patch is available on Aminet for Kickstart 3.0 to do this without
+manual actions in the file @file{os30/util/Monitor30Patch.lha}.}
+The 1960 monitor doesn't have this problem, but it's a bit more expensive.
+@end itemize
+
+For a VGA/SVGA or Multisync monitor, you'd need a little shiny box which gives
+you the standard 15-pin "D" connector. It costs around $15.
+
+There are other alternatives... like the "AmiVGA" box ($50 or so), which I
+think is a cheapo version of the Flicker Fixer. (But it's really a shame to
+use this on an AGA Amiga.)
+
+Also, you can get a VGA monitor, and hook up your TV to the composite or RF
+port on the Amiga - one monitor for games, one for serious stuff.
+
+(Per Espen Hagen, per.e.hagen@@ffi.no)
+
+
+@node PAL/NTSC
+@section How do I switch between PAL and NTSC?
+@cindex PAL
+@cindex NTSC
+PAL and NTSC are two different video standards, the former being
+European, and the latter being American. PAL has a slightly taller
+screen (256 lines non-interlaced, non-overscanned) as opposed to NTSC
+(200 lines), so if you see the bottom portion of a program's screen
+getting cut off on your American machine, chances are the program was
+written for PAL, and is running on your shorter NTSC screen. PAL and
+NTSC differences are somewhat less important to European users; since
+their machines default to PAL, running an NTSC program is no more than
+a minor annoyance having the screen only appear in the top portion of
+the display.
+
+Therefore, for us NTSC folks, switching into PAL mode becomes important
+to avoid loss of some picture on Euro Demos, etc.
+
+First, the most common misconception about switching between PAL and
+NTSC is that you need a Multiscan or special monitor for such a purpose.
+Not so! Just about any monitor can handle the minor signal difference
+between PAL and NTSC (50Hz vertical refresh versus 60Hz). The 108x,
+19xx, and 20xx series, and even most TVs, can display both PAL and NTSC.
+Sometimes it is necessary to perform minor tweaking of vertical hold
+and/or v. size on your monitor to achieve full display, though this is
+trivial.
+
+What IS needed to switch between PAL and NTSC in software, is a "Fatter"
+(1MB) Agnus or better. If your system has more than 512K of CHIP RAM
+(use the avail command to find out) you have this chip. If you do not,
+ou can still construct a hardware switch (see below).
+
+The following directions assume you're an NTSC user who wants to switch
+into PAL mode, but the procedure for going from PAL to NTSC is much the
+same.
+
+The most common use of switching into PAL is for self-booting games,
+demos, etc.  The best way to accomplish this on pre-3.0 systems is
+to use Chris Hames' Degrader program (most recent version: 1.30). Once
+you have procured this program, the switch is as simple as selecting
+"50Hz", and "50Hz System", then installing the program's ROMTag (little
+program that runs at boot-time) by pressing the "Survive Reset(s)" button.
+
+AmigaDOS 3.0 added a PAL/NTSC switch feature to its Boot Menu, and all
+you need to do in order to access this is hold down both mouse buttons
+as the computer boots. Select Display Options, Display Mode/PAL, and
+then Boot. If the program still fails to go into PAL mode (Zool is
+one I've found), you may wish to get Degrader anyway and try that.
+
+Software PAL/NTSC switching is easy and painless. Some people have
+gone even further by installing hardware PAL/NTSC switches. This
+results in a system which even the most nasty hardware-banging programs
+can't bring to its original configuration (if it has been switched).
+The procedure is simple -- most Amigas have jumpers already -- but
+beyond the scope of this document.
+
+Therefore, if your screen is too short or cut off, seek the different
+screen mode. You'll "see new horizons", literally!
+
+(Joseph Luk, jluc@@eis.calstate.edu)
+
+@footnote{PAL/NTSC switching with a MultiSync monitor is possible on 2.0+
+and easily accomplished by moving the PAL monitor type to (or NTSC, as
+applicable, I have them both in) the Devs/Monitors drawer (from the
+Storage/Monitors drawer), reboot, then go into the Prefs drawer and
+select the ScreenMode program. You will see at least two PAL modes
+available (PAL and PAL Interlaced). Simply select one of the (usually
+non-interlaced for demos) and select "Use". All windows on the Workbench
+will close, the video mode will change, and then the windows will
+reopen -- that simple!
+
+Allen J. Newton, anewton@@alturia.abq.nm.us}
+
+
+

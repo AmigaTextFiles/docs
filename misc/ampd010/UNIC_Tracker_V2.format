@@ -1,0 +1,77 @@
+Unic Tracker 2 format
+Created by Anders E. Hansen (Laxity / Kefrens) 1991-1993
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(VERY similare to UNIC tracker format ... . Who knows, maybe it's
+the very same tracker with but a few minor changes ... . Someone
+knows how to contact Laxity ?)
+
+Offset    size (byte)    Comment
+------    -----------    -------
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+  0h          14h        Sample Name                 *
+ 14h           2         finetune (signed word) ...  *
+ 16h           2         Sample Size / 2             *
+ 18h           1         ?                           *
+ 19h           1         Volume (0 - 40h)            *
+ 1Ah           2         Loop Start / 4  (or / 2)    *
+ 1Ch           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+(about this loop start /4 or /2, I keep it that way knowing there
+were the two possible cases in UNIC format. UNIC2 file I have, have
+all this value /4).
+
+
+3A2h           1         Number of pattern to play
+3A3h           1         "noisetracker byte" set to $00
+                         
+3A4h         80h         pattern table
+
+424h           ?         Pattern datas.
+
+ each pattern takes 300h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000
+ ||\     /  \  / \  /  \       /
+ ||relative  || effect   effect
+ || note     ||          value
+ ||number    ||
+ ||          //
+ | \        //
+ |  sample number
+ |
+unused
+
+effect:
+  Just note that pattern break effect command (D**) uses HEX value
+ in UNIC2 format (while it is DEC values in PTK). Thus, it has to
+ be converted !.
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (UNIC / UNIC2):
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..

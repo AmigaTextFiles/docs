@@ -1,0 +1,346 @@
+                               APPENDIX G
+
+                             AUTOCONFIG (TM)
+
+
+The AUTOCONFIG protocol is designed to allow the dynamic assignment of
+available address slots to expansion boards, eliminating the need for user
+configuration via jumpers. Upon reset, each board appeals in turn at
+$E80000. with readable identification information, most of which is in
+one's complement format, stored in the high nibbles of the first $40
+words ($80 bytes) of the board. This identification information includes
+the size of the board, its address space preferences, type of board
+(memory or other), and a unique Hardware Manufacturer Number assigned
+by Commodore Amiga Technical Support, West Chester, Pennsylvania.
+
+Each board contains configuration hardware including an address latch
+appearing in the nibble at offset S0048 and a nibble at offset $004a.
+When A23 through A16 of the assigned board base address are written to
+this register, the board latches and appears at the assigned address,
+then passes a signal called CONFIG-OUT that causes the next board to
+appear at $E80000. To make certain types of boards less expensive, an
+expansion board's write registers may be organized as
+
+                           - Appendix G 335 -
+
+
+either a byte-wide register or two nibble-wide registers. If the register
+is nibble-wide then it must latch the low nibble of the assigned address
+(at $4A) until the high nibble (at $48) is written.
+This allows the following algorithm to work with either type of board:
+
+    Write the low order address nibble to offset $4A
+    Write the entire address byte to offset $48
+
+Alternatively, many boards can be asked to "shut-up" (pass CONFIG-OUT and
+stop responding) by writing to offset S004c of the board. A bit in the
+nibble at offset $0008 flags whether a board supports shut-up.
+
+All commercial expansion slot boards for the Amiga must implement the
+AUTOCONFIG protocol. More in-depth machine-specific information on the
+design and implementation of AUTOCONFIG boards is available from
+Commodore Amiga Technical Support.
+
+The Amiga operating system contains support for matching up disk-based
+drivers with AUTO-CONFIG boards. Since 1.3, the OS also supports
+initialisation of onboard ROM driver software.
+
+As a general rule, applications should not attempt to AUTOCONFIG
+expansion peripherals, but rather should allow the Amiga system software
+to handle all automatic configuration. Many boards contain registers
+which once activated could do irreparable damage, for example, data on a
+user's hard disk could be lost if the board had been configured improperly.
+
+However, certain types of low level stand-alone applications may need to
+configure hardware such as RAM boards without using the Amiga operating
+system. Such applications should only configure expansion RAM boards
+(boards which ask to be added to the free memory list) and known
+dedicated boards designed for specific applications. All other boards
+should be shut-up if the board supports shut-up, or configured and
+ignored if shut-up is not supported. (There are many boards which do not
+support shut-up). Configuration of boards should only be attempted by
+applications which take over the whole machine at reset. Presence of an
+AUTOCONFIG board waiting for configuration is determined by comparing the
+nibbles appearing at the initial AUTOCONFIG address with the valid values
+for such nibbles in the specifications.
+
+The AUTOCONFIG spec requires that boards be configured on boundaries that
+match their space requirements. For example, a 1 MB memory board should
+be configured on a 1 MB boundary.
+There are two exceptions to this rule: boards with a 4 MB address space
+are capable of being placed at S200000 and S600000 as well as being
+placed on 4 MB boundaries; 8 MB boards can be placed at S200000. These
+exceptions are necessary because the 8 MB space reserved for expansion in
+the current machine begins at $200000.
+
+DEBUGGING AUTOCONG BOARDS
+
+If there is a defect in your configuration information, your board may be
+ignored, may shut-up or may crash in a way that makes diagnosis
+difficult. There is a simple trick allows you to test the configuration
+information. Cut the CONFIGIN* line to your board and wire a switch into
+the line. Wire in the switch such that when it is set one way, the
+CONFIGIN* line will pass through
+
+                           - 336 Appendix G -
+
+
+from the bus to the board. This allows the board to respond to the
+AUTOCONFIG process. When the switch is set the other way, it should be
+wired such that the input to the board is forced high This will disable
+the AUTOCONFIG of the board.
+
+Set the switch so that the CONFIGIN* line is forced high, then bring up
+the system. Your board will be invisible to the system software. Activate
+a debugger, and flip the switch, Your board should now respond at the
+normal $E80000 address. Your view of the board is identical to what the
+operating system sees when configuring your board. You can compare the
+bits with the expected values.
+
+NOTE
+The board to be debugged must be the last board in the system (closest to
+the PC slots, away fm the power supply.) Boards downstream of the board
+to be debugged will not be configured by the system.
+
+ADDRESS SPECIFICATION TABLE
+
+The following table describes the board identification information and
+AUTOCONFIG registers which appear in the first $80 bytes of an AUTOCONFIG
+board at configuration time.
+
+NOTES
+o  Identification information is stored in the high nibbles of the even
+(word) addresses at the start of an AUTOCONFIG board. For example, the
+first two words of a board might contain $Cxxx 1xxx. The valid
+information in these first two words would be the $C igh nibble of
+the word at offset $00). then the $1 (high nibble of the word at offset
+$02). Much of the information is interpreted by combining several
+nibbles, with low to high address nlbbles containing high to low order
+parts of the resulting value.
+
+o  All nibbles of information, except for those at offsets $00/02 and
+$40/42, are stored in an inverted (one's complement) form and must be
+exclusive OR'd with $F before interpreting them according to the table
+below. Unused nibbles (the three other nibbles in each word) may not be
+assumed to contain any particular value. All values written to the
+AUTOCONFIG area, including the assigned address, are written uninverted.
+
+o  All addresses are shown here as offsets from the base address $E80000
+where boards appear at configuration time, so offset $02 is at $E80002,
+offset $04 at $E80004, etc.
+
+                           - Appendix G 337 -
+
+
+Board Offset
+ ($00/02)   7  6  5  4      3  2  1  0  Description of nibbles
+ R/W info   \___  ___/      \___  ___/
+                \/              \/
+        Nibble at $E80000   Nibble at $E80002
+
+         Figure G-1: How to read the Address Specification Table
+
+
+NOTE
+The bit numbering ( 7 6 5 4 3 2 1 0 ) is for use when two nibbles are to
+be interpreted together as a byte. Physically, each nibble is the high
+nibble of the word at its address (ie. bits 15 14 13 12).
+
+
+Table G-1: Address Specification Table
+
+ OFFSET:       Address 1    Address 2              Deacription
+-------------------------------------------------------------------------
+($00/02)       7  6  5  4  3  2  1  0___Board size  000=8meg 100512k
+ Read          |  |  |  |  |  \__|__/               001=64k 101=1meg
+ Not Inverted  |  |  |  |  |                        010=128k 110=2meg
+               |  |  |  |  |                        011=256k 111=4meg
+               |  |  |  |  \-------- 1 = Next card is also on this board
+               |  |  |  \----------- 1 = Optional ROM vector valid
+               |  |  \-------------- 1 = Link into memory free list (RAM)
+               |  \____________
+                \______________>---- Board type       00 = Reserved
+                                                      01 = Reserved
+                                                      10 = Reserved
+                                                      11 = Current type
+
+
+($04/06)       7  6  5  4  3  2  1  0   Manufacturers chosen product
+  Read         \___  ___/  \___  ___/             number
+Inverted           \/          \/
+               Hi nibble   Lo nibble
+
+
+($08/0A)        7 6 5 4 3 2 1 0 (Remember - theae read inverted)
+  Read          | | |_|_|_|_|_|_ Reserved - Should be 0 currently
+Inverted        | |
+                | \____________\ 0 = this board can be shut-up
+                |              / 1 = this board ignores shut-up
+                |
+                \______________\ 0 = any space OK
+                               / 1 = 8 Meg area preferred
+
+                           - 338 Appendix G -
+
+
+OFFSET:         Address 1    Address 2      Description (cont.)
+-------------------------------------------------------------------------
+
+(SOC/OE)        7 6 5 4 3 2 1 0
+  Read          |_|_|_|_|_|_|_|_ Reserved - must be 0
+Inverted
+
+
+($10/12)        7  6  5  4  3  2  1  0    High byte of unique hardware
+  Read          \___  ___/  \___  ___/    manufacturer number assigned
+Inverted            \/          \/        to manufacturer.
+                 Hi nibble   Lo nibble    (Not developer number!)
+
+
+(S14/16)        7  6  5  4  3  2  1  0    Low byte of unique hardware
+Read            \___  ___/  \___  ___/    manufacturer number assigned
+Inverted            \/          \/        to manufacturer.
+                Hi nibble    Lo nibble    (Not developer number!)
+
+NOTE
+Manufacturer number is assigned by Commodore Amiga Technical Support in
+West Chester, Pennsylvania (CATS). Contact CATS for further information.
+
+($18/1A)        7  6  5  4  3  2  1  0  Optional aerial #, 1st byte (msb)
+($1C/lE)        7  6  5  4  3  2  1  0  Optional serial #, 2nd byte
+($20/22)        7  6  5  4  3  2  1  0  Optional serial #, 3rd byte
+($24/26)        7  6  5  4  3  2  1  0  Optional serial #, 4th byte (lsb)
+  Read
+Inverted
+
+
+(S28/2A)        7  6  5  4  3  2  1  0    Hi byte of optional ROM vector.
+  Read          \___  ___/  \___  ___/
+Inverted            \/          \/
+                Hi nibble   Lo nibble
+
+
+(S2C/2E)        7  6  5  4  3  2  1  0   Lo byte of optional ROM vector.
+  Read          \___  ___/  \___  ___/   If the "ROM vector valid" bit
+Inverted            \/          \/       is set in nibble S00 at start
+                 Hi nibble  Lo nibble    of the board, this optional ROM
+                                         vector is the offset from the
+                                         board base to ROM driver
+                                         structures.
+
+(S30/32)        7  6  5  4  3  2  1  0   Read - Reserved, must be 00
+  R/W                                    Write - optional reset of
+Inverted                                 board base register to
+                                         pre-configuration address
+
+($34/36)        7  6  5  4  3  2  1  0   Reserved, must be 00
+(S38/3A)        7  6  5  4  3  2  1  0   Reserved, must be 00
+(S3C/3E)        7  6  5  4  3  2  1  0   Reserved, must be 00
+Inverted
+
+                           - Appendix G 339 -
+
+
+OFFSET:         Address 1   Address 2    Description (cont.)
+-------------------------------------------------------------------------
+(S40/42)        7  6  5  4  3  2  1  0   Write           Read
+  R/W           |  |  |  |  |  |  |  |
+Not Inverted    |  |  |  |  |  |  |  \_ Interrupt enable Interrupt enable
+                |  |  |  |  |  |  \____ User definable   Undefined
+                |  |  |  |  |  \_______ Local reset             Must be 0
+                |  |  |  |  \__________ User definable   Undefined
+                |  |  |  \_____________ User definable   INT2 pending
+                |  |  \________________ User definable   INT6 pending
+                |  \___________________ User definable   INT7 pending
+                \______________________ User definable   Board pull INT
+
+NOTE
+Use of the S40/42 registers is an optional feature which can be implemented
+by boards which generate interrrupts. They make it possible for
+board-specific interrupt servers to determine if the current interrupt
+is being generated by their board, or by some other hardware using the
+same interrupt line.
+
+(S44/46)        7  6  5  4  3  2  1  0   Reserved, read must be 00
+  R/W                                    Write undefined
+Inverted
+
+(S48/4A)        7  6  5  4  3  2  1  0   Base add. register, write only.
+Write Only      \___  ___/  \___  ___/   These bits are compared with A23
+Not Inverted        \/          \/       through A16 (or fewer) to determine
+                Hi nibble    Lo nibble   the base address of the board.
+
+($4C/4E)        7  6 5   4   3  2  1  0  Optional shut-up register.
+Write Only      \___  ___/   \___  ___/  Any write to $4C will cause
+                    \/           \/      board to pass CONFIG-OUT and
+                     \_________________\ and then never respond again
+                                       / to any address, until RESET. A
+                                         bit in nibble $08 flags whether
+                                         the board can be shut-up.
+
+(S50 through S7E)                        Reserved, must be 00
+   Inverted
+
+Remember that an nibbles except S00/02 and $40/42 will actually appear
+inverted from the values in the above table. For example, a "must be 0"
+nibble will appear as $F, and flags and hex values will also be inverted
+(i.e. a value of $1 will read as $E, etc).
+
+                           - 340 Appendix G -
+
+
+/*
+
+* Examine all AUTOCONFIG(tm) boards in the system
+
+*/
+
+include "exec/types.h"
+include "libraries/configvars.h"
+
+struct Library *OpenLibrary();
+struct ConfigDev *FindConfigDev();
+struct Library *ExpansionBase;
+
+void main()
+{
+struct ConfigDev *myCD=0;
+
+ExpansionBase=OpenLibrary("expansion.library",0L);
+
+while(myCD=FindConfigDev(myCD,-1L,-1L)) /* search for any ConfigDev */
+    {
+    printf("\n---ConfigDev structure found at location $%1x---\n",myCD);
+
+    /* These valuses are read directly from the board */
+    printf("er Manufacturer         =");
+        printf("%d,",myCD->cd Rom.er Manufacturer);
+        printf("S%x,",myCD->cd Rom.er Manufacturer);
+        printf("(-$%4x)\n",-myCD->cd Rom.er Manufacturer);
+
+    printf("er Product              =");
+        printf("%d,",myCD->cd Rom.er Product);
+        printf("$%x,",myCDÑ>cd Rom.er Product);
+        printf("(-$%x)\n",-myCD->cd Rom.er Product);
+
+    printf("er Type                 =$%x\n",myCD->cd Rom.er Type);
+
+    printf("er Flags                =");
+        printf("$%x\n",myCD->cd Rom.er Flags);
+
+    /* These values are generated when the AUTOCONFIG(tm) software
+
+    * relocate the board
+
+    printf("cd BoardAddr            =$%1x\n",myCD->cd BoardAddr);
+    printf("cd BoardSize            =$%1x (%ldK)\n",
+    myCD->cd BoardSize,((ULONG)myCD->cd BoardSize)/1024);
+
+    printf("cd Flags                =$%x\n",myCD->cd Flags);
+    }
+CloseLibrary(ExpanionBase);
+}
+
+                           - Appendix G 341 -
+
+End.

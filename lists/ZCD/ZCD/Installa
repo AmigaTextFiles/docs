@@ -1,0 +1,126 @@
+;
+; Script di installazione per il listino NonSoLoSoft (20.08.97)
+;
+
+; Stringhe
+
+(set @default-dest  "")
+(set @default-message "")
+(set @icon-message "Quale set di icone preferisci?")
+(set @standard          "Standard a 4 colori")
+(set @magic             "MagicWB a 8 colori")
+(set @newicon           "NewIcons")
+(set @iconhelp  (cat " Seleziona quale set di icone intendi installare per il Listino\n\n"))
+(set listino-dest    "Ram:")
+
+; E' un Amiga 3.0?
+        (if (< (/ (getversion) 65536) 37) (abort "Devi avere il Kickstart 2.0 (o superiore) per installare\n il listino"))
+
+        (message
+                (cat      "\n\n\nNonSoLoSoft, script di installazione del listino.\n"
+                          "Questa procedura installa il listino NonSoloSoft sul vostro Amiga.\n\n"
+                          "(C) Copyright 1991-1997 NonSoloSoft.\n Tutti i diritti sono riservati"
+                ))
+
+        (set listino-dest
+                (askdir
+                        (prompt  "Dove desideri installare il Listino NonSoloSoft? (sarà creato un nuovo cassetto chiamato 'NonSoloSoft')?")
+                        (help    "Seleziona il cassetto in cui installare la directory NonSoloSoft.")
+                        (default listino-dest)
+                        (disk)
+                )
+        )
+; Quali icone?
+
+
+
+(set icon (askchoice
+        (prompt @icon-message)
+        (help (cat @iconhelp @askchoice-help))
+        (choices @standard @magic @newicon )
+        (default @standard)
+))
+
+
+(if (= icon 0)
+                (set iconpath "standard/")
+        )
+(if (= icon 2)
+                (set iconpath "newicons/")
+        )
+(if (= icon 1)
+                (set iconpath "mwbicons/")
+        )
+
+
+
+;        (if (NOT (exists (tackon listino-dest "NonSoloSoft")))
+;            (makedir (tackon listino-dest "NonSoloSoft")
+;                     (infos)))
+        (working
+                (cat      "\n\n\nAttendere prego,\n"
+                          "sto installando il listino.\n"
+                          "Nel frattempo ti ricordo il mio orario:\n"
+                          "Dal martedì al venerdì\n"
+                          "Dalle 14.30 alle 18.30\n"
+                          "\nfax 24h/24: 011-9415237\n\n(C) Copyright 1991-1997 NonSoloSoft.\nTutti i diritti sono riservati"
+                )
+        )
+;        (copyfiles
+;            (prompt "Attendere Prego...")
+;            (source "NonSoloSoft/")
+;            (dest   (tackon listino-dest "NonSoloSoft"))
+;            (all)
+
+         (run (cat "lhex -qfw=" listino-dest " x nonsolosoft.lha"))
+
+;        )
+
+        (copyfiles
+            (prompt "Copio 'Listino.info' in " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "Listino.info"))
+            (dest   (tackon listino-dest "NonSoloSoft"))
+        )
+
+        (copyfiles
+            (prompt "Copio 'TurboCalc.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "TurboCalc.info"))
+            (dest   (tackon listino-dest "NonSoloSoft"))
+        )
+
+        (copyfiles
+            (prompt "Copio 'AmyResource1.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "AmyResource1.info"))
+            (dest   (tackon listino-dest "NonSoloSoft"))
+        )
+
+        (copyfiles
+            (prompt "Copio 'NonSoLoSoft.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "NonSoLoSoft.info"))
+            (dest  listino-dest )
+        )
+
+        (copyfiles
+            (prompt "Copio 'Leggimi.txt.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "Leggimi.txt.info"))
+            (dest  (tackon listino-dest "NonSoloSoft/Listino/" ))
+        )
+
+        (copyfiles
+            (prompt "Copio 'SoLo.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "os2.x.guide.info"))
+            (dest  (tackon listino-dest "NonSoloSoft/Listino/"))
+            (newname "Solo.guide.info")
+        )
+
+        ( if (>= (/ (getversion) 65536) 39)
+           (copyfiles
+            (prompt "Copio 'SoLo.info' come " listino-dest "NonSoloSoft/...")
+            (source (tackon iconpath "os3.x.guide.info"))
+            (dest  (tackon listino-dest "NonSoloSoft/Listino/" ))
+            (newname "Solo.guide.info")
+            )
+        )
+
+
+

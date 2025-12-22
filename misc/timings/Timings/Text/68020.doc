@@ -1,0 +1,161 @@
+All timings are for cache case, three-clock reads and writes,
+and long word aligned operands.
+
+address mode           fea   fiea   cea   ciea   jea
+single effective address instruction format
+Dn                       0   2/ 4     0   2/ 4
+An                       0            0
+(An)                     4   4/ 4     2   2/ 4     2
+(An)+                    4   6/ 8     2   4/ 6
+-(An)                    5   5/ 7     2   ?/ ?
+(d16,An)                 5   5/ 7     2   4/ 6     4
+(xx).w                   4   5/ 7     2   4/ 6     2
+(xx).l                   4   6/ 8     4   4/ 8     2
+#data.b                  2   4/ 6
+#data.w                  2   4/ 6
+#data.l                  4   6/ 8
+
+brief format extension word
+(d8,An,Xn)               7   9/11     4   6/ 8     6
+
+full format extension word(s)
+(d16,An,Xn)              7   9/11     6   8/10     6
+(B)                      7   9/11     6   8/10     6
+(d16,B)                  9  11/13     8  10/12     8
+(d32,B)                 13  15/17    12  14/16    12
+([B],I)                 12  14/16    11  13/15    11
+([B],I,d16)             14  16/18    13  15/17    13
+([B],I,d32)             14  16/18    13  15/17    13
+([d16,B],I)             14  16/18    13  15/17    13
+([d16,B],I,d16)         16  18/20    15  17/19    15
+([d16,B],I,d32)         16  18/20    15  17/19    15
+([d32,B],I)             18  20/22    17  19/21    17
+([d32,B],I,d16)         20  22/24    19  19/23    19
+([d32,B],I,d32)         20  22/24    19  19/23    19
+
+fiea and ciea: #data.W/#data.L
+B = base address: 0, An, PC, Xn, An+Xn, PC+Xn
+                 (Form does not affect timing)
+I = Index:        0, Xn
+Xn cannot be in B and I at the same time.
+Scaling and size of Xn do not affect timing.
+
+
+commands                time            special
+
+ABCD                     4/16           (Dn/mem)
+ADD                      2+fea/4+fea    (Dn/mem)
+ADDA                     4+fea/2+fea    (.W/.L)
+ADDI                     2+fiea/4+fiea  (Dn/mem)
+ADDQ                     2/4+fea        (Rn/mem)
+ADDX                     2/12           (Dn/mem)
+AND                      2+fea/4+fea    (Dn/mem)
+ANDI                     2+fiea/4+fiea  (Dn/mem)
+ANDI to SR/CCR          12
+ASL                      ?/ 8/ 6+fea    (#data,Dn/ Dn,Dm/ mem by 1)
+ASR                      ?/ 6/ 5+fea    (#data,Dn/ Dn,Dm/ mem by 1)
+
+Bcc  (taken)             6
+Bcc. (not taken)         4/ 6/ 6        (.b/.w/.l)
+BCHG                     4              (+fea, if Dn,mem; +fiea, if #,mem)
+BCLR                     4              (+fea, if Dn,mem; +fiea, if #,mem)
+BFCHG                   12/16+ciea      (Dn/mem) (+8, if 5 Bytes mem)
+BFCLR                   12/16+ciea      (Dn/mem) (+8, if 5 Bytes mem)
+BFEXTx                   8/13+ciea      (Dn/mem) (+5, if 5 Bytes mem)
+BFFFO                   18/24+ciea      (Dn/mem) (+8, if 5 Bytes mem)
+BFINS                   10/14+ciea      (Dn/mem) (+6, if 5 Bytes mem)
+BFSET                   12/16+ciea      (Dn/mem) (+8, if 5 Bytes mem)
+BFTST                    6/11+ciea      (Dn/mem) (+4, if 5 Bytes mem)
+BSET                     4              (+fea, if Dn,mem; +fiea, if #,mem)
+BSR                      7
+BTST                     4              (+fea, if Dn,mem; +fiea, if #,mem)
+
+CALLM                   65+6n+fiea      (maximum)
+CAS                     15+ciea/12+ciea (successful/unsuccessful)
+CAS2                    25/22           (successful/unsuccessful)
+CHK                      8+fea /28+fea  (no exeption/ exeption)
+CHK2                    18+fiea/40+fiea (no exeption/ exeption)
+CLR                      2/ 4+cea       (Dn/mem)
+CMP                      2+fea
+CMP2                    18+fiea
+CMPA                     4+fea
+CMPI                     2+fiea/4+fiea  (Dn/mem)
+CMPM                     9
+
+DBcc                     6/10           (not expired/expired)
+DIVS.L                  90+fiea         (maximum)
+DIVS.W                  56+fea          (maximum)
+DIVU.L                  78+fiea         (maximum)
+DIVU.W                  44+fea          (maximum)
+
+EOR                      2/4+fea        (Dn,Dn/Dn,EA)
+EORI                     2+fiea/4+fiea  (Dn/mem)
+EORI to SR/CCR          12
+EXG                      2
+EXT                      4
+
+JMP                      4+jea
+JSR                      5+jea
+
+LEA                      2+cea
+LINK                     5/ 6           (.W/.L)
+LSd                      4/ 6/ 5+fea    (#data,Dn/ Dn,Dm/ mem by 1)
+
+MOVE EA,EA               2+fea+fea      (sometimes 2-3 clocks faster)
+MOVE SR/CCR              4+fea
+MOVE USP                 4
+MOVEC                    6
+MOVEM EA,RL              8+4n+ciea
+MOVEM RL,EA              4+3n+ciea
+MOVEP                   11/17           (.W/.L)
+MOVEQ                    2
+MOVES                    7+fea/5+cea    (EA,Rn/Rn,EA)
+MULx.L                  43+fiea         (maximum)
+MULx.W                  27+fea          (maximum)
+
+NBCD                     6/ ?           (Dn/mem)
+NEG                      2/ 4+fea       (Dn/mem)
+NEGX                     2/ 4+fea       (Dn/mem)
+NOP                      2
+NOT                      2/ 4+fea       (Dn/mem)
+
+OR                       2+fea/4+fea    (Dn/mem)
+ORI                      2+fiea/4+fiea  (Dn/mem)
+ORI to SR/CCR           12
+
+PACK                     6/13           (Dn/mem)
+PEA                      5+cea
+
+ROd                      ?/ 8/ 7+fea    (#data,Dn/ Dn,Dm/ mem by 1)
+ROXd                     ?/12/ 5+fea    (#data,Dn/ Dn,Dm/ mem by 1)
+RTD                     10
+RTM                     32              (maximum)
+RTR                     14
+RTS                     10
+
+SBCD                     4/16           (Dn/mem)
+Scc                      4/ 6+cea       (Dn/mem)
+SUB                      2+fea
+SUBA                     4+fea/2+fea    (.W/.L)
+SUBI                     2+fiea/4+fiea  (Dn/mem)
+SUBQ                     2/ 3+fea       (Dn/mem)
+SUBX                     2/12           (Dn/mem)
+SWAP                     4
+
+TAS                      4/12+cea       (Dn/mem)
+TST                      2/ 2+fea       (Dn/mem)
+
+UNLK                     6
+UNPK                     8/13           (Dn/mem)
+
+BKPT                    10
+Interrupt               26/41           (I-/M-Stack)
+RESET                  518
+STOP                     8
+TRACE                   25
+TRAP                    20              (also "Illegal" and "Privilege Violation")
+TRAPcc                   4/ 6/ 8        (-/.W/.L) (25, if trap)
+TRAPV                    4/25           (no trap/ trap)
+RTE                     16-92
+Bus Cycle Fault         43-79
+

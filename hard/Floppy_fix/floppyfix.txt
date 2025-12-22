@@ -1,0 +1,92 @@
+==========================================================================
+WARNING:  This  text  describes  a hardware hack that involves voiding the
+warranty  of  your computer and doing some solders inside it. If you do it
+and something goes wrong, I have no responsibility at all about it.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>DO IT AT YOUR OWN RISK<<<<<<<<<<<<<<<<<<<<<<<<
+
+==========================================================================
+
+There  seem  to be a problem with the new Amiga 1200 manufactured by Amiga
+Technologies, at least with some of them distributed in Spain.
+
+The  problem  is that the AmigaOS can use df0: without problems, but a lot
+of  NDOS  disks  (demos and games) just doesn't work at all. Usually these
+games/demos  just  'freeze'  the computer, waiting for somethig that never
+comes....
+
+...and  this  is the problem. The READY signal of df0: has dissappeared in
+the new Amigas (yuck! it's a nasty PeeCee drive!! aarrgghhhhh!!!!!). While
+the  3.1  ROMs  simply ignore this signal (I think that Amiga Technologies
+modified  it so they can use cheaper, and nastier, PeeCee drives) , and so
+it  has  no  problem  at  all when using df0:, the NDOS games/demos access
+directly  to  the floppy hardware, so this missing signal affects directly
+to  them. In the old Amiga floppies this signal remains inactive while the
+drive  motor  is  off,  and it switches to active when the motor is on and
+there  is a floppy inside the drive, indicating that the floppy has spined
+up to the correct rotation speed, an so it is READY for reading/writing.
+
+A  lot  of  games/demos  (but  not all of them) wait for this signal to be
+activated  to  begin  reading,  but as this signal is missed, the computer
+remains waiting forever for a signal that will NEVER be activated.
+
+The  only  solution  is  to create a READY signal for the games/demos that
+need  it,  so  I decided to do a signal that always appear active when the
+software  accesses to the drive. This is not the best solution (maybe, the
+BEST  solution  would  be  to  put 3.0 ROMs and a REAL Amiga floppy, but I
+think  that  AT has modified something about the DiskChange signal too, so
+maybe  even  with  3.0+Amiga  floppy df0: will not work... :-\) but worked
+really well when done in a friend's computer (my A1200 is an old Commodore
+one, so I haven't this problem), and it's REALLY EASY to do (and cheap too
+;-)
+
+The  signal  can  be  created simply by joining, with a diode, the SELECT0
+signal  (this  signal indicates that the computer wants to access to drive
+0,  and  it's  in pin 10 of the _internal drive_ data cable) and the READY
+signal  (pin  1  of  the  _external  drive_  connector, as in the internal
+connector this signal is missed), so when the computer activates the drive
+(with  the  SELECT  0  signal)  the  READY  signal  will be activated too,
+appearing always active.
+
+The  anode  of  the  diode  have  to be connected to the pin 1 of external
+connector,  and  cathode  have  to  be  connected  to  pin  10 of internal
+connector.  This  diode  doesn't  need to be a specific type, but I used a
+1N4148  as  it is small, cheap and easy to find. In the diode, the cathode
+is the side marked with a line.
+
+Take a look at the included picture for more detail.
+
+From  the  OS  point  of  view,  this  doesn't affect it as this signal is
+ignored  by  the 3.1 ROMs, and the behaviour of the system will not change
+with this hack.
+
+From  the  NDOS point of view...well, a lot of programs work now, so there
+is no problem, I think... ;-)
+
+The  ONLY  problem  that  can  appear  is  when  program that uses df0: by
+hardware  wants  to  write  to the floppy right after starting the drive's
+motor.  If  instead  of doing a pause by itself (some soft do it, like the
+3.1  ROMs)  it  waits for the READY signal to be active, with this hack it
+could  begin  to  write when the floppy still doesn't rotates to the right
+speed,  so  the  track will be trashed......if this is bad, think about it
+without   the  hack....the  program  would  wait  forever  for  the  READY
+signal.....
+
+A better READY signal could be done by taking the MOTOR0 signal (pin 16 of
+the  internal  floppy connector, I think...) and passing it (ORed with the
+SELECT0  signal)  to the READY signal (pin 1 of external floppy connector)
+with  some  kind  of delay (with a condenser, for example), but as I don't
+know  if  this  is  really  needed  (the AmigaOS doesn't need it, and NDOS
+programs  usually  doesn't  write to floppies) I preferred to do it by the
+simplest way :-)
+
+NOTE:  I  couldn't  test  thoroughly  this  hack, but what I tested worked
+perfectly. If you find something that works on an old A1200 but not in the
+newer A1200 with this hack, please report it to me.
+
+Well, enjoy your Amiga, and sorry for the nasty english ;-)
+
+Toni Pomar (tpomar@ibm.net)
+
+P.D.:  This  hack is in the Public Domain, but if you intend to earn money
+by doing it.....well, just remember who made you rich ;-)

@@ -1,0 +1,944 @@
+@DATABASE "ARB36"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 36 - Parsing & Templates Part 2 - Input Options"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 36 - PARSING AND TEMPLATES - PART 2 - INPUT OPTIONS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+@{JLEFT}
+
+In @{"Article 35" LINK "ARB:Articles_31-40/35.Parse-Templates/MAIN"} I discussed parsing and templates from a beginners point
+of view.
+
+This article is mainly about the various input sources of the string that
+is used as the input for the parsing operation.
+@{JCENTER}
+
+@{" The PARSE Format              " LINK "Parse"}
+@{"     The VAR Input Source      " LINK "ARB:Articles_31-40/35.Parse-Templates/Var"}
+@{"     The VALUE Input Source    " LINK "Value"}
+@{"     The PULL Input Source     " LINK "Pull"}
+@{"     The ARG Input Source      " LINK "Arg"}
+@{"     The EXTERNAL Input Source " LINK "External"}
+@{"     The NUMERIC Input Source  " LINK "Numeric"}
+@{"     The SOURCE Input Source   " LINK "Source"}
+@{"     The VERSION Input Source  " LINK "Version"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Parse" "Article 36 - Parsing & Templates Part 2 - Parse Format"
+
+@{B}@{U}@{JCENTER}THE PARSE FORMAT@{UB}@{UU}
+@{JLEFT}
+The format for PARSE is:-
+
+  PARSE [UPPER] InputSource [Template] [,Template] [,........]
+
+This has already been discussed in the @{"last article" LINK "ARB:Articles_31-40/35.Parse-Templates/Parse"} which covered types
+of parsing, input strings, scanning, templates and template markers and
+targets.
+
+All the various types of parsing and markers discussed in that previous
+article are applicable to all these input sources.
+
+@{B}@{U}The "Input Source" Option Keywords@{UB}@{UU}
+
+There are 8 possible input sources from which the input string can be
+obtained. These are as follows, listed in the order in which I suggest
+that you read them:-
+
+
+  @{B}@{U}Keyword@{UB}@{UU}       @{B}@{U}Source of the Input String@{UB}@{UU}
+
+@{" VAR      " LINK "ARB:Articles_31-40/35.Parse-Templates/Var"} The value held by a symbol following the VAR keyword.
+
+@{" VALUE    " LINK "Value"} The value of the expression following the VALUE keyword.
+
+@{" PULL     " LINK "Pull"} Keyboard entry.
+
+@{" ARG      " LINK "Arg"} The argument that was used when the program was invoked or the
+            internal function was called.
+
+@{" EXTERNAL " LINK "External"} The same as PULL except that the input comes from the
+            @{"stream STDERR" LINK "ARB:Misc/Glossary/Streams"}
+
+@{" NUMERIC  " LINK "Numeric"} The current numeric settings (as discussed in @{"Article 31" LINK  "ARB:Articles_31-40/31.NUMBERS_More/Numeric"}.
+
+@{" SOURCE   " LINK "Source"} The string used to start off the program or function.
+
+@{" VERSION  " LINK "Version"} The version of ARexx and the configuration of the Amiga.
+
+@{B}Only two@{UB} of these input sources obtain the input string from the parsing
+clause line itself. These are VAR and VALUE.
+
+The @{B}other six@{UB} input sources obtain the input string from somewhere @{B}other
+than@{UB} the parsing clause line.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Value" "Article 36 - Parsing & Templates Part 2 - The VALUE Input Source"
+
+@{B}@{U}@{JCENTER}THE VALUE INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+The full format for this input source is as follows:-
+
+  PARSE [UPPER] VALUE Expression WITH [Template] [,Template] [,........]
+
+As usual, the UPPER keyword is optional.
+
+This is very similar to the @{"VAR" LINK "ARB:Articles_31-40/35.Parse-Templates/Var"} input source except that the input string
+is held by the "Expression" and not by a symbol value.
+
+The @{B}WITH@{UB} keyword is @{B}essential@{UB} to enable ARexx to distinguish between the
+expression and the template(s). The expression comes @{B}before@{UB} the WITH and
+the templates come @{B}after@{UB} the WITH.
+
+This is all illustrated by the following example which uses the same input
+string as that used in the examples in the previous article. The following
+is the equivalent of @{"Example35-12" LINK "ARB:Articles_31-40/35.Parse-Templates/Absolute"}:-
+
+  /* Example36-1 */
+
+  PARSE VALUE 'Joe Bloggs 99 Somewhere Street 123 4567' WITH =1 Name =12
+     Address =32 Phone =40
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+Once again, the output is:-
+
+  Name    = Joe Bloggs
+  Address = 99 Somewhere Street
+  Phone   = 123 4567
+
+@{B}NOTE@{UB} that the "Expression" in the above example is held within quotes
+and the expression is, in fact, a string.
+
+If the quotes are left out then ARexx assumes that the individual words
+in the expression are symbol values. If you used the same PARSE clause
+from Example36-1 but left out the quotes around the string:-
+
+  PARSE VALUE Joe Bloggs 99 Somewhere Street 123 4567 WITH =1 Name =12
+     Address =32 Phone =40
+
+then you would get:-
+
+  Name    = JOE BLOGGS
+  Address = 99 SOMEWHERE STREET
+  Phone   = 123 4567
+
+As the symbols have not been assigned values, ARexx gives them the same
+value as their name but converted to upper letters. However, if you had
+this:-
+
+  /* Example36-2 */
+
+  Joe = 'Jenny'
+  Bloggs = 'Donkey'
+  Somewhere = 'The'
+  Street = 'Paddock'
+
+  PARSE VALUE Joe Bloggs 99 Somewhere Street 123 4567 WITH =1 Name =12
+              Address =32 Phone =40
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+This will output:-
+
+  Name    = Jenny Donke
+  Address = y 99 The Paddock 123
+  Phone   = 4567
+
+This result is because the values of the four variable symbols "Joe",
+"Bloggs", "Somewhere" and Street" have been substituted into the PARSE
+clause. The fixed symbols (i.e. the numbers) cannot, of course, have other
+values. Note that, because the values of the symbols are of different
+length to the symbol names, the absolute markers are in irrelevant
+positions!
+
+The moral of all this is to ensure that, if you are using a string, then
+make sure that it is enclosed in quotes so that ARexx will not mistake
+the words in the string for symbols!
+
+@{"Example36-2" LINK "Value"54} illustrates that you @{B}can@{UB} use symbols after the VALUE keyword.
+The difference between this and the @{"VAR" LINK "ARB:Articles_31-40/35.Parse-Templates/Var"} keyword is that VAR allows only
+one symbol after it and VALUE allows any number of symbols. Also, VALUE
+@{B}evaluates@{UB} the expression following it including the values of any symbols
+in the expression.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Pull" "Article 36 - Parsing & Templates Part 2 - The Input PULL Source"
+
+@{B}@{U}@{JCENTER}THE PULL INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+In @{"Article 8" LINK "ARB:Articles_01-10/08.Symbols_Ex_Keyboard/MAIN"} we looked at a simple form of the PULL input source. Its
+full format is:-
+
+  PARSE [UPPER] PULL [Template] [,Template] [,........]
+
+In Article 8 we said:-
+
+  PULL is an abbreviation of PARSE UPPER PULL
+
+so that:-
+
+  PULL Symbol
+
+is an abbreviation of:-
+
+  PARSE UPPER PULL Template
+
+and the "Symbol" after the "PULL" is, in fact, the "Template"
+
+In looking at PULL in Article 8 we looked only at retrieving symbol values
+one at a time from the keyboard. If we look at @{"Example8-2" LINK "ARB:Articles_01-10/08.Symbols_Ex_Keyboard/MAIN"74} again we will
+see that we used three separate parsing instructions to obtain three
+different symbol values.
+
+There are three ways in which we can avoid using three separate PULL
+instructions - by using one of:-
+
+  @{" Pattern Markers    " LINK "ARB:Articles_31-40/35.Parse-Templates/PatternMarkers"} - See @{"Example  36-3" LINK "36-3"}
+  @{" Multiple Templates " LINK "ARB:Articles_31-40/35.Parse-Templates/Multiple"} - See @{"Example  36-4" LINK "36-4"}
+  @{" Tokenisation.      " LINK "ARB:Articles_31-40/35.Parse-Templates/Tokenisation"} - See @{"Examples 36-5 & 36-6" LINK "36-5"}
+
+The problem with these three alternatives is that it is very easy for
+the program user to become confused with the way the data should be
+entered. I still consider it safest to use multiple parsing instructions
+as I did in @{"Example8-2" LINK "ARB:Articles_01-10/08.Symbols_Ex_Keyboard/MAIN"74}. In this way, each entry can be requested with
+individual instructions and each symbol can be assigned from separate
+keyboard entries. In this way there should not be any confusion.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "36-3" "Article 36 - The Input PULL Source - Example Of Pattern Markers"
+
+@{B}@{U}@{JCENTER}THE PULL INPUT SOURCE - EXAMPLE OF PATTERN MARKERS@{UB}@{UU}
+@{JLEFT}
+In getting input to multiple symbols, we can use @{"Pattern Markers" LINK "ARB:Articles_31-40/35.Parse-Templates/PatternMarkers"}.
+
+To do this, we could ask the user to separate the various items of
+information with a pattern marker as in this example:-
+
+  /* Example36-3 */
+
+  SAY 'Enter your Name, Address and Phone Number, separating each with a
+       semicolon (;)'
+
+  PARSE PULL Name';'Address';'Phone
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+If you RX this and enter via the keyboard:-
+
+  Joe Bloggs;99 Somewhere St;123 4567
+
+you will get the same ouptput as @{"Example35-1" LINK "ARB:Articles_31-40/35.Parse-Templates/Var"15}:-
+
+  Name    = Joe Bloggs
+  Address = 99 Somewhere St
+  Phone   = 123 4567
+
+The template has used the semicolon (;) as a pattern marker and looks
+for those patterns in the input string that comes from the keyboard.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "36-4" "Article 36 - The Input PULL Source - Example of Multiple Templates"
+
+@{B}@{U}@{JCENTER}THE PULL INPUT SOURCE - EXAMPLE OF MULTIPLE TEMPLATES@{UB}@{UU}
+@{JLEFT}
+In getting input to multiple symbols, we can use @{"Multiple Templates" LINK "ARB:Articles_31-40/35.Parse-Templates/Multiple"}.
+
+To do this, we could ask the user to press RETURN after each entry as in
+this example:-
+
+  /* Example36-4 */
+
+  SAY 'Enter your Name, Address and Phone Number. Press RETURN after each
+       item.'
+
+  PARSE PULL Name,Address,Phone
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+Now you must enter:-
+
+  Joe Bloggs [Return]
+  99 Somewhere St [Return]
+  123 4567 [Return]
+
+you will get the same ouptput as @{"Example35-1" LINK "ARB:Articles_31-40/35.Parse-Templates/Var"15}:-
+
+  Name    = Joe Bloggs
+  Address = 99 Somewhere St
+  Phone   = 123 4567
+
+This is an example of multiple templates using @{B}different@{UB} input strings.
+(You will recall that, in the last article, I said that, when using VAR,
+the @{"same input string" LINK "ARB:Articles_31-40/35.Parse-Templates/Multiple"46} was reused for the second template.)
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "36-5" "Article 36 - The Input PULL Source - Examples Of Tokenisation"
+
+@{B}@{U}@{JCENTER}THE PULL INPUT SOURCE - EXAMPLES OF TOKENISATION@{UB}@{UU}
+@{JLEFT}
+In getting input to multiple symbols, we can use @{"Tokenisation" LINK "ARB:Articles_31-40/35.Parse-Templates/Tokenisation"}.
+
+To do this, we could ask the user to put a SPACE between each entry as in
+this example:-
+
+  /* Example36-5 */
+
+  SAY 'Enter your Name, Address and Phone Number with a space between each
+       item.'
+
+  PARSE PULL Name Address Phone .
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+The trouble with this is that each item entered can contain only @{B}one@{UB} word.
+You will recall from the last article that tokenisation will assign only
+@{"one word" LINK "ARB:Articles_31-40/35.Parse-Templates/Tokenisation"} to each target symbol.
+
+Thus if the user RX'ed Example36-5 he/she would have to enter something
+like:-
+
+  Joe_Bloggs 99_Somewhere_St 123_4567
+
+which is not very useful! The output would be:-
+
+  Name    = Joe_Bloggs
+  Address = 99_Somewhere_St
+  Phone   = 123_4567
+
+which is @{B}NOT@{UB} quite the same as the ouptput from @{"Example35-1" LINK "ARB:Articles_31-40/35.Parse-Templates/Var"15}:-
+
+However, tokenisation could be a reasonable method to use in some
+circumstances, such as a rewrite of @{"Example8-2" LINK "ARB:Articles_01-10/Example8-2.rexx/MAIN"74}:-
+
+  /* Example36-6 */
+
+  SAY 'Enter your First Name, your Surname and your Age with a space
+       between each item'
+  PARSE PULL First Surname Age
+  SAY 'Hi' First Surname'. You will be 100 in' 100 - Age 'years.'
+
+Now the user can enter all on one input line:-
+
+  Joe Bloggs 45 [Return]
+
+and the program will output:-
+
+  Hi Joe Bloggs. You will be 100 in 55 years.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Arg" "Article 36 - Parsing & Templates Part 2 - The ARG Input Source"
+
+@{B}@{U}@{JCENTER}THE ARG INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+We made a mention of ARG in @{"Article 16 - Internal Functions" LINK "ARB:Articles_11-20/16.Functions-Internal/Arg"} where we
+discussed sending arguments from the main program to an internal function.
+In that article I said that:-
+
+  ARG is an abbreviation of PARSE UPPER ARG
+
+and so:-
+
+  ARG Symbol(s)
+
+is an abbreviation of:-
+
+  PARSE UPPER ARG Template(s)
+
+The full format for the use of ARG is as follows:-
+
+  PARSE [UPPER] ARG [Template] [,Template] [,........]
+
+ARG is usually used at the @{B}start@{UB} of a program or a function to recover
+the value(s) of the string that was used to call to the program or the
+function. For example:-
+
+  Calling a program:-      RX ProgramName String
+
+  Calling a function:-     CALL FunctionName String
+
+The "String" at the end of each of these lines becomes the "Input String"
+for the parsing operation.
+
+The following examples illustrate these points.
+
+  /* Example 36-7 */
+
+  PARSE ARG Name':'Address':'Phone
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+If this were RX'ed, the user would need to enter, at the CLI prompt:-
+
+  > rx Example36-7 Joe Bloggs:99 Somewhere St:123 4567
+
+and the resultant output would be:-
+
+  Name    = Joe Bloggs
+  Address = 99 Somewhere St
+  Phone   = 123 4567
+
+The PARSE clause has used pattern markers to split up the input string
+that appears on the command line after the program name.
+
+The following example is similar but uses a call to a function:-
+
+  /* Example 36-8 */
+
+  CALL MyFunction 'Joe Bloggs:99 Somewhere St:123 4567'
+  EXIT
+
+  MyFunction:
+
+  PARSE ARG Name':'Address':'Phone
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+  RETURN
+
+This has the same output as Example36-7.
+
+The big difference between the input strings in Examples 36-7 and 36-8
+is:-
+
+- @{B}For Example36-7@{UB} the string entered at the command must @{B}NOT@{UB} be
+  enclosed in quotes. If you entered this command line:-
+
+    > rx Example36-7 'Joe Bloggs:99 Somewhere St:123 4567'
+
+  then resultant output would have the quotes included in the symbol
+  values:-
+
+    Name    = 'Joe Bloggs
+    Address = 99 Somewhere St
+    Phone   = 123 4567'
+
+- @{B}For Example36-8@{UB} the string included in the CALL clause @{B}MUST@{UB} be
+  enclosed in quotes. If you uses this line:-
+
+    CALL MyFunction Joe Bloggs:99 Somewhere St:123 4567
+
+  then the program would stop with an error message "Invalid Expression".
+
+When calling internal functions with CALL the use of any sort of marker
+is possible.
+
+When starting off programs from a command line then, as with @{"PULL" LINK "Pull"}, we
+need to be mindful of causing confusion to the program user if we have
+complicated instructions about how to enter the input string on the command
+line.
+
+I would much rather ask the user to input data using PULL than to expect
+him/her to be able to properly insert the correct string and markers into
+the CLI command line following the RX command.
+
+When invoking an internal function with the use of:-
+
+  FunctionName()
+
+the main thing to watch is that the argument(s) which are enclosed in
+the brackets following the function name, can consist of either @{B}only one@{UB}
+argument or @{B}a number@{UB} of arguments.
+
+When we used it in @{"Example16-3" LINK "ARB:Articles_11-20/16.Functions-Internal/Invoking"40} we had:-
+
+  Multiply(number,x)
+
+This was providing two arguments separated by commas which was used by
+this parse instruction:-
+
+  ARG m,n
+
+This is equivalent to:-
+
+  PARSE UPPER ARG m,n
+
+with @{B}two@{UB} templates separated by commas. The first template accepted the
+first argument and the second template accepted the second
+argument.
+
+We could rewrite this program using other methods of parsing as shown
+in the following two examples.
+
+Example36-9 uses pattern matching:-
+
+  /* Example36-9.rexx */
+
+  SAY 'Enter number of Times Table'
+  PULL number
+  SAY 'The' number 'times table'
+
+  DO x = 1 to 10
+     SAY Number 'times' x '=' multiply(number ':' x)
+  END
+  EXIT
+
+  Multiply:
+  ARG m ':' n
+  RETURNm*n
+
+Example36-10 uses tokenisation:-
+
+  /* Example36-10.rexx */
+
+  SAY 'Enter number of Times Table'
+  PULL number
+  SAY 'The' number 'times table'
+
+  DO x = 1 to 10
+    SAY Number 'times' x '=' multiply(number x)
+  END
+  EXIT
+
+  Multiply:
+  ARG m n
+  RETURNm*n
+
+The above two examples are good illustrations of using different types
+of parsing to achieve the same result.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "External" "Article 36 - Parsing & Templates Part 2 - The EXTERNAL Input Source"
+
+@{B}@{U}@{JCENTER}THE EXTERNAL INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+I have seen one ARexx manual that states that this input source is the
+same as @{"PULL" LINK "Pull"}.
+
+@{B}THIS IS NOT SO.@{UB}
+
+The ARexx manuals that are supplied with Amiga Workbench2 onwards state
+that the input string is read from the stream @{"STDERR" LINK "ARB:Misc/Glossary/Streams"}.
+
+The @{B}PULL@{UB} input source gets its input string from the keyboard using the
+@{"STDIN" LINK "ARB:Misc/Glossary/Streams"} stream which is normally the CLI window being used by the ARexx
+program.
+
+The @{B}EXTERNAL@{UB} input source gets its input string from the keyboard using
+the STDERR stream which is a separate console window which can be opened
+with the command utility "TCO" and closed with the command utility
+"TCC".
+
+We will be looking at the @{"TCO" LINK "ARB:Articles_41-50/47.Error_Tracing-2/TCO"} and @{"TCC" LINK "ARB:Articles_41-50/47.Error_Tracing-2/TCC"} utilities later on, but if you enter
+at a CLI prompt:-
+
+  > TCO
+
+you will see another window open and if you enter:-
+
+  > TCC
+
+the new window will close.
+
+This window will be used for output when tracing operations for debugging
+are in operation but can also be used for input with the EXTERNAL keyword.
+This is illustrated with this example which is a rewrite of
+@{"Example36-4" LINK "36-4"}:-
+
+  /* Example36-11 */
+
+  ADDRESS 'COMMAND' TCO
+  SAY 'Enter your Name, Address and Phone Number. Press RETURN after each
+       item.'
+
+  PARSE EXTERNAL Name,Address,Phone
+  SAY 'Name    =' Name
+  SAY 'Address =' Address
+  SAY 'Phone   =' Phone
+
+  ADDRESS 'COMMAND' TCC
+
+After RX'ing this program, enter these items @{B}in the TCO window@{UB} :-
+
+  Joe Bloggs [Return]
+  99 Somewhere St [Return]
+  123 4567 [Return]
+
+If these entries are made in the normal CLI window nothing will appear
+to happen. However, if they are entered in the TCO window that appears
+at the top of the screen labelled "ARexx" then the usual output
+of:-
+
+  Name    = Joe Bloggs
+  Address = 99 Somewhere Street
+  Phone   = 123 4567
+
+will appear in the normal CLI window, @{B}not@{UB} in the window opened by the
+TCO command utility. However, if you @{B}did@{UB} first make the entries in the
+normal CLI window, then, after the ARexx program has finished, you will
+get these CLI error messages:-
+
+  Joe: Unknown command
+  99: Unknown command
+  123: Unknown command
+
+This is because the three lines entered have been stored for use after
+the ARexx program has finished with the CLI window.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Numeric" "Article 36 - Parsing & Templates Part 2 - The NUMERIC Input Source"
+
+@{B}@{U}@{JCENTER}THE NUMERIC INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+This input source uses, as the input string, the current numeric settings
+as discussed in @{"Article 31" LINK "ARB:Articles_31-40/31.NUMBERS_More/Numeric"}.
+
+This is illustrated with this example:-
+
+  /* Example36-12 */
+
+  PARSE NUMERIC Digits Fuzz Form .
+  SAY 'Digits setting =' Digits
+  SAY 'Fuzz   setting =' Fuzz
+  SAY 'Form   setting =' Form
+
+  NUMERIC DIGITS 5
+  NUMERIC FUZZ 3
+  NUMERIC FORM Engineering
+
+  PARSE NUMERIC Digits Fuzz Form .
+  SAY 'New Digits setting =' Digits
+  SAY 'New Fuzz   setting =' Fuzz
+  SAY 'New Form   setting =' Form
+
+This should give you this output:-
+
+  Default Digits setting = 9
+  Default Fuzz setting = 0
+  Default Form setting = SCIENTIFIC
+  New Digits setting = 5
+  New Fuzz setting = 3
+  New Form setting = ENGINEERING
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Source" "Article 36 - Parsing & Templates Part 2 - The SOURCE Input Source"
+
+@{B}@{U}@{JCENTER}THE SOURCE INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+The SOURCE input source uses, as the input string, a string of 6 words
+consisting of:-
+
+1st word - COMMAND or FUNCTION - indicating whether the program was
+                                 invoked as a command or a function
+
+2nd word - 1 or 0   1 indicates a result was requested
+                    0 indicates no result was requested
+
+3rd word - The name used when the program or function was invoked
+
+4th word - The full path and file name of the program
+
+5th word - The extension to the file name used in searching.
+           "REXX" is the default extension used
+
+6th word - The initial host address for commands.
+
+This is all best illustrated by an example:-
+
+  /* Example 36-13 */
+
+  PARSE SOURCE First Second Third Fourth Fifth Sixth .
+
+  SAY 'First  =' First
+  SAY 'Second =' Second
+  SAY 'Third  =' Third
+  SAY 'Fourth =' Fourth
+  SAY 'Fifth  =' Fifth
+  SAY 'Sixth  =' Sixth
+
+Start off this program with this CLI command line:-
+
+  > rx example36-13
+
+@{B}NOTE@{UB} - the file name is all lower case without the ".rexx" suffix.
+     - You should make sure that the current directory is "Articles31-40"
+
+The output should be:-
+
+  First  = COMMAND
+  Second = 0
+  Third  = example36-13
+  Fourth = DeviceName:DirName/Articles_31-40/Example36-13.rexx
+  Fifth  = REXX
+  Sixth  = REXX
+
+@{B}First@{UB} word is COMMAND as the program was invoked from a CLI command line.
+It would be the same if we used this line from within another ARexx
+program:-
+
+  ADDRESS COMMAND 'rx Example36-13'
+
+@{B}Second@{UB} word is 0 as no result string was requested from the program when
+the program was invoked.
+
+@{B}Third@{UB} word is the exact name of the file as used in the command line,
+including an exact match of the case of the letters used. As it is all
+lower case, it must have been invoked in that way, If we used:-
+
+  > RX EXAMPLE36-13.rexx
+
+then we would have got:-
+
+  Third = EXAMPLE36-13.rexx
+
+@{B}Fourth@{UB} word is the name of the full path and file of the invoked program.
+Note that the case of the letters are @{B}exactly@{UB} as they appear in the disk
+directories. This is called the RESOLVED file name.
+
+@{B}Fifth@{UB} word "REXX" which is the file extension that is used when searching
+for the program. The default extension is "REXX". When we used:-
+
+  > rx example36-13
+
+to start the program then ARexx really searched for a file called:-
+
+  example36-13.rexx
+
+@{B}Sixth@{UB} word is "REXX" which is the name of the host address used when the
+command was issued.
+
+@{B}Launching an ARexx program from another host address@{UB} should result in
+the @{B}Fifth@{UB} and @{B}Sixth@{UB} words being different. (However, in a very few programs,
+this is not the case.)
+
+To illustrate this, follow these steps (@{B}Workbench 1.3 and earlier@{UB} users
+will not be able to do this as, prior to Workbench2.0, the ED program
+did not have an ARexx port):-
+
+1. Make sure that the current directory in you CLI window is still
+   "Articles_31-40". The ED program will adopt this current directory.
+
+2. Start up the ED program with, for example:-
+
+   > RUN ED RAM:Garbage
+
+  (we do not really want to edit a program but we need to give ED a file
+   name before it will work.)
+
+3. Press the ESC key which will result in an asterisk (*) appearing at
+   the bottom left of the ED window
+
+4. Type in this line after the * and then press return:-
+
+   rx /Example36-13.rexx/
+
+   @{B}Note@{UB} that, if you do @{B}not@{UB} include the ".rexx" suffix, then this line
+   will not work as, with no suffix present, rx'ing from ED causes ARexx
+   to look for the suffix ".ed"
+
+Now the output will be:-
+
+  First = COMMAND
+  Second = 0
+  Third = Example36-13.rexx
+  Fourth = DeviceName:DirName/Articles_31-40/Example36-13.rexx
+  Fifth = ed
+  Sixth = Ed
+
+The Fifth word indicates that ARexx is looking for a default suffix of
+".ed" on the ARexx programs.
+
+The Sixth word indicates that the program was launched from a host address
+of "Ed", i.e. the host address name of the ED program.
+
+To test out the default suffix you could enter at the CLI window prompt:-
+
+   > Copy Example36-13.rexx RAM:Test.ed
+
+then, when you press ESC in the ED window, enter:-
+
+  rx /RAM:Test/
+
+and the output will be:-
+
+  First  = COMMAND
+  Second = 0
+  Third  = RAM:test
+  Fourth = RAM_DISK:Test.ed
+  Fifth  = ed
+  Sixth  = Ed
+
+This proves that the default suffix of ".ed" has been used in the file
+search.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Version" "Article 36 - Parsing & Templates Part 2 - The VERSION Input Source"
+
+@{B}@{U}@{JCENTER}THE VERSION INPUT SOURCE@{UB}@{UU}
+@{JLEFT}
+
+
+@{B}@{U}The VERSION Input Source@{UB}@{UU}
+
+The SOURCE input source uses, as the input string, a string of 6 words
+consisting of:-
+
+1st word - The word "ARexx".
+
+2nd word - The version number of the ARexx that you are using.
+
+3rd word - The CPU in your Amiga, e.g. 68000 or 68020, etc.
+
+4th word - The MPU in your Amiga, e.g. 68881, or NONE if no MPU is
+           present.
+
+5th word - NTSC or PAL depending on your video output.
+
+6th word - Your Amiga's clock frequency, either 50HZ or 60HZ
+
+This program will read and display your Amiga's set up:-
+
+  /* Example 36-14 */
+
+  PARSE VERSION First Second Third Fourth Fifth Sixth .
+
+  SAY 'Program       =' First
+  SAY 'ARexx Version =' Second
+  SAY 'Amiga CPU     =' Third
+  SAY 'Amiga FPU     =' Fourth
+  SAY 'Video System  =' Fifth
+  SAY 'Frequency     =' Sixth
+
+The output will depend on your set up but, for a standard Amiga 500 used
+in Australia, it would be something like:-
+
+  Program       = ARexx
+  ARexx Version = V1.15
+  Amiga CPU     = 68000
+  Amiga FPU     = NONE
+  Video System  = PAL
+  Frequency     = 50HZ
+
+or like this for an accelerated A1200 with an MPU and an NTSC system:-
+
+  Program       = ARexx
+  ARexx Version = V1.15
+  Amiga CPU     = 68030
+  Amiga FPU     = 68881
+  Video System  = NTSC
+  Frequency     = 60HZ
+
+
+@{B}@{U}A PRACTICAL EXAMPLE OF VERSION FOR WORKBENCH 1.x USERS@{UB}@{UU}
+
+For those of you who still use Workbench 1.3 or earlier (and for those
+of you who can remember!).
+
+@{B}(But all readers may like to continue to see how VERSION can be used.)@{UB}
+
+There is a bug in the V1.3 and earlier Amigas (corrected from V2.0 onwards)
+that occasionally caused the system to boot up in NTSC mode instead of
+PAL mode. This meant that windows could not be moved into the bottom quarter
+of the screen. It only happens once in a large number of boot ups but
+it is very annoying when it does. If you want to use the full screen then
+the only solution is to reboot.
+
+On a rather rare excursion into the world of V1.3 and earlier while I
+was testing the hard drive installation program for these disks, I got
+an NTSC screen which made me think "what will `PARSE VERSION ...' show
+me?" Sure enough, I got a return of "NTSC" instead of "PAL", so I thought
+"ARexx to the rescue!"
+
+The following lines should be put into your startup-sequence file @{B}after@{UB}
+the "Setpatch" command but @{B}before@{UB} all the rest of the file so that it
+operates as early as possible.
+
+  ECHO "Starting RexxMast"
+  sys:system/rexxmast
+  sys:RexxC/RX s:checkscreenmode
+
+We need to call RexxMast and then the RX command using their full paths
+as the directories "System" and "RexxC" would not yet have been added
+to the command search path with the Path command.
+
+Now put the following program into the boot disk's "S" directory and give
+it the name "checkscreenmode.rexx":-
+
+  /* Example 36-15 */
+  /* Check Screen Mode */
+
+  SAY 'Checking for PAL or NTSC boot - If NTSC I will abort startup'
+
+  PARSE VERSION VersionString
+
+  Video = WORD(VersionString,5)
+
+  IF UPPER(Video) = 'NTSC' THEN DO
+    SAY 'System has booted with an NTSC screen - You need to reboot now!'
+    DO FOREVER ; END
+  END
+  ELSE SAY 'All OK - PAL detected - startup proceeding'
+
+All this does is to check the 5th word of the "Version" string and, if
+it is "NTSC", the program will go into a never ending loop thus stopping
+the boot up and allowing you to reboot. If "PAL" is the 5th word then
+control will pass back to the startup-sequence file.
+
+Now you will find out at the earliest possible moment that a reboot is
+needed. No more going through a whole startup-sequence before finding
+out.
+
+Of course, if you are living in America or somewhere else that uses NTSC
+mode then this is not much use to you. (But do NTSC Amigas sometimes boot
+up in PAL mode?? - If so substitute "PAL" for "NTSC and vice versa in
+the above program.)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

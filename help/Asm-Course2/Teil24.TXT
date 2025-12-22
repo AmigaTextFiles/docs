@@ -1,0 +1,258 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                24.Teil...
+
+So, jetzt wisst ihr ja schon eine ganze Menge ueber den Bootblock. Aber
+etwas das wisst ihr noch nicht.
+Obwohl ich wiegesagt nicht viel von dem Ganzen Betriebssystem-Krempel halte
+gibt es da doch etwas was sich unheimlich toll anhoert und auch toll ist.
+
+Obwohl ich, wie ich gerade gemerkt habe, das Kapitel Bootblock nicht
+nummerriert habe will ich doch mit der Nummerierung weitermachen.
+
+20.Programmierung des Trackdisk.Device
+
+Die ganze Zeit in der wir mit dem Bootblock gearbeitet haben hab ich immer von
+Trackdisk.Device geredet. Jetzt will ich mal rausruecken was das tolle an
+ihm ist.
+
+Erstmal will ich erklaeren was ueberhaupt Devices sind. Es gibt sie fuer
+sehr viele Sachen...Tastatur, Drucker...Musik usw.
+
+Was ist ein Device ueberhaupt ?
+
+Devices sind Programme die wie Librarys geoeffnet werden muessen. Sie haben
+dann direkten Draht zu dem Geraet fuer das sie da sind. Sie sind die
+verbindungsstelle zum Laufwerk oder zum Drucker. Das Trackdisk Device ist
+die unterste ebene bei der Arbeit mit dem Diskettenlaufwerk.
+
+Da wie ich gesagt habe das TDD (in zukunft fuer Trackdis...) schon offen
+ist, entfaellt das oeffnen komplett. Daran muesst ihr denken falls ihr
+dieses Device mal ausserhalb des Bootblocks benutzen wollt.
+
+Wenn wir das TDD benutzen so werden wir sehr viel schneller sein als wie
+der das AmigaDos selbst, weil wir die sachen erstmal von Hand auf die
+Diskette schmeissen, und da natuerlich die optimale Sache einsetzen. Und
+die ist nunmal alles hintereinander und in einem durch.
+
+Das Betriebssystem macht es etwas umstaendlicher.
+Um den Komfort und einfachere Handhabung fuer die Operation mit Disketten
+zu gewaehrleisten arbeitet das AmigaDos etwas anders mit dem TDD, als wie
+es wir tun. Das Betriebssystem laedt ein File nach dieser Technik ein..
+
+Sobald der Name im AmigaDos eingeben wurde sucht es den dafuer zu
+staendigen eintrag im Directory.
+Sobald es den hat, zieht es sich wichtige Daten aus dem Header. Eine Sache
+ist die laenge des Programms, damit es weiss wo es das hinladen kann, und
+keine vorhandenen Programme zerstoert.
+Desweiteren findet das Dos auch die Adresse des ersten Blocks des Programms
+auf der Diskette. Wenn es den hat, veranlasst es das TDD diesen Block zu
+lesen. Die letzten beiden Worte dieses Blocks sind die Adressen des
+naechsten. So hangelt sich das AmigaDos durch die Disk, bis es das
+Komplette Programm drin hat. Dies ist noetig weil das AmigaDos Programme
+nicht immer hintereinander auf die Diskette schreibt, sondern immer so nahe
+wie moeglich an den Directory Bloecken ran, damit der Schreib/Lese Kopf
+schnell das Ziel erreicht.
+
+Ihr stimmt mir doch zu das diese Methode sehr umstaendlich ist. Aber sie
+hat sich bewaehrt wenn es um geordnete Diskette und Zugriffszeit geht.
+
+Aber das TDD kann mehr !
+
+Denn das TDD verwaltet die Diskette nicht in Tracks und Sectoren wie das
+AmigaDos und die Laufwerke. Fuer das TDD ist die Diskette in Bloecke a 512
+Bytes unterteilt, und die sind von Null bis 1760 oder so durchnummeriert.
+
+Wenn wir also mit den Amon ein Programm, welches an Festen Adressen, wie
+zum Beispiel unsere Intro`s liegt, einfach Block fuer Block hintereinander
+auf Disk schreiben, dann kann es das TDD mit einem Schlag einladen, ohne
+das man dafuer ein Directory braucht. Den Effekt kennt ihr bestimmt von
+manchen Orginalspielen oder MegaDemos kennt, das obwohl sehr viele
+Programme auf der Diskette sein muessen, keine Directory vorhanden ist.
+
+Und das macht es sehr viel schneller.
+
+Ein vergleich..
+
+Ich habe mit dem Seka ein Testfile auf Diskette installiert. Es ist 64
+Kilobyte lang. Ansonsten war die Diskette leer.
+Um dieses File mit Read Image wieder einzuladen braucht der Seka 7
+Sekunden.
+
+Danach habe ich dasselbe File mit dem Amon auf Diskette geschriebn, und
+zwar so wie ich es mit dem TDD laden kann.
+Ich habe den Bootblock dafuer geschrieben, indem der Aufruf steht, und ihn
+auf die Diskette gelegt.
+Da ich das Ende der Bootblock identifikation und der Anfang des Ladens
+durch das TDD nicht ermitteln kann, sage ich halt wieviel das Laufwerk
+gebraucht vom Booten bis zum drinhaben des Files.
+
+Ganze 3.5 Sekunden, fuer alles beide..Das ist doch sehr schnell finde ich.
+
+Desweiteren eignet sich das TDD fuer unsere Zwecke, wenn wir mal von
+nachladen waehrend ein Programm laeuft reden. Da das TDD einen eigenen task
+belegt koennen wir es Synchron zu anderen Sachen laufen lassen. Es ist
+naemlich ein toller Effekt wenn nachgeladen wird und ein sogenanntes
+`Loading Demo` laeuft.
+
+Und da es so toll ist, will ich euch mal zeigen wie man damit umgeht.
+
+Erstmal muessen wir uns bevor wir anfangen zu Experimentieren ein Testfile
+anlegen. Wir nehmen wie ich ein 64 Kilobyte-File. Damit wir auch sehen das
+es ueberhaupt laedt, und wenn, dann wann es fertig ist, schreiben wir noch
+ein kleines Prograemmchen davor welches die Bildschirm farbe aendert.
+
+Also wir schreiben im Seka folgendes....
+
+Org $40000
+Load $40000
+
+Start:
+        Move.w  #$0f00,$dff180
+        Bra.s   Start
+
+So nun legen ihr eine Formatierte Diskette ein die aber ansonsten leer ist.
+Nunja, sie muss nicht leer sein, aber ein Teil der Daten die sich auf ihr
+befinden werden Floeten gehen.
+Also nachdem die Diskette eingelegt ist, Assemblieren wir das Programm.
+Sobald das geschehen ist, schreiben wir das fertige Image auf Disk.
+Wir muessen 64 Kilobyte abspeichern, dazu geben wir den Bereich von $40000
+bis $50000 an. Sobald sich das Image auf Diskette befindet, muessen wir es
+TDD-gerecht auf Disk schreiben.
+
+Dazu benutzen wir den Amon...
+
+Erstmal laden wir das Image in den Arbeitsspeicher. Das geschieht mit
+
+[ 40000 Testfile
+
+Jetzt liegen die 64 Kilobyte ab $40000
+
+Nun muessen wir sie auf Diskette kriegen. Den Write-Blocks befehl vom Amon
+kennt ihr ja schon. Nun muessen wir uns nur noch einen Standpunkt auf
+Diskette ausdenken. Dazu nehmen wir den Teil direkt hinter den Bootblocks.
+
+Der Befehl lautet
+
+> 40000 1 2 80
+
+40000   Von $40000 an
+1       Df1:
+2       ab Block 2
+80      80 Blocks
+
+Damit duerfte das File Korrekt geschrieben werden.
+
+Jetzt muessen wir uns um den Bootblock kuemmern der das dann wieder
+einlaedt.
+Wiegesagt muss man sich wenn man mit dem TDD arbeitet nicht mehr um die
+Routinen kuemmern die das Ordnungsgemaesse abarbeiten der Bootroutine
+organisieren. Wir koennen uns also nur mit dem Aufruf fuer das TDD
+kuemmern.
+Der Aufruf sieht so aus, das wir dem TDD folgende Daten geben
+
+Den Jobcode, ob laden oder speichern
+Die Laenge in Bytes
+Das Ziel an das es im Speicher geschrieben werden soll
+und ab wo das File auf Diskette anfaengt.
+
+Nachdem ich das alles geschrieben haben muss ich das TDD nur noch
+veranlassen diese Operation auszufuehren. Der Bootblock saehe dann so aus..
+
+Da ich die Werte nicht in irgendwelchen Register uebergebe, sondern an ganz
+bestimmten stellen im TDD, schreibe ich sie Direkt dort hin, und zwar so.
+
+Jobcode nach $1c(a1), also an die 28($1c) Stelle des TDD
+Die Laenge in Bytes nach $24(a1)
+Ziel im Speicher nach $28(a1)
+Ab dem Wievielten Byte auf Disk es anfaengt, dort kann man aber nur
+anfaenge von Blocks angeben.
+
+Zum Schluss noch eine Routine im Exec, die alles veranlasst. Diese Funktion
+heisst DoIO fuer Do Input/Output
+
+Danach nur noch der Jmp-Befehl der das geladene ausfuehrt.
+
+Das Bootblock-listing sieht dann so aus..
+
+Org $40000
+Load $40000
+
+Kennung:   dc.b "DOS",0
+Chksum:    dc.l 0
+Rootblock: dc.l 0                       ; Wiegesagt, der Rootblock ist nur
+                                        ; bei Diskette mit Directory noetig
+                                        ; Deshalb lasse ich ihn weg.
+
+        Move.w  #$02,$1c(a1)            ; Jobcode `Lesen` nach $1c
+        Move.l  #$10000,$24(a1)         ; Laenge in Bytes nach $24
+        Move.l  #$40000,$28(a1)         ; Ziel im Speicher
+        Move.l  #$400,$2c(a1)           ; Ab Byte $0400 auf Disk
+        Jsr     -$1c8(a6)               ; DoIO
+        jmp     $40000                  ; Geladenes anspringen.
+
+Das ist doch garnicht so schwer, oder ?
+
+Wenn man mehrere Programme, wie zum Beispiel bei einem Megademo, laedt kann
+man das Programm auch mit JSR anspringen, nachdem das Intro dann mir RTS
+verlassen wird, wird der Bootblock, sofern er nicht zerstoert ist weiter
+abgearbeitet.
+Deshalb arbeiten die meisten Demosteuernden Bootbloecke so, das sie erstmal
+den Teil der das Demo steuert an einen Feste Adresse Kopieren, damit sie
+genau wissen wo er liegt, und sicher ist das er Intakt ist.
+
+Die Eintragungen in den Registern des TDD sind einfach. Sie entsprechen den
+Werten die man auch mit dem Seka hat. Ich rede von der Laenge und der
+Adresse.
+Mit dem Amon ist das aber etwas anders. Dort werden Anfang auf Diskette und
+die Laenge mit der Anzahl der Blocks auf Diskette angegeben. Um diese Werte
+zu erhalten, muessen wir die Werte des Bootblocks nur durch 512($200)
+teilen.
+
+Damit waere der Anfang auf Diskette $400/$200 = 2
+Und die Laenge $10000/$200 = 80
+
+Somit wisst ihr auch wie ihr den Aufruf
+
+> 40000 1 2 80
+
+zu verstehen habt...
+
+Es stehen bei der Arbeit mit dem Trackdisk.device genau 1760 Blocks zur
+verfuegung. Das sind die vollen 880 Kilobyte, die die Diskette hergibt.
+Und das ist eine ganze menge, da kriegt man ne` menge Demo rein.
+
+Man kann natuerlich auch die beiden Modi kombinieren. Das ist noetig wenn
+man zum Beispiel eine Diskette mit vielen Programmen rumgibt die sich die
+Leute aber Kopieren sollen koennen, und man ein etwas laengeres Bootintro
+hat, dann kann man die Blocks die das laengere Bootintro braucht als Belegt
+kennzeichnen. Sie werden dann nicht von AmigaDos benutzt.
+
+Man kann, wie ihr gesehen habt, die direkte Adressierung zu benutzen, wie wir
+es mit den Intros und so gewoehnt sind. Denn geben ja die Adresse an wo es
+hingeladen werden soll. Man kann aber nur wenn man aus dem Bootblock
+herauslaedt mit den Werten um sich schmeissen. Sobald aber andere
+Programme Laufen sollte man sich entweder vergewissern ob der Bereich frei
+ist, oder sich halt von Betriebssystem eine Adresse geben lassen wo es hin
+kann. Den sonst stuerzt der Amiga sofort ab wenn ein wichtiges Programm
+ueberschrieben wird.
+
+Mehr muss eigentlich nicht beachtet werden wenn man mit den TDD arbeitet.
+Ich benutze es sehr selten. Es ist auch nur interresant wenn man viel
+Demos, MusikShow oder Diashows Produziert und herumreicht. Die Vorteile
+liegen dort klar auf der Hand.
+
+1. Die sachen sind alle sehr schnell eingeladen.
+2. Irgendwelche Lamer`s koennen die Diskette nicht zerpfluecken koennen und
+  als ihr Werk herumreichen koennen.
+3. Macht es natuerlich noch einen sehr guten eindruck.
+
+Ich schaetze die Gruende sprechen fuer sich. Experimentiert noch ein
+Bisschen damit rum, und macht mal ein paar Test, von wegen den Zeiten die
+Zum laden gebraucht werden, damit ihr sicherer in der Handhabung des TDD
+werdet. Denn nicht ist aergelicher als wie wenn man `mal eben` einen TDD
+Bootblock schreiben will, alles wieder neu lernen muss.
+
+C.U.
+
+                Jeff Kandle

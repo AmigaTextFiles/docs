@@ -1,0 +1,292 @@
+
+
+
+
+
+               ........................................
+               ...__________________________________...
+               ../__________________________________\..
+               ../____/~~~~\/~~~~~\/~~~~\/~~~~~\____\..
+               ../___/~~\/~~V~~\/~~\/~~\_/~~\/~~\___\..
+               ../___/~~\___/~~\/~~\/~~\_/~~\/~~\___\..
+               ../___/~~V~~~V~~~~~\_/~~\_/~~~~~~\___\..
+               ../___/~~\/~~V~~\/~~\/~~\_/~~\_______\..
+               ../___/~~\/~~V~~\/~~\/~~\_/~~\_______\..
+               ../____/~~~~\/~~\/~~V~~~~\/~~\_______\..
+               ../__________________________________\..
+               ../                                  \..
+               ........................................
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               Graphical Rendition Interchange Protocol
+
+                         format specifications
+
+                               Version 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        devised by Michael Glew
+
+                            2nd August 1992
+-----------------------------------------------------------------------
+                            AN INTRODUCTION
+-----------------------------------------------------------------------
+
+     Over  the years,  I  have  used  many  BBS's and  have encountered
+interesting  protocols such  as AVATAR  and SKYPIX.  As I was extremely
+interested  with SKYPIX,  I wondered  if it  was possible  to create  a
+multimedia graphics protocol that  would be  flexible and simple enough
+to be used  on all  machines, yet  is powerful  enough to  create great
+looking graphics  screens on  BBS's,  on  any resolution  screen;  from
+block character graphics (160x50) to SVGA (1024x850)?!
+
+     The transfering of full  bit map  raster files over networks was a
+bit stupid  with non-digital  phone lines,  where a  picture could take
+anything from 60  seconds to  10 minutes  to transfer  to your machine,
+even if  it is  compressed with  MNP or  GIF protocols.   I decided  to
+leave  this  to  other  protocols,   and  just  handle  simple  graphic
+commands.
+
+     The commands are meant to be  part of an ASCII file, much like how
+ANSI is  implemented.  A  double escape  (<ESC><ESC>) signals the start
+of GRIP mode, and  continues  until  another double  escape is reached.
+Each graphic command is followed  immediately by a carriage return, and
+line feeds  and spaces  are ignored.   The commands  are meant  to look
+like a script, so that editing is simplified.
+
+     One  thing must  be  noted  though;   This  protocol is  character
+orientated.  That is to say that  the resolution on a 80x25 text screen
+is 80x25 - this is to  make formatting  menus and the such easier.  The
+line, though will be of the  resolution of the graphics capabilities of
+the screen  used.  eg.   if  a  CGA 320x200  screen is  used, then  the
+matrix resolution will  be 40x25,  but the  lines will be drawn up to a
+resolution  of  320x200,  as  will  circles  and  area  fill  patterns.
+Speaking of fill  patterns, as  most machines  will have  8x8 character
+matrices, then  that will  be the  base pattern  matrix, so on machines
+that have  say a  16x16  character  matrix,  will  have 4  matrices per
+character, or twice the resolution.
+
+     In Version 1  of the  specifications,  there was the ability to
+control the  resolution  directly  using the  protocol.  I decided this
+would be a bad idea, so  this has  been removed.  The terminal software
+will take  the  default  80x25  screen  data  as  input and  optionally
+translate  it to  whatever size  screen  it  currently has.   eg.  If A
+80x32 screen  is used  (on Amiga  PAL  machines),  then say  a C15;16;5
+command can be interpreted  as a  C15;20;5 command, hence the aspect of
+the entire screen  can be  preserved.   Please  note that  the software
+will have to handle correct circle  aspects itself.  Either by hardware
+checking, or by user default settings.
+-----------------------------------------------------------------------
+                        T H E   C O M M A N D S
+-----------------------------------------------------------------------
+
+NB:  variables in the form a,b represent coordinates (x,y)
+     up arrows (^) point to the set of variables that can be repeated
+
+-----------------------------------------------------------------------
+
+       Name:   Vector
+Description:   Draw line(s), join the given points with line vectors
+  Variables:   a,b = point
+      Usage:   Va;b
+    Repeats:    ^^^
+    Example:   V0;0;10;10;30;10;0;0
+      Notes:   - a and b will be of type BYTE
+               - this command will  move to  the first coordinate if no
+               current coordinate is  defined, and  draw a line to each
+               following  coordinate, updating  the current  coordinate
+               at each step:
+
+               eg.   move(0,0)      ; move to (0,0) - only if undefined
+                     line(0,0)      ; draw to (0,0)
+                     line(10,10)    ; draw to (10,10)
+                                    ; move to (10,10)
+                     line(30,10)    ; draw to (30,10)
+                                    ; move to (30,10)
+                     line(0,0)      ; draw to (0,0)
+                                    ; move to (0,0)
+
+
+       Name:   Circle
+Description:   Draw circle(s) in current foreground colour
+  Variables:   a,b  = centre
+               r    = radius
+      Usage:   Ca;b;r
+    Repeats:    ^^^^^
+    Example:   C10;20;5;10;40;3
+      Notes:   - a, b and r will be of type BYTE
+               - this command  will simply  draw circles  as described,
+               but applications  will  either  adjust circle  aspect to
+               appear  1:1, or  the aspect  will be  adjustable by  the
+               user.
+
+
+       Name:   Box
+Description:   Draw box(es) in current foreground colour
+  Variables:   a,b  = top-left corner
+               c,d  = bottom-right corner
+      Usage:   Ba;b;c;d
+    Repeats:    ^^^^^^^
+    Example:   B0;0;10;10;3;3;7;7
+      Notes:   - a, b, c and d will be of type BYTE
+               - this command could  hand values to the Vector command,
+               as this could share code,  and make things simpler.  But
+               if the  application machine  has  kernal  routines to do
+               this,  you should  use these  routines, as  they will be
+               faster.   (Not that  it would  make a  difference at low
+               baud rates.)
+       Name:   Fill
+Description:   Fill enclosed area(s) with current colours
+  Variables:   a,b  = starting point
+      Usage:   Fa;b
+    Repeats:    ^^^
+    Example:   F20;10;1;27
+      Notes:   - a and b will be of type BYTE
+               - there should  be  kernal  routines to  handle this  on
+               most  graphics  orientated   machines,  write  your  own
+               otherwise.
+               - the enclosure  of the  Fill can  be any colour but the
+               background colour
+
+
+       Name:   Thick
+Description:   Set drawing thickness
+  Variables:   a    = thickness as a percentage of character width
+      Usage:   Ta
+    Repeats:   none
+    Example:   T30
+      Notes:   - a will be of type BYTE
+               - eg. T30  will give  30% character  width, which  on an
+               8x8 character,  is 2.4  pixels.  Most routines should be
+               able  to work  with non-integer  Thickness, for  maximum
+               quality.  Please  note  that  routines should  work with
+               round "pens":
+
+               eg.  1 pixel thickness                       *
+
+                    2 pixel thickness                       **
+                                                            **
+
+                    3 pixel thickness                       ***
+                                                            ***
+                                                            ***
+
+                    4 pixel thickness                        **
+                                                            ****
+                                                            ****
+                                                             **
+
+               The routine to define  the "pen"  should use pixels more
+               than 50% filled  by a  perfect, adjusted  aspect, circle
+               with a diameter that of the thickness value.
+
+
+       Name:   Pattern
+Description:   Set the fill pattern
+  Variables:   a0..a7    = 8x8 matrix bits grouped in to bytes
+      Usage:   Pa
+    Repeats:    ^ (up to 8 bytes)
+    Example:   P85;170 (equivalent to P85;170;85;170;85;170;85;170)
+      Notes:   - a is of type BYTE
+               - default value is 255
+
+
+       Name:   SetPen
+Description:   set the Foreground and Background colours
+  Variables:   f    = foreground colour (drawing)
+               b    = background colour (fill and clear)
+      Usage:   Sf;b
+    Repeats:   none
+    Example:   S4;2
+      Notes:   - f and b are of type BYTE
+               - works  with  standard  ANSI   colours  (16),  upper  8
+               converted to lower 8 if only 8 colours available.
+       Name:   Comment
+Description:   Allows commenting of GRIP commands
+  Variables:   a$   = comment text
+      Usage:   *a$
+    Repeats:   none
+    Example:   * This menu was written by Joe Bloggs 2001
+      Notes:   - These should be ignored  by the  GRIP interpreter, and
+               ideally, they should  be chopped from the sent GRIP text
+               file, by the sending software.
+-----------------------------------------------------------------------
+                             IN CONCLUSION
+-----------------------------------------------------------------------
+
+     So there are the  basic commands,  but no  doubt there may be more
+to come,  such as  heading text  writers and  the such,  and maybe even
+sound will be added - lets wait and see!!!
+
+     Outside this protocol,  ANSI and  indeed AVATAR can be used as per
+normal.  Carriage Returns may be  ignored if at the start of a command,
+eg. if there are two carriage returns  after a command, then the second
+one will be ignored - this helps  with formatting  your GRIP text file.
+But most GRIP sensitive  BBS packages  will filter  out comments to get
+the most efficient output from the serial connection.
+
+     It is entirely  optional, but  the fill  styles will  apply to 1:1
+pixel  aspects,  and  the  bitmap  should  be  adjusted  for  non-  1:1
+environments.   Then  again,  the  aspect  of a  pattern fill,  may not
+matter, with regards to aspect.
+
+     If an  error is  detected, then  the interpreter  in the  terminal
+program  will skip  characters  until  a  double  escape or  a carriage
+return comes along and respectively  exit GRIP command mode or continue
+interpreting.
+
+     I would like to  see this  standard go  far towards  standardising
+BBS  graphics and  Telnet graphics  alike.  I  hope that  the author of
+SKYPIX is  not too  uncomfortable, but  it is  you that  caused healthy
+competition in  the  area  of  communications  graphics protocols,  not
+me.... 8-)
+
+     I consider this to  be shareware  information, and if you make any
+money out of this  info, please  think of  me when you think of keeping
+all the  spoils for  yourself...  And  think of  me when  you do  so...
+sigh!!!
+-----------------------------------------------------------------------
+                       HOW TO CONTACT THE AUTHOR
+-----------------------------------------------------------------------
+
+    Internet:  s3007048@mackay.mpce.mq.edu.au
+
+  Compuserve:  internet:s3007048@mackay.mpce.mq.edu.au
+
+     Fidonet:  "Internet" at node 3:713/602, 3:632/400 or 1:105/14
+               First line of text as follows:
+               To: s3007048@mackay.mpce.mq.edu.au
+
+  Snail-Mail:  Michael Glew
+               Lot 61 Warrambool Road
+               Tumbi Umbi NSW 2261
+               Australia

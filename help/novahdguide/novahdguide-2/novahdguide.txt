@@ -1,0 +1,681 @@
+
+novahdguide - nowadays hard drive guide by megacz@usa.com, release 2
+-----------------------------------------------------------------------
+
+---
+
+EVERYTHING GATHERED HERE APPLY TO A1200 WITH INTERNAL IDE INTERFACE MAINLY.
+A600 OR A4000 USERS MAY NEED TO RETUNE CERTAIN THINGS BUT THESE INFOS
+SHOULD BE STILL USABLE FOR THEM.
+
+---
+
+
+
+Something to say at start
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Having 160+ gig hard drive these days seems to be something very ordinary
+on Linux, Mac or Windows boxes, it may even be considered as a small amount
+of space since media take up a lot of it plus there are much larger drives
+(750+ gig) available on the market already. I wanted to use my 160 gib hard
+drive but i didnt want to make mistakes like i did with the previous drive,
+my knowledge wasnt too good as well on certain topics, so i started to look
+for some tips on the internet.
+
+My research shown that im allowed to use only the very first 126 GiB of my
+new harddisk, beacuse of the ATA registers limitation. I have seen many docs
+on the internet explaining the problem of this barrier and how to overcome
+it. The very known method is to increase the Block size and use 48bit LBA
+(http://www.48bitlba.com/) which is widely used in the PC world. There were
+some talkings around that Amiga also does support 48bit logic, but i was
+however unsuccessful with that.
+
+At this point i would like to warn you, 'scsi.device' version 43.43 that
+comes with BoingBag-3.9.2 does detect large capacities( >=126 gig) properly
+but there is no documentation available anywhere stating that it has some
+improvements to the LBA handling, plus it contains a very serious bug, it
+crashes or hangs upon two or more partitions going to be auto mounted...,
+'scsi.device's in versions 43.30 or 43.35 seem to work fine.
+
+Another remark is data safety, even if you succeed(by hacking) partitioning
+160+ gig harddisk with the Block size of 512 Bytes then you must realize
+that you can not expect miracle. When you reach and then cross the 28bit ATA
+boundary = 0xFFFFFFF then the counter will wrap around and you will be at
+the point of = 0x0000000 going up again, where performing any writes will
+result in corrupting the begining of your disk where your boot partition
+or some other partitions may sit!
+
+In ATA you got 16 bits for number of Cylinders = 65536 max., 4 bits for
+number of Heads = 16 max. and 8 bits for number of Blocks per Track = 255.
+If you summarize them 16 + 4 + 8 you will receive 28 bits. Do the math
+65536 * 16 * 255 it will give you a maximum of 267386880 possible sectors.
+Assuming Block size is 512 Bytes we multiply 267386880 * 512 and achieve
+136902082560 bytes or 127.5 Gigabytes of available space, but on the Amiga
+this type of logic can be considered a hack, this is because 'scsi.device'
+uses a value of 63 for Blocks per Track..., i will discuss this in RVM.
+
+Generally you should stay with the 28bit ATA and not try to use some tricks
+that may be incompatible from driver to driver. You can always use 4-way
+adapter and connect more such drives, so no nasty surprises will occur.
+
+
+
+Can i use old 'HdToolBox'?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sure, but there are limitations. It is safe to set 32768 cylinders per
+partition and resize it with mouse, but it is not safe to do so beyond that.
+As a final value you can use 65536 and do all the resizements with numbers
+entered in the string gadgets only. You can always combine 'HdInstTools'.
+To calculate 'Blocks per Cylinder' manually use this:
+
+   Heads * Blocks per Track = Blocks per Cylinder
+
+Also, dont look at the calculations made by old partitioning software they
+will be mostly wrong.
+
+Please note, your drive is in your hands, so be careful with the math, double
+check everything, data integrity depends on that! You do not need to calculate
+anything if you got 128+ gig big hard drive, just follow the guide. Lets start
+from providing drive definition, click 'Read Configuration' and check the out,
+we must verify the config. So if for example it came with,
+
+             Cylinders: 39549
+                 Heads: 16
+      Blocks per Track: 63
+   Blocks per Cylinder: 1008
+           (Block size: 512)
+
+Then you do the math of this type,
+
+   Cylinders * Heads * Blocks per Track * Block size = Capacity [B]
+
+to see if this reflects real capacity of your drive, ARexx is mostly at hand,
+so we will be using it from now on as a calculator:
+
+   > rx "numeric digits 14;say 39549*16*63*512"
+
+which is 20411080704 Bytes or 19 GiB = true, this is my old Samsung drive.
+If it will turn out that this not true then you have to improvise. If for
+example it has detected(might happen with 'HdInstTools'),
+
+             Cylinders: 712345
+                 Heads: 1
+      Blocks per Track: 399
+           (Block size: 512)
+
+then this is not a good idea to use such setup. If your drive capacity is
+160 GiB then as you remember from the previous part of this article you are
+allowed to use only the first 126 GiB with the Block size of 512 Bytes!
+In this case you should enter these values,
+
+             Cylinders: 262144
+                 Heads: 16
+      Blocks per Track: 63
+   Blocks per Cylinder: 1008
+           (Block size: 512)
+
+   > rx "numeric digits 14;say 262144*16*63*512"
+
+which is 135291469824 Bytes or 126 GiB and now you may finally go and set the
+partitions. If it will turn out that the automatic configuration dumped too
+small values then enter things like above and adjust the Cylinders only to
+match the real hard drive size minus some small factor to be on the safe side,
+to avoid unexpected errors that may appear if values exceed the real capacity.
+Suppose your drive is 80.1 GiB big and there were some problems with detection,
+so we assume it as 80100000000 bytes, now you should adjust the Cylinders to
+give you lower than this value or simply,
+
+   Capacity / Heads / B p T / Block size = Cylinders
+
+   > rx "numeric digits 14;say trunc(80100000000/16/63/512)"
+
+which is 155203 Cylinders according to OVM nomenclature.
+
+
+
+Original Values Model = OVM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In old 'scsi.device' ranging from version 37(maybe even less) to 40 you are
+allowed to use only the very first 7.8 GiB(theoretically) of your disk quota,
+this limitation is a result of 24 bit logic. There can be 16384 Cylinders =
+14 bits, 16 Heads = 4 bits and (64-1) Blocks per Track = 6 bits.
+A combination of these values gives a number of 16515072(16384*16*63) sectors
+for your disposal(in theory). If you pick a block size of 512 Bytes and then
+multiply by the number of sectors you will receive 8455716864 Bytes = 7.8 GiB.
+Some people may say "Great! But why doesnt this work???", and the answer is
+"Because this requires 64 bit types, and your 'scsi.device' and 'FastFileSystem'
+operate on 32 bit integers only, which means (4294967294-2) Bytes = 3.9 GiB".
+To fully use that space you must patch 'scsi.device' with a program called
+'NSDPatch' and use 64 bit file system, such as version 44+ of 'FastFileSystem'
+or version 1 or 2 of 'SmartFileSystem'. You must also follow the rule below
+when partitioning in order to keep your data in good shape:
+
+
+2                                                                       16382
++------------------------------------+-+------------------------------------+
+|                                    | |                                    |
+|          V (nFFS ok here)          |S|      A (never use nFFS here)       |
+|                                    | |                                    |
++------------------------------------+-+------------------------------------+
+
+                3.9 GiB                               ~3.9 GiB
+
+
+      V - VISIBLE area, virtually any 'scsi.device'.
+      S - SEPARATOR area (a partition made of few cyls.).
+      A - ADOPTED area, space available after patching.
+
+   nFFS - native FFS, the one that comes with Kickstart
+          or any other pre 43 or some other old/exotic fs.
+
+
+Let me explain. V is where 'scsi.device' has access all the time, S is to 
+prevent you from making partitions partly in the V area and partly in the A
+area, this may cause probs, like it may turn out with some exotic file systems
+that partition made right after the first 3.9 GiB is visible without 64 bit
+patch applied first. Imagine writing to it at that time... burried alive, cuz
+after you reach 4294967294 Bytes and try to cross it, then the integer will
+simply wrap around and give 0 or any other value in its range where your
+partition(s) in V area sit.
+
+Assuming these are our base values for the drive,
+
+             Cylinders: 16384
+                 Heads: 16
+      Blocks per Track: 63
+   Blocks per Cylinder: 1008
+           (Block size: 512)
+
+we want to calculate how many Partition Cylinders for V area will be needed,
+and according to this formula:
+
+   Cylinders - (Capacity - 3.9 GiB) / Heads / B p T / Block size = PCyls
+
+   > rx "numeric digits 14;say trunc(16384-(8455716864-4294967294)/16/63/512)"
+
+8322 - 2 = 8320 (this is because partitions start at cylinder 2, see above)
+PCyls will be needed. We will now check how many Bytes this is so we can
+calculate how many PCyls for S, firstly i would like to suggest to calculate
+how many Bytes in one cylinder.
+
+   Heads * Blocks per Track * Block size = One cylinder [B]
+
+   > rx "numeric digits 14;say 16*63*512"
+
+And this is 516096 Bytes, so now the V area stuff,
+
+  PCyls * One cylinder = V area size [B]
+
+  > rx "numeric digits 14;say 8320*516096"
+
+which is 4293918720 Bytes, nearly 3.9 GiB, good. Now lets focus on SEPARATOR,
+lets subtract V area size from 3.9 GiB to see how many bytes to separate,
+
+  3.9 GiB - V area size = S mask
+
+  > rx "numeric digits 14;say 4294967294-4293918720"
+
+and we need 1048574 Bytes to mask the rest of V area. You can clearly see that
+3 cylinders will be just fine,
+
+  > rx "numeric digits 14;say 3*516096"
+
+which is 1548288 Bytes. At this point you should create a partition at cyl.
+8322 with the size of 3 PCyls, call it SEPARATOR and exclude from being
+auto mounted. This way we got V and A, ready to be partitioned.
+
+If your 'scsi.device' or patch applied to your old 'scsi.device' is capable
+of simulating LBA then you are able to use 126 GiB of your hard disk quota.
+Things change a little bit, since we are able to use 28 bits(ATA limitation),
+where we can set 262144 Cylinders = 18 bits, 16 Heads = 4 bits and 63 B p T =
+6 bits. This gives a total of 264241152(262144*16*63) sectors we can use.
+Assuming Block size of 512 Bytes this gives 135291469824 Bytes or 126 GiB
+of total available space. What i suggest here is add second SEPARATOR for
+maximum security.
+
+
+2                                                                      262142
++----------------+-+-------------+-+----------------------------------------+
+|                | |             | |                                        |
+|   V (nFFS ok)  |S| A (no nFFS) |S|            L (no nFFS here)            |
+|                | |             | |                                        |
++----------------+-+-------------+-+----------------------------------------+
+
+      3.9 GiB         ~3.9 GiB                     118.2 GiB
+
+
+      V - VISIBLE area, virtually any 'scsi.device'.
+      S - SEPARATOR area (a partition made of few cyls.).
+      A - ADOPTED area, space available after patching or
+          using new 'scsi.device'.
+      L - LBA area, space available with a device that
+          supports TD64.
+
+   nFFS - native FFS, the one that comes with Kickstart
+          or any other pre 43 or some other old/exotic fs.
+
+
+We dont have to calculate anything anymore, we will just insert another
+SEPARATOR at cylinder 16384 preferably 3 PCyls long. From now on your L area
+is finally a place for big partitions, almost no restrictions with true 64 bit
+file systems!
+
+At this point you are ready to go, your first 3.9 GiB is ready to be used
+so you can install or xfer your previous system from old drive and continue
+setting up TD64/NSD64 stuff (see last point and dont worry if it says your
+drive does not support 64 bit commands, we dont need them in VISIBLE area!).
+
+
+
+Reduced Values Model = RVM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this model we will try to be ATA compatible. This model is not recommended
+for use with 8 Gigabyte drives, however 7.8 GiB limitation will be assumed.
+
+We will use these values for our drive,
+
+             Cylinders: 65536
+                 Heads: 16
+      Blocks per Track: 255
+   Blocks per Cylinder: 4080
+           (Block size: 512)
+
+so we have a 127.5 GiB of total available space. The advantage of RVM is your
+partitions will be having less cylinders = more Gigabytes, where this is very
+desirable when using old partitioning proggy, such as 'Hdtoolbox'. Rules are
+nearly the same as in previous point, except for numer of Cylinders, LBA area
+size,
+
+
+2                                                                       65534
++----------------+-+-------------+-+----------------------------------------+
+|                | |             | |                                        |
+|   V (nFFS ok)  |S| A (no nFFS) |S|            L (no nFFS here)            |
+|                | |             | |                                        |
++----------------+-+-------------+-+----------------------------------------+
+
+      3.9 GiB         ~3.9 GiB                     119.7 GiB
+
+
+      V - VISIBLE area, virtually any 'scsi.device'.
+      S - SEPARATOR area (a partition made of few cyls.).
+      A - ADOPTED area, space available after patching or
+          using new 'scsi.device'.
+      L - LBA area, space available with a device that
+          supports TD64.
+
+   nFFS - native FFS, the one that comes with Kickstart
+          or any other pre 43 or some other old/exotic fs.
+
+
+and the method of calculation is slightly different. Firstly we take the
+Capacity from the OVM which is 8455716864 Bytes and we are going to convert
+it to a numer of Cylinders to put in RVM, this is as simple as,
+
+   Capacity / Heads / B p T / Block size = PCyls 
+
+   rx "numeric digits 14;say trunc(8455716864/16/255/512)"
+
+and results with 4047 - 2 = 4045 PCyls(partitioning starts at cylinder 2!). 
+So, now we add a partition called SEPARATOR at 4046 with 3 PCyls and exclude
+it from being auto mounted. Worth to mention is that one cylinder in this
+model is,
+
+   Heads * Blocks per Track * Block size = One cylinder [B]
+
+   > rx "numeric digits 14;say 16*255*512"
+
+2088960 Bytes long! So in practise 2 PCyls should suffice for SEPARATOR stuff,
+but as i was using 3 in OVM then we will stay this way. Now we are going to 
+setup VISIBLE area,
+
+   3.9 GiB / Heads / B p T / Block size = PCyls
+
+   > rx "numeric digits 14;say trunc(4294967294/16/255/512)"
+
+and this is 2056 - 2 = 2054 PCyls (partitioning is possible counting from
+cylinder 2!), so we place a SEPARATOR at cylinder 2057 with 3 PCyls, and this
+way we got V, A and L areas ready to be partitioned. You are allowed to use
+the VISIBLE area right after setting there some file systems, so you can boot
+your machine with some system and do the necessary changes to your startup
+in order to use A and/or L areas.
+
+
+
+What about the Block size?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Increasing block size wont actually help, it might work with 48bit ATA, but
+as far as i know there is no such thing on the Amiga. Anyway here is how to
+setup if im wrong and BoingBag's 'scsi.device' allows 128+ gigs to be used,
+but note this is pure theory and i do not recommend to use this.
+
+You have to calculate everything from scratch for a Block size of 1024 or
+more Bytes. You have to take care of maximum Cylinders, set them before doing
+anything further. For example you have 16.8 GiB hard drive and wish to use it
+with NSD64 only, which should be possible. So you assume that 16.8 GiB is
+16800000000 Bytes. Firstly you calculate how many Cylinders this is in total
+for a Block size of 1024 Bytes(remeber im referring to OVM!),
+
+   Capacity / Heads / B p T / Block size = Cylinders
+
+   > rx "numeric digits 14;say trunc(16800000000/16/63/1024)"
+
+and this is 16276 Cylinders, so now we make a drive definition like this,
+
+             Cylinders: 16276
+                 Heads: 16
+      Blocks per Track: 63
+   Blocks per Cylinder: 1008
+           (Block size: 1024)
+
+and do everthing as in OVM point, remembering to use a file system with the
+Block size of 1024 Bytes and NOT enlarging the VISIBLE area!!!
+
+Please note, the larger the Block size is the more space will be wasted! You
+can read about that in old SFS documentation, there are benchmarks and such,
+but yes it will boost the filesystem a lot! Reasonable Block size is something
+like 1024 or 2048 Bytes and that is all for a file system of general purpose.
+On the other hand if you got 1 TiB large hard disk then it should not be
+bothering you. And oh, i almost forgot, larger Block sizes + huge partitions
+= more memory needed, like for validating, checking, etc.
+
+
+
+Partitioning suggestions(OVM)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+I would like to suggest you a partition of 2 GiB for your 'SYS:',
+
+   > rx "numeric digits 14;say x2d('7fffffff')-1",
+
+which should be 2147483646 bytes long if you plan to use 'FastFileSystem'.
+Another thing is to leave unused space for further use. You may for example
+create a partition to store your environment stuff instead of putting it
+in 'RAM:'. I know this is slower than storing in 'Ram Disk', but if you
+are low on memory then this is a great idea + this way risk of invalidated
+boot partition is much lower. You may also like to use VMM - im not sure if
+VMM can talk to the 'scsi.device' in the new way, so you better not create
+a partition for it in A or L areas!
+
+For anything else in the ADOPTED and LBA areas i dont see any other good
+solution than 'SmartFileSystem' - SFS version 1 = SFS\0 = 0x53465300.
+
+   - SFS            ( http://strohmayer.org/ )
+
+After setting up your hard disk, make a safe copy of 'RDB',
+
+   - HdInstTools    ( http://aminet.net/disk/misc/hdinst.lha )
+
+You may also like to write manual mountlist entries(very good idea) and mount
+them after the patches and/or new drives are loaded. For example, assuming
+values previously defined as our drive base,
+
+             Cylinders: 16384
+                 Heads: 16
+      Blocks per Track: 63
+   Blocks per Cylinder: 1008
+           (Block size: 512)
+
+you have created a partition called 'HD1:' that starts at cylinder 8326 and
+has 8057 PCyls. Your file system is SFS\0 and the disk is connected on Unit 0,
+then your mounlist entry will be looking like this:
+
+HD1:
+FileSystem 	= L:SmartFileSystem
+Device 		= scsi.device
+Priority 	= 1
+Unit 		= 0
+Flags 		= 0
+Surfaces 	= 16
+BlockSize 	= 512
+BlocksPerTrack 	= 63
+Reserved 	= 2
+Interleave 	= 0
+LowCyl 		= 8327
+HighCyl 	= 16383
+StackSize 	= 4096
+Buffers 	= 128
+BufMemType 	= 0
+GlobVec 	= -1
+DosType 	= 0x53465300
+MaxTransfer 	= 0x1FE00
+Mask 		= 0xFFFFFFE
+Activate 	= 1
+#
+
+You may specify other values for 'Buffers' and 'Mask' - i prefer 0xFFFFFFE
+(256 MiB). Also note, if you plan to use mounlists instead of auto mounting
+then you can unload file systems from RDB and load them in the startup
+residently, except for your boot partition. 
+
+
+
+Which 64 bit solution do i choose?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Known to me solutions are:
+
+   - IDEfix           (28 bits ATA)
+   - AmigaOS updates  (28 bits ATA)
+   - FRAP             (28 bits ATA)
+
+   - NSDPatch         (24 bits with old 'scsi.device')
+
+If you are a lucky owner of 'IDEfix' then you need to know that this is much
+more optimized 'scsi.device' than the one in 'AmigaOS updates'. But if you do
+not have it at hand then the version of 'scsi.device' that comes with OS 3.5/
+3.9 and BoingBags is also good(as long as you avoid 'scsi.device' version
+43.43). Other things are 'FRAP' and 'NSDPatch', they are freely available and
+you can get them both form Aminet. Downsides of these two solutions are like 
+- in case of 'FRAP' - you have to have working mmu in order to use it. And 
+when talking about 'NSDPatch' it will allow you to use only the very first
+7.8 Gigabytes of your hard drive with the block size of 512 Bytes.
+
+If you decide to use 'IDEfix' under OS 3.5/3.9 then dont forget to edit the
+'NSDPatch.cfg' and comment out everything related to 'scsi.device' as it is
+NSD64/TD64 compatible already!.
+
+In case of 'FRAP' you do not need to patch it with 'NSDPatch', it is fully
+NSD64/TD64 compliant, so exclude 'scsi.device' in 'NSDPatch.cfg'.
+
+
+a) IDEfix
+==========
+
+This is very easy, files you need are as follows(crippled):
+
+   - c:IDEfix
+   - c:LoadIDE
+   - libs:idefix.library
+
+You have two choices, install the new 'scsi.device' as a module, or patch 
+existing 'scsi.device' on the fly. In the first case place 'LoadIDE' after 
+'Setpatch' like:
+
+   > Setpatch
+   > LoadIDE reset
+
+You may take a look at its options to fully fit your configuration, and dont
+worry it wont fall into reboot loop - reboots only once, when installing the
+module.
+
+Second way is somewhat undesired and unclean, but it works and you dont have
+to reboot. You just place 'IDEfix' after the 'Setpatch'
+
+   > Setpatch
+   > IDEfix
+
+And you are done. These are of course simple examples, in my startup i got a
+place where i load all the modules so that i got only two reboots at cold
+start.
+
+You may find a demo on Aminet,
+
+   - IDEfix97       ( http://aminet.net/disk/misc/IDEfix97.lha )
+
+but i recommend version 119.16(IDE-fix), the less recommened is version
+119.17(IDE-max) - people say it contains some tweaks.
+
+
+b) AmigaOS updates
+===================
+
+First of all, extract your "AmigaOS Rom Update" using one of three available
+on the net proggies:
+
+   - RomSplit       ( http://www.doobreynet.co.uk/files/remus/RomSplit_096.lha )
+   - romupdatesplit ( http://aminet.net/util/boot/BlizKick.lha )
+   - rux            ( http://aminet.net/util/boot/RemAPollo.lha )
+
+Rename your update to something like "AmigaOS Rom Update_off", copy the
+extracted modules to 'devs:modules/' and pick the needed ones to be loaded 
+with,
+
+   - Loadresident   ( http://aminet.net/util/boot/RemAPollo.lha )
+
+or any other such program(i like this one, cuz it is able to display the
+modules and can be easily used in scripts) or your kickstart remapper. For
+example, we want to load 'scsi.device' version 43.35 so we just:
+
+   > Setpatch
+   > failat 21
+   > Loadresident devs:modules/scsi.device_43.35 reboot
+
+Or using the kickstart remapper(refer to its docs on how to do that):
+
+   > Setpatch
+   > yourkickstartremapper devs:kickstarts/kickX.AY devs:modules/scsi.device_43.35
+
+In case of 'Loadresident' if you decide to add more modules then remember
+to add them always on top of existing ones without 'reboot' switch.
+
+
+c) FRAP
+========
+
+With this patch you can attack 'scsi.device' in versions ranging from 37.64
+(maybe even less) to perhaps 40.22, i was using it for a long time in the past
+with my 20 gig drive and it was better than nothing. But it expects the rom to
+be writable so you have to remap it and leave unprotected, where this tool does
+this very good:
+
+   > MuFastRom      ( http://aminet.net/util/libs/MMULib.lha )
+
+But before you can do that you have to install and configure the 'MMULib'
+package in your system. After that you just insert 'MuFastRom' after your
+real kickstart remapper(or if you dont have any then right after 'Setpatch'):
+
+   > Setpatch
+   > yourkickstartremapper ...
+   > mulocklib
+   > MuFastRom on noprotect
+   > FRAP
+  
+And without any additional reboots your system continues to boot with NSD64/
+TD64 compliant 'scsi.device'. To see if 'FRAP' did its job redirect the output
+to some file. You may hook up some script testing if it patched or not like
+this one:
+
+   > ...
+   > SET frapmsg ram:frapmsg.temp
+   > FRAP >$frapmsg
+   > rx >NIL: "a=OPEN(b,'$frapmsg','R');c=READCH(b,65535);IF POS('LBA mode : ON',c)>0 THEN EXIT 0;EXIT 5"
+   > IF WARN
+   > echo "error, 'scsi.device' not patched!!!"
+   > ENDIF
+   > UNSETENV $frapmsg
+   > UNSET frapmsg
+
+or this one(simplier):
+
+   > Setpatch
+   > yourkickstartremapper ...
+   > mulocklib
+   > MuFastRom on noprotect
+   > IF WARN
+   > echo "error, 'scsi.device' not patched!!!" 
+   > ELSE
+   > FRAP
+   > ENDIF
+
+You may be asking of why to remap twice, and not just use the 'MuFastRom', and
+that is a good question! The problem is with 'exec.library', 'MuFastRom' cant
+relocate it "live". I know this is a waste of memory but there is probably no 
+other way if you want speed and 'FRAP' unless your remapper is able to leave
+the kickstart unprotected.
+
+Frap can be found on Aminet here:
+
+   - FRAP           ( http://aminet.net/disk/misc/frap_v1.0.lha )
+
+
+d) NSDPatch
+============
+
+This solution is good for use with 8 Gigabyte disks and old 'scsi.device'.
+It can perhaps work on A600 as well. Download and install(dont install if you
+are the owner of OS 3.5/3.9 as there is 'NSDPatch' integrated in 'Setpatch'):
+
+   - NSDPatch       ( http://aminet.net/disk/misc/NSDPatch43_20.lha )
+
+You then simply use the default config which should be activated after
+the 'Setpatch':
+
+   > Setpatch
+   > NSDPatch
+
+This will result in NSD64 compliant 'scsi.device' of virtually any version.
+Small remark, you should not patch any residently loaded modules with this
+program, only rom resources, so take a look at the 'NSDPatch.cfg' first to
+see what is in there and what modules you usually load!
+
+
+
+Final words
+^^^^^^^^^^^^
+
+You can safely format everything in the V area, not worrying about the 64
+bit commands absency. After making sure your NSD64/TD64 function ok, you may
+start formatting your newly created partitions in the A and maybe L areas, but
+do that only with automounted partitions, dont use mounlists at this point.
+A program called:
+
+   - Format64       ( http://aminet.net/disk/misc/Format64.lha )
+
+will tell you at the begining if drive supports 64 bit commands and if so hit
+Return, and go shopping or give yourself some food =D otherwise press Control-C
+and Return to abort.
+
+DONT FORMAT AND/OR QUICK FORMAT THE L AREA WHEN USING 'NSDPatch' WITH OLD 
+'scsi.device', IT WILL TRASH NEIGHBOUR PARTITIONS AND CAUSE THE SYSTEM TO
+COMMIT SUICIDE(CRASH)!!!
+
+Generally dont do quick formats at all so you can track down more errors. Also,
+avoid 'ffs' switch on SFS partitions.
+
+You may want to add 'noverify' switch so the formatting process will be as
+twice as fast(if the drive is new, then the risk of bad blocks is almost
+none).
+
+In case of SFS afected partitions and when everything went fine with 'format64',
+use 'SFSFormat' to setup file system specific stuff.
+
+If you see any errors in this article then please let me know, your suggestions
+and contributions are very welcome!
+
+Formatting 127.5 GiB took my Miggy(68040/33) 18 hours, good luck! =D
+
+
+
+Thanks to all people who have developed software mentioned in this guide,
+without your effort it would be impossible to use large hard drives on this
+oldskoolish computer.
+
+
+
+megacz@usa.com

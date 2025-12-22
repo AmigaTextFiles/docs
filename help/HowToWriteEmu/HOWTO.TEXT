@@ -1,0 +1,403 @@
+HOWTO: Writing a computer emulator
+
+How To Write a Computer Emulator
+
+by Marat Fayzullin
+
+   I wrote this document after receiving large amount of email from people who
+would like to write an emulator of one or another computer, but do not know
+where to start. Any opinions and advices contained in the following text are
+mine alone and should not be taken for an absolute truth. The document mainly
+covers so-called "interpreting" emulators, as opposed to "compiling" ones,
+because I do not have much experience with recompilation techniques. It does
+have a pointer or two to the places where you can find information on these
+techniques.
+
+  If you feel that this document is missing something or want to make a
+correction, feel free to email me your comments. I do not answer to flames,
+idiocy, and requests for ROM images though. I'm badly missing some important
+FTP/WWW addresses in the end of this document, so if you know any worth putting
+there, tell me about it. Same goes for any frequently asked questions you may
+have, that are not in this document.
+
+Contents
+
+  So, you decided to write a software emulator? Very well, then this document
+may be of some help to you. It covers some common technical questions people ask
+about writing emulators.
+
+ * What can be emulated?
+ * What is "emulation" and how does it differ from "simulation"?
+ * Is it legal to emulate the proprietary hardware?
+ * What is "interpreting emulator" and how does it differ from "recompiling
+emulator"?
+ * I want to write an emulator. Where should I start?
+ * Which programming language should I use?
+ * Where do I get information on the emulated hardware?
+ * How do I emulate a CPU?
+ * How do I optimize C code?
+ * More to come here
+
+What can be emulated?
+
+  Basically, anything which has a microprocessor inside. Of course, only devices
+running a more or less flexible program are interesting to emulate. Those
+include:
+
+ * Computers
+ * Calculators
+ * Videogame Consoles
+ * Arcade Videogames
+ * etc.
+
+  It is necessary to note that you can emulate any computer system, even if it
+is very complex (such as Commodore Amiga computer, for example). The perfomance
+of such an emulation may be very low though.
+
+What is "emulation" and how does it differ from "simulation"?
+
+  Emulation is an attempt to imitate the internal design of a device.Simulation
+is an attempt to imitate functions of a device. For example, a program imitating
+the Pacman arcade hardware and running real Pacman ROM on it is an emulator. A
+Pacman game written for your computer but using graphics similar to a real
+arcade is a simulator.
+
+Is it legal to emulate the proprietary hardware?
+
+  Although the matter lies in the "gray" area, it appears to be legal to emulate
+proprietary hardware, as long as the information on it hasn't been obtained by
+illegal means. You should also be aware of the fact that it is illegal to
+distribute the system ROMs (BIOS, etc.) with the emulator if the are
+copyrighted.
+
+What is "interpreting emulator" and how does it differ from "recompiling
+emulator"?
+
+  There are three basic schemes which can be used for an emulator. They can be
+combined for the best result.
+
+ * Interpretation
+  The emulator reads emulated code from the memory byte-by-byte, decodes it, and
+performs the appropriate commands on the emulated registers, memory, and I/O.
+The general algorithm of such an emulator is following:
+while(CPUIsRunning)
+{
+  Fetch OpCode
+  Interpret OpCode
+}
+  The pluses of such code include ease of debugging, portability, and ease of
+synchronization (you can simply count the clock cycles passed and tie the rest
+of your emulation to the cycle count).
+
+  The single, big, and obvious minus is perfomance. The interpretation takes a
+lot of CPU time, and you may require pretty fast computer to run your code at
+the decent speed.
+
+ * Static Recompilation
+  In this technique, you take a program written in the emulated code and attempt
+to translate it into the assembly code of your computer.The result will be usual
+executable file which you can run on your computer without any special tools.
+While static recompilation sounds very nice, it is not always possible. For
+example, you can not statically recompile the self-modifying code, as there is
+no way to tell what it will become without running it. To avoid such situations,
+you may try combining static recompiler with an interpreter or a dynamic
+recompiler.
+
+ * Dynamic Recompilation
+  Dynamic recompilation is essentially the same thing as the static one, but it
+occurs during program execution. Instead of trying to recompile all the code at
+once, do it on the fly when you encounter CALL or JUMP instructions. To increase
+speed, this technique can be combined with the static recompilation. You can
+read more on dynamic recompilation in the white paper by Ardi, creators of the
+recompiling Macintosh emulator.
+
+I want to write an emulator. Where should I start?
+
+  In order to write an emulator, you must have a good general knowledge of
+computer programming and digital electronics. Experience in assembly programming
+comes very handy too.
+
+ *     Select a programming language to use.
+ *     Find all available information about the emulated hardware.
+ *     Write CPU emulation or get existing code for the CPU emulation.
+ * Write some draft code to emulate the rest of the hardware, at    least
+partially.
+ * At this point, it is useful to write a little built-in debugger    which
+allows to stop emulation and see what the program is doing.    You may also need
+a disassembler of the emulated system assembly    language. Write your own if
+none exist.
+ * Try running programs on your emulator.
+ * Use disassembler and debugger to see how programs use the hardware    and
+adjust your code appropriately.
+
+Which programming language should I use?
+
+  The most obvious alternatives are C and Assembly. Here are pros and cons of
+each of them:
+
+ * Assembly Languages
++ Generally, allow to produce faster code.
++ The emulating CPU registers can be used to directly
+  store the registers of the emulated CPU.
++ Many opcodes can be emulated with the similar
+  opcodes of the emulating CPU.
+- The code is not portable, i.e. it can not be run on
+  a computer with different architecture.
+- It is difficult to debug and maintain the code.
+
+ * C
++ The code can be made portable so that it works on
+  different computers and operating systems.
++ It is relatively easy to debug and maintain the
+  code.
++ Different hypothesis of how real hardware works
+  can be tested quickly.
+- C is generally slower than pure assembly code.
+
+  Good knowledge of the chosen language is an absolute necessity for writing a
+working emulator, as it is quite complex project, and your code should be
+optimized to run as fast as possible. Computer emulation is definitely not one
+of the projects on which you learn a programming language.
+
+Where do I get information on the emulated hardware?
+
+  Following is a list of places where you may want to look.
+
+Newsgroups
+
+ * comp.emulators.misc
+  This is a newsgroup for the general discussion about computer emulation.Many
+emulator authors read it, although the noise level is somewhat high.Read the
+c.e.m FAQbefore posting to this newsgroup.
+ * comp.emulators.game-consoles
+  Same as comp.emulators.misc, but specifically dealing with videogame console
+emulators. Read the c.e.m FAQbefore posting to this newsgroup.
+ * comp.sys./emulated-system/
+  The comp.sys.* hierarchy contains newsgroups dedicated to specific computers.
+You may obtain a lot of useful technical information by reading these
+newsgroups. Typical examples:
+comp.sys.msx       MSX/MSX2/MSX2+/TurboR computers
+comp.sys.sinclair  Sinclair ZX80/ZX81/ZXSpectrum/QL
+comp.sys.apple2    Apple ][
+etc.
+  Please, check the appropriate FAQs before posting to these newsgroups.
+ * alt.folklore.computers
+
+ * rec.games.video.classic
+
+FTP
+
+Console and Game Programming  site in Oulu, Finland
+Arcade Videogame Hardware  archive at ftp.spies.com
+Computer History and Emulation  archive at KOMKON
+
+WWW
+
+comp.emulators.misc FAQ
+My Homepage
+Arcade Emulation Programming Repository
+Emulation Programmer's Resource
+
+How do I emulate a CPU?
+
+First of all, if you only need to emulate a standard Z80 or 6502 CPU, you can
+use one of the CPU emulators I wrote.Certain conditions apply to their usage
+though.
+
+ For those who want to write their own CPU emulation core or interested to know
+how it works, I provide a skeleton of a typical CPU emulator in C below. In the
+real emulator, you may want to skip some parts of it and add some others on your
+own.
+Counter=InterruptPeriod;
+PC=InitialPC;
+
+for(;;)
+{
+  OpCode=Memory[PC++];
+  Counter-=Cycles[OpCode];
+
+  switch(OpCode)
+  {
+    case OpCode1:
+    case OpCode2:
+    ...
+  }
+
+  if(Counter
+
+First, we assign initial values to the CPU cycle counter (Counter), and the
+program counter (PC):
+Counter=InterruptPeriod;
+PC=InitialPC;
+The Counter contains the number of CPU cycles left to the next suspected
+interrupt. Note that interrupt should not necessarily occur when this counter
+expires: you can use it for many other purposes, such as synchronizing timers,
+or updating scanlines on the screen. More on this later. The PC contains the
+memory address from which our emulated CPU will read its next opcode.
+
+ After initial values are assigned, we start the main loop:
+for(;;)
+{
+Note that this loop can also be implemented as
+while(CPUIsRunning)
+{
+where CPUIsRunning is a boolean variable. This has certain advantages, as you
+can terminate the loop at any moment by setting CPUIsRunning=0. Unfortunately,
+checking this variable on every pass takes quite a lot of CPU time, and should
+be avoided if possible. Also, do not implement this loop as
+while(1)
+{
+because in this case, some compilers will generate code checking whether 1 is
+true or not. You certainly don't want the compiler to do this unnecessary work
+on every pass of a loop.
+
+ Now, when we are in the loop, the first thing is to read the next opcode, and
+modify the program counter: OpCode=Memory[PC++];While this is the simplest and
+fastest way to read from the emulated memory, it is not always possible for
+following reasons:
+
+ * Memory may be fragmented into switchable pages (aka banks)
+ * There may be memory-mapped I/O devices in the system
+
+In these cases, we can read the emulated memory via ReadMemory() function:
+OpCode=ReadMemory(PC++);There should also be a WriteMemory() function to write
+into emulated memory. Besides handling memory-mapped I/O and pages,
+WriteMemory() should also do the following:
+
+ * Protect ROM from writing
+Some cartridge-based software (such as MSX games, for example) tries to write
+into their own ROM and refuses to work if writing succeeds. This is often done
+for copy protection.
+ * Handle mirrored memory
+An area of memory may be accessible at several different addresses. For example,
+the data you write into location $4000 will also appear at $6000 and $8000.
+While this situation can be handled in the ReadMemory(), it is usually not
+desirable, as ReadMemory() gets called much more frequently than WriteMemory().
+Therefore, the more efficient way would be to implement memory mirroring in the
+WriteMemory() function.
+
+ The ReadMemory()/WriteMemory() functions usually put a lot of overhead on the
+emulation, and must be made as efficient as possible, because they get called
+very frequently. Here is an example of these functions:
+static inline byte ReadMemory(register word Address)
+{
+  return(MemoryPage[Address>>13][Address&0x1FFF]);
+}
+
+static inline void WriteMemory(register word Address,register byte Value)
+{
+  MemoryPage[Address>>13][Address&0x1FFF]=Value;
+}
+Notice the inline keyword. It will tell compiler to embed the function into the
+code, instead of making calls to it. If your compiler does not support inline or
+_inline, try making function static: some compilers (WatcomC, for example) will
+optimize short static functions by inlining them.
+
+ Also, keep in mind that in most cases the ReadMemory() is called several times
+more frequently than WriteMemory().Therefore, it is worth to implement most of
+the code in WriteMemory(), keeping ReadMemory() as short and simple as possible.
+
+ After the opcode is fetched, we decrease the CPU cycle counter by a number of
+cycles required for this opcode: Counter-=Cycles[OpCode];The Cycles[] table
+should contain the number of CPU cycles for each opcode. Beware that some
+opcodes (such as conditional jumps or subroutine calls) may take different
+number of cycles depending on their arguments. This can be adjusted later in the
+code though.
+
+ Now comes the time to interpret the opcode and execute it:
+switch(OpCode)
+{
+It is a common misconception that the switch() construct is inefficient, as it
+compiles into a chain of if() ... else if() ... statements. While this is true
+for constructs with a small number of cases, the large constructs (100-200 and
+more cases) always appear to compile into a jump table, which makes them quite
+efficient.
+
+ There are two alternative ways to interpret the opcodes. The first is to make a
+table of functions and call an appropriate one. This method appears to be less
+efficient than a switch(), as you get the overhead from function calls. The
+second method would be to make a table of labels, and use the goto statement.
+While this method is slightly faster than a switch(), it will only work on
+compilers supporting "precomputed labels". Other compilers will not allow you to
+create an array of label addresses.
+
+ After we successfully interpreted and executed an opcode, the comes a time to
+check whether we need any interrupts. At this moment, you can also perform any
+tasks which need to be synchronized with the system clock:
+if(Counter
+
+Following is a short list of things which you may want to do in this if()
+statement:
+
+ * Check if end of screen is reached and generate VBlank interrupt if so
+ * Check if end of scanline is reached and generate HBlank interrupt if so
+ * Check for sprite collisions, generate interrupt if necessary
+ * Update emulated hardware timers, generate interrupt if timer expires
+ * Refresh a display scanline
+ * Refresh the entire screen
+ * Update sound
+ * Read keyboard/joysticks state
+ * etc.
+
+ Carefully calculate the number of CPU cycles needed for each task, then use the
+smallest number for InterruptPeriod, and tie all other tasks to it (they should
+not necessarily execute on every expiration of the Counter).
+
+ Note that we do not simply assign Counter=InterruptPeriod, but do a
+Counter+=InterruptPeriod: this makes cycle counting more precise, as there may
+be some negative number of cycles in the Counter.
+
+ Also, look at the if(ExitRequired) break;line. As it is too costly to check for
+an exit on every pass of the loop, we do it only when the Counter expires: this
+will still exit the emulation when you set ExitRequired=1, but it won't take as
+much CPU time.
+
+ This is about all I have to say about CPU emulation in C. You should be able to
+figure the rest on your own.
+
+How do I optimize C code?
+
+  First, a lot of additional code perfomance can be achieved by choosing right
+optimization options for the compiler. Based on my experience, following
+combinations of flags will give you the best execution speed:
+Watcom C++      -oneatx -zp4 -5r -fp3
+GNU C++         -O3 -fomit-frame-pointer
+Borland C++
+  If you find a better set of options for one of these compilers or a different
+compiler, please, let me know about it.
+
+ * A little note on loop unrolling:
+  It may appear useful to switch on the "loop unrolling" option of the
+optimizer. This option will try to convert short loops into linear pieces of
+code. My experience shows, though, that this option does not produce any
+perfomance boost. Turning it on may also break your code in some very special
+cases.
+
+  Optimizing the C code itself is slightly trickier than choosing compiler
+options, and generally depends on the CPU for which you compile the code.Several
+general rules tend to apply to all CPUs. Do not take them for absolute truths
+though, as your mileage may vary:
+
+ * Size of integers
+  Try to use only integers of the base size supported by the CPU, i.e. int ones,
+as opposed to short or long. This will reduce amount of code compiler generates
+to convert between different integer lengths. It may also reduce the memory
+access time, as some CPUs work fastest when reading/writing data of the base
+size aligned to the base size address boundaries.
+ * Register allocation
+  Use as few variables as possible in each block and declare most frequently
+used ones as register (most new compilers can automatically put variables into
+registers though). This makes more sense for CPUs with many general-purpose
+registers (PowerPC) than for ones with a few dedicated registers (Intel 80x86).
+ * Unroll small loops
+  If you happen to have a small loop which executes a few times, it is always a
+good idea to manually unroll it into a linear piece of code. See a note above
+about the automatic loop unrolling.
+ * Shifts vs. multiplication/division
+  Always use shifts wherever you need to multiply or divide by 2^n
+(J/128==J&gt&gt7). They execute faster on most CPUs. Also, use bitwise AND to
+obtain the modulo in such cases (J%128==J&0x7F).
+
+   ©997 Copyright by Marat Fayzullin  [fms@freeflight.com]
+
+      < Converted by HTMLess v2.4 by Troglobyte/Darkness. Only Amiga... >

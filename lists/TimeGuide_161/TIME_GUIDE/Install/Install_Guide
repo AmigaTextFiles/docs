@@ -1,0 +1,287 @@
+; $VER: Install_Guide 1.58 (22.04.96)
+; Script to install Time.guide
+
+(complete 0)
+
+(set old_level @user-level)
+(set @default-dest "sys:")
+
+;=============================================================================
+; Deutsch strings
+;(if (= @languge "Deutsch")
+;(
+   (set #bad-kick
+   (cat "Sie benötigen AMIGA OS 2.0+ zum Installieren der "
+        "Time.guide!"))
+
+	(set #ask-dir	"Wohin soll die Time.guide installiert werden?\nAchtung es wird kein Verzeichnis erstellt!")
+
+	(set #ask-funktion "Was soll installiert werden?\n\n")
+	(set #ask1 "AmigaGuide")
+	(set #ask2 "Startfiles")
+	(set #ask3 "Amiga-Magazin-Liste")
+	(set #ask4 "Amiga-Plus-Liste")
+	(set #ask5 "SaarAG-Liste")
+	(set #ask6 "Time-Liste")
+	(set #ask7 "Porky's-Liste")
+	(set #ask8 "Indizes")
+	(set #ask9 "Hilfsprogramme")
+	(set #askA "Sourcecodes")
+	(set #ask-funktion-help
+	(cat "\nSie müssen auswählen, was installiert werden soll.\n\n"
+		"Mit \"" #ask1 "\" wird dieses auf Ihre Startdisk installiert\n"
+		"\"" #ask2 "\" installiert Startfiles zur Time.guide (werden unbedingt benötigt)\n"
+		"\"" #ask3 "\" installiert Inhalte der Amiga-Magazin-Disks\n"
+		"\"" #ask4 "\" installiert Inhalte der Amiga-Plus-Disks\n"
+		"\"" #ask5 "\" installiert Inhalte der SaarAG-Disks\n"
+		"\"" #ask6 "\" installiert Inhalte der Time-Disks\n"
+		"\"" #ask7 "\" installiert Inhalte der Porky-Disks\n"
+		"\"" #ask8 "\" installiert den Index zu allen Serien\n"
+		"\"" #ask9 "\" installiert Bestellprogramme\n"
+		"\"" #askA "\" zu den Hilfsprogrammen\n"
+	))
+	(set #ask-funktion-2 "Welche Sprache(n) wollen Sie installieren?\n\n")
+
+	(set #Install "Installiere ")
+	(set #Proc-Quest "Welche Version der Bestellsoftware soll installiert werden?\n\n")
+	(set #Unpack "Entpacke ")
+	(set #default_lang 1)
+;))
+;=============================================================================
+; make sure we are running under V37+
+
+(if (< (/ (getversion) 65536) 37)
+  (
+   abort #bad-kick
+  )
+)
+
+;=============================================================================
+; Verzeichnis auswählen:
+
+(user 2)
+(set target_dir (askdir (prompt #ask-dir @askdir)
+         (help @askdir-help)
+			(default @default-dest)
+			(disk)
+      )
+)
+(user old_level)
+(set @default-dest target_dir)
+
+;=============================================================================
+; Routine zum kopieren/entpacken der Time.guide
+(user 2)
+(set timesel
+	(askoptions (prompt #ask-funktion)
+	(help #ask-funktion-help)
+	(choices #ask1
+				#ask2
+				#ask3
+				#ask4
+				#ask5
+				#ask6
+				#ask7
+				#ask8
+				#ask9
+				#askA
+	)
+	(default 2)
+))
+(user old_level)
+
+(set m 0)
+(set n 0)
+(while (set Timehier
+	(select n #ask1
+				#ask2
+				#ask3
+				#ask4
+				#ask5
+				#ask6
+				#ask7
+				#ask8
+				#ask9
+				#askA
+				""
+	))
+(
+	(if (IN Timesel n)
+	(
+		(set #Name	(select n	"AmigaGuide"
+										"Startfiles"
+										"AmiMag"
+										"AmiPlus"
+										"Saar"
+										"Time"
+										"Porky"
+										"Indizes"
+										"Zusatz"
+										"Source"
+						)
+		)
+		(set #Complete (* (+ n 1) 10))
+		(WORKING (CAT #Unpack Timehier))
+		(RUN	(cat "unlzx x /" #Name ".lzx ram:"))
+
+		(if (= n 0)
+		(
+			(copylib	(prompt "AmigaGuide.library" @copylib)
+						(help   @copylib-help)
+						(source "ram:AmigaGuide/amigaguide.library")
+						(dest "Libs:")
+						(confirm 2)
+			)
+			(copylib	(prompt "AmigaGuide" @copylib)
+						(help   @copylib-help)
+						(source "ram:AmigaGuide/amigaguide")
+						(dest "c:")
+						(confirm 2)
+			)
+		))
+		(if (AND (> n 0) (< n 8))
+		(
+			(copyfiles	(prompt (cat #Install Timehier) @copyfiles)
+							(help   @copyfiles-help)
+							(source (cat "ram:" #Name "/"))
+							(dest target_dir)
+							(all)
+			)
+		))
+		(if (= n 8)
+		(
+			(set CPUStr (database "cpu"))
+			(if (< CPUStr "68020")
+				(set NewProc 0)
+				(set NewProc 1)
+			)
+			(if (> @user-level 1)
+				(set NewProc
+					(askchoice	(prompt #Proc-Quest)
+									(help @askchoice)
+									(choices "MC68000/10"
+												"MC68020/30/40/60"
+;												"NATIVE (PPC)"
+									)
+									(default NewProc)
+					)
+				)
+			)
+			(if (= NewProc 1)
+			(
+				(delete (CAT "ram:" #Name "/T_Bestellen")) 
+				(rename (CAT "ram:" #Name "/T_Bestellen.020+")
+						  (CAT "ram:" #Name "/T_Bestellen"))
+			))
+			(if (= NewProc 2)
+			(
+				(delete (CAT "ram:" #Name "/T_Bestellen")) 
+				(rename (CAT "ram:" #Name "/T_Bestellen.ppc")
+						  (CAT "ram:" #Name "/T_Bestellen"))
+				(delete (CAT "ram:" #Name "/T_Merke")) 
+				(rename (CAT "ram:" #Name "/T_Merke.ppc")
+						  (CAT "ram:" #Name "/T_Merke"))
+				(delete (CAT "ram:" #Name "/Aufloesung")) 
+				(rename (CAT "ram:" #Name "/Aufloesung.ppc")
+						  (CAT "ram:" #Name "/Aufloesung"))
+			))
+			(if (exists (CAT "ram:" #Name "/T_Bestellen.020+"))
+				(delete (CAT "ram:" #Name "/T_Bestellen.020+"))
+			)
+			(if (exists (CAT "ram:" #Name "/T_Bestellen.ppc"))
+				(delete (CAT "ram:" #Name "/T_Bestellen.ppc"))
+			)
+			(if (exists (CAT "ram:" #Name "/T_Merke.ppc"))
+				(delete (CAT "ram:" #Name "/T_Merke.ppc"))
+			)
+			(if (exists (CAT "ram:" #Name "/Aufloesung.ppc"))
+				(delete (CAT "ram:" #Name "/Aufloesung.ppc"))
+			)
+			(if (exists (TACKON target_dir "T_Bestellen.info"))
+				(delete (CAT "ram:" #Name "/T_Bestellen.info")) 
+			)
+			(if (exists (TACKON target_dir "T_Best.dat"))
+				(delete (CAT "ram:" #Name "/T_Best.dat")) 
+			)
+			(if (exists "LOCALE:")
+			(
+				(user 2)
+				(set lang
+					(askoptions (prompt #ask-funktion-2)
+									(help @askoptions-help)
+									(choices
+;												"dansk"
+												"deutsch"
+												"english"
+;												"español"
+;												"français"
+;												"italiano"
+;												"nederlands"
+;												"norsk"
+;												"portoguês"
+;												"svenska"
+									)
+									(default #default_lang)
+					)
+				)
+				(user old_level)
+
+
+				(set m 0)
+				(while (set language
+					(select m
+;								"dansk"
+								"deutsch"
+								"english"
+;								"español"
+;								"français"
+;								"italiano"
+;								"nederlands"
+;								"norsk"
+;								"portoguês"
+;								"svenska"
+								""
+				))
+				(
+					(set LocSource (cat "ram:" #Name "/Locale/Catalogs/" language))
+					(if (exists LocSource)
+					(
+						(if (IN lang m)
+						(
+							(makedir (cat "LOCALE:Catalogs/" language))
+							(run (cat "copy >NIL: " LocSource "/#? Locale:Catalogs/" language "/ all"))
+						))
+						(run (cat "delete " LocSource "/#? all"))
+						(run (cat "delete " LocSource))
+					))
+					(set m (+ m 1))
+				))
+			))
+			(run (cat "delete ram:" #Name "/Locale/#? all"))
+			(run (cat "delete ram:" #Name "/Locale"))
+			(copyfiles	(prompt (CAT #Install Timehier) @copyfiles)
+							(help   @copyfiles-help)
+							(source (cat "ram:" #Name "/"))
+							(dest target_dir)
+							(all)
+			)
+			(complete #Complete)
+		))
+		(if (= n 9)
+		(
+			(makedir (TACKON target_dir #Name))
+			(copyfiles	(prompt (cat #Install Timehier) @copyfiles)
+							(help   @copyfiles-help)
+							(source "ram:Source/")
+							(dest (TACKON target_dir "Source/"))
+							(all)
+			)
+		))
+	))
+	(run (cat "delete ram:" #Name "/#? all"))
+	(run (cat "delete ram:" #Name))
+	(complete #Complete)
+	(set n (+ n 1))
+))
+
+(complete 100)

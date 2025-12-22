@@ -1,0 +1,312 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                10.Teil...
+
+So, was wollten wir machen...achja das Schwingende Logo...mmmh, da habt ihr
+euch aber was vorgenommen. Es ist ganz im gegentum zu den anderen sache
+superleicht zu verstehen, allerdings mit der realisation ist es so eine
+sache, wir werden dazu Mininum 5 - 6 voellig neue Befehle, mit bisher
+noch nie dagewesener Funktion. Naemlich die Logischen Verknuepfungen, mit
+And und Oder, Not und Eor. Alles boemische Doerfer fuer euch, ich will ich
+allerdings jetzt noch nichts davon erzaehlen, denn ich will es so wie
+bisjetzt halten das ich den Neuen Befehl erst Benutze und dann erklaere was
+ich mit ihm gemacht habe. So versteht man sehr schnell. Oder versteht ihr
+jetzt schon was `Ausmaskieren des Oberen Kontrollwortes` heisst, seht ihr !
+
+Also, los gehts !!!
+
+Ein teil des Problems koennen wir schon anhand des Kinoscrollers erklaeren.
+Man verstellt die Pointer beim Kinoteil immer um eine Zeile. Beim
+Titschenden Logo stellen wir die Pointer immer um die kleinste einheit die
+ein Wort betraegt, nach links oder rechts.
+Das in feinen abstaenden wird sogenanntes Hardscrolling ergeben.
+Das aller ding saehe mit verlaub `ein bisschen Scheisse` aus, deshalb
+benutzen wir ein wahrhaft fantastisches register..naemlich
+BPLCON1 = $DFF102.
+
+Ihr erinnert euch..mit BPLCON0 konnte man schon eine menge machen.
+Dieses register beherbergt neben anderen tollen sachen auch noch die
+Scrollwerte fuer die geraden und die ungerade planes, und mit
+diesen scrollwerten koennen wir die Planes 0 bis 15 Pixel
+nach rechts schieben, ist doch toll. So koennen wir durch geschicktes
+Kombinieren von Hard- und Softscrolling jede Position auf dem Bildschirm
+vom logo einnehmen lassen.
+
+Vergegenwaertigen wir uns mal wie das errechnen der hard- und
+softscrollwerte von statten gehen muesste.
+
+...Wir schauen uns erstmal die Position an, an der das Teil Stehen soll.
+Dann versuchen wir mit hardscrolling so nah wie moeglich ranzukommen.
+So nah wie moeglich heisst, innerhalb der naechsten 15 Pixel. Dann stellen
+wir den rest noch mit den Scrollwerten fuer das Softscrolling ein. So
+einfach ist das.
+
+Mal konkret...Wir haben ein Normales Playfield wie wir es dauernd benutzen,
+mit den Massen 320*256. Die 256 wollen wir mal jetzt weglassen, wir gehen
+mal von einem Einzeilenlogo aus, welches genau ein Wort breit ist.
+Der Bildschirm hat 320 position, das entspricht 20 woertern a 16 Pixel.
+
+Wir wollen unser `Logo` an der position 78 darstellen. Jetzt kommt der
+Vorzug der hexdezimalen schriebweise. Bei dezimal muss man jetzt erst
+grossartig durch divideren herausfinden wieviel mal die 16 darin ist,
+dammit man die Hardscrollposition heraus findet, dann muesste mann das
+nochmal machen damit man den Genauen rest, zum einstellen des
+Softscrollings ermitteln.
+
+In Hexadezimaler darstellung heisst 78 aber $4e, und da haben wir alle
+beide positionen schon fertig. Man muss nur noch die 4 nehmen muss und als
+Hardscrollzeiger nehmen. Die softscrollpositioen habe wir automatisch in
+dem rest stehen, diese E bytes koennen wir direkt in das BPLCON1 register
+schreiben wo wir ja die Soften werte einstellen.
+
+So koennen wir relativ einfach eine bewegung erzeugen. Schrieben wir nun
+eine Routine, die Anhand dieses `Steuerwertes` die Position fuer das Logo
+errechnet. Der plane begin ist $40000, die Breite wie gehabt 320, das logo
+ist ein wort breit. Damit wir ohne groessere Multiplikationen auskommen
+muessen, benutzen wir einige neue Befehle. Fangen wir mal an ich erklaeren
+jetzt mal jeden einzelnen schritt.
+
+Der kontroll wert ist am anfang der Routine schon in D0....und es ist eben
+diese $4e von eben, so kann ich beschreiben was nach jedem Schritt passiert
+mit dem Kontrollwort.
+
+
+        Move.w d0,d7            ; Erstmal sichern da zwei aktionen mit
+                                ; mit dem Kontrollwert gemacht werden.
+
+        Divs #16,d0             ; Dividiert durch 16 ergibt 4, somit habe
+                                ; ich den wert fuer das Hardscrollregister.
+                                ; Da Hexadezimal alles abgerundet wird,
+                                ; weil es keine kommastellen gibt.
+
+        Add.w d0,d0             ; Wert verdoppeln, da eine Position also
+                                ; ein wort ja Zwei Bytes in der Plane
+                                ; bedeuten.
+
+        Move.l #$00040000,d1    ; Grundadresse der Bitplane setzen.
+
+        Add.w d0,d1             ; Errechnete Position in der Bitplane
+                                ; zu der Grundadresse dazu addieren. So
+                                ; erhaelt man die endgueltige Position !
+
+        Move.l d1,Bpl1pt        ; Und ab in den Bitplanepointer.
+
+
+So jetzt kommt der Teil mit dem Softscrolling...
+
+
+        Move.w d7,d0            ; Wert neu nach D0 schreiben.
+
+
+Da wir die $4 vor dem E nicht brauchen koennen, muessen wir sie irgendwie
+loswerden. In unserem ganz speziellen fall koennten wir natuerlich -$40
+schreiben, aber wenn andere wert auf kreuzen kommen wir nich an das
+gewuenschte Ziel oder wir schiessen in den Minus Bereich. Das wollen wir ja
+nicht. Also setzen wir dem Prozessor eine Augenklappe auf. Das ist
+natuerlich nur sinnbildlich zuverstehen. Aber es ist in der tat so das wir
+dem Prozessor die Bits Markieren die er sehen kann. Nach dem Prinzip
+koennten wir einfach dieses Kontroll wort nehmen, und dem Prozessor sagen
+das er nur die letzten 4 bits sehen kann. Denn die sind ja im endeffekt nur
+noch interresant fuer uns. Also wollen wir sehen wie man das macht.
+
+        And.w #%0000000000001111,d0
+
+Merke: Dieses And hat nichts mit der Addition von Zahlen zu tun, sondern es
+ist wie ein Filter. Das funktioniert so...
+
+Der Prozessor nimmt beide werte, und verknuepft sie miteinander. Das
+ergebnis haengt von der Funktion ab..Bei And ist das Ergebnis-Bit gesetzt
+wenn auch das Quell-Bit `UND` das Ziel Bit gesetzt sind. Bei unserem
+Beispiel koennen das nur die ersten 4 Bits sein. Jetzt mal Bildlich
+
+        Quelle    %0000000001001110     = $4e
+        And       %0000000000001111     = $0f
+        -------------------------------------
+        Ziel      %0000000000001110     = $0e
+
+Tolle sache ne..
+
+
+Man koennte das And wort auch so sehen...
+
+        And       %------------````
+
+Wobei - sperrt, und ` durchlaesst.
+
+
+Jetzt haben wir in D0 nur noch die SoftPosition stehen, und die koennen wir
+direkt ind das BPLCON1 register setzen..
+
+        Move.l d0,BPLCON1
+
+        Rts
+
+So, das war die Routine, sehr ausfuehrlich beschrieben oder ?
+
+
+Diese Routine koennte die Steuerung fuer dieses Einwort Logo uebernehmen.
+Allerdings nimmt man fuer Logo halt immer groessere Objekte. Und damit man
+die nicht jedesmal soo ein riesiges Paket Daten kopieren muss. Setzen wir
+einfach das Logo schon auf das Bild, Und verschieben nur noch das ganze
+bild.
+
+
+Ich will jetzt aber nicht wieder ein Listing hiereinpumpen sondern wir
+werden Horizontal und VertikalScrolling erstmal ruhen lassen um uns etwas
+anderem Widmen, naemlich...
+
+13.Der Vertikal Blanking Interrupt
+
+Bevor ich mit den Groesseren Demoreifen sachen Anfangen solltet ihr diesen
+doch sehr Wichtigen teil des Amigas kennenlernen.
+
+Ich habe euch doch schon von dem Vertikal Blanking bereich erzaehlt. Das
+war doch der bereich der so gut fuer manipulationen an dem Bildschirm und
+an der Copperliste ist weil dort vom Amiga noch nichts gemacht wird und
+noch keine Copperliste Aktiv ist. Dieser VB bereich liegt zwischen 0 und
+$3f. Wir haben ihn bisjetzt ja immer mit unserer einfachen Warteschleife
+
+Wait:   Cmpi.b #$00,VHposr
+        Bne.s Wait
+
+abgefragt.
+Das ist Theoretisch richtig, aber der Computer macht dann alles Zweimal pro
+bildschirm aufbau. Denn die 0 tritt zweimal auf einmal bei $00 und einmal
+bei $100, denn die $1 vor den Nullen testen wir ja nicht, also passiert
+alles zweimal pro durchlauf. Verhindern koennten wir dies indem wir diese 1
+auch noch abfragen. Die Routine dafuer lautet...
+
+
+Wait:   move.l  $dff004,d0              ; Rasterpos holen
+        and.l   #$1ff00,d0              ; alles unwichtige ausmaskieren
+        cmp.l   #$1000,d0               ; Zeile 16 ($10) erreicht ?
+        bne.s   Wait                    ; noe...
+
+Das waere die Abfrage fuer die Wirkliche Position $10.
+Allerdings ist das mit den Abfragen so eine Sache. Man kann ohne ihren
+Rythmus zu beeinflussen nicht allzuviel dazwischen setzen, und das ist bei
+manchen sache ja noetig. Stellen wir uns nur mal vor ihr bastelt ein Musik
+demo zusammen. Ihr habt 10 musikstuecke a 30 KB, und ihr habt eine normale
+Soundtrackerroutine. Diese muss in regelmaessigen Abstaenden, und zwar alle
+50 stel Sekunde, aufgerufen werden. Der Bildschirm wird alle 50 stel
+sekunde aufgebaut, und den Anfang fragen wir ja ab. Wenn wir dann aber noch
+einbauen das er, damit es schnell geht, immer wenn die gewuenschte position
+noch nicht erreicht ist, mal schnell die tasten F1 bis F10 fuer die
+einzelnen musikstuecke abfragen, und falls eine gedrueckt war wird das Flag
+fuer die neue Musik gesetzt. So falls der Prozessor ganz knapp vor der
+Gewueschten Zeile abfragt kriegt er ja nur gesagt das sie es noch nicht
+ist. Er fragt dann wieder alles ab...Und solche sachen Koennen mitunter
+sehr lange dauern. Und dann faengt es an zu Flackern, dieses Flackern sieht
+man bei schlecht programmierten Intros und Demos. Und weil wir das nicht
+wollen, muessen wir uns etwas ausdenken oder etwas benutzen was ganz
+bestimmt diese Sachen die Flackern koennten zu einem ganz bestimmten
+Zeitpunkt durchfuehrt egal was passiert.
+
+Dazu muessen wir aber nichts neues programmieren sondern etwas vom Amiga
+benutzen, denn er hat die selben schwierigkeiten wie wir. Er behilft sich
+mit einem Interrupt, naemlich dem VBI, Vertikal Blanking Interrupt.
+
+Erst muss ich erklaeren was ueberhaupt ein Interrupt ist. Interrupt heisst
+abbrechen, wie bei Coitus Interruptus, was viele ja schon kennen duerften.
+
+Beim Computer ist es aber mehr eine Unterbrechung da die arbeit nach der
+unterbrechung wieder aufgenommen wird.
+Es ist ungefaehr wie wenn ihr jetzt diese Saetze lest und das Teflon
+bimmelt, ihr nehmt ab, Quatscht kurz oder lang, legt wieder auf, denkt nach
+wo ihr dran wart, und lest weiter.
+
+Nicht anderes macht ein Computer, sobald er das Signal `IRQ` kriegt macht
+er einen Generalinterrupt. Zuerst rettet er alle Arbeitsregisterinhalte
+D0-D7 und A0-A7, auf den Stack. Dann analysiert er was fuer ein Interrupt
+das war, das steht in einem ganz bestimmten register, dann springt er
+indirekt je nach Interruptart ueber einen ganz bestimmten Zeiger zum
+Programm das im Falle eines Interrupts ausgefuehrt werden soll.
+
+Es gibt alle moeglichen Interrupts, uns interresiert aber im Moment nur
+einer, halt der VBI, der Vertikal Blanking Interrupt.
+
+Er wird ausgeloest wenn der Computer beim Bildschirm aufbau auf diesen
+Bereich trifft. Nachdem der Prozessor weiss das es der VBI war, springt er
+in die Adresse die in $0000006c steht, und fuehrt das Programm aus was dort
+steht. Da liegt unsere Chance auf einen wirklich regelmaessigen Zeitpunkt
+zum ausfuehren unserer Routinen zu kommen. Wir muessen nur die alte adresse
+nehmen und irgend wo sichern, und dann unsere eigene hinschreiben. So
+einfach ist das. Natuerlich muessen wir vor verlassen des Intros oder der
+Routine den Alten VBI wieder aktivieren. Und ganz wichtig ist halt das wir
+den VBI nicht mit all dem anderen Interrupts ausschalten, dazu kommen wir
+noch.
+Wenn ich eine Ganz bestimmte Tabelle hier finde werde ich euch ein paar
+befehle geben die man nur waehrend eines Interrupts benutzen kann, warum ?
+
+...Es gibt zwei modi in denen der Prozessor betrieben werden kann
+
+1.User Modus
+2.Supervisor Modus
+
+Wir arbeiteten jetzt immer nur im User modus, das wird auch im grossen und
+ganzen so bleiben, aber erstmal die erklaerung.
+
+Im Supervisor modus ist es als wenn ein Zweiter Prozessor arbeiten koennte,
+das ist noetig damit z.b Fehler noch fuer die Guru meldung analysiert
+werden kann. Sobald eine Exception (ausnahmesituation) auftritt, der
+Interupt gehoert auch dazu, wechselt der Prozessor in den Supervisor Modus.
+
+Dies ist auch gleichzeitig die Einzige moeglichkeit in diesen Zustand zu
+gelangen. Wir wollen aber nur wissen was das ist und deshalb werden wir
+auch nur indirekt in diesem Modus arbeiten. Wiegesagt es kommen ein paar
+befehle dazu, aber alle alten sind noch vorhanden.
+
+Sobald der Prozessor dann auf den Rueckkehr-befehl trifft, holt er die
+alten Daten vom Stapel und macht weiter als waere nichts geschehen.
+
+Dieser Rueckkehr Befehl heisst `RTE` Return from Exception.
+
+Der Vorteil liegt klar auf der Hand..wir initialisieren einmal diesen
+Interrupt, und koennen ein Endlosschleife gemuetlich auf alle moeglichen
+sachen warten lassen. Wir koennen Tausende Tasten abfragen, neue Flags fuer
+die Musiken setzen, der Prozessor unterbricht uns dann zwar immer, aber das
+ist ja das was wir wollen, das die Routine die Zeitkritisch sind immer zu
+einem Ganz bestimmten Zeitpunkt abgearbeitet wird. Verloren geht uns auch
+nichts, weil ja alle sachen die wichtig sind vor der eigentlichen Routine
+gerettet werden.
+ein kleines Beispiel fuer die Noetigen sachen fuer den VBI....Die
+ernsthafte anwendung folgt spaeter.
+
+Zuerst alle Interrupts loeschen.
+
+        Move.w #$7fff,intena
+
+Dann alten interupt wert an einer bestimmten stelle im Source retten...
+
+        Move.l #$006c.w,Oldirq
+
+Und nun den neuen wert schrieben..
+
+        Move.l #Newirq,$006c.w
+
+Nun koennen wir den VBI anschalten..
+
+        Move.w #$c020,Intena
+
+und unser programm irgendwas machen lassen...Wichtig ist nur das das
+Programm mit dem Label `Newirq` steht, es wird direkt beim naechsten VBI
+abgearbeitet.
+
+Newirq: blabla #55,97
+        Blablabla soundso
+
+und am enden der Routine muss dann dieses
+
+        Rte
+
+stehen damit der Prozessor wieder an unserem normalen programm arbeiten
+kann.
+
+So einfach ist das. Arbeiten werden wir allerdings erst ein bisschen
+spaeter damit. Da ich jetzt erstmal ein paar Effekte Programmieren muss,
+damit ich die euch praesentieren kann, es koennte also drei vier Tage
+dauern bis ich mich wieder melden.
+
+Vergesst mich nicht
+
+                Jeff Kandle

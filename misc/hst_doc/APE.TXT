@@ -1,0 +1,792 @@
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                                                 APPENDIX E
+                                         ADDITIONAL OPERATIONAL INFORMATION
+
+
+          CONTENTS
+          
+          E-1  Using Both Voice and Data Communications
+
+          E-2  High Speed/Low Speed Protocol
+
+          E-3  Retrain Sequence
+
+          E-4  PBX, Dedicated Line, and Leased Line Operations
+
+          E-5  Hewlett Packard 300 Installations
+
+          E-6  Analog Loopback and Other Testing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                        E-1
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          APPENDIX E-1
+          USING BOTH VOICE AND DATA COMMUNICATIONS
+
+          When you assemble the Courier, you have the option of plugging
+          your phone into the second modular jack of the modem so it's
+          available for voice calls.  You can also use the phone to
+          synchronize communications with another user whose modem uses the
+          AT command set, such as a USRobotics or USRobotics-compatible
+          modem.
+
+          PREPARATION
+
+          First call the other user to establish the bit rate, parity, word
+          length and number of Stop bits the other person's modem accepts.
+          Then both of you can turn the call over to your modems.
+
+          COMMANDS
+
+          1.   Without hanging up the phone, have your modem go off hook in
+               Originate Mode.  Type the following command:
+
+                    ATD <Enter>
+
+               NOTE:  Be sure the modem is not set to X2, X4, X6, or X7, or
+               it will return the NO DIAL TONE result code and hang up.
+
+          2.   The other party should then have the remote modem go off
+               hook in Answer Mode.  The following command is used to do
+               this:
+
+                    ATA <Enter>
+
+          3.   Now both of you can hang up your respective phones while the
+               two modems establish the data link.  They will maintain the
+               link until one of you gives your modem a command to
+               disconnect.
+
+          Either party's device can be the originate or answer modem:  it
+          doesn't matter who made the phone call.  But one modem must first
+          enter Originate Mode and the other then enter Answer Mode.  You
+          and the other party, therefore, must agree on which command, ATD
+          or ATA, you will each use.
+
+          NOTE:  It may happen that spurious garbage characters will
+          appear on the screen when you hang up the phone.  You can avoid
+          these by hanging up the phone as soon as you hear the modem go
+          off hook, during the one or two seconds it takes the two modems
+          to establish the link.
+
+
+
+
+                                                                        E-2
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          APPENDIX E-2
+          HIGH SPEED/LOW SPEED PROTOCOL
+
+          OVERVIEW
+
+          This appendix is intended for those users who want to try
+          programming their computers to switch bit rates to match the
+          Courier HST's connection rate.  The material here applies only
+          when the modem is set for variable rates at both the DTE
+          (computer) and link interfaces, &B0 and &N0, respectively.
+
+          In both Originate or Answer Modes, if the link rate is set to &N0
+          the Courier HST negotiates with the remote modem to connect at
+          the highest possible rate.  In addition, if the modem is set to
+          the Extended or Advanced result codes (X1 or higher) it signals
+          the DTE with one of the following result codes or, unless the
+          call is at 300 bps, an /ARQ Mode equivalent:
+
+               CONNECT        (300 bps)
+               CONNECT 1200   (1200 bps)
+               CONNECT 2400   (2400 bps)
+               CONNECT 9600   (9600 bps)
+
+          The modem sends the result code at its previous rate.  Then it
+          switches to the new connection rate.
+
+          If your computer doesn't switch rates and you want to program it
+          to do so, use the example on the next page as a guide.  It
+          demonstrates the occurrence of the CONNECT codes in the
+          connection sequence, so that recognition of the codes can be used
+          to switch the computer.  The example uses a sequence of incoming
+          calls, but the codes apply to Originate Mode connections as well.
+
+          The example assumes the following settings:
+
+               Software: initially 9600 or 19.2k bps, allowing the full     
+                         range of link rates:                               
+                         9600/7200/4800/2400/1200/300 bps
+
+                  Modem: X1 or higher (rate-specific CONNECT codes)
+                         &B0 (variable DTE rate)
+                         &N0 (variable link rate)
+
+
+
+
+
+
+
+
+
+
+                                                                        E-3
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Example
+
+          -----------------------------------------------------------------
+                                        Modem                  DTE/DCE
+          Action                        Response                 Rate
+          -----------------------------------------------------------------
+          1.  Power on.                                          9600
+          
+          2.  300-bps call comes in.    RING                     9600
+                                        CONNECT                  9600
+          
+          3.  Data link is established.                           300
+              Data transfer takes place.
+          
+          4.  Data session is over.     NO CARRIER                300
+              Call is ended; loss of
+              carrier.
+          
+          5.  2400-bps call comes in.   RING                      300
+                                        CONNECT 2400              300
+          
+          6.  Data link is established.                          2400
+              Data transfer takes place.
+          
+          7.  Data session is over.     NO CARRIER               2400
+              Call is ended; loss of
+              carrier.
+          
+          8.  9600-bps call comes in.   RING                     2400
+                                        CONNECT 9600             2400
+          
+          9.  Data link is established.                          9600
+              Data transfer takes place.
+          
+          10. Data session is over.     NO CARRIER               9600
+              Call is ended; loss of
+              carrier.
+          -----------------------------------------------------------------
+
+          Explanation
+
+          1.   The modem is powered on and is operating at 9600 bps.  If
+               the software is then set to 19.2k bps and an AT command
+               sent, the DTE/DCE rate would be 19.2k bps.
+
+          2.   A 300-bps modem calls.  The Courier senses the incoming
+               signal and sends the messages RING and CONNECT to the
+               computer.  These messages are sent at 9600 (or 19.2k) bps,
+               the current rate.
+
+
+
+                                                                        E-4
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          3.   Since the Courier responds CONNECT, rather than CONNECT
+               1200, 2400, or 9600, the computer switches to 300 bps.  The
+               modem automatically shifts to 300 bps to accept the data
+               from the incoming call.
+
+          4.   The 300-bps data session is terminated; the modem sends the
+               message NO CARRIER at 300 bps.
+
+          5.   A 2400-bps call comes in.  The modem responds RING and
+               CONNECT 2400.  These message are sent at the current bit
+               rate of 300 bps.
+
+          6.   The computer, receiving the CONNECT 2400 message, adjusts
+               accordingly to the higher bit rate.  The modem also shifts
+               to 2400 bps.
+
+          7.   The 2400-bps data session is terminated; the modem sends the
+               message NO CARRIER at 2400 bps.
+
+          8.   A 9600-bps call comes in.  The modem responds RING and
+               CONNECT 9600.  These message are sent at the current bit
+               rate of 2400 bps.
+
+          9.   The computer, receiving the CONNECT 9600 message, adjusts
+               accordingly to the higher bit rate.  The modem also shifts
+               to 9600 bps.
+
+          10.  The 9600-bps data session is terminated; the modem sends the
+               message NO CARRIER at 9600 bps.
+
+          NOTE:  If online fallblack occurs during a 9600-bps call, the
+          modem does not send CONNECT result codes for 7200- or 4800-bps
+          link rates.
+
+          Keep in mind that whether or not your computer adjusts to these
+          rate changes, the Courier automatically shifts to the connection
+          rate if it is set to &B0.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                        E-5
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          APPENDIX E-3
+          RETRAIN SEQUENCE
+
+          DESCRIPTION
+
+          The retrain sequence occurs at 2400 and 9600 bps.  It is a
+          resynchronization sequence performed when one of the connected
+          modems senses that problems on the line may affect data
+          reliability.  The procedure is essentially transparent to users.
+
+          The following is an example of retrain events:
+
+          1.   The Courier HST's receiver, sensing a need to retrain,
+               clamps RX to MARKs.
+
+          2.   The remote modem, after receiving about 100 ms of analog
+               signals (a pattern of ?~?~ is usually output), clamps RX
+               data to MARKs.
+
+          3.   After the training sequence, approximately one second, the
+               Courier unclamps RX data and turns HS ON.
+
+          4.   The remote modem reenters Data Mode.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                        E-6
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          APPENDIX E-4
+          PBX, DEDICATED LINE, AND LEASED LINE OPERATIONS
+
+          The following operations apply in installations where the modem
+          is not directly connected to the public-access switched telephone
+          network.
+
+          PBX Installations
+
+          It's possible to install the modem(s) on the customer side of an
+          analog PBX.  When used with multiple telephones per line, DIP
+          switch 7 can be set DOWN to short A/A1 when the modem is off
+          hook.  This notifies other devices sharing the line that the line
+          is busy.
+
+          Calling an Outside Party
+
+          To have the modem make an outside call, follow the auto-dial
+          instructions in Chapter 6, but insert the sequence used to obtain
+          an outside line, followed by a comma, before the phone number in
+          the Dial command.
+
+          The off-hook indicator on the PBX should show the extension as
+          busy if DIP switch 7 is DOWN.
+
+          Internal Calling
+
+          To call another modem on the PBX system, use the Dial command
+          described in Chapter 6 with the extension of the destination
+          modem.  If set to Auto Answer, the called modem automatically
+          answers on the incoming ring.
+
+          The off-hook indicators on the PBX should show both extensions as
+          busy if DIP switch 7 is DOWN on both modems.
+
+          2-Wire Dedicated (Private) or Leased Line
+
+          A 2-Wire dedicated (private) line is a customer-installed,
+          twisted-pair line.  2-Wire leased lines are provided by the
+          telephone company and may be designated as 2-Wire 3002 Analog
+          Circuits.
+
+          In both types of installation there is a continuous point-to-
+          point connection between two modems.  For optimal operations, the
+          physical length of the line should not exceed 5 miles.
+
+          To establish the connection, follow these steps:
+
+          1.   Decide which modem is to be the Originate modem and which
+               the Answer modem.  The originate and answer frequencies must
+               be defined for the modems to communicate.
+
+                                                                        E-7
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          2.   First put the calling modem in Originate Mode with the
+               manual Dial command:
+
+                    ATD <Enter>
+
+               NOTE:  Be sure the modem is not set to X2, X4, X6, or X7, or
+               it will return the NO DIAL TONE result code and hang up.
+
+          3.   Then put the answering modem in Answer Mode with the manual
+               Answer command:
+
+                    ATA <Enter>
+
+          NOTE:  If there is an interruption in the communications link (a
+          strike to the line due to weather or some other problem), repeat
+          steps 2 and 3 to reestablish the link.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                        E-8
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          APPENDIX E-5
+          HEWLETT PACKARD 3000 INSTALLATIONS
+
+          The Courier HST recognizes the ASCII ENQ/ACK characters exchanged
+          between the Hewlett Packard 3000 host computer and its terminals.
+          The HP host sends the terminal an ENQ character at predefined
+          intervals, and sends no more data until the terminal responds
+          with an ACK character.
+
+          Courier HST modems manage this ENQ/ACK protocol so that
+          communication is speeded up, thereby enabling HP terminals to
+          achieve high speeds on dial-up lines.  Special Received Data flow
+          control settings (the &I command) are required for HP users.
+
+          Follow these guidelines:
+
+          1.   Use one of the &I settings given here for both Normal and
+               error control (ARQ) sessions, i.e., for all &M settings.
+
+          2.   Do not use a software setting for Transmit Data flow
+               control.  Set the modem only to &H0 or &H1, according to the
+               guidelines in Chapter 4.
+
+          3.   Set the Courier HST to Host Mode if it is attached to the
+               host computer, or to Terminal Mode if it is attached to a
+               terminal:
+
+               Host Mode      AT&I3 <Enter>  
+               Terminal Mode  AT&I4 <Enter>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                        E-9
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                                               APPENDIX E-6
+                                            ANALOG LOOPBACK AND OTHER TESTS
+
+
+          ANALOG LOOPBACK SELF-TEST
+
+          This test is a way to check that the modem's transmitter and
+          receiver are working properly.  During Analog Loopback, data from
+          the computer is sent in a loop through the transmitter (where it
+          is modulated) and the receiver (where it is demodulated), and
+          returned to the screen.  Due to asymmetrical modulation at 9600
+          bps, the test must be performed at 2400 bps or below.
+
+          You can use the modem's internal test pattern as data, or type
+          your own at the keyboard.  Follow these procedures to test the
+          modem by sending the test pattern:
+
+          NOTE:  If the modem is set to X2, X4 X6, or X7 it will return the
+          NO DIAL TONE result code and hang up.  Send the modem a different
+          X setting.
+
+          1.   Set your terminal or software to 2400 bps and send the modem
+               the following command, which has the results listed below.
+
+                    AT &M0 S16=5D <Enter>
+
+               &M0     Sets the modem to Normal Mode.  If the modem is set
+                       for error control (&M4 or &M5) you can't tell if
+                       there is a problem because the modem checks for
+                       errors and automatically retransmits any errored
+                       data.
+               S16=5   Sets S-Register 16 to Analog Loopback with test
+                       pattern.  The modem sends, modulates and demodulates
+                       its internal test pattern and returns that pattern
+                       to your screen.
+               D       The Dial command selects testing the Originate
+                       (Dial) frequency.  The Answer command (A) tests the
+                       Answer frequency.
+               
+               The modem enters Analog Loopback Mode, goes off hook, sends
+               the message CONNECT 2400 to the screen, and then sends the
+               test pattern.
+
+          2.   When you're satisfied with the test, terminate the operation
+               by pressing any character key on the keyboard.  The modem
+               goes back on hook and responds with the message NO CARRIER.
+
+          3.   Reset the error control default and reset S-Register 16 to
+               zero, for data operations, by entering this command:
+
+                    AT &M4 S16=0 <Enter>
+
+                                                                        E-10
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Normal/Test Frequencies
+
+          In normal operations, communicating modems transmit at different
+          frequencies within the communications channel, one low and the
+          other high.  The calling modem is said to be in Originate Mode:
+          it transmits at the low (Originate) frequency and receives at the
+          high  frequency.  The answering modem, in Answer Mode, transmits
+          at the high (Answer) frequency, and receives on the low
+          frequency.
+
+          During Analog Loopback testing, the modem transmits and receives
+          on the same frequency, either Originate (low) or Answer (high).
+          The Analog Loopback command in the previous section tests the
+          Originate frequency.
+
+          Testing the Answer Frequency
+
+          To test the Answer frequency, substitute the Answer command, A,
+          as follows:
+
+                    AT &M0 S16=5A
+
+          ADDITIONAL TESTS
+
+          In all, S-register 16 has five settings, as follows.
+
+               0    Data Mode (normal operations)
+               1    Analog Loopback
+               2    Dial Test
+               4    Test Pattern
+               5    Analog Loopback with Test Pattern
+
+          NOTE:  After any testing, be sure to reset S-register 16 for Data
+          Mode, with or without the default error control setting (&M4):
+
+                    AT &M4 S16=0 <Enter>
+
+          S16=1
+
+          1.   Select this option to perform analog loopback testing by
+               sending your own data instead of the test pattern.  Use
+               either of the following commands after setting your terminal
+               or software to 2400 bps.  If the modem is set for error
+               control, insert &M0 before the S16 command.
+
+                    ATS16=1D <Enter>
+                    ATS16=1A <Enter>
+                    
+          2.   When the modem displays the message CONNECT 2400, type any
+               message you wish at the keyboard.  It is looped through the
+               modem and returned to the screen.
+
+                                                                        E-11
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          3.   End the test by not typing anything for at least one second
+               and then typing the escape code that brings the modem back
+               to Command Mode.  (Do not type the AT prefix or press the
+               Enter key.)
+
+                    +++
+
+          4.   The modem returns the OK message. Reset the error control
+               default and reset S-Register 16 to zero, for data
+               operations, by entering this command:
+
+                    AT &M4 S16=0 <Enter>
+
+          S16=2
+
+          The Dial Test is used for factory testing the frequencies of
+          Touch-Tone values.  When S-register 16 is set to 2 and a single
+          Touch-Tone is dialed (e.g., ATD7), the modem continues to
+          transmit that tone until another Carriage Return is entered.
+
+          S16=4
+
+          The Test Pattern alone is used for testing equipment and the
+          phone line.  If S16 is set to 4 and a Dial command issued, the
+          Courier transmits the test pattern upon connection to the remote
+          system.  If set for Auto Answer the Courier transmits the test
+          pattern when it answers a call.  Be sure to reset S16 to zero for
+          normal calls.
+
+          Testing at 1200 BPS
+
+          To test the modem at 1200 bps, follow the previous instructions,
+          but first set your software to 1200 bps.
+
+          Testing at 300 BPS
+
+          The Test Pattern is not available at 300 bps.  Analog Loopback
+          testing is done at 300 bps by setting your software to 300 bps
+          and setting S-16 only to 1D or 1A.
+
+          NOTE:  It might happen that you have issued either S16=1 or 5 and
+          the modem is in Analog Loopback Mode, but you haven't yet sent a
+          Dial or Answer command to initiate testing.  If the modem is also
+          set for Auto Answer and a call comes in, the Courier resets S16
+          to zero and answers the call.
+
+
+
+
+
+
+
+                                                                        E-12
+
+
+
+

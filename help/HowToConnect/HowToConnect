@@ -1,0 +1,297 @@
+ I wrote this to try to help people with the installation to the Internet.
+ It may have some errors, or omissions.
+
+ A lot of what's here is from the various installation instructions.
+
+ If there's parts that aren't clear, contact me, and I'll try to improve
+ the instructions.
+
+ ======================================================================
+ List of programs needed to connect to the Internet with a PPP account:
+ =====================================================================
+
+    Program                     Where to get it
+    -------                     ---------------
+
+ 1) AmiTCP-4.0                  Aminet
+ 2) PPP 1.45                    Aminet
+ 3) A Browser                   
+    -IBrowse                     http://omnipresence.conm/ibrowse/
+        Needs MUI 3.0
+    -AWeb                       Aminet
+    -Voyager                   Aminet
+        Needs MUI 3.3
+    -Amosaic-2.0-prerelease      http://omnipresence.conm/amosaic/
+        Needs MUI (get 3.3)
+ 4) A mail, and news reader.
+    -Thor (mail, and news)      Aminet
+    -Elm  (mail)
+        Requires inet_utilities
+        and AmiPOP              Aminet
+    -Grn  (news)                Aminet
+
+ =====================================================================
+ what you need from your provider
+ =====================================================================
+
+ Your providers domain name
+ Your providers IP address
+ Your user name
+ Your password
+
+ =====================================================================
+
+ AmiTCP installation:
+ ===================
+
+ Use the Install script.
+
+ Enter the following: (I've shown what I entered for an example)
+
+ Your user name for the default user name - gcaine
+
+ Yes for is your network connection dynamic.
+
+ You servers domain name for your domain name - cycor.ca
+
+ Select PPP for the internet interface type
+
+ Select PPP for the network interface to be used.
+
+ Enter 0.0.0.0 for the default IP address.
+
+ Enter your server's IP address for the destination address - 198.167.1.1
+
+ Enter a blank string for the Netmask.
+
+ Enter your server's IP for the IP address of the name servers - 198.167.1.1
+ Follow that with  a blank line for the next name server.
+
+ Enter your servers domain name for the domain names to search - cycor.ca
+ Follow that with a blank line
+
+ Select "Yes" to have the User-startup script changed.
+
+ Select "Yes" to have Inetd to be started at the AmiTCP startup.
+
+ You will then be asked for a password for the user.
+
+ PPP 1.45 installation:
+ ======================
+
+ Make a drawer called NetWorks in Devs:
+
+ Copy the ppp.device that's right for your system from PPP/devs to
+ Devs:NetWorks and rename it to PPP.device
+
+ Copy everything in PPP/bin to AmiTCP:bin
+
+ Make a drawer in Envarc: called Sana2
+ Create a file called ppp0.config and put this line in it.
+
+ serial.device 0 56700 0.0.0.0 7WIRE
+
+ Put the file ppp0.config in Envarc:sana2
+
+ Edit this with your user name, and replace AmiTCP:bin/startnet with it:
+
+ ----------------------------Cut Startnet---------------------------
+
+online devs:networks/ppp.device 0
+; log in
+echo
+echo login: gcaine
+AmiTCP:bin/login -f gcaine
+AmiTCP:bin/umask 022
+AmiTCP:AmiTCP
+WaitForPort AMITCP
+; Configure loop-back device
+AmiTCP:bin/ifconfig lo0 localhost
+; Configure ppp0
+AmiTCP:bin/ifconfig ppp0 $ppp0iplocal $ppp0ipremote
+; Add route to this host
+AmiTCP:bin/route add $ppp0iplocal localhost
+AmiTCP:bin/route add default $ppp0ipremote
+setenv HOSTNAME `AmiTCP:bin/hostname`
+Assign TCP: Exists > NIL:
+IF Warn
+  Mount TCP: from AmiTCP:devs/Inet-Mountlist
+EndIf
+; Start the internet `super server'
+run AmiTCP:bin/inetd
+
+------------------------------End Cut Startnet---------------------
+
+
+ Add this line to the end of AmiTCP:bin/Stopnet
+
+ Offline ppp.device 0
+
+ Add this line to the end of AminTCP:db/interfaces
+
+ ppp0 DEV=Devs:NetWorks/ppp.device UNIT=0 IPTYPE=33 NOARP P2P
+
+  
+ IBrowse installation:
+ =====================
+ Install MUI with the Installer script.
+
+ Dearchive it, and read the readme file. (Very easy)
+ 
+ Voyager installation:
+ =====================
+ Install MUI with the Installer script.
+ 
+ Use the installer script.
+ 
+ AWev installation:
+ ==================
+ Use the installer script.
+
+ Amosaic installation:
+ =====================
+
+ Install MUI with the Installer script.
+
+ Copy the contents of Amosaic/envarc to envarc:
+ Copy the contents Amosaic/Rexx to Rexx:
+
+ Put this in s:user-startup:
+
+ -----------------------------cut user-startup-----------------
+
+;BEGIN mosaic
+assign Mosaic: amitcp:inet/Amosaic20 (put the proper path here)
+Setenv NNTPSERVER 198.167.1.1 (put your own servers IP here)
+;END mosaic
+
+------------------------------end cut user-startup------------
+
+Edit envarc:mosaic/prefs so its like this:
+
+__________________________cut mosaic prefs-------------------
+
+DelayImageLoads         true
+ImageCacheSize          500
+RexxMacro1      Add to Hotlist | add-hotlist
+RexxMacro2      Jump to Hotlist | "'jump url file://localhost/env:Mosaic/hotlist.html'"
+HomeDocument http://www.cycor.ca/
+TempDir Ram:t/ <------------------- the slash is manditory
+Home AmiTCP:/  <------------------- ditto
+DownLoadDir AmiTCP:downloads
+
+------------------------end cut mosaic prefs---------------------
+
+Edit the home HomeDocument part to go where ever you want.
+
+==================================================================
+==================================================================
+
+After you have done everything we've discussed so far:
+
+- Open your Term program.
+- type AT&d0 (DTR over ride)
+- call your service provider, and log in.
+- When you start to see what looks like a bunch of garbage, save your
+  buffer, and quit the term program.
+- From a shell type startnet<enter>
+  if all goes well you should see a window open, asking for your password.
+  enter it. The Amitcp register requester will come up. You can close it
+  after a few moments. Then you should see PPP getting set up.
+- Click the Amosaic Icon, and see if you get anywhere.
+
+   * Note *
+   You must have the baud rate set the same in both your
+   Term program, and in ppp0.config
+
+After you've had a chance to look around the net for a bit, type
+stopnet<enter> from a shell to quit.
+
+Open the buffer file you saved from your term program, and use it to
+create a dialscript for PPP.
+
+Here a copy of mine:
+
+-------------------------cut s:dialscript-------------------------
+ECHO ON
+TIMEOUT 1500
+REDIAL "BUSY"
+SEND "AAT&d0DT2424828"
+WAIT "Enter choice: "
+SEND "3"
+WAIT "Username: "
+SEND "gcaine"
+WAIT "Password: "
+SEND "mypassword"
+WAIT "Switching to PPP."
+
+-------------------------end cut s:dialscript----------------------
+
+Change envarc:sana2/ppp0.config to this:
+
+serial.device 0 57600 0.0.0.0 7WIRE DIALSCRIPT=s:dialscript
+
+Now all you have to do to connect is type startnet from the shell.
+
+Thor Installation:
+==================
+
+Use the installtion script.
+
+ Here's what I did after I installed Thor.
+ ----------------------------------------
+ 
+ System Config:
+ - I created a system called Gary.
+ - I put my user name in the "Mailpacket (w/o ext.)" field.
+ - I selected TCP for the Type. 
+ - I clicked the "User Info ..." button and entered my user name, and 
+   email address.
+ - I clicked the "Type Options ..." button and put my server's IP number
+   in the mail server, and news server fields. I entered my user name,
+   and password, and clicked on the "Delete mail from POP server" button.
+ - I left everything else in the system config as it was, and saved it.
+ 
+ Conference Config:
+ -I Clicked "User Info" and entered my email address 
+ 
+ Global Config:
+  Message Options:
+  - I entered an external editor. (right now I have GED SCREEN Thor.1)
+    If you use an editor that you can't open on a public screen then 
+    change the tool types in the Thor Icon to make it open on the WB.
+  - put my signature in the "Signature" field, and selected "Use String"
+  Global Paths:
+  - "Save Dir"          Work:AmiTCP-4.0/Archive/Text
+  - "Download Dir"      Work:AmiTCP-4.0/Mail
+  - "Upload Dir"        Work:Amitcp-4.0/MailSpool
+  - "Arexx Dir"         S:
+  - "Tmp Dir"           T:
+  - "Dos Output"        Con:0/11/640/200/Thor<->Dos 0
+  
+  Everything else I left alone.
+  
+ I added this to the top of my startnet script:
+ 
+ SetEnv USERNAME gcaine
+ SetEnv HOSTNAME cycor.ca
+ SetEnv SOCKETCONFIG "UID=100 GID=100 USER=gcaine DOMAIN=cycor.ca UMASK=002"
+ 
+ You will have to change it to match your system.
+ 
+ Make sure you put the socket.library in the AmiTCP:libs drawer.
+ 
+ I created two more systems, one each for my wife, and daughter.
+ 
+ To Join conferences you have to go to the "Events" menus and select 
+ "Get ConfList". The next time you call your server, select "Connect Thor"
+ from the menus, and then click on "Do Events" or "Do All". A list of 
+ available conferences will be downloaded, and then you can join the ones
+ you want.
+ ======================================================================
+
+ I don't know if this is the most effecient way to get set up, but it
+ got me going.
+ 
+ I hope this helps, send me email to let me know how it works out. :)
+  

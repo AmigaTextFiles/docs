@@ -1,0 +1,91 @@
+   Hur man kopplar in en h}rddisk till Amiga.
+   ---------------------------------------------
+
+   Innan man s{tter ig}ng m}ste en boot-disk prepareras. Den ska, f|rutom
+de n|dv{ndiga filerna, inneh{lla:
+
+        prep            kopieras till   C:
+        ahd.device            "         DEVS:
+
+   S:Startup-sequence m}ste ocks} {ndras. G|r en kopia av denna och {ndra
+sedan orginalet till f|ljande:
+
+        mount dh0:
+        assign c: dh0:c                 ; Alla dessa assign kan ers{ttas
+        assign s: dh0:s                 ; med kommandot defdisk dh0: om
+        assign l: dh0:l                 ; detta finns tillg{ngligt.
+        assign libs: dh0:libs
+        assign devs: dh0:devs
+        assign fonts: dh0:fonts
+        assign sys: dh0:
+        execute s:startup-sequence
+
+
+   N{r detta {r klart kan vi b|rja med initieringsfasen. S{tt p} h}rddisken
+f|rst, sedan datorn. H}rddisken genomg}r en egen startsekvens som inte har
+med datorn att g|ra. N{r datorn fr}gar efter WorkBench matar Du in
+Startdisketten. Efter ett tag kommer ett f|nster upp och diskens l{s/skriv
+lampa blinkar lite. [nnu ett tag senare kommer ett felmeddelande upp som
+s{ger 'Not a DOS disk in unit 1' - detta {r fullst{ndigt normalt och beror
+p} att HD:n inte {r formatterad {n. Skriv 'prep' och v{nta p} att texten
+'Cylinders' skrivs, mata h{r in antalet cylindrar som finns p} driven. Prep
+fr}gar efter fler parametrar vilka alla m}ste anges s} korrekt som m|jligt.
+Om du har FastFileSystem s} brukar ett interleave p} 2 till 4 vara b{st,
+annars b|r du ange ca 10. N{r Prep {r n|jd med dina data kommer den att
+skriva ut informationen p} HD:n. Nu m}ste Du ocks} editera i filen
+'devs:mountlist'. Skriv 'ed devs:mountlist' och {ndra sedan v{rdena i filen
+s} att de passar f|r dina |nskem}l. T.ex:
+
+   Om du har WorkBench 1.3 med FastFileSystem i L: kan denna post i
+devs:mountlist anv{ndas till att konfigurera en 900K stor partition p} en
+20MB MFM-disk.
+
+DH0:    Device = ahd.device
+        FileSystem = l:FastFileSystem
+        Unit   = 1
+        Flags  = 0
+        Surfaces  = 4
+        BlocksPerTrack = 17
+        Reserved = 2
+        Interleave = 0
+        LowCyl = 2
+        HighCyl = 30
+        Buffers = 50
+        GlobVec = -1
+        BufMemType = 1
+        Mount = 1
+#
+
+   Om du inte har FastFileSystem.
+
+DH0:    Device = ahd.device
+        Unit   = 1
+        Flags  = 0
+        Surfaces  = 4
+        BlocksPerTrack = 17
+        Reserved = 2
+        Interleave = 0
+        LowCyl = 2
+        HighCyl = 30
+        Buffers = 50
+        BufMemType = 1
+#
+
+
+   Nu {r alla inst{llningar klara och vi kan b|rja med formatteringsfasen.
+Innan Du kan formattera m}ste dock AmigaDOS f} l{sa in den nya
+informationen. Allts} - 'boota om' Amigan (CTRL + C= + AMIGA h}lls ner
+samtidigt en sekund). N{r Amigan startar upp igen kommer samma meddelande
+som f|rut att ges (vi har inte formatterat disken {n). Om du har
+FastFileSystem skriv: 'format drive dh0: name Test ffs noicons' annars
+'format drive dh0: name Test noicons' och v{nta p} att disken formatterar
+klart. N{r '>'-prompten kommer tillbaka stoppar du in den original
+WorkBench du fick n{r du k|pte din Amiga i df0: och skriver 'df0:c/copy
+df0: dh0: all'. Nu kopieras alla filer p} din WorkBench till h}rddisken.
+N{r detta {r klart och allt har varit tyst och stilla i ca 5 sekunder
+stoppar du in StartDisketten i df0: och bootar om. Om allt har g}tt bra
+kommer Amigan att f|rst l{sa in drivprogram fr}n StartDisketten och sedan
+boota fr}n h}rddisken. Prova att starta n}gra program och att skapa nya
+bibliotek. Om allt st}r r{tt till kommer alla operationer att g} n{stan
+lika fort som p} ramdisken.
+

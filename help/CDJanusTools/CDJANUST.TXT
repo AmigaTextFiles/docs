@@ -1,0 +1,111 @@
+This file describes the steps neccessary to access a JanusTools hard disk
+partition using CrossDos.  You may also be able to use other MS-DOS file
+systems, such as MessyFileSystem.
+
+1.  Set up the partition you wish to use with the Bridgeboard or PC-Task
+    on your Amiga hard drive according to the JanusTools documentation
+    *except* you must set the DOSType for the new partition to 0x4D534400
+    *not* 0x4D534800 as stated in the JanusTools documentation.  CrossDos
+    will not work with the 0x4D534800 DOSType, but JanusTools will work with
+    the 0x4D534400 DOSType.  This should be possible to do with HDTools
+    or the utilities that came with your Amiga hard drive.
+
+2.  Obtain PCDISK91B (from Aminet).  In it is a utility called DISKINFO.
+    Run DISKINFO to obtain the Mountlist parameters for the JanusTools
+    drive.  It is best to redirect this to a file so that it can be imported
+    into your Mountlist.  I use something like: DISKINFO DH2: >DH2.PARMS.
+
+3.  Add this entry (DH2.PARMS in my case) to the end of your Mountlist.
+    The Mountlist usually resides in SYS:DEVS/Mountlist  (where SYS: is the
+    boot partition and usually a hard drive, but could be a floppy).
+
+4. Modify 5 of the parameters in the Mountlist entry that you just added for
+   the JanusTools partition.  Change the name of the entry.  If it is DHx:,
+   you can change it to something like IBMC:, IBMD:, or whatever.
+   Change the DosType parameter to 0x4D534400 (but, it should already be set).
+   Now the entries for LowCyl and HighCyl should be modified according to
+   the formulas (taken from PCDISK91B):
+
+   NewPCLowCyl = (AmigaLowCyl * Surfaces) + 1
+   NewHighCyl  = (AmigaHighCyl + 1) * Surfaces) - 1
+
+   where AmigaLowCyl is the LowCyl parameter of the unmodified Mountlist entry
+         AmigaHighCyl is the HighCyl parmater of the unmodified Mountlist entry
+         Surfaces is the Surfaces parameter of the unmodified Mountlist entry
+
+   Replace LowCyl and HighCyl with these values and replace Surfaces with 1.
+
+5. Add a parameter entry (or change any existing one for FileSystem):
+   FileSystem = L:CrossDosFileSystem (or L:MessyFileSystem)
+
+6. If you plan to use this partition with any of the various Bridgeboards,
+   you will need to edit the ABOOT.CTRL file which is usually in the PC/SYSTEM
+   drawer.  Put in this file the name of your PC partition (i.e IBMC:, IBMD:
+   etc.)  Be sure you have the ":", but do not put a carraige return (newline)
+   at the end.  Thus, you should have one line only in the file.
+
+7. Now, when you boot your Bridgeboard, you will have to go through the usual
+   steps to initialize and format the new partition.  Please see you MS-DOS
+   documentation if you are not familiar with this.
+
+8. If you have done everything correctly, you can now Mount this entry (add
+   a statement in your startup-sequence such as MOUNT IBMC:) prior to
+   invoking the Binddrivers command to boot the Bridgeboard and when you
+   do a DIR on it from AmigaDOS, you should see the PC files.  You should
+   also be able to add this entry as a primary (C:) or secondary (D:) hard
+   disk entry in the PC-Task startup menu and access it when in PC-Task.
+   If you have problems or are reading garbage, go back and carefully
+   check the parameters.
+
+As an example, I have an IBM 728 MB IDE drive partitioned into
+DH0: (200 MB), DH1: (200 MB), DH2: (200 MB) and DH3: (99 MB).  I used
+DH2: as my PC DOS partition.
+
+My DH2 entry (from DISKINFO) looks like this:
+
+DH2: Device          = ExpSys.device
+     Unit            = 80
+     BlockSize       = 512
+     Surfaces        = 16
+     BlocksPerTrack  = 63
+     Reserved        = 2
+     PreAlloc        = 0
+     Interleave      = 0
+     LowCyl          = 818
+     HighCyl         = 1224
+     Buffers         = 32
+     BufMemType      = 1
+     MaxTransfer     = 0x7FFFFFFF
+     Mask            = 0x00FFFFFE
+     BootPri         = 0
+     DosType         = 0x444F5301
+#
+
+My JanusTools PCE entry (modified from DISKINFO) looks like this:
+
+PCE: Device          = ExpSys.device            ;<- changed
+     FileSystem      = L:CrossDosFileSystem     ;<- added
+     Unit            = 80
+     BlockSize       = 512
+     Surfaces        = 1                        ; <- changed
+     BlocksPerTrack  = 63
+     Reserved        = 2
+     PreAlloc        = 0
+     Interleave      = 0
+     LowCyl          = 13089                    ; <- changed
+     HighCyl         = 19599                    ; <- changed
+     Buffers         = 32
+     BufMemType      = 1
+     MaxTransfer     = 0x7FFFFFFF
+     Mask            = 0x00FFFFFE
+     BootPri         = 0
+     DosType         = 0x4D534400               ; <- changed
+#
+
+My ABOOT.CTRL has PCE: and I can access PCE: from the Bridgeboard, if I
+disable my PC IDE drive via the CMOS settings, or I can access it from
+PC-Task, or I can access it via AmigaDOS (CrossDOS).
+
+Jordan Krim
+krim@vnet.ibm.com
+krim@azstarnet.com

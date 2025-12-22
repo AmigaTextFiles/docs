@@ -1,0 +1,174 @@
+
+
+   AHD on interface, joka tekee mahdolliseksi liitt{{ edullisen PC-kovalevyn
+Amiga 1000:een tai Amiga 500:aan. Interfacen ajatuksena oli tehd{ siit{
+halpa ja yksinkertainen rakentaa. Siksi siin{ ei ole mit{{n Auto-boottia
+tai DMA-siirtoa. 
+
+Rakentaminen
+============
+
+   Interfacen p{{tarkoituksena on muuttaa Amiga-v{yl{ PC-v{yl{ksi ja
+p{invastoin. Pieni taustakuvaus interfacen toimintatapaan voi olla
+paikallaan.
+
+   PC:n kontrolleri (esim. Western Digital WX1) on rakennettu j{{m{{n
+osoitteeseen $0320 PC:n muistissa. T{m{ paikka on varattu juuri
+kovalevykontrollerille.  Amigassa I/O-alue alkaa osoitteesta $E80000,
+joten meid{n pit{{ siirt{{ $0320 ==> $E80000.
+
+   Osoitekoodauksessa maskataan AND-piirill{ ja invertteri yksinkertaisesti
+k{{nt{{ bitit. Osoitekooderista (AEU) tuleva HDEN-signaali nousee, kun
+osoitev{yl{n viisi ylint{ bitti{ (A23-A19) ovat '11101' - sopiva
+$E8XXXX:{{n. N{m{ signaalit k{{nnet{{n invertterill{ ja yhdistet{{n
+OR-piiriss{ *LDS-signaaliin. T{m{ tarkoittaa, ett{ kun osoite muodostetaan
+ja kun prosessori yritt{{ lukea LSByte{ siit{, yll{mainittu piiri antaa
+alhaalla olevan signaalin kahdelle OR-piirille, jotka pit{v{t huolen
+I/O:n jakamisesta PC-esikuvan mukaisesti.
+
+**************************************************************************
+
+Alkuper{isess{ rakennusohjeessa DU-osassa (ks. komponenttikaavio)
+OR-piiriin menee signaali laskurin (LS93) nastasta 8. Kokeilin kytkent{{, 
+jossa nasta 8 oli korvattu nastalla 9, ja kontrollerin toiminta nopeutui 
+n. 20%, kaikki toimi silti normaalisti. Suosittelen tekem{{n tuon, 
+kovalevyn luku/kirjotusnopeudet paranivat heti huomattavasti!
+
+***************************************************************************
+
+   Kontrollerin reunassa osa signaaleista johtaa maahan, +5V:iin sek{
++12V:iin. Jos on ep{varma siit{ mik{ pinni on mik{kin niin etsi
++12V j{lkeenp{in joka on vain pinniss{ 10 (v{yl{n alapuolella).
+
+   Ehdotan ett{ yritett{isiin kytke{ v{hint{{n ainakin kaksi erillist{
+maadoitusta Amigan laajennusv{yl{lt{ (pinnit 1-4 sek{ 85 ovat maata
+laajennusv{yl{ss{). Seuraavat pinnit ovat maata PC-liittimess{:
+
+     A11 - A21, A24 - A25, A27 - A29, B1, B2, B10, B31
+
+    Amigan laajennusv{yl{ss{ pinneiss{ 5 ja 6 on +5V. Seuraavat pinnat
+PC-liittimess{ kytket{{n +5V:iin:
+
+     A22 - A23, A26, B3, B29
+
+    Kontrolleri vaatii my|skin +12V. N{m{ j{nnitteet l|ytyv{t pinnist{ 10.
+Suosittelen kuitenkin erillisen virtal{hteen hankkimista, Amigan oma 
+poweri tuskin kest{{ sek{ kontrollerin ett{ kovalevyn aiheuttamaa 
+kuorimitusta. Itsell{ni on k{yt|ss{ vanha PC:n virhtal{hde.
+Seuraava pinna PC-liittimess{ kytket{{n +12V:iin:
+
+     B9
+
+    Amiga 500:ssa on my|s -12V j{nnite. Sit{ voidaan k{ytt{{, jos l|ytyy
+kontrolleri joka vaatii t{m{n j{nnitteen. A500-omistajat joilla on
+sellainen kontrolleri, l|yt{v{t ko. pinnin k{ytt{j{noppaasta.
+
+    Koska PC-liittimell{ on oma puskuri datav{yl{lle, voidaan Amigan
+laajennusv{yl{ liitt{{ suoraan kontrolleriin:
+
+     Amiga             PC
+
+      75               A9
+      77               A8
+      79               A7
+      81               A6
+      83               A5
+      86               A4
+      84               A3
+      82               A2
+
+    Amigan osoitelinjat A1 ja A2 pit{{ my|skin kytke{, ett{ tietokone osaa
+k{ytt{{ kontrollerin rekisterit{:
+
+     Amiga             PC
+
+      29               A31
+      27               A30
+
+   Pinnijen numerointi Amigan laajennusv{yl{ss{
+   --------------------------------------------
+
+   Amiga 1000:n ja Amiga 500:n laajennusv{yl{t ovat erilaisia. T{ss{ selvitys 
+kummastakin. '#####' tarkoittaa itse laajennusv{yl{{:
+
+    A1000:
+
+               Yl|s
+       ..................              >1 3 5 7 ... 81 83 85
+Edest{ :oo   #####      : Takaa        >
+       :................:              >2 4 6 8 ... 82 84 86
+               Alas
+            
+
+    A500:
+
+          Yl|s
+       .........                       >1 3 5 7 ... 81 83 85
+Takaa  :       :::..      Edest{       >
+       :.....#####::::..               >2 4 6 8 ... 82 84 86 
+          Alas                         
+
+
+   Amiga 500:n laajennusv{yl{ on siirretty koneen toiselle puolelle, jos 
+verrataan Amiga 1000:een. Yleens{ kaikki dokumentit on tehty Amiga 1000:tta 
+silm{ll{ pit{en. (A500:ssa on muutama uudistus). Seuraavassa viel{ Amiga 
+1000:n ja Amiga 500:n pinnaj{rjestys (Amiga Hardware Reference Manualista):
+(* = invertoitu)
+
+
+    EXPANSION ...86 PIN EDGE (.1) (P2) (For Amiga 1000)
+
+    1  gnd         23 A6          45 A15         67 PD13
+    2  gnd         24 A4          46 BERR*       68 PRW*
+    3  gnd         25 gnd         47 A17         69 PD12
+    4  gnd         26 A3          48 VPA*        70 LDS*
+    5  +5          27 A2          49 gnd         71 PD11
+    6  +5          28 A7          50 E           72 UDS*
+    7  exp         29 A1          51 VMA*        73 gnd
+    8  -5          30 A8          52 A18         74 AS*
+    9  exp         31 FC0         53 RES*        75 PD0
+    10 +12         32 A9          54 A19         76 PD10
+    11 gnd         33 FC1         55 HLT*        77 PD1
+    12 CONFIG      34 A10         56 A20         78 PD9
+    13 gnd         35 FC2         57 A22         79 PD2
+    14 C3*         36 A11         58 A21         80 PD8
+    15 CDAC        37 gnd         59 A23         81 PD3
+    16 C1*         38 A12         60 BR*         82 PD7
+    17 OVR*        39 A13         61 gnd         83 PD4
+    18 XRDY        40 IPL0*       62 BGACK*      84 PD6
+    19 INT2*       41 A14         63 PD15        85 gnd
+    20 PALOPE*     42 IPL1*       64 BG*         86 PD5
+    21 A5          43 A15         65 PD14
+    22 INT6*       44 IPL2*       66 DTACK*
+
+
+    EXPANSION ...86 PIN EDGE (For Amiga 500)
+
+    1  gnd         23 A6          45 A15         67 PD13
+    2  gnd         24 A4          46 BERR*       68 PRW*
+    3  gnd         25 gnd         47 A17         69 PD12
+    4  gnd         26 A3          48 VPA*        70 LDS*
+    5  +5          27 A2          49 gnd         71 PD11
+    6  +5          28 A7          50 E           72 UDS*
+    7  exp         29 A1          51 VMA*        73 gnd
+  ->8  -12         30 A8          52 A18         74 AS*
+    9  exp         31 FC0         53 RES*        75 PD0
+    10 +12         32 A9          54 A19         76 PD10
+    11 gnd         33 FC1         55 HLT*        77 PD1
+  ->12 CONFIG*     34 A10         56 A20         78 PD9
+    13 gnd         35 FC2         57 A22         79 PD2
+    14 C3*         36 A11         58 A21         80 PD8
+    15 CDAC        37 gnd         59 A23         81 PD3
+    16 C1*         38 A12         60 BR*         82 PD7
+    17 OVR*        39 A13         61 gnd         83 PD4
+    18 XRDY        40 IPL0*       62 BGACK*      84 PD6
+    19 INT2*       41 A14         63 PD15        85 gnd
+    20 PALOPE*     42 IPL1*       64 BG*         86 PD5
+    21 A5          43 A15         65 PD14
+    22 INT6*       44 IPL2*       66 DTACK*
+
+(-> = muuttuneet pinnit)
+
+
+K{{nt{nyt Lovejoy of Pu-239. En ota vastuuta mahdollisista virheit{ tms.
+

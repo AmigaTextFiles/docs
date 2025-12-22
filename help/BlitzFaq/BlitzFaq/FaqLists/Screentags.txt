@@ -1,0 +1,120 @@
+;** NEW SCREEN-OPEN STARTUP **
+;*****************************
+WBStartup
+NoCli
+
+#Left=$80000021:#Top=$80000022
+#Width=$80000023:#Height=$80000024
+#Dep=$80000025
+#Det=$80000026
+#Blok=$80000027
+#Title=$80000028
+#Font=$8000002B
+#SysFont=$8000002C
+#Typ=$8000002D
+#PubName=$8000002F
+#DisplayID=$80000032
+#Overscan=$80000034
+#_Quiet=$80000038
+#AutoScroll=$80000039
+#Pens=$8000003A
+#Inter=$80000042
+#LikeWorkbench=$80000047
+#Draggable=$8000003e
+
+NEWTYPE .screeninfo
+  id.l
+  wi.l
+  he.l
+  Dep.w
+  over.l
+  auto.w
+End NEWTYPE
+
+NEWTYPE .tag
+  a.l
+  b.l
+End NEWTYPE
+
+NEWTYPE .taglist
+  a.tag
+  b.tag
+  c.tag
+  d.tag
+  e.tag
+  f.tag
+  g.tag
+  h.tag
+  i.tag
+  j.tag
+  k.tag
+  l.tag
+  m.tag
+  n.tag
+  o.tag
+End NEWTYPE
+
+NEWTYPE .pens
+  a.w
+  b.w
+  c.w
+  d.w
+  e.w
+  f.w
+  g.w
+  h.w
+  i.w
+  j.w
+  k.w
+  l.w
+  m.w
+  n.w
+End NEWTYPE
+
+Scr.s="Test Screen"
+
+pp.pens\c=1 ; Text on background
+pp.pens\d=2 ; Bright edge on 3d objects
+pp.pens\e=1 ; Dark edge on 3d objects
+pp.pens\f=3 ; activew window/select gadgetfill
+pp.pens\g=1 ; text over FILLPEN (filltextpen)
+pp.pens\h=0 ; Backgroundpen
+pp.pens\i=2 ; Special colour text
+pp.pens\j=1 ; Text/deail in screen-bar/menus
+pp.pens\k=2 ; Screenbar/menusfill
+pp.pens\l=1 ; Trim under screenbar
+pp.pens\m=12 ; Number of pens
+pp.pens\n=1 ; Do I need it?
+
+DEFTYPE .screeninfo    screeninfo,*ScreenPt
+*ScreenPt=screeninfo
+
+screeninit:
+USEPATH *ScreenPt
+\id=$8000
+\wi=640:\he=256
+\Dep=6
+  scrtag.taglist\a\a=#LikeWorkbench,True
+  scrtag.taglist\b\a=#Width,\wi
+  scrtag.taglist\c\a=#Height,\he
+  scrtag.taglist\d\a=#Typ,$f
+  scrtag.taglist\e\a=#Dep,\Dep
+  scrtag.taglist\f\a=#Pens,&pp
+  scrtag.taglist\g\a=#Det,dpen
+  scrtag.taglist\h\a=#Blok,bpen
+  scrtag.taglist\i\a=#DisplayID,\id
+  scrtag.taglist\j\a=#Draggable,True
+  scrtag.taglist\k\a=#Title,Scr
+  scrtag.taglist\l\a=#SysFont,0
+  scrtag.taglist\m\a=0,0
+
+; Here are the changes:
+
+scree.l=OpenScreenTagList_(False,&scrtag\a\a)
+ScreenToFront_(&scree) ; lets us find the screen easily and secure.
+FindScreen 1
+Use Screen 1
+
+ClickMouse
+CloseScreen_(scree) ; close the screen using the return screen-pointer
+                    ; from OpenScreenTagList_(..)

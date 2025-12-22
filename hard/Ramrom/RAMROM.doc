@@ -1,0 +1,177 @@
+			A500 RAM/ROM overlay Modification
+
+						by Leslie Ayling
+						p.o box 334 Glebe 2037
+
+
+   Yet another in the series of El-Cheapo modifications for the A500/2000
+
+	Those of you who arrived at the amiga via the APPLE ][ route will
+no doubt be aware of the APPLE language card (otherwise known as a 16k ram
+card) and how it could be loaded with all manner of different operating
+systems, such as INTEGER BASIC, PASCAL, ASSEMBLER DEV PAC etc.
+Once loaded, there was either a HARD or SOFT toggle switch which disabled
+the ACTIVE ROMS (namely APPLESOFT BASIC) then enabled the RAM CARD.
+The system then behaved as though you had the appropriate roms for whatever
+package you wanted to run.
+
+	A similar function can be enabled within the Amiga 500/2000 with an
+A501 card to allow the KICKSTART roms to be overlayed with a ram image.
+
+	This will allow you to not only load whatever version of kickstart
+you desire (1.1, 1.2, 1.3, 1.4????) (a'la Amiga 1000) but also to customize
+it for auto-config of NON-auto-config memory boards or various other
+devices. Or even further still modify some of the rom-resident libraries
+for more efficient action (That infernal drive clicking for one!). Lets face 
+it, look what difference the ARP verions of most commands make!! Any takers
+on this PROJECT????
+
+HOW IT WORKS:
+-------------
+
+	To overlay the Roms with RAM we first have to choose a 256k memory 
+area that we are happy to do without. I picked $C40000-$C7FFFF becase it
+required the least circuitry (less power drain on that commodore power
+supply!) which is after all what this series of articles is all about!
+
+	The easiest way to do any re-addressing on the Amiga 500 I have
+found is to confuse GARY about what he is really looking at. This time we
+have to make the ram image of $C00000-$C7FFFF also appear at
+$F80000-$FFFFFF. Refer to the following table :-
+
+	A23	A22	A21	A20	A19	A18	A17	A16
+
+$F8..    1       1       1       1       1       0       0       0
+
+$C0..    1       1       0       0       0       0       0       0
+
+	When we wan't to read $F80000-$FF0000 Gary must think we are
+looking at $C00000-$C7FFFF.From the table this means that when A23,22,21,20
+and 19 are HIGH (or LOGIC "1") we must force the inputs for GARY for
+A21,20,19 LOW (or LOGIC "0").
+
+	Refer to the accompanying circuit digram. The 74S30 chip decodes
+the top 5 address lines and the enable switch and outputs a low when they
+are all HIGH. the 74F08 gates this signal with the true address lines for
+A21,20,19 then applies the signals to GARY.
+
+	When the Amiga is addressing anywhere but $f80000-$FFFFFF the
+output of the 74S30 is high. This is passed through logic AND gates with
+the true address lines.In this state the true addresses are applied to GARY
+
+	In the address range $F80000-$FFFFFF (when the switch is enabled)
+the 74S30 outputs a LOW signal.This is passed to the AND gates.In this
+state since one of the inputs of each AND gate is LOW the outputs are also
+forced LOW.Hence A21,20,19 are forced low in this address range, causing
+GARY to think it is looking at $C00000-$C7FFFF and enable the RAM it finds
+there!
+
+	If you want to write protect the RAM you can cut the R/W* trace
+that leads to the A501 , join either side of the cut to a single pole
+single throw switch and wire a 4.7k resistor between 5v and the A501 side
+of the switch.When the switch is open writes to the A501 RAM are inhibited.
+Keep the leads to this switch SHORT.
+
+
+HOW TO USE IT
+-------------
+
+	First of all the A501 memory must become invisible , so the system
+dosen't go writing over our ROM image.Boot with a disk which has the CCS
+boot or similar boot block program for turning off extra memory. **NOTE**
+It must actually REMOVE the memory from the system not just ALLOCATE it all
+like some programs otherwise system stacks and execbase structures will
+still be sitting in fast memory!!!!
+Alternatively if you have the switch on the A501 as previously described in
+Megadisk, flick the switch to off and reset the system. This will also make
+the A501 invisible to the system. When the Hand appears on the screen just
+flick the switch back to ON.
+	Secondly load a Monitor program such as CMON and load the desired
+image into $C40000-$C7FFFF.
+
+	This image can be created in one of two ways.
+
+1. Find a friend with an Amiga who has the desired kickstart version you
+want and get him to dump it to disk for you ($FC0000-$FFFFFF).
+2. Get a kickstart disk to suit the 1000. The rom image starts on track 0
+sector 1 and continues sequentially up the disk to about track 22 or
+thereabouts. Load it in track by track then dump the resultant image to a
+disk file. This takes more time but if you don't know anyone with
+appropriate roms then it is your last resort!
+
+	Once the image is loaded modify the bytes at $C401DF and $C401B7 
+to #$C4. This prevents the system allocating and over writing our ROM image
+when we reset .Hold down the <CTRL>-amiga-amiga keys, flick the switch and
+then release the keys. The machine should reset as normal , however at this
+point it is running from the RAM. If the machine crashes RESET. If it still
+dosen't work recheck your work as you have made a mistake  (99.9% chance the
+mistake is in the software because if you have got this far the hardware more
+than likely works.)
+If you are using the same version in RAM of kickstart that you have in ROM
+you will have to corrupt the EXECBASE vector as described below otherwise
+the system will not re-evaluate the memory attached to the system.
+
+
+WHAT HAPPENS DURING RESET?
+--------------------------
+
+	The RESET* signale is applied to CIA-A which forces its PA0 output
+high. This is applied to GARY as OVL (overlay). This signal causes the roms
+to appear at $000000-$07FFFF. The 680000 then reads the long word at
+$000004 and transfers control to the address it finds there ($FC0062 for
+all versions so far) it then turns off the PA0 line so that the normal chip
+ram can now be accessed.With the mod enabled, the jmp $FC0062 should
+jump into our Ram image,if enabled.
+
+MODIFYING KICKSTART
+-------------------
+
+	So far I have only made changes to auto-configure my 2meg memory
+board as described in Megadisk 15.
+Change the following bytes:-
+		$FC01D9 : #$20
+		$FC01DF : #$40
+		$FC01F1 : #$20
+		$FC01FD : #$20
+		$FC01B7 : #$40
+		$FC01BF : #$24
+
+	This will auto-configure anything up the 2megs between $200000 and
+$400000. Change the #$40 bytes to more if you have more than two megs.
+	To enable this to work, once you have loaded the image and made
+the changes (and saved it for future loading) with your monitor put the
+value $FFFF into memory location $000006. This will corrupt the execbase
+vectors and make the machine instantaneously GURU. Hit the RESET keys
+BEFORE the led flashes 11 times. This will cause our kickstart image to
+re-evaluate what memory is present and auto-configure the extra memory!
+*NOTE* If you add these changes do not include the previously mentioned
+patch as the two are mutually exclusive.
+
+
+SUMMING UP
+----------
+	All of the software steps could be written into one program, but at
+present I don't have a sufficient grasp of C or making use of devices etc.
+Maybe one of you software boys could do it and send it in to TIM at
+Megadisk!
+
+	The mod is very simple and allows compatibility betwwen different
+versions of kickstart without the need to buy seperate versions in ROM.
+For example you now have access to kickstart 1.3 and the benefits it gives
+even if you only have 1.2 in your machine.
+Availability has also proved to be a problem with the 1.3 roms as an
+upgrade for 1.2 owners. When I finally got mine they were $41.86 from the
+chatswood service centre. You can bet your bottom dollar that 1.4 when it
+comes out will be a damn sight harder to get hold of!. With this mod you
+are ready as soon as the Kickstart disk is made available or when you can
+dump a copy from a friend with the latest.!
+
+If you have any problems or questions contact me either direct or via megadisk.
+
+If you can't find the CCS boot program, it is available DIRECT from me on a
+disk with ARP1.3 and many other useful utilities including the latest
+versiom of VIRUSX (4.0) for the measly sum of $5.00 plus $2.00 P/P.
+
+Coming up...More usefull hardware mods!
+
+Hope this is of some help.....................regards  Leslie Ayling

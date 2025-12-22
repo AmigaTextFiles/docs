@@ -1,0 +1,84 @@
+;
+; MorphOS startup-sequence
+;
+; Copyright © 2002-2003 The MorphOS Development Team, All Rights Reserved.
+;
+; This script is executed on system boot. Do *NOT* modify this file!
+; Use S:user-startup instead.
+;
+; $VER: startup-sequence 1.3
+;
+
+Failat 21
+
+C:Version >NIL:
+
+Resident >NIL: C:Assign PURE
+Resident >NIL: C:Execute PURE
+
+MakeDir RAM:T
+Assign T: RAM:T
+
+MakeDir RAM:ENV RAM:Clipboards
+Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+Assign ENV: RAM:ENV
+
+if exists SYS:Locale NOREQ
+    Assign LOCALE: SYS:Locale
+endif
+
+if exists MOSSYS: NOREQ
+    Assign LOCALE: MOSSYS:Locale ADD
+Endif
+
+
+Assign KEYMAPS: DEVS:Keymaps DEFER
+Assign CLIPS: RAM:Clipboards
+Assign HELP: LOCALE:Help DEFER
+Assign PRINTERS: DEVS:Printers DEFER
+Assign REXX: S: DEFER
+
+
+LoadMonDrvs
+
+Mount >NIL: MOSSYS:Devs/DOSDrivers/~(#?.info) DEVS:DOSDrivers/~(#?.info)
+
+SetEnv Workbench $Workbench
+SetEnv Kickstart $Kickstart
+UnSet Workbench
+UnSet Kickstart
+
+AddDataTypes REFRESH QUIET
+
+ConClip
+
+Path >NIL: C: SYS:Utilities S:
+
+IPrefs
+
+;Run >NIL: FPPrefs
+
+if not exists ENV:NOTRANCE NOREQ
+    Run <>NIL: DETACH QUIET Trance
+endif
+
+Assign TurboPrint: MOSSYS:TP
+if exists "TurboPrint:configs/_Last_" NOREQ
+    Run <>NIL: TurboPrint:turbo/ttp
+endif
+
+if exists S:User-Startup NOREQ
+    Execute >NIL: S:User-Startup
+endif
+
+Resident Execute REMOVE
+Resident Assign REMOVE
+
+Run >NIL: PowerIcons NOGHOSTSELECT GHOST=40 TEXTMODE=0 SCROLLSPEEDUP SELR=0 SELG=0 SELB=80
+Wait 1
+
+LoadWB SIMPLEGELS
+;LoadWB.scalos HIDE SIMPLEGELS
+;LoadWB_MOS
+
+EndCLI >NIL:

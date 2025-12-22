@@ -1,0 +1,112 @@
+
+   Ahd {r ett interface som g|r det m|jligt att koppla en billig PC-disk
+till en Amiga 1000 eller Amiga 500. Tanken med IF:et {r att det ska vara
+billigt och enkelt att bygga. D{rf|r finns det ingen AutoBoot eller DMA.
+Det ligger iofs i kitets natur att det {r l{tt att bygga ut. Om n}gon g|r
+detta s} skulle jag vara intresserad av att f} veta detta.
+
+
+   Uppbyggnad
+   ----------
+
+   IF:ets huvudsakliga uppgift {r att omvandla Amigans buss till en PC buss
+och tv{rtom. Lite bakgrund till metoden som f|ljer kan vara p} sin plats.
+
+   En kontroller f|r en PC (t.ex Western Digital WX1) {r byggd f|r att
+hamna p} adressen $0320 i PC:ns minne. Denna plats {r reserverad f|r just
+en Winchesterkontroller. Hos Amigan finns det ett antal I/O utrymmen med
+b|rjan p} adress $E80000. N{r Amigan Bootar upp s} g}r den ut och k{nner av
+vad som finns anslutet och talar om f|r respektive enhet var den ska hamna
+i minnet. Dessa enheter kommer, innan de har blivit konfigurerade, att
+ligga p} just $E80000 och sedan bli flyttade till annan adress. Det {r
+rimligt att anta att just utrymmet runt $E80000 kommer att vara det som
+anv{nds sist - tanken med kitet bygger p} att $E80000 {r ledigt n{r
+AmigaDOS sedan startar upp. Vad vi beh|ver g|ra {r allts} att |vers{tta
+$0320 till $E80000.
+
+   Adressavkodningen l|ses med en AND-grind och en inverterare enligt
+figur. Den signal (HDEN) som kommer ur Adressavkodaren (AEU) kommer att g}
+h|g n{r de |versta fem bitarna p} adressbussen (A23 - A19) {r i tillst}ndet
+'11101' - kvalifikationen f|r $E8XXXX. Denna signal inverteras och
+kombineras genom en OR-grind med *LDS. Detta betyder att n{r adressen
+st{mmer och n{r processorn f|rs|ker l{sa LSByte p} den adressen s} kommer
+ovan n{mnda grind att ge en l}g signal till tv} OR-grindar som sk|ter
+uppdelningen av I/O enligt PC-m|nster (se ritning).
+
+   P} kontrollerns sida ska en del signaler kopplas till jord, +5v samt
++12v. Om det f|religger os{kerhet om vilken pinne som {r vilken s} leta
+efter +12v som bara finns p} pinne 10 (p} undersidan av bussen).
+
+      Jag f|resl}r att man f|rs|ker koppla |ver minst tv} separata
+   jordledningar fr}n Amigans buss (pinnarna 1 - 4 samt 85 {r jord i
+   Amigabussen). F|ljande pinnar i PC-kontakten jordas:
+
+        A11 - A21, A24 - A25, A27 - A29, B1, B2, B10, B31
+
+      P} Amigan finns 5v p} pinnarna 5 och 6. F|ljande pinnar i
+   PC-kontakten kopplas till +5v:
+
+        A22 - A23, A26, B3, B29
+
+      Kontrollern kr{ver {ven +12v. Denna sp{nning hittar man p} pinne 10.
+   F|ljande pinnar i PC-kontakten kopplas till +12v:
+
+        B9
+
+   P} 500:an finns {ven en -12v sp{nning. Den kan anv{ndas om man hittar en
+kontroller som kr{ver denna sp{nning. De 500-{gare som befinner sig i denna
+situation hittar var denna pinne finns i anv{ndarmanualen.
+
+   Eftersom PC-kontrollern har en egen buffer f|r sina dataledningar kan vi
+koppla Amigans databuss r{tt in i kontrollerns.
+
+       Amiga            PC
+
+        75              A9
+        77              A8
+        79              A7
+        81              A6
+        83              A5
+        86              A4
+        84              A3
+        82              A2
+
+
+   Amigans adressledningar A1 och A2 m}ste ocks} kopplas f|r att datorn ska
+kunna komma }t kontrollerns register.
+
+       Amiga            PC
+
+        29              A31
+        27              A30
+
+
+   Se vidare i figuren f|r de signaler som m}ste skapas med logiska
+grindar.
+
+
+
+   Pinnarnas numrering p} Amigabussen
+   ----------------------------------
+
+   Det {r ingalunda sj{lvklart hur Amigabussens pinnar numreras. H{r visas
+hur A1000 och A500 har sin numrering. I b}da fallen ses Amigan fr}n sidan
+mot bussen. '####'-markeringen f|rest{ller sj{lva busskontakten.
+
+   A1000:
+
+                Upp
+        +----------------+        >  1 3 5 7 ... 81 83 85
+   Fram !oo   #####      ! Bak    >
+        +----------------+        >  2 4 6 8 ... 82 84 86
+                Ner
+
+
+   A500:
+
+      A500 har samma format och indelning som A1000-bussen. Det enda som
+   skiljer {r att bussen sitter p} andra sidan av datorn samt l{gre ner. I
+   ovanst}ende skiss ska allts} fram och bak byta plats (pinne 1 sitter
+   |verst l{ngst bak). H|jden {r viktig att t{nka p} n{r man bygger f|r en
+   500:a - det kan bli n|dv{ndigt att palla upp datorn annars.
+

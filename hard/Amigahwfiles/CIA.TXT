@@ -1,0 +1,739 @@
+                               APPENDIX F
+
+                       COMPLEX INTERFACE ADAPTERS
+
+
+This appendix contains information about the 8520 peripheral interface
+adapters.
+
+8520 COMPLEX INTERFACE ADAPTOR CIA) CHIPS
+
+Each Amiga system contains two 8520 Complex Interface Adaptor (CIA)
+chips. Each chip has 16 general purpose input/output pins, plus a serial
+shift register, three timers, an output pulse pin and an edge detection
+input. In the Amiga system various tasks are assigned to the chip's
+capabilities.
+
+                           - Appendix F 317 -
+
+
+CIAA Address Map
+----------------
+ Byte    Register               Data bits
+Address    Name    7     6     5    4    3     2     1    0
+------------------------------------------------------------------
+BFE001    pra      /FIR1 /FIR0 /RDY /TK0 /WPRO /CHNG /LED OVL
+BFE101    prb      Parallel port
+BFE201    ddra     Direction for port A (BFE001);1 output (set to 0x03)
+BFE301    ddrb     Direction for port B (BFE101);1 output (can be in/out)
+BFE401    talo     CIAA timer A low byte (.715909 Mhz NTSC; .709379 Mhz PAL)
+BFE501    tahi     CIAA timer A high byte
+BFE601    tblo     CIAA timer B low byte (.715909 Mhz NTSC; .709379 Mhz PAL)
+BFE701    tbhi     CIAA timer B high byte
+BFE801    todlo    50/60 Hz event counter bits  7-0 (VSync or line tick)
+BFE901    todmid   50/60 Hz event counter bits 15-8
+BFEA01    todhi    50/60 Hz event counter bits 23-16
+BFEB01             not used
+BFEC01    sdr      CIAA serial data register (connected to keyboard)
+BFED01    icr      CIAA interrupt control register
+BFEE01    cra      CIAA control register A
+BFEF01    crb      CIAA control register B
+
+Note: CIAA can generate interrupt INT2.
+
+CIAB Address Map
+----------------
+Byte Register Data bits
+Address   Name     7    6     5     4     3     2     1    0
+-------------------------------------------------------------------
+BFD000    pra      /DTR /RTS  /CD   /CTS  /DSR  SEL   POUT BUSY
+BFD100    prb      /MTR /SEL3 /SEL2 /SEL1 /SEL0 /SIDE DIR  /STEP
+BFD200    ddra     Direction for Port A (BFD000);1 = output (set to 0xFF)
+BFD300    ddrb     Direction for Port B (BFD100);1 - output (set to 0xFF)
+BFD400    talo     CIAB timer A low byte (.715909 Mhz NTSC; .709379 Mhz PAL)
+BFD500    tahi     CIAB timer A high byte
+BFD600    tblo     CIAB timer B low byte (.715909 Mhz NTSC; .709379 Mhz PAL)
+BFD700    tbhi     CIAB timer B high byte
+BFD800    todlo    Horizontal sync event counter bits 7-0
+BFD900    todmid   Horizontal sync event counter bits 15-8
+BFDA00    todhi    Horizontal sync event counter bits 23-16
+BFDB00             not used
+BFDC00    dr       CIAB serial data register (unused)
+BFDD00    icr      CIAB interrupt control register
+BFDE00    cra      CIAB Control register A
+BFDF00    crb      CIAB Control register B
+
+Note: CIAB can generate INT6.
+
+                           - 318 Appendix F -
+
+
+CHIP REGISTER MAP
+
+Each 8520 has 16 registers that you may read or write. Here is the list
+of register and the access addesses of each within the memory space
+dedicated to the 8520:
+
+                   Register
+RS3 R52 RS1 RS0 (hex) NAME      MEANING
+------------------------------------------------------------
+0   0   0   0   0     pra       Peripheral data register A
+0   0   0   1   1     prb       Peripheral data regigter B
+0   0   1   0   2     ddra      Data direction register A
+0   0   1   1   3     ddrb      Direction register B
+0   1   0   0   4     talo      Timer A low register
+0   1   0   1   5     tahi      Timer A high regiater
+0   1   1   0   6     tblo      Timer B low register
+0   1   1   1   7     tbhi      Timer B high register
+1   0   0   0   8     todlow    Event LSB
+1   0   0   1   9     todmid    Event 8-15
+1   0   1   D   A     todhi     Event S
+1   0   1   1   B               No connect
+1   1   0   0   C     sdr       Serial data register
+1   1   0   1   D     icr       Interrupt control register
+1   1   1   0   E     cra       Control register A
+I   1   1   1   F     crb       Control register B
+
+SOFTWARE NOTE:
+
+The operating system kernel has already allocated the use of
+several of the 8520 timers.
+
+CIAA, timer A - keyboard (used continuously to handshake
+                keystrokes). NOT AVAILABLE.
+
+CIAA, timer B - Virtual timer device (used continuously
+                whenever system Exec is in control; used
+                for task switching, interrupts and timing).
+CIAA, TOD     - 50/60 Hz timer used by timer.device. The
+                A1000 uses power line tick. The A500 uses
+                vertical sync. The A2000 has a jumper
+                selection.
+
+CIAB, timer A - not used
+
+CIAB, timer B - not used
+
+CIAB, TOD     - graphics.library video beam follower. This
+                timer counts at the horizontal sync rate,
+                and is used to syncronize graphics events
+                to the video beam.
+
+                Note that previous editions of this chart were incorrect.
+
+                           - Appendix F 319 -
+
+
+REGISTER FUNCTIONAL DESCRIPTION
+
+I/O PORTS (PRA, PRB, DDRA, DDRB)
+
+Ports A and B each consist of an 8-bit peripheral data register (PR) and
+an 8-bit data direction register (DDR). If a bit in the DDR is set to a
+1, the corresponding bit position in the PR becomes an output. If a DDR
+bit is set to a 0, the corresponding PR bit is defined as an input.
+
+When you READ a PR register, you read the actual current state of the I/O
+pins (PA0-PA7, PB0-PB7, regardless of whether you have set them to be
+inputs or outputs.
+
+Ports A and B have passive pull-up devices as well as active pull-ups,
+providing both CMOS and TTL compatibility. Both ports have two TTL load
+drive capability.
+
+In addition to their normal IO operations, ports PB6 and PB7 also provide
+timer output functions.
+
+HANDSHAKING
+Handshaking occurs on data transfers using the PC output pin and the FLAG
+input pin. PC will go low on the third cycle after a port B access. This
+signal can be used to indicate "data ready" at port B or "data accepted"
+from port B. Handshaking on 16-bit data transfers (using both ports
+A and B) is possible by always reading or writing port A first. FLAG is a
+negative edge-sensitive input that can be used for receiving the PC
+output from another 8520 or as a general purpose interrupt input. Any
+negative transition on FLAG will set the FLAG interrupt bit.
+
+REG NAME D7   D6   D5   D4   D3   D2   D1   D0
+--- ---- --   --   --   --   --   --   --   --
+0   PRA  PA7  PA6  PA5  PA4  PA3  PA2  PA1  PA0
+1   PRB  PB7  PB6  PB5  PB4  PB3  PB2  PB1  PB0
+2   DDRA DPA7 DPA6 DPA5 DPA4 DPA3 DPA2 DPA1 DPA0
+3   DDRB DPB7 DPB6 DPB5 DPB4 DPB3 DPB2 DPB1 DPB0
+
+INTERVAL TIMERS (TIMER A, TIMER B)
+
+Each interval timer consists of a 16-bit read-only timer counter and a
+16-bit write-only timer latch. Data written to the timer is latched into
+the timer latch, while data read from the timer is the present contents
+of the timer counter.
+
+                           - 320 Appendix F -
+
+
+The latch is also called a prescalar in that it represents the countdown
+value which must be counted before the timer reaches an underflow (no
+more counts) condition. This latch (prescalar) value is a divider of the
+input clocking frequency. The timers can be used independently or linked
+for extended operations. Various timer operating modes allow generation
+of long time delays, variable width pulses, pulse trains, and variable
+frequency waveforms. Utilizing the CNT input, the timers can count
+external pulses or measure frequency, pulse width, and delay times of
+external signals.
+
+Each timer has an associated control register, providing independent
+control over each of the following functions:
+
+START/STOP
+A control bit allows the timer to be started or stopped by the
+microprocessor at any time.
+
+PB ON/OFF
+A control bit allows the timer output to appear on a port B output line
+(PB6 for timer A and PB7 for timer B). This function overrides the DDRB
+control bit and forces the appropriate PB line to become an output.
+
+TOGGLE/PULSE
+A control bit selects the output applied to port B while the PB on/off
+bit is ON. On every timer underflow, the output can either toggle or
+generate a single positive pulse of one cycle duration.
+The toggle output is set high whenever the timer is started, and set low
+by RES.
+
+ONE-SHOT/CONTINUOUS
+A control bit selects either timer mode. In one-shot mode, the timer will
+count down from the latched value to zero, generate an interrupt, reload
+the latched value, then stop. In continuous mode, the timer will count
+down from the latched value to zero, generate an interrupt, reload the
+latched value, arld repeat the procedure continuously.
+
+In one-shot mode, a write to timer-high (register 5 for timer A, register
+7 for Timer B) will transfer the timer latch to the counter and initiate
+counting regardless of the start bit.
+
+                           - Appendix F 321 -
+
+
+FORCE LOAD
+A strobe bit allows the timer latch to be loaded into the timer counter
+at any time, whether the timer is running or not.
+
+INPUT MODES
+Control bits allow selection of the dock used to decrement the timer.
+Timer A can count 02 clock pulses or extemal pulses applied to the CNT
+pin. Timer B can count 02 pulses, extemal CNT pulses, timer A underflow
+pulses, or timer A underflow pulses while the CNT pin is held high.
+
+The timer latch is loaded into the timer on any timer underflow, on a
+force load, or following a write to the high byte of the pre-scalar
+while the timer is stopped. If the timer is running, a write to the high
+byte will load the timer latch but not the counter.
+
+BIT NAMES on READ-Register
+
+REG NAME   D7   D6   D5   D4   D3   D2   D1   D0
+--- ----   --   --   --   --   --   --   --   --
+4   TALO   TAL7 TAL6 TAL5 TAL4 TAL3 TAL2 TAL1 TAL0
+5   TAHI   TAH7 TAH6 TAH5 TAH4 TAH3 TAH2 TAH1 TAH0
+6   TBLO   TBL7 TBL6 TBLS TBL4 TBL3 TBL2 TBL1 TBL0
+7   TBHI   TBH7 TBH6 TBH5 TBH4 TBH3 TBH2 TBH1 TBH0
+
+
+BIT NAMES on WRITE-Register
+
+REG NAME   D7   D6   D5   D4   D3   D2   D1   D0
+--- ----   --   --   --   --   --   --   --   --
+4   TALO   PAL7 PAL6 PAL5 PAL4 PAL3 PAL2 PAL1 PAL0
+5   TAHI   PAH7 PAH6 PAH5 PAH4 PAH3 PAH2 PAH1 PAH0
+6   TBLO   PBL7 PBL6 PBL5 PBL4 PBL3 PBL2 PBL1 PBL0
+7   TBHI   PBH7 PBH6 PBH5 PBH4 PBH3 PBH2 PBH1 PBH0
+
+                           - 322 Appendix F -
+
+
+TIME OF DAY CLOCK
+TOD consists of a 24-bit binary counter. Positive edge transitions on
+this pin cause the binary counter to increment. The TOD pin has a passive
+pull-up on it.
+
+A programmable alarm is provided for generating an interrupt at a desired
+time. The alarm registers are located at the same addresses as the
+corresponding TOD registers. Access to the alarm is governed by a control
+register bit. The alarm is write-only; any read of a TOD address will
+read time regardless of the state of the ALARM access bit.
+
+A specific sequence of events must be followed for proper setting and
+reading of TOD. TOD is automatically stopped whenever a write to the
+register occurs. The clock will not start again until after a write to
+the LSB event register. This assures that TOD will always start at the
+desired time.
+
+Since a carry from one stage to the next can occur at any time with
+respect to a read operation, a latching function is included to keep all
+TOD information constant during a read sequence. All TOD registers latch
+on a read of MSB event and remain latched until after a read of LSB
+event.
+The TOD clock continues to count when the output registers are latched.
+If only one register is to be read, there is no carry pmblem and the
+register can be read "on the fly" provided that any read of MSB event is
+followed by a read of LSB Event to disable the latching.
+
+BIT NAMES for WRITE TIME/ALARM or READ TIME
+
+REG NAME
+--- ----
+ 8  LSB Event     E7   E6   E5   E4   E3   E2   E1   E0
+ 9  Event 8-15    E15  E14  E13  E12  E11  E10  E9   E8
+ A  MSB Event     E23  E22  E21  E20  E19  E18  E17  E16
+
+WRITE
+CRB7 = 0
+CRB7 = 1 ALARM
+
+                           - Appendix F 323 -
+
+
+SERIAL SHIFT REGISTER (SDR)
+
+The serial port is a buffered, 8-bit synchronous shift register. A
+control bit selects input or output mode. In the Amiga system one shift
+register is used for the keyboard, and the other is unassigned. Note that
+the RS-232 compatible serial port is controlled by the Paula chip; see
+chapter 8 for details.
+
+INPUT MODE
+In input mode, data on the SP pin is shifted into the shift register on
+the rising edge of the signal applied to the CNT pin. After eight CNT
+pulses, the data in the shift register is dumped into the serial data
+register and an interrupt is generated.
+
+OUTPUT MODE
+In the output mode, Timer A is used as the baud rate generator. Data is
+shifted out on the SP pin at 1/2 the underflow rate of Timer A. The
+maximurn baud rate possible is 02 divided by 4, but the maximum usable
+baud rate will be determined by line loading and the speed at which the
+receiver responds to input data.
+
+To begin transmission, you must first set up Timer A in continuous mode,
+and start the timer. Transmission will start following a write to the
+serial data register. The clock signal derived from Timer A appears as an
+output on the CNT pin. The data in the serial data register will be
+loaded into the shift register, then shifted out to the SP pin when a CNT
+pulse occurs. Data shifted out becomes valid on the next falling edge of
+CNT and remains valid until the next falling edge.
+
+After eight CNT pulses, an interrupt is generated to indicate that more
+data can be sent. If the serial data register was reloaded with new
+information prior to this interrupt, the new data will automatically be
+loaded into the shift register and transmission will continue.
+
+If no further data is to be transmitted after the eighth CNT pulse, CNT
+will return high and SP will remain at the level of the last data bit
+transmitted.
+
+SDR data is shifted out MSB first. Serial input data should appear in
+this same format.
+
+                           - 324 Appendix F -
+
+
+BIDIRECTIONAL FEATURE
+The bi-directional capability of the shift register and CNT clock allows
+many 8520s to be connected to a common serial communications bus on which
+one 8520 acts as a master, sourcing data and shift clock while all other
+8520 chips act as slaves. Both CNT and SP outputs are open drain to allow
+such a common bus. Protocol for master/slave selection can be transmitted
+over the serial bus or via dedicated handshake lines.
+
+      REG NAME D7 D6 D5 D4 D3 D2 D1 D0
+      --- ---- -- -- -- -- -- -- -- --
+      C   SDR  S7 S6 S5 S4 S3 S2 S1 S0
+
+INTERRUPT CONTROL REGISTER (ICR)
+
+There are five sources of interrupts on the 8520:
+
+   -Underflow from Timer A (timer counts down past 0)
+   -Underflow from Timer B
+   -TOD alarm
+   -Serial port full/empty
+   -Flag
+
+A single register provides masking and interrupt information. The
+interrupt control register consists of a write-only MASK register and a
+read-only DATA register. Any interrupt will set the corresponding bit in
+the DATA register. Any interrupt that is enabled by a 1-bit in that
+position in the MASK will set the IR bit (MSB) of the DATA register and
+bring the IRQ pin low. In a multichip system, the IR bit can be polled to
+detect which chip has generated an interrupt request.
+
+When you read the DATA register, its contents are cleared (set to 0), and
+the IRQ line returns to a high state. Since it is cleared on a read, you
+must assure that your interrupt polling or interrupt service code can
+preserve and respond to all bits which may have been set in the DATA
+register at the time it was read. With proper preservation and response,
+it is easily possible to intermix polled and direct interrupt service
+methods.
+
+You can set or clear one or more bits of the MASK register without
+affecting the current state of any of the other bits in the register.
+This is done by setting the appropriate state of the MSBit, which is
+called the set/clear bit. In bits 6-0, you yourself form a mask that
+specifies which of the bits you wish to affect. Then, using bit 7, you
+specify HOW the bits in corresponding positions in the mask are to be
+affected.
+
+                           - Appendix F 325 -
+
+
+o  If bit 7 is a 1, then any bit 6-0 in your own mask byte which is set
+to a 1 sets the corresponding bit in the MASK register. Any bit that you
+have set to a 0 causes the MASK register bit to remain in its current
+state.
+
+o  If bit 7 is a 0, then any bit 6-0 in your own mask byte which is set
+to a 1 clears the corresponding bit in the MASK register. Again, any 0
+bit in your own mask byte causes no change in the contents of the
+corresponding MASK register bit.
+
+If an interrupt is to occur based on a particular condition, then that
+corresponding MASK bit must be a 1.
+
+Example: Suppose you want to set the Timer A interrupt bit (enable the
+Timer A interrupt), but want to be sure that all other interrupts are
+cleared. Here is the sequence you can use:
+
+        INCLUDE "hardware/cia.i"
+        XREF   ciaa               ; From amiga.lib
+        lea    ciaa,a0            ; Defined in amiga.lib
+        move.b 401111110,ciaicr(a0)
+
+MSB is 0, means clear any bit whose value is 1 in the rest of the byte
+
+        INCLUDE "hardware/cia.i"
+        XREF   ciaa                ; From amiga.lib
+        lea    ciaa,a0             ; Defined in amiga.lib
+        move.b %100000001,ciaicr(a0)
+
+MSB is 1, means set any bit whose value is 1 in the rest of the byte (do
+not change any values wherein the written value bit is a zero)
+
+READ INTERRUPT CONTROL REGISTER
+
+REG NAME       D7   D6   D5   D4   D3   D2   D1   D0
+--- ----       --   --   --   --   --   --   --   --
+D   ICR        IR   0    0    FLG  SP   ALRM TB   TA
+
+WRlTE INTERRUPT CONTROL MASK
+
+REG NAME       D7   D6   D5   D4   D3   D2   D1   D0
+--- ----       --   --   --   --   --   --   --   --
+D   ICR        S/C  x    x    FLG  SP   ALRM TB   TA
+
+                           - 326 Appendix F -
+
+
+CONTROL REGISTERS
+There are two control registers in the 8520, CRA and CRB. CRA is
+associated with Timer A and CRB is associated with Timer B. The format of
+the registers is as follows:
+
+CONTROL REGISTER A
+
+BIT NAME    FUNCTION
+
+0  START    1 = start Timer A, 0 - top Timer A.
+            This bit is automatically reset (= 0) when
+            underflow occurs during one-shot mode.
+
+1  PBON     1 = Timer A output on PB6, 0 = PB6 is normal operation.
+
+2  OUTMODE  1 = toggle, 0 = pulse.
+
+3  RUNMODE  1 = one-shot mode, 0 = continuous mode.
+
+4  LOAD     1 = force load (this ia a strobe input, there ia no
+            data storage; bit 4 will always read back a zero
+            and writing a 0 has no effect.)
+
+5  INMODE   1 = Timer A count positive CNT tranition,
+            0 = Timer A counts 02 pules.
+
+6  SPMODE   1 = Serial port=output (CNT is the source of the shift
+            clock)
+
+            0 = Serial port-input (external shift clock is
+            required)
+
+7  UNUSED
+
+                           - Appendix F 327 -
+
+
+BIT MAP OF REGISTER CRA
+
+REG# NAME UNUSED  SPMODE   INMODE LOAD    RUNMODE OUTMODE PBON     START
+
+E    CRA  unused  0=input  0=02   1=force 0=cont. 0=pulse 0=PB60FF 0=stop
+          unused  1=output 1=CNT    load  1=one- 1=toggle 1-PB60N 1=start
+                                  (strobe)  shot
+
+                           |<------------Timer A Variables------------->|
+
+All unused register bits are unaffected by a write and forced to 0 on a
+read.
+
+CONTROL REGISTER B:
+
+BIT NAME   FUNCTION
+
+0  START   1=start Timer B, 0=stop Timer B.
+           This bit ia automatically reset (=0) when
+           underflow occurs during one-shot mode.
+
+1  PBON    1=Timer B output on PB7, 0= PB7 is normal operation.
+
+2  OUTMODE 1=toggle, 0=pulse.
+
+   RUNMODE 1=one-shot mode, 0=continuous mode.
+
+4  LOAD    1=force load (this is a strobe input, there is no
+           data atorage; bit 4 will alwaya read back a
+           zero and writing a 0 has no effect.)
+
+6,5 INMODE Bits CRB6 and CRB5 select one of four possible
+           input modes for Timer B, as follows:
+
+           CRB6 CRB5  Mode Selected
+           ---- ----  --------------------------
+           0    0     Timer B counts 02 pulses
+           0    1     Timer B counts positive CNT transitions
+           1    0     Timer B counts Timer A underflow pulses
+           1    1     Timer B counts Timer A underflow pulses
+                            while CNT pin is held high.
+
+7  ALARM   1=writing to TOD registers sets Alarm
+           0=writing to TOD registers sets TOD clock.
+           Reading TOD registers always reads TOD clock,
+           regardless of the state of the Alarm bit.
+
+                           - 328 Appendix F -
+
+
+BIT MAP OF REGISTER CRB
+
+REG
+ #   NAME  ALARM   INMODE  LOAD    RUNMODE  OUTMODE  PBON    START
+
+ F   CRB   0=TOD   00-02   1=force 0=cont.  0=pulae 0=PB70FF 0=stop
+           1=Alarm 01=CNT    load  1=one-   1=toggle 1=PB70N 1=start
+                   10=Timer A (strobe) shot
+                   11=CNT+
+                      Timer A
+
+                   <--------------Timer B Variables---------------->
+
+All unused register bits are unaffected by a write and forced to 0 on a
+read.
+
+PORT SIGNAL ASSIGNMENTS
+
+This part specifies how various signals relate to the available ports of
+the 8520. This information enables the programmer to relate the port
+addresses to the outside-world items (or internal control signals) which
+are to be affected. This part is primarily for the use of the systems
+programmer and should generally not be used by applications programmers.
+Systems software normally is configured to handle the setting of
+particular signals, no matter how the physical connections may change.
+
+NOTE
+In a multi-tasking operating system, many different tasks may be
+competing for the use of the system resources. Applications programmers
+should follow the established rules for resource access in order to
+assure compatibility of their software with the system.
+
+                           - Appendix F 329 -
+
+
+Address BFEr01   data bits 7-0   (A12*) (INT2)
+
+PA7..game port 1, pin 6 (fire button*)
+PA6..game port 0, pin 6 (fire button*)
+PAS..RDY*        disk ready*
+PA4..TKO*        disk track 00*
+PA3..WPRO*       write protect*
+PA2..CHNG*       disk change*
+PAl..LED*        led light (0=bright)
+PAO..OVL         memory overlay bit
+SP...RDAT        keyboard data
+CNT..RCLR
+PB7..P7          data 7
+PB6..P6          data 6
+PB5..P5          data 5     Centronics parallel interface
+PB4..P4          data 4          data
+PB3..P3          data 3
+PB2..P2          data 2
+PBl..P1          data 1
+PBO..P0          data 0
+PC...drdy*               centronics control
+F....ack*
+
+Address BFDrOO   data bit 15-8   (A13*) (INT6)
+
+PA7..com line DTR*, driven output
+PA6..com line RTS*, driven output
+PA5..com line carrier detect*
+PA4..com line CTS*
+PA3..com line DSR*
+PA2..SEL         centronics control
+PA1..POUT        paper out ---+
+PA0..BUSY        busy  -----+ |
+                            | |
+SP...BUSY        commodore -+ |
+CNT..POUT        commodore ---+
+
+PB7..MTR*        motor
+PB6..SEL3*       select external 3rd drive
+PB5..SEL2*       select external 2nd drive
+PB4..SEL1*       select external 1st drive
+PB3..SEL0*       select internal drive
+PB2..SIDE*       side select*
+PBl..DIR         direction
+PBO..STEP*       step* (3.0 milliseconds minimum)
+
+PC...not used
+F....INDEX* disk index*
+
+                           - 330 Appendix F -
+
+
+; A complete 8520 timing example. This blinks the power light at (exactly)
+; 3 milisecond intervals. It takes over the machine, 50 watch out!
+;
+; The base Amiga crytal frequecies are:
+;           NTSC    28.63636 MHz
+;           PAL     28.37516 MHz
+;
+; The two 16 bit timers on the 8520 chips each count down at 1/10 the CPU
+; clock, or 0.715909 MHz. That works out to 1.3968255 microseconds per count.
+; Under PAL the countdown is slightly slower, 0.709379 MHz.
+;
+; To wait 1/100 second would require waiting 10,000 microseconds.
+; The timer register would be set to (10,000 / 1.3968255 - 7159).
+;
+; To wait 3 miliseconds would require waiting 3000 microsecsonds.
+; The register would be set to (3000 / 1.3968255 - 2148).
+
+        INCLUDE "hardware/cia.i"
+        INCLUDE "hardware/custom.i"
+;
+        XREF _ciaa
+        XREF _ciab
+        XREF _custom
+;
+        lea  _custom,a3                ; Base of custom chips
+        lea  _ciaa,a4                  ; Get base address if CIA-A
+;
+        move.w S7fff,dmacon(a3)        ; Kill all chip interrupts
+;
+; Setup, only do once
+; This set all bits needed for timer A one-shot mode.
+;
+        move.b ciacra(a4),d0           ;Set control register A on CIAA
+        and.b  #%11000000,d0           ;Don't trash bitq we are not
+        or.b   #%00001000,d0           ;using...
+        move.b d0,ciacra(a4)
+        move.b #%01111111,ciaicr(a4)   ;Clear all 8520 interrupts
+;
+        Set time (low byte THEN high byte)
+        And the low order with $ff
+        Shift the high order by 8
+;
+TIME    equ 2148
+        move.b (TIME&$FF),ciatalo(a4)
+        move.b (TIME>>8),ciatahi(a4)
+;
+;       Wait for the timer to count down
+busy_wait:
+;
+     btst.b #0,ciaicr(a4)           ;Wait for timer expired flag
+     beq.s  busy wait
+     bchg.b #CIAB LED,ciapra(a4)    ;Blink light
+     bset.b #0,ciacra(a4)           ;Restart timer
+     bra.s  busy_wait
+
+     END
+
+                           - Appendix F 331 -
+
+
+HARDWARE CONNECTION DETAILS
+
+The system hardware selects the CIAs when the upper three address bits
+are 101. Furthermore, CIAA is selected when A12 is low, A13 high; CIAB is
+selected when A12 is high, A13 low. CIAA communicates on data bits 7-0,
+CIAB communicates on data bits 15-8.
+
+Address bits A11, A10, A9, and A8 are used to specify which of the 16
+internal registers you want to access. This is indicated by "r" in the
+address. All other bits are don't cares. So, CIAA is selected by the
+following binary address: 101x xxxx xx01 rrrr xxxx xxx0. CIAB address:
+101x xxxx xx10 rrrr xxxx xxx1
+
+With future expansion in mind, we have decided on the following
+addresses: CIAA = BFEr01; CIAB = BFDr00. Software must use byte accesses
+to these address, and no other.
+
+INTERFACE SIGNALS
+
+CLOCK INPUT
+The 02 clock is a TTL compatible input used for internal device operation
+and as a timing reference for communicating with the system data bus. On
+the Amiga, this is connected to the 68000 "E" clock. The "E" clock runs
+at 1/10 of the CPU clock. This works out to .715909 Mhz for NTSC or
+.709379 Mhz for PAL.
+
+CS - CHIP-SELECT INPUT
+The CS input controls the activity of the 8520. A low level on CS while
+02 is high causes the device to respond to signals on the R/W and address
+(RS) lines. A high on CS prevents these lines from corrolling the 8520.
+The CS line is normally activated (low) at 02 by the appropriate
+address combination.
+
+R/W - READ/WRITE INPUT
+The RW signal is normally supplied by the microprocessor and controls the
+direction of data transfers of the 8520. A high on R/W indicates a read
+(data transfer out of the 8520), while a low indicates a write (data
+transfer into the 8520).
+
+                           - 332 Appendix F -
+
+
+RSRS0 - ADDRESS INPUTS
+The address inputs select the internal registers as described by the
+register map.
+
+DB7-DB0 - DATA BUS INPUTS/OUTPUTS
+The eight data bus output pins transfer information between the 8520 and
+the system data bus.  These pins are high impedance inputs unless CS is
+low and R/W and 02 are high, to read the device. During this read, the
+data bus output buffers are enabled, driving the data from the selected
+register onto the system data bus.
+
+IRQ - INTERRUPT REQUEST OUTPUT
+IRQ is an open drain output normally connected to the processor interrupt
+input. An extemal pull-up resistor holds the signal high, allowing
+multiple IRQ outputs to be connected together.
+The IRQ output is normally off (high impedance) and is activated low as
+indicated in the functional description.
+
+RES - RESET INPUT
+A low on the RES pin resets all intemal registers. The port pins are set
+as inputs and port registers to zero (although a read of the ports will
+retum all highs because of passive pull-ups). The timer control registers
+are set to zero and the timer latches to all ones. All other registers
+are reset to zero.
+
+                           - Appendix F 333 -
+
+End.

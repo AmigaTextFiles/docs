@@ -1,0 +1,1663 @@
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    00001 ;KEY.ASM
+                    00002 ;   IBM keyboard to Amiga Converter
+                    00003 ;
+                    00004 ;
+                    00005         list p=16c84, f=inhx8m  ;Enter device name 
+                    00006         include "p16c84.inc"
+                    00001         LIST
+                    00002 ; P16C84.INC  Standard Header File, Version 1.00    Microchip Technology, Inc.
+                    00134         LIST
+                    00007 
+                    00008 
+                    00009 #DEFINE PAGE0   bcf     STATUS,RP0          
+                    00010 #DEFINE PAGE1   bsf     STATUS,RP0          
+                    00011 
+                    00012 ;
+                    00013 ;------------------------------------------------------
+                    00014 ;Please define ScratchPadRam here:
+                    00015 ;If you are using PIC16C5X define "ScratchPadRam equ 0x10" 
+                    00016 ;else define "ScratchPadRam equ 0x20"
+                    00017 ;-------------------------------------------------------
+                    00018 ;
+  00000000          00019 ScrollLock  equ     0x0
+  00000001          00020 NumLock     equ     0x1
+  00000002          00021 CapsLock    equ     0x2
+  00000001          00022 Kclk        equ     0x1
+  00000000          00023 Kdat        equ     0x0
+  00000004          00024 Aclk        equ     0x4
+  00000003          00025 Adat        equ     0x3
+  00000002          00026 Arst        equ     0x2
+  00000000          00027 Ctrlbit     equ     0x0
+  00000001          00028 RAmigabit   equ     0x1
+  00000002          00029 LAmigabit   equ     0x2
+  00000000          00030 Keytype     equ     0x0
+  00000001          00031 Resetype    equ     0x1
+                    00032 ;
+                    00033 ;
+  0000000C          00034 ScratchPadRam   equ     0x0C
+                    00035 ;
+  0000000C          00036 Capbit      equ     ScratchPadRam+0x0
+  0000000D          00037 Capdown     equ     ScratchPadRam+0x1
+  0000000E          00038 CtrlDown    equ     ScratchPadRam+0x2
+  0000000F          00039 RESET       equ     ScratchPadRam+0x3
+  00000010          00040 Lights      equ     ScratchPadRam+0x4
+  00000011          00041 Count3      equ     ScratchPadRam+0x5
+  00000012          00042 ATparity    equ     ScratchPadRam+0x6
+  00000013          00043 Make        equ     ScratchPadRam+0x7
+  00000014          00044 Charbad     equ     ScratchPadRam+0x8
+  00000015          00045 Oldchar     equ     ScratchPadRam+0x9
+  00000016          00046 Amigachar   equ     ScratchPadRam+0xA
+  00000017          00047 Count1      equ     ScratchPadRam+0xB
+  00000018          00048 Count2      equ     ScratchPadRam+0xC
+  00000019          00049 ATchar      equ     ScratchPadRam+0xD
+  0000001A          00050 tableoffset equ     ScratchPadRam+0xE
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  0000001B          00051 AltConfig   equ     ScratchPadRam+0xF
+  0000001C          00052 Savechar    equ     ScratchPadRam+0x10
+  0000001D          00053 returnvalue equ     ScratchPadRam+0x11
+  0000001E          00054 eeaddress   equ     ScratchPadRam+0x12
+  0000001F          00055 eedata      equ     ScratchPadRam+0x13
+  00000020          00056 win95       equ     ScratchPadRam+0x14
+  00000021          00057 Savechar2   equ     ScratchPadRam+0x15
+                    00058 ;
+                    00059 ;        
+0000                00060         org     0x0
+0000 2A64           00061         goto    start
+                    00062 
+0001                00063 ATtb1 
+0001 0082           00064         movwf       PCL                  
+0002 344F           00065         retlw       0x4F            ;F9
+0003 3400           00066         retlw       0x0               
+0004 3457           00067         retlw       0x57            ;F5
+0005 345B           00068         retlw       0x5B            ;F3
+0006 345F           00069         retlw       0x5F            ;F1
+0007 345D           00070         retlw       0x5D            ;F2
+0008 3441           00071         retlw       0x41            ;F12=help
+0009 3400           00072         retlw       0x0
+000A 344D           00073         retlw       0x4D            ;F10
+000B 3451           00074         retlw       0x51            ;F8
+000C 3455           00075         retlw       0x55            ;F6
+000D 3459           00076         retlw       0x59            ;F4
+000E 347B           00077         retlw       0x7B            ;TAB
+000F 34FF           00078         retlw       0xFF            ;~
+0010 3400           00079         retlw       0x0
+                    00080 
+0011 3400           00081         retlw       0x0
+0012 3437           00082         retlw       0x37            ;Left ALT
+0013 343F           00083         retlw       0x3F            ;Left SHIFT
+0014 3400           00084         retlw       0x0
+0015 2900           00085         goto    lctrl               ;Left Ctrl
+0016 34DF           00086         retlw       0xDF            ;Q
+0017 34FD           00087         retlw       0xFD            ;1
+0018 3400           00088         retlw       0x0
+0019 3400           00089         retlw       0x0
+001A 3400           00090         retlw       0x0
+001B 349D           00091         retlw       0x9D            ;Z
+001C 34BD           00092         retlw       0xBD            ;S
+001D 34BF           00093         retlw       0xBF            ;A
+001E 34DD           00094         retlw       0xDD            ;W
+001F 34FB           00095         retlw       0xFB            ;2
+0020 3400           00096         retlw       0x0
+                    00097 
+0021 3400           00098         retlw       0x0
+0022 3499           00099         retlw       0x99            ;C
+0023 349B           00100         retlw       0x9B            ;X
+0024 34BB           00101         retlw       0xBB            ;D
+0025 34DB           00102         retlw       0xDB            ;E
+0026 34F7           00103         retlw       0xF7            ;4
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0027 34F9           00104         retlw       0xF9            ;3
+0028 3400           00105         retlw       0x0
+0029 3400           00106         retlw       0x0
+002A 347F           00107         retlw       0x7F            ;SPACE
+002B 3497           00108         retlw       0x97            ;V
+002C 34B9           00109         retlw       0xB9            ;F
+002D 34D7           00110         retlw       0xD7            ;T
+002E 34D9           00111         retlw       0xD9            ;R
+002F 34F5           00112         retlw       0xF5            ;5
+0030 3400           00113         retlw       0x0
+                    00114 
+0031 3400           00115         retlw       0x0
+0032 3493           00116         retlw       0x93            ;N
+0033 3495           00117         retlw       0x95            ;B
+0034 34B5           00118         retlw       0xB5            ;H
+0035 34B7           00119         retlw       0xB7            ;G
+0036 34D5           00120         retlw       0xD5            ;Y
+0037 34F3           00121         retlw       0xF3            ;6
+0038 3400           00122         retlw       0x0
+0039 3400           00123         retlw       0x0
+003A 3400           00124         retlw       0x0
+003B 3491           00125         retlw       0x91            ;M
+003C 34B3           00126         retlw       0xB3            ;J
+003D 34D3           00127         retlw       0xD3            ;U
+003E 34F1           00128         retlw       0xF1            ;7
+003F 34EF           00129         retlw       0xEF            ;8
+0040 3400           00130         retlw       0x0
+                    00131 
+0041 3400           00132         retlw       0x0
+0042 348F           00133         retlw       0x8F            ;<
+0043 34B1           00134         retlw       0xB1            ;K
+0044 34D1           00135         retlw       0xD1            ;I
+0045 34CF           00136         retlw       0xCF            ;O
+0046 34EB           00137         retlw       0xEB            ;0
+0047 34ED           00138         retlw       0xED            ;9
+0048 3400           00139         retlw       0x0
+0049 3400           00140         retlw       0x0
+004A 348D           00141         retlw       0x8D            ;>
+004B 348B           00142         retlw       0x8B            ;/
+004C 34AF           00143         retlw       0xAF            ;L
+004D 34AD           00144         retlw       0xAD            ; ';'
+004E 34CD           00145         retlw       0xCD            ;P
+004F 34E9           00146         retlw       0xE9            ;-
+0050 3400           00147         retlw       0x0
+                    00148 
+0051 3400           00149         retlw       0x0
+0052 3400           00150         retlw       0x0
+0053 34AB           00151         retlw       0xAB            ;@
+0054 3400           00152         retlw       0x0
+0055 34CB           00153         retlw       0xCB            ;[
+0056 34E7           00154         retlw       0xE7            ;=
+0057 3400           00155         retlw       0x0
+0058 3400           00156         retlw       0x0
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0059 343B           00157         retlw       0x3B            ;CAPS LOCK?
+005A 343D           00158         retlw       0x3D            ;Right SHIFT
+005B 3477           00159         retlw       0x77            ;RETURN
+005C 34C9           00160         retlw       0xC9            ;]
+005D 3400           00161         retlw       0x0
+005E 34A9           00162         retlw       0xA9            ;#=right foreign key
+005F 3400           00163         retlw       0x0
+0060 3400           00164         retlw       0x0
+                    00165 
+0061 3400           00166         retlw       0x0
+0062 349F           00167         retlw       0x9F            ;\ (next to left shift on AT keyboard)
+0063 3400           00168         retlw       0x0
+0064 3400           00169         retlw       0x0
+0065 3400           00170         retlw       0x0
+0066 3400           00171         retlw       0x0
+0067 347D           00172         retlw       0x7D            ;Back SPACE
+0068 3400           00173         retlw       0x0
+0069 3400           00174         retlw       0x0
+006A 34C5           00175         retlw       0xC5            ;1 keypad
+006B 3400           00176         retlw       0x0
+006C 34A5           00177         retlw       0xA5            ;4 keypad
+006D 3485           00178         retlw       0x85            ;7 keypad
+006E 3400           00179         retlw       0x0
+006F 3400           00180         retlw       0x0
+0070 3400           00181         retlw       0x0
+                    00182 
+0071 34E1           00183         retlw       0xE1            ;0 keypad
+0072 3487           00184         retlw       0x87            ;dot keypad
+0073 34C3           00185         retlw       0xC3            ;2 keypad
+0074 34A3           00186         retlw       0xA3            ;5 keypad
+0075 34A1           00187         retlw       0xA1            ;6 keypad
+0076 3483           00188         retlw       0x83            ;8 keypad
+0077 3475           00189         retlw       0x75            ;ESCAPE!
+0078 344B           00190         retlw       0x4B            ;Number Lock=( keypad   
+0079 34E5           00191         retlw       0xE5            ;F11=\
+007A 3443           00192         retlw       0x43            ;+ keypad
+007B 34C1           00193         retlw       0xC1            ;3 keypad
+007C 346B           00194         retlw       0x6B            ;- keypad
+007D 3445           00195         retlw       0x45            ;* keypad
+007E 3481           00196         retlw       0x81            ;9 keypad
+007F 3449           00197         retlw       0x49            ;scroll Lock=) keypad 
+0080 3400           00198         retlw       0x0
+                    00199 
+0081                00200 ATtb2:
+0081 3400           00201         retlw       0x0
+0082 3400           00202         retlw       0x0
+0083 3400           00203         retlw       0x0
+0084 3453           00204         retlw       0x53            ;F7
+0085 290D           00205         goto    prtscreen           ;print screen=R Amiga P  
+0086 3400           00206         retlw       0x0
+0087 3400           00207         retlw       0x0
+0088 3400           00208         retlw       0x0
+0089 3400           00209         retlw       0x0
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+008A 3400           00210         retlw       0x0
+008B 3400           00211         retlw       0x0
+008C 3400           00212         retlw       0x0
+008D 3400           00213         retlw       0x0
+008E 3400           00214         retlw       0x0
+008F 3400           00215         retlw       0x0
+0090 3400           00216         retlw       0x0
+                    00217 
+0091 3400           00218         retlw       0x0
+0092 3435           00219         retlw       0x35            ;Right ALT
+0093 3400           00220         retlw       0x0
+0094 3400           00221         retlw       0x0
+0095 2903           00222         goto    rctrl               ;Right CTL
+0096 3400           00223         retlw       0x0
+0097 3400           00224         retlw       0x0
+0098 3400           00225         retlw       0x0
+0099 3400           00226         retlw       0x0
+009A 3400           00227         retlw       0x0
+009B 3400           00228         retlw       0x0
+009C 3400           00229         retlw       0x0
+009D 3400           00230         retlw       0x0
+009E 3400           00231         retlw       0x0
+009F 3400           00232         retlw       0x0
+00A0 3433           00233         retlw       0x33            ;Left Win=Left Amiga
+                    00234 
+00A1 3400           00235         retlw       0x0
+00A2 3400           00236         retlw       0x0
+00A3 3400           00237         retlw       0x0
+00A4 3400           00238         retlw       0x0
+00A5 3400           00239         retlw       0x0
+00A6 3400           00240         retlw       0x0
+00A7 3400           00241         retlw       0x0
+00A8 3431           00242         retlw       0x31            ;Right Win=Right Amiga
+00A9 3400           00243         retlw       0x0
+00AA 3400           00244         retlw       0x0
+00AB 3400           00245         retlw       0x0
+00AC 3400           00246         retlw       0x0
+00AD 3400           00247         retlw       0x0
+00AE 3400           00248         retlw       0x0
+00AF 3400           00249         retlw       0x0
+00B0 2906           00250         goto    swapscreen          ;Menu Key=swapscreen
+                    00251         
+00B1 3400           00252         retlw       0x0
+00B2 3400           00253         retlw       0x0
+00B3 3400           00254         retlw       0x0
+00B4 3400           00255         retlw       0x0
+00B5 3400           00256         retlw       0x0
+00B6 3400           00257         retlw       0x0
+00B7 3400           00258         retlw       0x0
+00B8 3400           00259         retlw       0x0
+00B9 3400           00260         retlw       0x0
+00BA 3400           00261         retlw       0x0
+00BB 3400           00262         retlw       0x0
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00BC 3400           00263         retlw       0x0
+00BD 3400           00264         retlw       0x0
+00BE 3400           00265         retlw       0x0
+00BF 3400           00266         retlw       0x0
+00C0 3400           00267         retlw       0x0
+                    00268 
+00C1 3400           00269         retlw       0x0
+00C2 3400           00270         retlw       0x0
+00C3 3400           00271         retlw       0x0
+00C4 3400           00272         retlw       0x0
+00C5 3400           00273         retlw       0x0
+00C6 3400           00274         retlw       0x0
+00C7 3400           00275         retlw       0x0
+00C8 3400           00276         retlw       0x0
+00C9 3400           00277         retlw       0x0
+00CA 3400           00278         retlw       0x0
+00CB 348B           00279         retlw       0x8B            ;/key, supposedly
+00CC 3400           00280         retlw       0x0
+00CD 3400           00281         retlw       0x0
+00CE 3400           00282         retlw       0x0
+00CF 3400           00283         retlw       0x0
+00D0 3400           00284         retlw       0x0
+                    00285 
+00D1 3400           00286         retlw       0x0
+00D2 3400           00287         retlw       0x0
+00D3 3400           00288         retlw       0x0
+00D4 3400           00289         retlw       0x0
+00D5 3400           00290         retlw       0x0
+00D6 3400           00291         retlw       0x0
+00D7 3400           00292         retlw       0x0
+00D8 3400           00293         retlw       0x0
+00D9 3400           00294         retlw       0x0
+00DA 3400           00295         retlw       0x0
+00DB 3479           00296         retlw       0x79            ;Numeric Enter
+00DC 3400           00297         retlw       0x0
+00DD 3400           00298         retlw       0x0
+00DE 3400           00299         retlw       0x0
+00DF 3400           00300         retlw       0x0
+00E0 3400           00301         retlw       0x0
+                    00302 
+00E1 3400           00303         retlw       0x0
+00E2 3400           00304         retlw       0x0
+00E3 3400           00305         retlw       0x0
+00E4 3400           00306         retlw       0x0
+00E5 3400           00307         retlw       0x0
+00E6 3400           00308         retlw       0x0
+00E7 3400           00309         retlw       0x0
+00E8 3400           00310         retlw       0x0
+00E9 3400           00311         retlw       0x0
+00EA 2914           00312         goto    endkey              ;End=Shift right-cursor  
+00EB 3400           00313         retlw       0x0
+00EC 3461           00314         retlw       0x61            ;Cursor Left
+00ED 291B           00315         goto    home                ;Home=Shift left-cursor  
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00EE 3400           00316         retlw       0x0
+00EF 3400           00317         retlw       0x0
+00F0 3463           00318         retlw       0x63            ;MACRO key=control
+                    00319 
+00F1 2930           00320         goto    insert              ;Insert=Right Amiga 7
+00F2 3473           00321         retlw       0x73            ;Delete
+00F3 3465           00322         retlw       0x65            ;Cursor Down
+00F4 3400           00323         retlw       0x0
+00F5 3463           00324         retlw       0x63            ;Cursor Right
+00F6 3467           00325         retlw       0x67            ;Cursor Up
+00F7 3400           00326         retlw       0x0
+00F8 3400           00327         retlw       0x0
+00F9 3400           00328         retlw       0x0
+00FA 3400           00329         retlw       0x0
+00FB 2922           00330         goto    pagedown            ;Page Down=Shift down-cursor
+00FC 3400           00331         retlw       0x0
+00FD 290D           00332         goto    prtscreen           ;print screen=Right Amiga P
+00FE 2929           00333         goto    pageup              ;Page up=Shift up-cursor
+00FF 2937           00334         goto    break               ;Break=Ctrl-C
+                    00335 ;        retlw       0x0
+                    00336 
+                    00337 
+                    00338 
+                    00339 ; *** Left Control key ***
+0100                00340 lctrl
+0100 1820           00341         btfsc   win95,0x0
+0101 3439           00342         retlw   0x39                ; ctrl
+0102 3433           00343         retlw   0x33                ; left Amiga
+                    00344 
+                    00345 ; *** Right Control key ***
+0103                00346 rctrl
+0103 1820           00347         btfsc   win95,0x0
+0104 3439           00348         retlw   0x39                ; ctrl
+0105 3431           00349         retlw   0x31                ; right Amiga
+                    00350         
+                    00351 
+                    00352 ; *** Menu = Left Amiga-M
+0106                00353 swapscreen
+0106 3033           00354         movlw   0x33                ; Left Amiga pressed
+0107 21A0           00355         call    actualtransmit
+0108 3091           00356         movlw   0x91                ; M pressed & released
+0109 23B5           00357         call    sendmessage
+010A 3032           00358         movlw   0x32                ; Left Amiga released
+010B 21A0           00359         call    actualtransmit
+010C 3400           00360         retlw   0x0          
+                    00361 
+                    00362 
+                    00363 ; *** Prt Scrn Key = Right Amiga-P
+010D                00364 prtscreen
+010D 3031           00365         movlw   0x31                ; Right Amiga pressed
+010E 21A0           00366         call    actualtransmit
+010F 30CD           00367         movlw   0xCD                ; P pressed & released
+0110 23B5           00368         call    sendmessage
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0111 3030           00369         movlw   0x30                ; Right Amiga released
+0112 21A0           00370         call    actualtransmit
+0113 3400           00371         retlw   0x0          
+                    00372 
+                    00373 
+                    00374 
+                    00375 ; *** End Key = Shift right-cursor
+0114                00376 endkey
+0114 303D           00377         movlw   0x3D                ; Right shift pressed
+0115 21A0           00378         call    actualtransmit
+0116 3063           00379         movlw   0x63                ; right-cursor pressed & released
+0117 23B5           00380         call    sendmessage
+0118 303C           00381         movlw   0x3C                ; Right shift released
+0119 21A0           00382         call    actualtransmit
+011A 3400           00383         retlw   0x0          
+                    00384 
+                    00385 
+                    00386 
+                    00387 ; *** Home Key = Shift left-cursor
+011B                00388 home
+011B 303D           00389         movlw   0x3D                ; Right shift pressed
+011C 21A0           00390         call    actualtransmit
+011D 3061           00391         movlw   0x61                ; left-cursor pressed & released
+011E 23B5           00392         call    sendmessage
+011F 303C           00393         movlw   0x3C                ; Right shift released
+0120 21A0           00394         call    actualtransmit
+0121 3400           00395         retlw   0x0          
+                    00396 
+                    00397 
+                    00398 
+                    00399 ; *** PageDown Key = Shift down-cursor
+0122                00400 pagedown
+0122 303D           00401         movlw   0x3D                ; Right shift pressed
+0123 21A0           00402         call    actualtransmit
+0124 3065           00403         movlw   0x65                ; down-cursor pressed & released
+0125 23B5           00404         call    sendmessage
+0126 303C           00405         movlw   0x3C                ; Right shift released
+0127 21A0           00406         call    actualtransmit
+0128 3400           00407         retlw   0x0          
+                    00408 
+                    00409 
+                    00410 
+                    00411 ; *** Pageup Key = Shift up-cursor
+0129                00412 pageup
+0129 303D           00413         movlw   0x3D                ; Right shift pressed
+012A 21A0           00414         call    actualtransmit
+012B 3067           00415         movlw   0x67                ; up-cursor pressed & released
+012C 23B5           00416         call    sendmessage
+012D 303C           00417         movlw   0x3C                ; Right shift released
+012E 21A0           00418         call    actualtransmit
+012F 3400           00419         retlw   0x0          
+                    00420 
+                    00421 
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    00422 
+                    00423 ; *** Insert Key = Right Amiga 7
+0130                00424 insert
+0130 3031           00425         movlw   0x31                ; Right Amiga pressed
+0131 21A0           00426         call    actualtransmit
+0132 30F1           00427         movlw   0xF1                ; 7 pressed & released
+0133 23B5           00428         call    sendmessage
+0134 3030           00429         movlw   0x30                ; Right Amiga released
+0135 21A0           00430         call    actualtransmit
+0136 3400           00431         retlw   0x0          
+                    00432 
+                    00433 
+                    00434 
+                    00435 ; *** Break Key = Ctrl-C
+0137                00436 break
+0137 3039           00437         movlw   0x39                ; Ctrl pressed
+0138 21A0           00438         call    actualtransmit
+0139 3099           00439         movlw   0x99                ; C pressed & released
+013A 23B5           00440         call    sendmessage
+013B 3038           00441         movlw   0x38                ; Ctrl released
+013C 21A0           00442         call    actualtransmit
+013D 3400           00443         retlw   0x0          
+                    00444 
+                    00445 
+                    00446 
+                    00447 ; *** Wait a long time ***
+013E                00448 longdelay
+013E 0097           00449         movwf   Count1
+013F                00450 dly
+013F 2143           00451         call    fixeddelay
+0140 0B97           00452         decfsz  Count1,F
+0141 293F           00453         goto    dly
+0142 0008           00454         return
+                    00455 ;
+                    00456 ; *** Wait a short while ***
+0143                00457 fixeddelay
+0143 30FF           00458         movlw   0xFF
+0144                00459 smalldelay
+0144 0098           00460         movwf   Count2
+0145                00461 delay
+0145 0B98           00462         decfsz  Count2,F
+0146 2945           00463         goto    delay
+0147 0008           00464         return
+                    00465 
+                    00466 
+                    00467 
+                    00468 
+                    00469 ; *** Send character to Amiga and wait for handshake ***
+0148                00470 amigatransmit
+0148 0096           00471         movwf   Amigachar
+0149 0215           00472         subwf   Oldchar,W
+014A 1903           00473         btfsc   STATUS,Z            ; skip if not equal
+014B 0008           00474         return                      ; ignore it
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    00475         
+014C 3033           00476         movlw   0x33                ; LAmiga pressed
+014D 0216           00477         subwf   Amigachar,W
+014E 1903           00478         btfsc   STATUS,Z            ; skip if not equal
+014F 110F           00479         bcf     RESET,LAmigabit
+0150 3032           00480         movlw   0x32                ; LAmiga released
+0151 0216           00481         subwf   Amigachar,W
+0152 1903           00482         btfsc   STATUS,Z            ; skip if not equal
+0153 150F           00483         bsf     RESET,LAmigabit
+                    00484                 
+0154 3031           00485         movlw   0x31                ; RAmiga pressed
+0155 0216           00486         subwf   Amigachar,W
+0156 1903           00487         btfsc   STATUS,Z            ; skip if not equal
+0157 108F           00488         bcf     RESET,RAmigabit
+0158 3030           00489         movlw   0x30                ; RAmiga released
+0159 0216           00490         subwf   Amigachar,W
+015A 1903           00491         btfsc   STATUS,Z            ; skip if not equal
+015B 148F           00492         bsf     RESET,RAmigabit
+                    00493                 
+015C 303B           00494         movlw   0x3B                ; jump if not Capslock down
+015D 0216           00495         subwf   Amigachar,W
+015E 1D03           00496         btfss   STATUS,Z            ; skip if equal
+015F 2966           00497         goto    transok2            ; ignore it
+0160 100F           00498         bcf     RESET,Ctrlbit
+0161 0816           00499         movf    Amigachar,W
+0162 0095           00500         movwf   Oldchar
+0163 30FF           00501         movlw   0xFF
+0164 008D           00502         movwf   Capdown             ; set flags for later
+0165 0008           00503         return
+0166                00504 transok2
+0166 303A           00505         movlw   0x3A                ; jump if not Capslock up
+0167 0216           00506         subwf   Amigachar,W
+0168 1D03           00507         btfss   STATUS,Z            ; skip if equal
+0169 2984           00508         goto    transok3            ; ignore it
+                    00509 
+016A 140F           00510         bsf     RESET,Ctrlbit
+016B 303B           00511         movlw   0x3B                ; see if Capslock was just down
+016C 0215           00512         subwf   Oldchar,W           ; 
+016D 1D03           00513         btfss   STATUS,Z            ; skip if equal
+016E 297D           00514         goto    transok4            ; use as Ctrl key
+016F 018D           00515         clrf    Capdown             ; clear flag
+0170 098C           00516         comf    Capbit,F            ; toggle down/upness of caplock
+0171 303B           00517         movlw   0x3B                ; send Capslock down
+0172 1C0C           00518         btfss   Capbit,0x0
+0173 39FE           00519         andlw   0xFE
+0174 21A0           00520         call    actualtransmit
+                    00521 ; send lights to AT
+0175 30ED           00522         movlw   0xED                ; Next data is for lights
+0176 21D7           00523         call    SendtoAT
+0177 1510           00524         bsf     Lights,CapsLock     ; Capslock on
+0178 1C0C           00525         btfss   Capbit,0x0
+0179 1110           00526         bcf     Lights,CapsLock     ; Capslock off
+017A 0810           00527         movf    Lights,W
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+017B 21D7           00528         call    SendtoAT
+017C 0008           00529         return
+017D                00530 transok4
+017D 1820           00531         btfsc   win95,0x0
+017E 0008           00532         return
+017F 018E           00533         clrf    CtrlDown
+0180 018D           00534         clrf    Capdown             ; Capslock has finished acting as ctrl
+0181 3038           00535         movlw   0x38                ; send Ctrl up
+0182 21A0           00536         call    actualtransmit
+0183 0008           00537         return
+0184                00538 transok3
+0184 0816           00539         movf    Amigachar,W
+0185 00A1           00540         movwf   Savechar2
+0186 0095           00541         movwf   Oldchar
+0187 088D           00542         movf    Capdown,F           ; Capslock down?
+0188 1903           00543         btfsc   STATUS,Z            ; skip if non-zero i.e caps pressed
+0189 2995           00544         goto    nocontrol           ; ignore it
+018A 1820           00545         btfsc   win95,0x0
+018B 2995           00546         goto    nocontrol           ; ignore it
+018C 088E           00547         movf    CtrlDown,F
+018D 1D03           00548         btfss   STATUS,Z            ; skip if zero i.e caps pressed
+018E 2995           00549         goto    nocontrol           ; ignore it
+018F 30FF           00550         movlw   0xFF
+0190 008E           00551         movwf   CtrlDown            ; Caps lock is now Ctrl key
+0191 3039           00552         movlw   0x39                ; send Ctrl down
+0192 21A0           00553         call    actualtransmit
+0193 0821           00554         movf    Savechar2,W
+0194 29A0           00555         goto    actualtransmit
+0195                00556 nocontrol
+0195 0816           00557         movf    Amigachar,W
+0196 39FE           00558         andlw   0xFE
+0197 3C44           00559         sublw   0x44                ; * (Numkey) released
+0198 1D03           00560         btfss   STATUS,Z            ; skip if equal
+0199 019B           00561         clrf    AltConfig
+019A 0A9B           00562         incf    AltConfig,F
+                    00563 
+019B 3028           00564         movlw   0x28                ; 20 th time?
+019C 021B           00565         subwf   AltConfig,W
+019D 1903           00566         btfsc   STATUS,Z            ; skip if not equal
+019E 22F9           00567         call    config
+                    00568 
+                    00569 
+019F 0816           00570         movf    Amigachar,W
+                    00571 
+01A0                00572 actualtransmit
+01A0 0096           00573         movwf   Amigachar
+                    00574 
+01A1 3005           00575         movlw   .5           ; do a 5x256 delay
+01A2 213E           00576         call    longdelay
+01A3                00577 actual2
+01A3 3008           00578         movlw   .8
+01A4 0097           00579         movwf   Count1
+01A5 0194           00580         clrf    Charbad
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01A6                00581 f
+01A6 1B96           00582         btfsc   Amigachar,0x7       ; IF bit7=1 THEN Adat=1
+01A7 1585           00583         bsf     PORTA,Adat
+01A8 1F96           00584         btfss   Amigachar,0x7       ; IF bit7=0 THEN Adat=0
+01A9 1185           00585         bcf     PORTA,Adat
+01AA 3008           00586         movlw   .8
+01AB 2144           00587         call    smalldelay          ; Allow Adat logic to settle
+01AC 1205           00588         bcf     PORTA,Aclk          ; transmit
+01AD 3008           00589         movlw   .8
+01AE 2144           00590         call    smalldelay          ; Allow Aclk logic to settle
+01AF 1605           00591         bsf     PORTA,Aclk          ; reset Aclk=1
+01B0 300A           00592         movlw   .10
+01B1 2144           00593         call    smalldelay          ; Allow Aclk logic to settle
+01B2 0D96           00594         rlf     Amigachar,F
+01B3 0B97           00595         decfsz  Count1,F            ; Transmit next bit?
+01B4 29A6           00596         goto    f
+                    00597 
+01B5 300F           00598         movlw   0xF
+01B6 0097           00599         movwf   Count1
+01B7 30FF           00600         movlw   0xFF
+01B8 0097           00601         movwf   Count1
+01B9 0098           00602         movwf   Count2
+                    00603 
+01BA 1683           00604         PAGE1          
+01BB 1585           00605         bsf     TRISA,Adat          ; Read acknowledge signal
+01BC 1283           00606         PAGE0          
+01BD                00607 ack
+01BD 0397           00608         decf    Count1,F
+01BE 1903           00609         btfsc   STATUS,Z
+01BF 0398           00610         decf    Count2,F
+01C0 0818           00611         movf    Count2,W            ; Count2=0?
+01C1 1903           00612         btfsc   STATUS,Z
+01C2 29CC           00613         goto    syncup              ; no handshake
+01C3 1985           00614         btfsc   PORTA,Adat         ; wait for handshake from amiga
+01C4 29BD           00615         goto    ack
+01C5                00616 ready
+01C5 1D85           00617         btfss   PORTA,Adat          ; wait for handshake to finish
+01C6 29C5           00618         goto    ready
+                    00619 
+01C7 1585           00620         bsf     PORTA,Adat          ; reset Adat=1
+01C8 1683           00621         PAGE1          
+01C9 1185           00622         bcf     TRISA,Adat          ; Return to output mode
+01CA 1283           00623         PAGE0          
+01CB 0008           00624         return
+01CC                00625 syncup
+01CC 1205           00626         bcf     PORTA,Aclk          ; send another clock pulse
+01CD 3008           00627         movlw   .8
+01CE 2144           00628         call    smalldelay          ; Allow Aclk logic to settle
+01CF 1605           00629         bsf     PORTA,Aclk          ; reset Aclk=1
+01D0 30FF           00630         movlw   0xFF
+01D1 0097           00631         movwf   Count1
+01D2 0098           00632         movwf   Count2
+01D3 0391           00633         decf    Count3,F
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01D4 1903           00634         btfsc   STATUS,Z
+01D5 0008           00635         return
+01D6 29BD           00636         goto    ack                 ; wait for acknowledge again
+                    00637 
+                    00638 
+                    00639 
+                    00640 ; *** Send character to AT keyboard and wait for handshake ***
+01D7                00641 SendtoAT
+01D7 0094           00642         movwf   Charbad
+01D8                00643 resend
+01D8 0814           00644         movf    Charbad,W
+01D9 0099           00645         movwf   ATchar
+01DA 0192           00646         clrf    ATparity
+01DB 1486           00647         bsf     PORTB,Kclk          ; Kclk=1 get keyboards attention
+01DC 0000           00648         nop
+01DD 1006           00649         bcf     PORTB,Kdat          ; Kdat=0 get keyboards attention
+01DE 1683           00650         PAGE1          
+01DF 1086           00651         bcf     TRISB,Kclk          ; Kclk is in output mode
+01E0 0000           00652         nop
+01E1 1006           00653         bcf     TRISB,Kdat          ; Kdat is in output mode
+01E2 1283           00654         PAGE0          
+01E3 3008           00655         movlw   .8
+01E4 0097           00656         movwf   Count1
+01E5 1683           00657         PAGE1          
+01E6 1486           00658         bsf     TRISB,Kclk          ; Kclk is in input mode
+01E7 1283           00659         PAGE0          
+01E8 1886           00660 Send4   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+01E9 29E8           00661         goto    Send4
+01EA 1819           00662         btfsc   ATchar,0x0          ; IF bit0=1 THEN Kdat=1
+01EB 1406           00663         bsf     PORTB,Kdat
+01EC 1C19           00664         btfss   ATchar,0x0          ; IF bit0=0 THEN Kdat=0
+01ED 1006           00665         bcf     PORTB,Kdat
+01EE 0C99           00666         rrf     ATchar,F            ; next bit
+01EF 1803           00667         btfsc   STATUS,C            ; test parity of bit shifted out
+01F0 0A92           00668         incf    ATparity,F
+01F1 1C86           00669 Send5   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+01F2 29F1           00670         goto    Send5                
+01F3 0B97           00671         decfsz  Count1,F
+01F4 29E8           00672         goto    Send4
+01F5 1886           00673 Send6   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+01F6 29F5           00674         goto    Send6
+01F7 1812           00675         btfsc   ATparity,0x0        ; IF bit0=odd THEN Kdat=0 (odd parity)
+01F8 1006           00676         bcf     PORTB,Kdat
+01F9 1C12           00677         btfss   ATparity,0x0        ; IF bit0=even THEN Kdat=1 (odd parity)
+01FA 1406           00678         bsf     PORTB,Kdat
+01FB 1C86           00679 Send7   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+01FC 29FB           00680         goto    Send7
+01FD 1886           00681 Send77  btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+01FE 29FD           00682         goto    Send77
+01FF 1406           00683         bsf     PORTB,Kdat          ; stop bit
+0200 1C86           00684 Send78  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0201 2A00           00685         goto    Send78
+0202 1683           00686         PAGE1          
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0203 1406           00687         bsf     TRISB,Kdat          ; reset Kdat back to input mode
+0204 1283           00688         PAGE0          
+0205 1886           00689 Send79  btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0206 2A05           00690         goto    Send79
+0207 1C86           00691 Send7a  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0208 2A07           00692         goto    Send7a
+0209 3008           00693         movlw   .8
+020A 2144           00694         call    smalldelay          ; Allow Kclk logic to settle
+020B 1086           00695         bcf     PORTB,Kclk          ; Kclk=0 Send handshake
+020C 1683           00696         PAGE1          
+020D 1086           00697         bcf     TRISB,Kclk          ; Kclk is in output mode
+020E 1283           00698         PAGE0          
+020F 3014           00699         movlw   .20
+0210 2144           00700         call    smalldelay          ; Allow keyboard chance 
+0211 2217           00701         call    ATgetkey
+0212 30FA           00702         movlw   0xFA                ; Was transmission ok
+0213 0219           00703         subwf   ATchar,W
+0214 1D03           00704         btfss   STATUS,Z            ; skip if good
+0215 29D8           00705         goto    resend
+0216 0008           00706         return
+                    00707         
+                    00708 
+                    00709 
+                    00710 
+                    00711 ; *** Waits for keyboard to send code ***
+0217                00712 ATgetkey
+0217 0199           00713         clrf    ATchar
+0218 1486           00714         bsf     PORTB,Kclk          ; Kclk=1 Allow keyboard to talk
+0219 1683           00715         PAGE1
+021A 1486           00716         bsf     TRISB,Kclk          ; Kclk is in input mode
+021B 1283           00717         PAGE0
+021C 1886           00718 skip1st btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+021D 2A1C           00719         goto    skip1st
+021E 1C86           00720 skippy  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+021F 2A1E           00721         goto    skippy
+0220 3008           00722         movlw   .8
+0221 0097           00723         movwf   Count1
+0222                00724 ATwait0
+0222 1886           00725         btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0223 2A22           00726         goto    ATwait0
+0224 0C99           00727         rrf     ATchar,F
+0225 1806           00728         btfsc   PORTB,Kdat
+0226 1799           00729         bsf     ATchar,0x7
+0227 1C06           00730         btfss   PORTB,Kdat
+0228 1399           00731         bcf     ATchar,0x7
+0229 1C86           00732 ATwait1 btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+022A 2A29           00733         goto    ATwait1
+022B 0B97           00734         decfsz  Count1,F
+022C 2A22           00735         goto    ATwait0             ; get all 8 bits of data
+022D 1886           00736 parity0 btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+022E 2A2D           00737         goto    parity0
+022F 1C86           00738 parity1 btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0230 2A2F           00739         goto    parity1
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 15
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0231 1886           00740 stop0   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0232 2A31           00741         goto    stop0
+0233 1C86           00742 stop1   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0234 2A33           00743         goto    stop1
+0235 1086           00744         bcf     PORTB,Kclk          ; Kclk=0 Send handshake
+0236 1683           00745         PAGE1
+0237 1086           00746         bcf     TRISB,Kclk          ; Kclk is in output mode
+0238 1283           00747         PAGE0
+0239 3014           00748         movlw   .20
+023A 2144           00749         call    smalldelay          ; Allow keyboard chance to recieve
+023B 0008           00750         return
+                    00751 
+                    00752 
+                    00753 
+                    00754 
+                    00755 
+                    00756 ; *** Flash Light ***
+023C                00757 flash
+023C 0090           00758         movwf   Lights
+023D 30ED           00759                 movlw   0xED                ; Next data is for lights
+023E 21D7           00760         call    SendtoAT
+023F 0810           00761         movf    Lights,W            ; Flash lights
+0240 21D7           00762         call    SendtoAT
+0241 3025           00763         movlw   0x25
+0242 213E           00764         call    longdelay     
+0243 30ED           00765         movlw   0xED                ; Next data is for lights
+0244 21D7           00766         call    SendtoAT
+0245 3000           00767         movlw   0x0                 ; Clear Lights
+0246 21D7           00768         call    SendtoAT
+0247 3025           00769         movlw   0x25
+0248 213E           00770         call    longdelay     
+0249 0008           00771                 return
+                    00772 
+                    00773 
+                    00774 
+                    00775 ; *** Performs reset on Amiga ***
+024A                00776 reset
+024A 3001           00777         movlw   Resetype
+024B 23D8           00778         call    readdata
+024C 3C01           00779         sublw   0x1                 
+024D 1903           00780         btfsc   STATUS,Z            ; skip if not equal
+024E 2A5B           00781         goto    kill                ; jump if fast reset
+024F 300F           00782         movlw   0x0F                ; Tell amiga we are going to reset it
+0250 21A0           00783         call    actualtransmit
+                    00784 
+0251 3008           00785                 movlw   0x8
+0252 0091           00786         movwf   Count3
+0253 3001           00787 strobe  movlw   0x1
+0254 223C           00788                 call    flash
+0255 3002           00789                 movlw   0x2
+0256 223C           00790             call        flash
+0257 3004           00791                 movlw   0x4
+0258 223C           00792             call        flash
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 16
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0259 0B91           00793         decfsz  Count3,F
+025A 2A53           00794         goto    strobe
+025B                00795 kill
+025B 3070           00796         movlw   0x70
+025C 213E           00797         call    longdelay     
+025D 1106           00798         bcf     PORTB,Arst          ; Arst=0 Send reset
+025E 1683           00799         PAGE1
+025F 1106           00800         bcf     TRISB,Arst          ; Arst is in output mode
+0260 1283           00801         PAGE0
+0261 30FF           00802         movlw   0xFF
+0262 213E           00803         call    longdelay           ; Wait for Amiga to reset
+0263 2A6E           00804         goto    start2
+                    00805 
+                    00806 
+                    00807 
+                    00808 
+0264                00809 start
+                    00810 
+                    00811 ; *** Allow time for HardDrive to spin upto speed ***
+0264                00812 SpinUp
+0264 1106           00813         bcf     PORTB,Arst          ; Arst=0 Send reset
+0265 1683           00814         PAGE1
+0266 1106           00815         bcf     TRISB,Arst          ; Arst is in output mode
+0267 1283           00816         PAGE0
+0268 3030           00817         movlw   0x30
+0269 0091           00818         movwf   Count3
+026A                00819 waitHD
+026A 30FF           00820         movlw   0xFF
+026B 213E           00821         call    longdelay           ; Wait for drive to wake up
+026C 0B91           00822         decfsz  Count3,F
+026D 2A6A           00823         goto    waitHD
+                    00824 
+026E                00825 start2
+                    00826 ; *** Setup ports ***
+026E 1605           00827         bsf     PORTA,Aclk          ; transmit
+026F 0000           00828         nop
+0270 1585           00829         bsf     PORTA,Adat
+0271 1683           00830         PAGE1          
+0272 3007           00831         movlw   0x7
+0273 0085           00832         movwf   TRISA
+0274 30FF           00833         movlw   0xFF
+0275 0086           00834         movwf   TRISB
+0276 1283           00835         PAGE0          
+                    00836 
+                    00837 
+                    00838 ; *** Clear out miscellaneous flags ***
+0277 018D           00839         clrf    Capdown
+0278 018E           00840         clrf    CtrlDown
+0279 018C           00841         clrf    Capbit
+027A 0195           00842         clrf    Oldchar
+027B 019B           00843         clrf    AltConfig
+027C 3007           00844         movlw   0x7
+027D 008F           00845         movwf   RESET
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 17
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    00846 
+                    00847 ; *** See what sort of keyboard is attached ***
+027E 01A0           00848         clrf    win95
+027F 3000           00849         movlw   Keytype
+0280 23D8           00850         call    readdata
+0281 3C02           00851         sublw   0x2                 
+0282 1903           00852         btfsc   STATUS,Z            ; skip if not equal
+0283 09A0           00853         comf    win95               ; win95=true or false
+                    00854 
+                    00855 ; *** Wait for AT keyboard to power up ***
+0284                00856 waitAT
+0284 1C06           00857         btfss   PORTB,Kdat         ; wait for AT keyboard
+0285 2A84           00858         goto    waitAT
+                    00859         
+                    00860 ; *** Reset AT keyboard ***
+                    00861 ;        movlw   0xFF            ; Reset
+                    00862 ;        call    SendtoAT
+0286 30F6           00863         movlw   0xF6            ; Default
+0287 21D7           00864         call    SendtoAT
+0288 3007           00865                 movlw   0x7
+0289 223C           00866                 call    flash
+028A 30ED           00867         movlw   0xED            ; Next data is for lights
+028B 21D7           00868         call    SendtoAT
+028C 3002           00869         movlw   0x2
+028D 0090           00870         movwf   Lights
+028E 21D7           00871         call    SendtoAT
+028F 30F4           00872         movlw   0xF4            ; Clear buffer
+0290 21D7           00873         call    SendtoAT
+                    00874 
+                    00875 
+0291                00876 ATstyle
+0291 088F           00877         movf    RESET,F
+0292 1903           00878         btfsc   STATUS,Z
+0293 2A4A           00879         goto    reset
+0294 2217           00880         call    ATgetkey
+0295 30E1           00881         movlw   0xE1
+0296 0219           00882         subwf   ATchar,W
+0297 1D03           00883         btfss   STATUS,Z            ; skip if equal
+0298 2AA1           00884         goto    ATnE1        
+0299 2217           00885         call    ATgetkey            ; should be $14
+029A 2217           00886         call    ATgetkey            ; should be $77
+029B 2217           00887         call    ATgetkey            ; should be $E1
+029C 2217           00888         call    ATgetkey            ; should be $F0
+029D 2217           00889         call    ATgetkey            ; should be $14
+029E 2217           00890         call    ATgetkey            ; should be $F0
+029F 2217           00891         call    ATgetkey            ; should be $77
+02A0 2A91           00892         goto    ATstyle
+02A1                00893 ATnE1
+02A1 019A           00894         clrf    tableoffset
+02A2 30E0           00895         movlw   0xE0
+02A3 0219           00896         subwf   ATchar,W
+02A4 1D03           00897         btfss   STATUS,Z            ; skip if equal
+02A5 2AC0           00898         goto    ATnE0        
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 18
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+02A6 3080           00899         movlw   0x80
+02A7 009A           00900         movwf   tableoffset
+02A8 2217           00901         call    ATgetkey
+02A9 30F0           00902         movlw   0xF0
+02AA 0219           00903         subwf   ATchar,W
+02AB 1D03           00904         btfss   STATUS,Z            ; skip if equal
+02AC 2AB7           00905         goto    ATnE0F0        
+02AD 2217           00906         call    ATgetkey
+02AE 3012           00907         movlw   0x12
+02AF 0219           00908         subwf   ATchar,W
+02B0 1903           00909         btfsc   STATUS,Z            ; skip if not equal
+02B1 2A91           00910         goto    ATstyle             ; E0F012 ignore it
+02B2                00911 ATnEF12
+02B2 3059           00912         movlw   0x59
+02B3 0219           00913         subwf   ATchar,W
+02B4 1D03           00914         btfss   STATUS,Z            ; skip if equal
+02B5 2ACD           00915         goto    ATup        
+02B6 2A91           00916         goto    ATstyle             ; E0F059 ignore it
+02B7                00917 ATnE0F0
+02B7 3012           00918         movlw   0x12
+02B8 0219           00919         subwf   ATchar,W
+02B9 1903           00920         btfsc   STATUS,Z            ; skip if not equal
+02BA 2A91           00921         goto    ATstyle             ; E012 ignore it
+02BB                00922 ATnE012
+02BB 3059           00923         movlw   0x59
+02BC 0219           00924         subwf   ATchar,W
+02BD 1D03           00925         btfss   STATUS,Z            ; skip if equal
+02BE 2AC6           00926         goto    ATdown        
+02BF 2A91           00927         goto    ATstyle             ; E059 ignore it
+02C0                00928 ATnE0
+02C0 30F0           00929         movlw   0xF0
+02C1 0219           00930         subwf   ATchar,W
+02C2 1D03           00931         btfss   STATUS,Z            ; skip if equal
+02C3 2AC6           00932         goto    ATdown        
+02C4 2217           00933         call    ATgetkey
+02C5 2ACD           00934         goto    ATup                ; F0= key released
+02C6                00935 ATdown        
+02C6 0A19           00936         incf    ATchar,W
+02C7 071A           00937         addwf   tableoffset,W
+02C8 2001           00938         call    ATtb1
+02C9 3E00           00939         addlw   0x0                 ; test W
+02CA 1D03           00940         btfss   STATUS,Z
+02CB 2148           00941         call    amigatransmit
+02CC 2A91           00942         goto    ATstyle
+02CD                00943 ATup        
+02CD 0A19           00944         incf    ATchar,W
+02CE 071A           00945         addwf   tableoffset,W
+02CF 009A           00946         movwf   tableoffset
+                    00947 
+02D0 30B0           00948         movlw   0xAF+1              ; menu key
+02D1 021A           00949         subwf   tableoffset,W
+02D2 1903           00950         btfsc   STATUS,Z            ; skip if not equal
+02D3 2A91           00951         goto    ATstyle             ; ignore it
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 19
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    00952 
+02D4 3085           00953         movlw   0x84+1              ; PrtScrn
+02D5 021A           00954         subwf   tableoffset,W
+02D6 1903           00955         btfsc   STATUS,Z            ; skip if not equal
+02D7 2A91           00956         goto    ATstyle             ; ignore it
+                    00957 
+02D8 30EA           00958         movlw   0xE9+1              ; End
+02D9 021A           00959         subwf   tableoffset,W
+02DA 1903           00960         btfsc   STATUS,Z            ; skip if not equal
+02DB 2A91           00961         goto    ATstyle             ; ignore it
+                    00962 
+02DC 30ED           00963         movlw   0xEC+1              ; Home
+02DD 021A           00964         subwf   tableoffset,W
+02DE 1903           00965         btfsc   STATUS,Z            ; skip if not equal
+02DF 2A91           00966         goto    ATstyle             ; ignore it
+                    00967 
+02E0 30F1           00968         movlw   0xF0+1              ; Insert
+02E1 021A           00969         subwf   tableoffset,W
+02E2 1903           00970         btfsc   STATUS,Z            ; skip if not equal
+02E3 2A91           00971         goto    ATstyle             ; ignore it
+                    00972 
+02E4 30FB           00973         movlw   0xFA+1              ; PageDown
+02E5 021A           00974         subwf   tableoffset,W
+02E6 1903           00975         btfsc   STATUS,Z            ; skip if not equal
+02E7 2A91           00976         goto    ATstyle             ; ignore it
+                    00977 
+02E8 30FD           00978         movlw   0xFC+1              ; PrtScrn
+02E9 021A           00979         subwf   tableoffset,W
+02EA 1903           00980         btfsc   STATUS,Z            ; skip if not equal
+02EB 2A91           00981         goto    ATstyle             ; ignore it
+                    00982 
+02EC 30FE           00983         movlw   0xFD+1              ; PageUp
+02ED 021A           00984         subwf   tableoffset,W
+02EE 1903           00985         btfsc   STATUS,Z            ; skip if not equal
+02EF 2A91           00986         goto    ATstyle             ; ignore it
+                    00987 
+02F0 30FF           00988         movlw   0xFE+1              ; Break
+02F1 021A           00989         subwf   tableoffset,W
+02F2 1903           00990         btfsc   STATUS,Z            ; skip if not equal
+02F3 2A91           00991         goto    ATstyle             ; ignore it
+                    00992 
+02F4 081A           00993         movf    tableoffset,W
+02F5 2001           00994         call    ATtb1
+02F6 39FE           00995         andlw   0xFE                ; clear bit 0
+02F7 2148           00996         call    amigatransmit
+02F8 2A91           00997         goto    ATstyle
+                    00998         
+                    00999 
+                    01000 
+                    01001 
+                    01002 
+                    01003 
+                    01004 
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 20
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                    01005 
+                    01006 
+                    01007 
+                    01008 
+                    01009 
+                    01010 
+                    01011 
+                    01012 ; *** Change configuration ***
+02F9                01013 config
+02F9 019E           01014         clrf    eeaddress
+02FA 303B           01015         movlw   0x3B                ; CAPSLOCK ON
+02FB 21A0           01016         call    actualtransmit
+                    01017         
+02FC 235C           01018         call    say_select          ; Select Type of
+02FD 237E           01019         call    say_key             ; key
+02FE 3095           01020         movlw   0x95                ; b
+02FF 23B5           01021         call    sendmessage
+0300 30CF           01022         movlw   0xCF                ; o
+0301 23B5           01023         call    sendmessage
+0302 30BF           01024         movlw   0xBF                ; a
+0303 23B5           01025         call    sendmessage
+0304 30D9           01026         movlw   0xD9                ; r
+0305 23B5           01027         call    sendmessage
+0306 30BB           01028         movlw   0xBB                ; d
+0307 23B5           01029         call    sendmessage
+0308 2385           01030         call    say_option1         ; 1=
+0309 2398           01031         call    say_uk10            ; uk 10
+030A 30FB           01032         movlw   0xFB                ; 2
+030B 23B5           01033         call    sendmessage
+030C 307F           01034         movlw   0x7F                ; space
+030D 23B5           01035         call    sendmessage
+030E 237E           01036         call    say_key             ; key
+030F 238F           01037         call    say_option2         ; 2=
+0310 2398           01038         call    say_uk10            ; uk 10
+0311 30F5           01039         movlw   0xF5                ; 5
+0312 23B5           01040         call    sendmessage
+0313 307F           01041         movlw   0x7F                ; space
+0314 23B5           01042         call    sendmessage
+0315 237E           01043         call    say_key             ; key
+0316 307F           01044         movlw   0x7F                ; space
+0317 23B5           01045         call    sendmessage
+0318 30DD           01046         movlw   0xDD                ; w
+0319 23B5           01047         call    sendmessage
+031A 30D1           01048         movlw   0xD1                ; i
+031B 23B5           01049         call    sendmessage
+031C 3093           01050         movlw   0x93                ; n
+031D 23B5           01051         call    sendmessage
+031E 30ED           01052         movlw   0xED                ; 9
+031F 23B5           01053         call    sendmessage
+0320 30F5           01054         movlw   0xF5                ; 5
+0321 23B5           01055         call    sendmessage
+0322 3077           01056         movlw   0x77                ; return 
+0323 23B5           01057         call    sendmessage
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 21
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0324 23BC           01058         call    getselection
+0325 009F           01059         movwf   eedata
+0326 081F           01060         movf    eedata,W
+0327 1903           01061         btfsc   STATUS,Z            ; skip if not zero
+0328 2AF9           01062         goto    config              ; bad choice, try again
+0329 23C8           01063         call    writedata        
+032A 23A3           01064         call    say_ok
+032B 01A0           01065         clrf    win95
+032C 3000           01066         movlw   Keytype
+032D 23D8           01067         call    readdata
+032E 3C02           01068         sublw   0x2                 
+032F 1903           01069         btfsc   STATUS,Z            ; skip if not equal
+0330 09A0           01070         comf    win95               ; win95=true or false
+                    01071 
+0331 0A9E           01072         incf    eeaddress
+0332                01073 askreset
+0332 235C           01074         call    say_select          ; Select Type of
+0333 23AA           01075         call    say_reset           ; reset
+0334 2385           01076         call    say_option1         ; 1=
+0335 30B9           01077         movlw   0xB9                ; f
+0336 23B5           01078         call    sendmessage
+0337 30BF           01079         movlw   0xBF                ; a
+0338 23B5           01080         call    sendmessage
+0339 30BD           01081         movlw   0xBD                ; s
+033A 23B5           01082         call    sendmessage
+033B 30D7           01083         movlw   0xD7                ; t
+033C 23B5           01084         call    sendmessage
+033D 307F           01085         movlw   0x7F                ; space
+033E 23B5           01086         call    sendmessage
+033F 23AA           01087         call    say_reset           ; reset
+0340 238F           01088         call    say_option2         ; 2=
+0341 30BD           01089         movlw   0xBD                ; s
+0342 23B5           01090         call    sendmessage
+0343 30AF           01091         movlw   0xAF                ; l
+0344 23B5           01092         call    sendmessage
+0345 30CF           01093         movlw   0xCF                ; o
+0346 23B5           01094         call    sendmessage
+0347 30DD           01095         movlw   0xDD                ; w
+0348 23B5           01096         call    sendmessage
+0349 307F           01097         movlw   0x7F                ; space
+034A 23B5           01098         call    sendmessage
+034B 23AA           01099         call    say_reset           ; reset
+034C 3077           01100         movlw   0x77                ; return 
+034D 23B5           01101         call    sendmessage
+                    01102 
+034E 23BC           01103         call    getselection
+034F 009F           01104         movwf   eedata
+0350 081F           01105         movf    eedata,W
+0351 1903           01106         btfsc   STATUS,Z            ; skip if not zero
+0352 2B32           01107         goto    askreset            ; bad choice, try again
+0353 23C8           01108         call    writedata        
+0354 23A3           01109         call    say_ok
+                    01110 
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 22
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0355 019B           01111         clrf    AltConfig
+0356 307E           01112         movlw   0x7E                ; space up
+0357 088D           01113         movf    Capdown,F           ; Capslock down?
+0358 1903           01114         btfsc   STATUS,Z            ; skip if non-zero i.e caps pressed
+0359 303A           01115         movlw   0x3A                ; Caps up
+035A 0096           01116         movwf   Amigachar
+035B 0008           01117         return
+                    01118         
+035C                01119 say_select
+035C 3077           01120         movlw   0x77                ; return x2
+035D 23B5           01121         call    sendmessage
+035E 23B5           01122         call    sendmessage
+035F 30BD           01123         movlw   0xBD                ; s
+0360 23B5           01124         call    sendmessage
+0361 30DB           01125         movlw   0xDB                ; e
+0362 23B5           01126         call    sendmessage
+0363 30AF           01127         movlw   0xAF                ; l
+0364 23B5           01128         call    sendmessage
+0365 30DB           01129         movlw   0xDB                ; e
+0366 23B5           01130         call    sendmessage
+0367 3099           01131         movlw   0x99                ; c
+0368 23B5           01132         call    sendmessage
+0369 30D7           01133         movlw   0xD7                ; t
+036A 23B5           01134         call    sendmessage
+036B 307F           01135         movlw   0x7F                ; space
+036C 23B5           01136         call    sendmessage
+036D 30D7           01137         movlw   0xD7                ; t
+036E 23B5           01138         call    sendmessage
+036F 30D5           01139         movlw   0xD5                ; y
+0370 23B5           01140         call    sendmessage
+0371 30CD           01141         movlw   0xCD                ; p
+0372 23B5           01142         call    sendmessage
+0373 30DB           01143         movlw   0xDB                ; e
+0374 23B5           01144         call    sendmessage
+0375 307F           01145         movlw   0x7F                ; space
+0376 23B5           01146         call    sendmessage
+0377 30CF           01147         movlw   0xCF                ; o
+0378 23B5           01148         call    sendmessage
+0379 30B9           01149         movlw   0xB9                ; f
+037A 23B5           01150         call    sendmessage
+037B 307F           01151         movlw   0x7F                ; space
+037C 23B5           01152         call    sendmessage
+037D 0008           01153         return
+                    01154 
+037E                01155 say_key
+037E 30B1           01156         movlw   0xB1                ; k
+037F 23B5           01157         call    sendmessage
+0380 30DB           01158         movlw   0xDB                ; e
+0381 23B5           01159         call    sendmessage
+0382 30D5           01160         movlw   0xD5                ; y
+0383 23B5           01161         call    sendmessage
+0384 0008           01162         return
+                    01163 
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 23
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0385                01164 say_option1
+0385 3077           01165        movlw   0x77                ; return x2
+0386 23B5           01166         call    sendmessage
+0387 23B5           01167         call    sendmessage
+0388 30FD           01168         movlw   0xFD                ; 1
+0389 23B5           01169         call    sendmessage
+038A 30E7           01170         movlw   0xE7                ; =
+038B 23B5           01171         call    sendmessage
+038C 307F           01172         movlw   0x7F                ; space
+038D 23B5           01173         call    sendmessage
+038E 0008           01174         return
+                    01175 
+038F                01176 say_option2
+038F 3077           01177         movlw   0x77                ; return 
+0390 23B5           01178         call    sendmessage
+0391 30FB           01179         movlw   0xFB                ; 2
+0392 23B5           01180         call    sendmessage
+0393 30E7           01181         movlw   0xE7                ; =
+0394 23B5           01182         call    sendmessage
+0395 307F           01183         movlw   0x7F                ; space
+0396 23B5           01184         call    sendmessage
+0397 0008           01185         return
+                    01186 
+0398                01187 say_uk10
+0398 30D3           01188         movlw   0xD3                ; u
+0399 23B5           01189         call    sendmessage
+039A 30B1           01190         movlw   0xB1                ; k
+039B 23B5           01191         call    sendmessage
+039C 307F           01192         movlw   0x7F                ; space
+039D 23B5           01193         call    sendmessage
+039E 30FD           01194         movlw   0xFD                ; 1
+039F 23B5           01195         call    sendmessage
+03A0 30EB           01196         movlw   0xEB                ; 0
+03A1 23B5           01197         call    sendmessage
+03A2 0008           01198         return
+                    01199 
+03A3                01200 say_ok
+03A3 30CF           01201         movlw   0xCF                ; o
+03A4 23B5           01202         call    sendmessage
+03A5 30B1           01203         movlw   0xB1                ; k
+03A6 23B5           01204         call    sendmessage
+03A7 3077           01205         movlw   0x77                ; return
+03A8 23B5           01206         call    sendmessage
+03A9 0008           01207         return
+                    01208 
+03AA                01209 say_reset
+03AA 30D9           01210         movlw   0xD9                ; r
+03AB 23B5           01211         call    sendmessage
+03AC 30DB           01212         movlw   0xDB                ; e
+03AD 23B5           01213         call    sendmessage
+03AE 30BD           01214         movlw   0xBD                ; s
+03AF 23B5           01215         call    sendmessage
+03B0 30DB           01216         movlw   0xDB                ; e
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 24
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+03B1 23B5           01217         call    sendmessage
+03B2 30D7           01218         movlw   0xD7                ; t
+03B3 23B5           01219         call    sendmessage
+03B4 0008           01220         return
+                    01221 
+                    01222 
+03B5                01223 sendmessage
+03B5 009C           01224         movwf   Savechar
+03B6 21A0           01225         call    actualtransmit
+03B7 081C           01226         movf    Savechar,W
+03B8 39FE           01227         andlw   0xFE
+03B9 21A0           01228         call    actualtransmit
+03BA 081C           01229         movf    Savechar,W
+03BB 0008           01230         return        
+                    01231 
+03BC                01232 getselection
+03BC 2217           01233         call    ATgetkey
+03BD 2217           01234         call    ATgetkey
+03BE 2217           01235         call    ATgetkey
+03BF 3016           01236         movlw   0x16                ; was key 1 pressed and released
+03C0 0219           01237         subwf   ATchar,W
+03C1 1903           01238         btfsc   STATUS,Z            ; skip if not equal
+03C2 3401           01239         retlw   0x1     
+03C3 301E           01240         movlw   0x1E                ; was key 2 pressed and released
+03C4 0219           01241         subwf   ATchar,W
+03C5 1903           01242         btfsc   STATUS,Z            ; skip if not equal
+03C6 3402           01243         retlw   0x2        
+03C7 3400           01244         retlw   0x0
+                    01245 
+03C8                01246 writedata
+03C8 081E           01247         movf    eeaddress,W
+03C9 0089           01248         movwf   EEADR
+03CA 081F           01249         movf    eedata,W
+03CB 0088           01250         movwf   EEDATA
+03CC 1683           01251         PAGE1
+03CD 1508           01252         bsf     EECON1,WREN         ; EEPROM write enable
+03CE 3055           01253         movlw   0x55
+03CF 0089           01254         movwf   EECON2
+03D0 30AA           01255         movlw   0xAA
+03D1 0089           01256         movwf   EECON2
+03D2 1488           01257         bsf     EECON1,WR
+03D3                01258 wait_write
+03D3 1E08           01259         btfss   EECON1,EEIF         ; wait for write to finish
+03D4 2BD3           01260         goto    wait_write
+03D5 0188           01261         clrf    EECON1              ; EEPROM write disable & int accept
+03D6 1283           01262         PAGE0
+03D7 0008           01263         return
+                    01264 
+                    01265 
+03D8                01266 readdata
+03D8 0089           01267         movwf   EEADR
+03D9 1683           01268         PAGE1
+03DA 1408           01269         bsf     EECON1,RD           ; EEPROM read
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 25
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+03DB 1283           01270         PAGE0
+03DC 0808           01271         movf    EEDATA,W
+03DD 0008           01272         return
+                    01273 
+                    01274 
+                    01275 
+                    01276 
+                    01277 
+                    01278 
+                    01279 
+                    01280         end
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 26
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ATchar                            00000019
+ATdown                            000002C6
+ATgetkey                          00000217
+ATnE0                             000002C0
+ATnE012                           000002BB
+ATnE0F0                           000002B7
+ATnE1                             000002A1
+ATnEF12                           000002B2
+ATparity                          00000012
+ATstyle                           00000291
+ATtb1                             00000001
+ATtb2                             00000081
+ATup                              000002CD
+ATwait0                           00000222
+ATwait1                           00000229
+Aclk                              00000004
+Adat                              00000003
+AltConfig                         0000001B
+Amigachar                         00000016
+Arst                              00000002
+C                                 00000000
+Capbit                            0000000C
+Capdown                           0000000D
+CapsLock                          00000002
+Charbad                           00000014
+Count1                            00000017
+Count2                            00000018
+Count3                            00000011
+CtrlDown                          0000000E
+Ctrlbit                           00000000
+DC                                00000001
+EEADR                             00000009
+EECON1                            00000088
+EECON2                            00000089
+EEDATA                            00000008
+EEIE                              00000006
+EEIF                              00000004
+F                                 00000001
+FSR                               00000004
+GIE                               00000007
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+Kclk                              00000001
+Kdat                              00000000
+Keytype                           00000000
+LAmigabit                         00000002
+Lights                            00000010
+Make                              00000013
+NOT_PD                            00000003
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 27
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_RBPU                          00000007
+NOT_TO                            00000004
+NumLock                           00000001
+OPTION_REG                        00000081
+Oldchar                           00000015
+PAGE0                             bcf     STATUS,RP0
+PAGE1                             bsf     STATUS,RP0
+PCL                               00000002
+PCLATH                            0000000A
+PORTA                             00000005
+PORTB                             00000006
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+RAmigabit                         00000001
+RBIE                              00000003
+RBIF                              00000000
+RD                                00000000
+RESET                             0000000F
+RP0                               00000005
+RP1                               00000006
+Resetype                          00000001
+STATUS                            00000003
+Savechar                          0000001C
+Savechar2                         00000021
+ScratchPadRam                     0000000C
+ScrollLock                        00000000
+Send4                             000001E8
+Send5                             000001F1
+Send6                             000001F5
+Send7                             000001FB
+Send77                            000001FD
+Send78                            00000200
+Send79                            00000205
+Send7a                            00000207
+SendtoAT                          000001D7
+SpinUp                            00000264
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+TMR0                              00000001
+TRISA                             00000085
+TRISB                             00000086
+W                                 00000000
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_CP_OFF                           00003FFF
+_CP_ON                            00003FEF
+_HS_OSC                           00003FFE
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 28
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_LP_OSC                           00003FFC
+_PWRTE_OFF                        00003FF7
+_PWRTE_ON                         00003FFF
+_RC_OSC                           00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_XT_OSC                           00003FFD
+__16C84                           00000001
+ack                               000001BD
+actual2                           000001A3
+actualtransmit                    000001A0
+amigatransmit                     00000148
+askreset                          00000332
+break                             00000137
+config                            000002F9
+delay                             00000145
+dly                               0000013F
+eeaddress                         0000001E
+eedata                            0000001F
+endkey                            00000114
+f                                 000001A6
+fixeddelay                        00000143
+flash                             0000023C
+getselection                      000003BC
+home                              0000011B
+insert                            00000130
+kill                              0000025B
+lctrl                             00000100
+longdelay                         0000013E
+nocontrol                         00000195
+pagedown                          00000122
+pageup                            00000129
+parity0                           0000022D
+parity1                           0000022F
+prtscreen                         0000010D
+rctrl                             00000103
+readdata                          000003D8
+ready                             000001C5
+resend                            000001D8
+reset                             0000024A
+returnvalue                       0000001D
+say_key                           0000037E
+say_ok                            000003A3
+say_option1                       00000385
+say_option2                       0000038F
+say_reset                         000003AA
+say_select                        0000035C
+say_uk10                          00000398
+sendmessage                       000003B5
+skip1st                           0000021C
+skippy                            0000021E
+smalldelay                        00000144
+start                             00000264
+MPASM 01.30 Released         IBMKEY25.ASM   3-28-1996  11:04:48         PAGE 29
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+start2                            0000026E
+stop0                             00000231
+stop1                             00000233
+strobe                            00000253
+swapscreen                        00000106
+syncup                            000001CC
+tableoffset                       0000001A
+transok2                          00000166
+transok3                          00000184
+transok4                          0000017D
+waitAT                            00000284
+waitHD                            0000026A
+wait_write                        000003D3
+win95                             00000020
+writedata                         000003C8
+
+
+MEMORY USAGE MAP ('X' = Used,  '-' = Unused)
+
+0000 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0040 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0080 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+00C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0100 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0140 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0180 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+01C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0200 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0240 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0280 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+02C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0300 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0340 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+0380 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX XXXXXXXXXXXXXXXX
+03C0 : XXXXXXXXXXXXXXXX XXXXXXXXXXXXXX-- ---------------- ----------------
+
+All other memory blocks unused.
+
+Program Memory Words Used:   990
+Program Memory Words Free:    34
+
+
+Errors   :     0
+Warnings :     0 reported,     0 suppressed
+Messages :     0 reported,    23 suppressed
+
+

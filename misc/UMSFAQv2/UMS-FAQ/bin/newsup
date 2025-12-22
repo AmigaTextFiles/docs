@@ -1,0 +1,43 @@
+; Magic Stuff ! check for news
+
+sumsprint MY_1STNAME "" "exported=0 AND group!=*"*"" FO="<MsgID,%s> - <Group,%s>\n" >ram:listnews
+
+IF `list ram:listnews lformat="%l"` EQ "empty"
+	ECHO "No News to send"
+	SKIP goofy
+ENDIF
+
+ECHO "Sending :"
+TYPE ram:listnews
+DELETE ram:listnews QUIET
+
+IF EXISTS ram:newsup
+	DELETE ram:newsup
+ENDIF
+
+; script to send news up
+
+LAB retry
+
+umsnntp -h news.demon.co.uk >ram:newsup
+
+IF EXISTS ram:newsup
+
+	; Check the size of the newsup file.  This will be "empty" if no news sent or
+	; it will contain something if news has left the machine
+
+	IF `list ram:newsup lformat="%l"` EQ "empty"				; no news went
+		ECHO "Retrying"
+		SKIP BACK retry
+	ELSE														; news dispatched
+		TYPE ram:newsup
+		DELETE ram:newsup
+		DELETE env:newssize
+	ENDIF
+
+ECHO "News Sent O.K."
+
+LAB goofy
+
+WAIT 5
+ENDCLI

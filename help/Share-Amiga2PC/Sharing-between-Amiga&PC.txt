@@ -1,0 +1,759 @@
+FAQ: Sharing files between Amigas and PCs
+-----------------------------------------
+
+Current and former Amiga users often ask about getting files between
+Amigas and PCs; this FAQ should give you some ideas about how to do it
+and answer most of the common questions.
+
+This FAQ was written by Ben Hutchings <benjamin.hutchings@worc.ox.ac.uk>.
+
+This is version 0.4 of the FAQ, dated 18 April 1998.  There are
+probably many bugs and omissions; please report them to me as soon as
+possible.  If you have any hints, comments, or experiences to share,
+please send to me too.
+
+I would particularly appreciate information about:
+
+* transferring files with HyperTerminal (I've used it before
+  successfully but forgot how after I deleted Windows!)
+* transferring files with ProComm
+* using the Netware client for Amiga
+* sharing files on Zip/Syquest disks
+
+
+
+0  Contents
+------------
+
+1	  Floppy disks
+1.1	  Obstacles to sharing
+1.2	  The compromises
+1.3	  Software for the Amiga
+1.3.1	  CrossDOS
+1.3.1.1   Installing CrossDOS drivers
+1.3.1.2   Loading CrossDOS drivers manually
+1.3.1.3   Using CrossDOS
+
+2	  Serial and parallel transfer
+2.1	  Serial transfer
+2.1.1	  Hardware for serial transfer
+2.1.2	  Software for serial transfer
+2.1.3	  How to do serial transfer
+2.2	  Parallel transfer
+2.2.1	  Hardware for parallel transfer
+2.2.2	  Software for parallel transfer
+2.2.3	  How to do parallel transfer
+
+3	  Networking
+3.1	  Hardware
+3.2       Drivers
+3.3	  Network stacks
+3.4	  Applications
+
+4	  Hard disks
+
+5	  Zip/Syquest disks (not yet done)
+
+Appendix  Where to find the software
+
+
+
+1  Floppy disks
+----------------
+
+
+1.1  Obstacles to sharing
+-------------------------
+
+There are 3 problems with sharing floppy disks:
+
+1.  Most Amigas have only a DD (double-density) floppy drive, and can't
+    deal with the HD (high-density) floppy disks which are now standard
+    for PCs.
+2.  The Amiga disk drive controller is quite flexible within the
+    limitations of (1); it can write up to 12 sectors on a track, and it
+    doesn't require any gaps between them.  Unfortunately PC floppy disk
+    controllers need gaps and markers to separate sectors.
+3.  Most PCs use software from some tiny cowboy operation called
+    Microsoft, which has an obscure file-system all of its own.  Amigas
+    have a nice whizzy file-system with comments and lots of file
+    attributes, which PCs don't know about.
+
+
+1.2  The compromises
+--------------------
+
+To get round these obstacles, you have to make some compromises, and go
+for the lowest common denominator in each area:
+
+1.  Don't use HD disks.  Use only DD disks, and format them on the
+    Amiga (see below for how to do this).  HD floppy drives cannot
+    format DD disks reliably; you will usually get some errors when
+    you try to read the data back on the Amiga.
+2.  You have to use a 9-sector format with sector gaps on the disks.
+3.  You have to make your Amiga use the same Microsoft file-system
+    on the disks.
+
+
+1.3  Amiga software
+-------------------
+
+Now to make the Amiga stoop to this level, you need some appropriate
+driver software.  There are several such packages:
+
+1.  MessyDOS.  A freeware product; said to be better than CrossDOS
+    in many ways.  It works fine under release 1.3 and later.
+
+2.  CrossDOS.  This is a fairly up-to-date commercial product.  A
+    limited version of this is included with AmigaOS releases 2.1, 3.0
+    and 3.1 - i.e. with all A1200s and A4000s, and with late A600s.
+    The commercial version 7.0, for OS 2.0+ is available from
+    Consultron <URL:http://www.cucug.org/consultron/>; they also sell
+    version 5.0 which will run on OS 1.3.  Thanks to Tony Friery and
+    Dale Frameli for this information.
+
+3.  MultiDOS.  This is freeware, and can be found on Aminet as
+    misc/emu/multidos1_12.lzh.  It's not as well documented as MSH,
+    but it has the advantage of being more transparent - you can
+    access both Amiga and MS-DOS disks as "DF0:" etc.  If you can't
+    download this onto an Amiga or Amiga disk you may have some
+    trouble.  See the section on serial transfer for some hints.
+
+I won't give any instructions for MSH or MultiDOS - there are
+instructions included with them.  I guess that most active Amiga users
+are likely to have CrossDOS, and some limited documentation that came
+with their computer.  Therefore I've written some fairly extensive
+instructions for it.
+
+1.3.1  CrossDOS
+---------------
+
+The Amiga has a very flexible way of dealing with device drivers and
+filesystems, so you can add them easily at any time.  If the Amiga user
+only wants to deal with PC floppies occasionally it's a waste of memory
+to load the appropriate device driver every time the computer boots; if
+he's using them very often then it's an annoyance to have to load it
+manually before using any such disks.  You decide which way you want to
+do things.
+
+1.3.1.1  Installing CrossDOS drivers
+------------------------------------
+
+To make sure the appropriate drivers are loaded every time the computer
+boots, you need to copy some files, which you can do by dragging icons
+on the Workbench.
+
+WARNING: If you have no hard disk and use floppies to boot your Amiga,
+you should use *copies* of your Workbench disk and other system disks,
+rather than the original.  *Never* modify your Workbench disk - store it
+away somewhere safe.  This might seem obvious, but many people just
+ignore the warning in their manuals, so if you are one of them please
+take note and protect your valuable software!
+
+OS 2.1, floppies:  Open the windows for your Workbench disk and for the
+                   Extras disk.  On the Extras disk you will find a
+                   "DOSDrivers" drawer.  Open that, and drag the icon
+                   "PC0" from it to the WBStartup drawer on your
+                   Workbench disk.  If you have only one floppy drive,
+                   you will find it easier to drag to the Ram Disk,
+                   change floppies, and then complete the operation.
+
+OS 2.1, hard disk: Open the windows for your System partition and for
+                   the Extras disk.  On the Extras disk you will find
+                   a "DOSDrivers" drawer.  Open that, and drag the
+                   icon "PC0" from it to the WBStartup drawer on your
+                   System partition.
+
+OS 3.x, floppies:  Open the windows for your Workbench disk, the Devs
+                   drawer of your Workbench disk, the Storage disk,
+                   and the DOSDrivers drawer of the Storage disk.
+                   Drag the icon "PC0" from the DOSDrivers drawer on
+                   Storage to the DOSDrivers drawer in Devs.
+
+OS 3.x, hard disk: Open the windows for your System partition, the
+                   Devs drawer, the Storage drawer, and the DOSDrivers
+                   drawer inside the Storage drawer.  Drag the icon
+                   "PC0" from the last drawer to the DOSDrivers drawer
+                   inside Devs.
+
+The drivers will not be loaded until you reboot; after this they will be
+loaded every time you boot.
+
+External drives
+---------------
+
+The above instructions only cover the internal floppy disk drive,
+normally accessed as DF0.  If you want to install drivers for using an
+external floppy disk drive (DF1) substitute "PC1" for "PC0" above.  For
+further disk drives (DF2, DF3), make a copy of the PC0 or PC1 icon,
+rename it appropriately, and change the UNIT tooltype in the icon
+information to read UNIT=2 or UNIT=3 as appropriate.
+
+Uninstallation
+--------------
+
+OS 3.x, hard disk:    Open the appropriate drawers, and drag the "PC0"
+                      icon back to where it came from.
+
+Other configurations: Delete the copy of the "PC0" icon from where
+                      you put it.
+
+1.3.1.2  Loading CrossDOS drivers manually
+------------------------------------------
+
+This depends on your system configuration.
+
+OS 2.1:            Insert the Extras disk, open its icon, and open the
+                   DOSDrivers drawer inside it.  Then double-click the
+                   PC0 icon inside that.
+
+OS 3.x, floppies:  Insert the Storage disk, open its icon, and open the
+                   DOSDrivers drawer inside it.  Then double-click the
+                   PC0 icon inside that.
+
+OS 3.x, hard disk: Open the icon for your system partition, the
+                   Storage drawer inside it, and the DOSDrivers drawer
+                   inside that.  Then double-click the PC0 icon inside
+                   that.
+
+External drives
+---------------
+
+The above instructions only cover the internal floppy disk drive,
+normally accessed as DF0.  If you want to load the drivers for an
+external floppy disk drive (DF1) substitute "PC1" for "PC0" above.  For
+further disk drives (DF2, DF3), make a copy of the PC0 or PC1 icon,
+rename it appropriately, and change the UNIT tooltype in the icon's
+information to read UNIT=2 or UNIT=3 as appropriate.
+
+1.3.1.3  Using CrossDOS
+-----------------------
+
+Once the CrossDOS drivers are loaded, the Amiga deals with MS-DOS
+disks just like native Amiga disks - with the difference that they
+appear in the drive PCn: instead of DFn: (n=0,1,2,3).  One side-effect
+of using two different drive names is that when you insert a disk you
+will get a "bad disk" icon for whichever drive isn't appropriate to
+it.  (This won't happen for PCn: if you don't actually install the
+driver.)  You can get round this by using MultiFileSystem.  However,
+this uses some slightly dubious software tricks, and it quickly
+crashed my system, although I know it works fine for many people.
+
+There is a program called "CrossDOS", which you can find in the
+Commodities drawer of the Tools drawer of your Extras disk or boot
+partition, which lets you change some aspects of CrossDOS behaviour.
+These are useful for dealing with text files.  If you want to read a
+plain text file created on a PC, you will normally want to select both
+"Text Conversion" and "Character Translation".  For all other files,
+you must be sure to turn these options off, otherwise the files will
+be corrupted.  The CrossDOS program is a commodity, so you can pop its
+window up with a hot key at any time once it's loaded.  See your
+manual for information about commodities.
+
+
+
+2  Serial and parallel transfer
+-------------------------------
+
+If the Amiga and PC are close together, or can temporarily be brought
+together, it may be easier to wire them up using appropriate ports, and
+transfer files that way.  The advantages of this are that you don't need
+to worry about disk formats, you don't need to move things round, and
+you usually get automatic error correction and other nice features.
+You'll need a cable of some sort and appropriate software to do this.
+
+
+2.1  Serial transfer
+--------------------
+
+This is very slow, unless you have enhanced ports on both the Amiga and
+PC which can handle up to 115,200 bps, in which case it's just plain
+slow.  However, you probably won't need to unplug anything else to do
+this, so there's one advantage.
+
+2.1.1  The hardware for serial transfer
+---------------------------------------
+
+First, you need to get a "null-modem cable".  This are readily
+available in good computer shops, and cost about $10 or about twice as
+much in local currency in Europe.  Before you go out and buy one,
+check what kind of serial port you have free on the PC - it should be
+either 9-pin or 25-pin.  The Amiga's built-in serial port is 25-pin;
+some expansion cards provide 9-pin ports, but I'm sure you know that
+if you've bought such a thing.  Be sure to get an appropriate cable!
+I use a universal null-modem cable which has both 9- and 25-pin plugs
+on both ends, which cost me £15 ($25); this lets me connect just
+about any two standard-ish serial ports together.
+
+2.1.2  The software for serial transfer
+---------------------------------------
+
+It's possible to do serial transfers using PC2Am (section 2.2.2), but
+you can also use terminal programs if you prefer.
+
+There's a simple terminal program in Windows 3, and one supplied with
+most "integrated" packages like Microsoft Works, but these aren't very
+good.  I've heard ProComm is one of the best under DOS.  The
+HyperTerminal program that comes with Windows 95 is reasonably good.
+
+Under Linux, I've found minicom to be adequate, but I think there are
+better programs around.  Minicom is included in the RedHat 4.2 and 5.0
+distributions of Linux.
+
+On the Amiga, I use term.  However, term likes to have about 2M of
+memory and needs OS 2.0.  A more lightweight comms program, which will
+run under OS 1.2 and OS 1.3 as well, is NComm.  This still needs 1M of
+RAM though, so if you have less than this you'll have to search for
+something smaller still.  The smallest terminal programs I could find
+on Aminet that would be useful for file transfer are amigaterm,
+AmigaDisplay, AZComm and Vt100.
+
+If you've not got any terminal software or PC floppy disk drivers, and
+you can only download onto your PC, you've got a problem starting off
+here.  For this reason, Tony Friery has written a set of BASIC
+programs (for AmigaBasic and QBASIC) that you can easily type in and
+then use to transfer a terminal program across.  (You'll need LhA for
+DOS as well, of course.)
+
+2.1.3  How to do serial transfers
+---------------------------------
+
+First, connect the two machines' serial ports using the cable.
+According to the RS232 standard, it should be safe to do this while
+the computers are on, but you might want to turn them off just to be
+absolutely safe.  If your PC already has a mouse plugged in with a
+9-pin plug, chances are that it's plugged into the "COM1" port, and the
+port you'll be using is "COM2".  Otherwise you're probably going to be
+using "COM1".
+
+You need to set up both communications packages with identical
+settings.
+
+Bits:           8
+Parity:         none
+Stop bits:      1
+Duplex:         full
+Handshaking/
+Flow Control:   hardware (also called "RTS/CTS")
+
+(PC) port:      COM1 or COM2 as described above
+(Amiga) device: serial.device, unless using an add-on serial port
+
+Here's how to enter these settings in various programs.
+
+HyperTerminal: When asked to select a connection to make, choose
+	       to create a new connection.
+minicom:       Press Ctrl-A, O, then select "Serial port setup".
+               Most of the settings are under item E.
+NComm:         Select settings on the Com menu.
+term:          Select the menu item Settings > Serial.
+
+You also need to set the connection rate.  This is measured in bits
+per second (bps, sometimes wrongly called baud).  Start by setting
+both sides to 14,400 bps, then type some stuff at either keyboard, and
+make sure it comes out OK on the other computer's screen.  If you
+can't get that far, refer to your documentation or a local comms
+expert.  I don't want to have to help people debug their serial
+connections, as I'm no expert on this.  If this all works OK, next try
+transferring some files across.
+
+On the computer sending files, set the transfer protocol to Zmodem.
+
+minicom:       You have to set this every time you send a file.
+NComm:         Select the menu item Transfer > Protocol > Zmodem.
+term:          Select the menu item Settings > Transfer protocols,
+               select the Default Protocol tab, set Type to "XPR
+               library" and Name to "xprzmodem.library".
+
+Then tell it to upload a file.
+
+minicom:       Press Ctrl-A, then S, select zmodem, then enter the
+	       filename.
+NComm:         Press RightAmiga-U and select the file.
+term:          Press RightAmiga-U and select the file.
+
+The other computer should automatically start to receive the file.  If
+this doesn't work, and you get messages about "CRC errors" which the
+receiving end can't recover from, try a lower transfer rate (on both
+computers).  If it went OK, try progressively raising the transfer
+rate until you *do* get lots of errors, then use the highest rate
+which was OK.  Also make sure that files can be transferred correctly
+in both directions.
+
+Once everything works, save the settings so you can use them every time
+you want to transfer files.
+
+
+2.2  Parallel transfers
+-----------------------
+
+Parallel transfers are quite a bit faster than serial transfers; in
+fact, they're probably faster than using floppy disks.  However, there
+isn't so much choice of software for doing parallel transfers.
+
+2.2.1  Hardware for parallel transfers
+--------------------------------------
+
+You need a 25-pin parallel-to-parallel cable, commonly sold as a
+"Laplink cable", after the popular program Laplink which does just what
+we want to do here but only between PCs.  Availability is much the same
+as for null modem cables (see section 2.1.1).
+
+2.2.2  Software for parallel transfers
+--------------------------------------
+
+PC2Am lets you access a PC's drives as subdirectories of a new Amiga
+drive called PC.  For instance, to read the PC's AUTOEXEC.BAT file,
+run "more pc:c/autoexec.bat" on the Amiga.  You can use your favourite
+Amiga directory utility, or the Shell, or the Workbench, to transfer
+files either way.  This requires AmigaOS 2.0 or later and MS-DOS 6.x
+or Windows 95 on the PC.
+
+2.2.3  How to do parallel transfers
+-----------------------------------
+
+You should start by reading the PC2Am documentation!  However, there are
+some potential problems with PC2Am that aren't mentioned there.
+
+1.  Some Amiga programs (I've seen DOpus mentioned) may have problems
+    copying large files through it.
+
+2.  The TSR version is not as reliable as the ordinary version, and
+    neither will work very well under Windows. If you must run PC2Am
+    under Windows, keep the DOS window active and set its priority
+    high (using the PIF Editor under Windows 3.x or the Properties
+    menu item under Windows 95).
+
+3.  Be sure to quit the Amiga side before the PC side.	If you quit the
+    PC side first, the Amiga side may not be able to clean up properly.
+
+Thanks to Thomas Tavoly for points 2 and 3.
+
+
+3  Networking
+-------------
+
+There are a variety of networking solutions for the Amiga.  I've
+included brief details of these, but for more information, you should
+read the Amiga networking FAQ. You can find the two parts of this in
+the newsgroup comp.sys.amiga.datacomm or on the web as
+<URL:http://www.lib.ox.ac.uk/internet/news/faq/archive/amiga.networking
+-faq.part1.html> and <URL:http://www.lib.ox.ac.uk/internet/news/faq/
+archive/amiga.networking-faq.part2.html> (and probably at many other
+sites, but this is the closest to me!).
+
+You need to have:
+
+* Networking hardware (modem, null-modem, Ethernet or Arcnet)
+* An appropriate device driver
+* A network stack (TCP/IP or IPX/SPX)
+* Some kind of file-sharing / file transfer applications
+  (SMB, FTP, NFS or Netware)
+
+You can't just pick and mix these - the following diagram should show
+how these things fit together:
+
++-------+ +-------+ +-------+  +----------------------+  -------------
+|       | |       | |       |  |                      |
+|  SMB  | |  FTP  | |  NFS  |  | Netware file-sharing |   Application
+|       | |       | |       |  |                      |      Layer
++-------+ +-------+ +-------+  |                      |
++------------------+--------+  +----------------------+  -------------
+|       TCP        |   UDP  |  |                      |     network
++------------------+--------+  |       IPX/SPX        |      stack
+|             IP            |  |                      |    (various
++---------------------------+  +----------------------+     layers)
++----------------+ +----------------+ +---------------+  -------------
+|                | |                | |PPP/SLIP driver|     device
+|     Arcnet     | |     Ethernet   | +---------------+     drivers
+|     driver     | |      driver    | +---------------+   (Data Link
+|                | |                | | serial driver |     Layer)
+|----------------+ +----------------+ +---------------+  -------------
+|     Arcnet     | |     Ethernet   | |    serial     |
+|     adapter    | |     adapter    | |   interface   |
++----------------+ +----------------+ +---------------+    Physical
++----------------+ +----------------+ +-----+ +-------+      Layer
+|     Arcnet     | |     Ethernet   | |modem| | null- |
+|     network    | |     network    | |     | | modem |
++----------------+ +----------------+ +-----+ +-------+  -------------
+
+
+
+3.1  Hardware
+-------------
+
+You can do what most people do, and use a modem with a driver for
+dialup access to the Internet or a private TCP/IP network (I guess).
+
+You can also use a null modem cable to create a private network
+between the two computers directly.
+
+Finally, there are a number of Ethernet and Arcnet cards available,
+and you should be able to fit one to most Amiga models.
+
+
+3.2  Drivers
+------------
+
+Arcnet and Ethernet cards should come with appropriate drivers.
+Serial interfaces should also have serial drivers, but on top of
+those you'll need a PPP or SLIP driver to turn them into network
+interfaces.  Each of the TCP/IP network stacks is supplied with
+a PPP driver included, as far as I know.
+
+Setting up PPP drivers
+----------------------
+
+First, you need to pick IP (Internet Protocol) addresses for the two
+computers.  Unless you already have a LAN set up, in which case you've
+probably gone through this already, I'd suggest using the addresses
+192.168.1.1 on the PC and 192.168.1.2 on the Amiga (which is what I
+use myself).  These are the addresses I've used in the examples below.
+
+You'll also need to decide what data rate to use on the serial line.
+For an unaccelerated A500, 600, 1200 or 2000, I'd suggest 19200 bps;
+with a 68020 or 68030 you should be able to manage 38400 bps; a 68040
+or 68060 can handle 57600 bps.  If you have a buffered serial port,
+you should be able to use 115,200 bps.  Most PCs have buffered serial
+ports and can handle this rate too.
+
+Amiga, ppp.device
+-----------------
+
+This is shareware.  It was written by Holger Kruse and so is
+effectively obsoleted by his later program Miami, which combines a
+network stack and PPP drive for higher performance.
+
+In the configuration file (normally ENVARC:SANA2/ppp0.config) put:
+
+    7WIRE EOFMODE SERBAUD=57600 SERNAME=serial.device IPADDR=192.168.1.2
+
+Adjust the transfer rate, device driver or IP address if you need to!
+
+Amiga, AmiPPP
+-------------
+
+This is shareware.  I couldn't figure out how to use it properly, but
+here's how to do the configuration:
+
+Select New.
+
+Select Config, and set the Phone Number and Modem Init to empty
+strings.  Select IPCP Config and set the Local IP Address to
+192.168.1.2.  Deselect the "Will" options for IP Address and IP
+Addresses and select the "Want" options for them.  Select OK twice.
+
+Select Serial, and change the Device and Baud rate if you need to.
+Then close that window.
+
+Amiga, Miami 3.0
+----------------
+
+Run MiamiInit.  Select a "nullmodem" connection, and turn off the
+"Internet" and "DNS" options.  Then continue to the next stage.
+
+Select the appropriate serial driver.
+
+Select the PPP protocol and a static IP address.  Enter the IP address
+192.168.1.2.  Then continue to the next stage.
+
+Eeek!  MiamiInit crashes at this point on my machine.
+
+Linux, ppp-2.3
+--------------
+
+Run a command something like this (all on one line) as root:
+
+pppd /dev/ttyS0 57600 crtscts lock mru 296 mtu 296 passive
+    192.168.1.1 -detach local netmask 255.255.255.0 &
+
+Adjust the serial device (/dev/ttyS0), rate (57600) and IP address as
+needed.
+
+Windows 95
+----------
+
+You need to have Dial-Up Networking and TCP/IP installed.  You also
+need to download a null modem INF file.
+
+
+3.3  Network stacks
+-------------------
+
+Virtually all Amiga networking software is based on TCP/IP.  These are
+the protocols used by the Internet; they can also be used on a local-
+area network, even a network consisting of just two computers (the
+Amiga and PC in question).
+
+There are two "standard" TCP/IP protocol stacks for the Amiga, called
+AS-225 and AmiTCP.  Some programs only work with one or the other, but
+most work with both.
+
+There is a Novell Netware client available for the Amiga, but it's not
+cheap and isn't fully supported any more.  It's now distributed by
+Interworks, and you can find details on their web pages at
+<URL:http://www.iworks.com/iw/oxxi_t.html>.  I believe it's also
+possible to make Netware servers run an NFS service over TCP/IP, so
+you may also be able to share files with Netware servers that way.
+
+AmiTCP is a commercial product.  You can download a demo from Aminet.
+It is quite tough to set up, but is very powerful and flexible.
+
+AS-225r1 is old, obsolete, and unsupported.
+
+AS-225r2 was released only to developers by Commodore.
+
+I-Net 225 is what AS-225 evolved into after its development was taken
+over by Interworks; it is a commercial product.  It is included in the
+"Amiga Surfer" pack.  See <URL:http://www.iworks.com/iw/inet225.html>
+for details of the product and distributors.
+
+Miami is shareware, and compatible with AmiTCP; you can download the
+evaluation version from Aminet.
+
+TermiteTCP is a commercial product published by Oregon Research.  It
+is compatible with AmiTCP.  I don't know who it's distributed by,
+except in the UK where I think HiSoft is the exclusive distributor.
+See <URL:http://www.hisoft.co.uk/termitetcp/> for details.  It can
+only make dialup connections.
+
+MLink (or Multilink) is shareware.  It is compatible with both AmiTCP
+and AS-225.  It connects to Multilink on a Unix machine (e.g. a PC
+running Linux) via a serial link to make a TCP/IP connection between
+the two.  It cannot use any other networking hardware.
+
+Envoy is a TCP/IP stack, but it provides Amiga-specific servers rather
+than socket-based things.  It is not useful for networking Amigas to
+PCs, as far as I know.
+
+
+3.4  Applications
+-----------------
+
+Samba
+-----
+
+Samba is a free software package which includes a client and servers
+for Microsoft networking (as used by LanManager, Windows for
+Workgroups, Windows 95, and Windows NT).  It runs on top of any Amiga
+TCP/IP stack, so you must have one installed on the Amiga and on the
+PCs you want to connect to.
+
+The Samba program "smbclient" lets you transfer files much like a
+conventional command-line FTP client.  First, you must make sure that
+the appropriate directory on the PC is shared and has appropriate
+permissions associated with it.  Then, on the Amiga, enter the
+command:
+
+smbclient \\<remote-name>\<share-name>
+	  -I <remote-address> -U <username> -W <workgroup>
+
+where:
+
+<remote-name> is the remote machine's machine name within Microsoft
+	      networking (*not* the IP hostname)
+<share-name> is the name under which the drive/directory is shared (c$
+	     will usually be the machine's local drive C: and
+	     <username>$ will usually be your home directory)
+<remote-address> is the IP address or domain name of the remote
+		 machine
+<username> is the name of a user entitled to access this share
+	   (normally, your personal username)
+<workgroup> is the workgroup/domain that <username> belongs to
+
+You will normally be asked for the user's password.  Then you get a
+prompt, just like in ftp.  Enter "help" for a list of commands.
+
+Samba also includes a server you can use to share directories/drives
+on your Amiga with machines using Microsoft networking, but I've never
+done this myself so you'll have to read up on this in the Samba
+documents to find out how to do it.
+
+FTP
+---
+
+There are two possible ways to use FTP for file transfer.
+
+If you have both machines on the Internet, and an account somewhere
+else that you can store files in using FTP, then you can use that as
+temporary storage for the files.
+
+Alternatively, you can set up an FTP server on one of the machines.
+Most Linux distributions should have an FTP server (typically wu-ftpd)
+included.  You can also get wu-ftpd for the Amiga.  It's free
+software.
+
+NFS
+---
+
+It should be possible to access files using Sun's NFS, as there is an
+NFS client included with AmiTCP.  You'll need to have an NFS server
+running on the PC, which is only practical if you have some flavour of
+UNIX on the PC.  I've found this to be unreliable across the
+null-modem connection I have.  I think NFS only works well over
+high-speed networks like Ethernet.
+
+Netware
+-------
+
+I would appreciate some details of how this works.
+
+
+
+4  Hard disks
+-------------
+
+My experience has been with an Amiga hard disk in a PC running Linux,
+temporarily installed while my Amiga was out of action due to hardware
+failures.
+
+Linux 2.x includes an Amiga file-system implementation and can read
+Amiga RDBs to locate the partitions on an Amiga hard disk.  I think
+most Linux distributions will include this as a module.  You can check
+for it by running "modprobe affs" (as root).  If yours doesn't, you'll
+need to compile it.  Set "Amiga FFS filesystem support" to compile as
+a module (in the file-systems section of kernel config).  Then run
+"make dep ; make modules ; make install".  You'll also need to
+re-compile the kernel itself to get Amiga RDB support.
+
+Once you've got this working, you should see a partition listing
+beginning with RDSK when you boot with an Amiga hard drive connected.
+Then you can mount Amiga partitions using the mount command with type
+set to "affs".  Apparently it has a fsck (disk validation) program
+built in, unlike other Linux file-systems.  I have had problems occur
+when I lost power with an FFS file-system mounted.  If you want to be
+completely safe, I suggest you mount FFS file-systems read-only.
+
+
+
+Appendix - Where to find the software
+-------------------------------------
+
+AmigaDisplay	Aminet comm/term/AmigaDisplay.lha
+amigaterm	Aminet comm/term/amigaterm.lha
+AmiPPP		Aminet comm/net/AmiPPP122u.lha
+AmiTCP demo	Aminet comm/tcp/AmiTCP-demo-40.lha
+AZComm		Aminet comm/term/AZComm.lha
+BASIC file transfer  Aminet comm/misc/basic-trans.lha
+LhA for DOS	ftp://ftp.intel.com/pub/IAL/tools_utils_demos/lha212.exe
+MessyDOS	Aminet misc/emu/msh-156.lha
+Miami		Aminet comm/tcp/Miami30main.lha
+		Aminet comm/tcp/Miami30-000.lha (for 68000/010 CPU)
+		Aminet comm/tcp/Miami30-020.lha (for 68020+ CPU)
+		Aminet comm/tcp/Miami30GTL.lha (if you don't like MUI)
+		Aminet comm/tcp/Miami30MUI.lha (if you do like MUI)
+MultiDOS	Aminet misc/emu/multidos1_12.lzh
+MultiFileSystem	Aminet disk/misc/mfs21.lha
+NComm		Aminet comm/term/ncomm30.lha
+null modem INF file  http://www.vt.edu:10021/K/kewells/net/scripts.html
+	        (read this and download the appropriate version)
+PC2Am		Aminet comm/misc/PC2Am308.lha
+ppp.device	Aminet comm/net/PPP1_45.lha
+ProComm		ftp://ftp.pc.ibm.com//pub/pccbbs/dos_comm/prcm243.zip
+		ftp://ftp.pc.ibm.com//pub/pccbbs/dos_comm/prcm243d.zip
+		ftp://ftp.pc.ibm.com//pub/pccbbs/dos_comm/prcm243u.zip
+Samba		Aminet comm/net/samba-1.9.16p9.lha.
+term		Aminet comm/term/term-roadmap.txt
+		(read this to find out which files you need)
+Vt100		Aminet comm/term/Vt100.lha
+wu-ftpd		Aminet comm/tcp/wu-ftpd-37.21.lha

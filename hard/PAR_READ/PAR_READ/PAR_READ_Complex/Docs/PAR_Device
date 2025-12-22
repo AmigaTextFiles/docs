@@ -1,0 +1,175 @@
+============================================================================
+
+                 Some Information About The PAR: ~VOLUME~.
+                 -----------------------------------------
+
+This is from experimentation.
+(NOTE, these notes could be wrong!!!)
+
+A) In READ mode on the 25 way ~D~ type socket.
+(Note - means active low.)
+
+  1) Pin 1......................  -STROBE line, fixed OUTPUT.
+  2) Pin 2 to pin 9.............  Data lines INPUT ONLY, set to high.
+  3) Pin 10.....................  -ACK line, fixed INPUT.
+  4) Pin 11.....................  BUSY line, fixed OUTPUT, set to low.
+  5) Pin 12.....................  POUT line, fixed OUTPUT, set to low.
+  6) Pin 13.....................  (-)SEL line, fixed OUTPUT, set to high.
+  7) Pin 14.....................  NOT USED, (+5V on classic AMIGAs).
+  8) Pin 15.....................  NOT USED, (NC on classic AMIGAs).
+  9) Pin 16.....................  -RESET line, follows the standard reset.
+ 10) Pin 17.....................  NOT USED, (Ground on classic AMIGAs).
+ 11) Pin 20 to pin 25...........  Ground, (also pins 18 and 19).
+
+Information only. EVERY time the parallel port is accessed the -STROBE
+line is triggered for about 1.5uS. This is NOT required for PAR: in
+BINARY READ mode.
+
+The -ACK line MUST be toggled to get each ~byte~ of data into a user
+buffer. This line does NOT need to be sync'd to the -STROBE line to work,
+and can be a free running, external, clock pulse.
+
+Pins 11, 12 and 13 are NOT needed for BINARY input operation. ONLY pins
+2 to 10 inclusive are required, that is the eight data lines, pins 2 to
+9 inclusive, and the -ACK line pin 10.
+
+NONE of the individual pins can be altered on the fly from INPUT to OUTPUT
+and vice versa when using PAR: in VOLUME mode.
+
+============================================================================
+
+NONE of the ~device~ offsets can be changed when used in ~volume~ mode.
+
+These DEVICE offsets are as follows:-
+(I'll ignore the standard structures of, MsgNode, IOExt, IOStdExt and the
+usual CMD_?? extensions and go straight to PAR: extended structures.)
+
+OFFSET.                         NAME.                      CONTENTS.
+48                           PWBufLen              Length of output buffer.
+52                           ParStatus             Status of the Device.
+53                           ParFlags              Parallel flags.
+54-61                        PTermArray            Termination Mask.
+
+The status byte, OFFSET 52, contains the following status bits.
+BIT.                            NAME.                    MEANING, IF SET.
+0                               PSEL               The Printer is selected.
+1                             PAPEROUT             No more paper.
+2                              PBUSY               Printer busy.
+3                              RWDIR               Data Direction, 0=READ.
+                                                                   1=WRITE.
+
+The following bits represent the parallel flags, OFFSET 53.
+BIT.                            NAME.                    MEANING, IF SET.
+1                              EOFMODE             EOF mode enabled.
+5                              SHARED              Access possible for
+                                                   other tasks.
+
+============================================================================
+
+B) In WRITE mode on the 25 way ~D~ type socket.
+
+  1) Pin 1......................  -STROBE line, fixed OUTPUT.
+  2) Pin 2 to pin 9.............  Data lines OUTPUT ONLY, set to low.
+  3) Pin 10.....................  -ACK line, fixed INPUT.
+  4) Pin 11.....................  BUSY line, fixed INPUT, set to high.
+  5) Pin 12.....................  POUT line, fixed INPUT, set to high.
+  6) Pin 13.....................  (-)SEL line, fixed INPUT, set to high.
+  7) Pin 14.....................  NOT USED, (+5V on classic AMIGAs).
+  8) Pin 15.....................  NOT USED, (NC on classic AMIGAs).
+  9) Pin 16.....................  -RESET line, follows the standard reset.
+ 10) Pin 17.....................  NOT USED, (Ground on classic AMIGAs).
+ 11) Pin 20 to pin 25...........  Ground, (also pins 18 and 19).
+
+(Ensure a printer is attached to the parallel port.)
+To see PAR: being used as a ~volume~ in WRITE mode open up a CLI and
+type the following:-
+
+Echo > PAR: "This is a test line sending plain text to a PRINTER."<ENTER>
+
+This will send the text line to the parallel port and a random printer
+should print it as GENERIC text.
+
+----------------------------------------------------------------------------
+
+Although very minor, there is a flaw when using PAR: in VOLUME mode READ
+or WRITE format. I'll let you find out what it is... :)
+It does NOT affect the overall usage of PAR: as a VOLUME however, so I will
+not pursue it any further.
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Public Domain and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200 in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. All memory expansions were ~DISABLED~ using
+    the NoFastMem program from the System drawer. Also tested on two A600s
+    with various memory configurations, a 1MB A500+ and an old style A500
+    with a 0.5MB memory expansion at $C00000 using the A500+ emulator and
+    Workbench 2.04, and LBNL an A600 emulating KS3.0x and running
+    Workbench 3.0x. Also tested on an A4000 with various upgrades and
+    OS3.9x.
+
+    All test conditions were/are running STANDARD KS2.0x to 3.9x, and using
+    standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before disconnecting or connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU,
+   70 King George Road,
+   Loughborough,
+   Leicestershire,
+   LE11 2PA,
+   England.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~hard/hack~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

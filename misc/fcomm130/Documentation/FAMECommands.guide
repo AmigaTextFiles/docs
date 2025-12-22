@@ -1,0 +1,8009 @@
+@DATABASE FAME-DoorCommands
+@AUTHOR SieGeL/tRSi (siegel@trsi.de)
+@(c) "Copyright 1995-97 (tRSi-iNNOVATiONs)"
+@$VER: FAME-DoorCommands 1.30 (01-02-98)
+@WORDWRAP
+@INDEX CONTENTS
+
+@REM==============================================================================
+
+@node MAIN "FAME Door-Command Overview"
+
+          @{b}.---------------------------------------------------------.
+          |   _ _________  _ _________  _ _______________  _ _______|_
+          | __\\\\\\_      /__\\\\\\_      /__\\\\\\_______      /__\\\\\\_______/
+          |/     /_____//   __/     //     /     /     //     __/___|
+          /     __/    /    \\      //     /     /     //    _/     /|
+         /_____/      /_____/_____//_____/_____/_____//___________/ |
+          |                                                         |sYz
+          `--------------[@{ub}@{i} - bULLETIN bOARD sYSTEMS - @{ui}@{b}]-------------'@{ub}
+
+                       @{b}@{fg highlight}F@{ub}@{fg text}_inal  @{b}@{fg highlight}A@{ub}@{fg text}_miga  @{b}@{fg highlight}M@{ub}@{fg text}_ailbox  @{b}@{fg highlight}E@{ub}@{fg text}_ngine
+                      @{b}~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~@{ub}
+
+                           @{b}FAME DOORCOMMAND OVERVIEW@{ub}
+
+                             @{"      Contents      " link "Contents"}
+                             @{"  Pre-Release Info  " link "PreRelease"}
+                             @{"  List of Commands  " LINK "DoorList"}
+                             @{" Back to Main Index " LINK FAME:Documentation/FAMEIndex.guide/Main}
+
+                  @{i}FAME is (c) 1993-97 by David "Strider" Wettig@{ui}
+
+                       All @{AMIGAGUIDE} documentations by:
+
+                             David '@{i}Strider@{ui}' Wettig
+                             Sascha '@{i}SieGeL@{ui}' Pfalz
+                            Oliver '@{i}Bloodrock@{ui}' Lange
+                             Kai '@{i}big-rat@{ui}' Hoepner
+
+@endnode
+
+@REM==============================================================================
+
+@node "PreRelease" "Release Informations"
+
+                           @{u}@{b}Release Informations@{ub}@{uu}
+
+FAME is a brand new MailBox program which seems to be becomming very popular
+and FAMEous as we can see from the very positive reactions we receive daily.
+
+We already have many bug-reports and suggestions and we believe we will
+get tonnes more from the very first release onwards.
+
+We work hard on fixing all reported bugs and realize suggestions as best we
+can, but it's impossible to do everything at the same time.
+
+The same with the documents.
+The documents are not complete at all... we have to enhance and enlarge
+them as we do with the FAME executables.
+
+You have bought FAME at an early stage and because of this not everything
+written here will be 100% correct, but we are working on it.
+
+
+@{u}@{b}Known not described parts in FAMECommands.guide@{uu}@{ub}
+
+ - Some structure definitions used in this document are currently missing.
+
+@endnode
+
+@REM==============================================================================
+
+@node "Contents" "FAMEDoorCommands.guide Contents"
+
+
+                         @{b}FAME DOORCOMMAND OVERVIEW@{ub}
+                        @{b}~~~~~~~~~~~~~~~~~~~~~~~~~~~@{ub}
+
+                    @{"  List of all available Commands  " LINK DOORLIST}
+                    @{" General Infos about DoorCommands " LINK GENERAL}
+                    @{"     DoorPort-Message Struct      " LINK STRUCT}
+                    @{"Additional Informations for Coders" LINK MOREINFO}
+                    @{"    How to contact the Authors    " LINK AUTHOR}
+
+   This Document describes all freely supported Door-Commands for FAME,
+       currently there exists 402 Commands which are described here.
+
+     This Database and it's functions are related to the include files
+     and developerfiles for FAME-Programming V1.5+ and MainPart V1.30+
+
+  Also an enhanced Version of the Door-Commands is available for Developers.
+
+@endnode
+
+@REM==============================================================================
+
+@node GENERAL "General Informations about how to use this document"
+
+                         @{u}General use of commands:@{uu}
+
+ - A door normally has to give values (numbers like confnumbers/usernumbers,
+   flags etc..) to Data1 in the FAMEDoorMsg-Struct before transfering this
+   to the DoorPort. If more values are needed the next Data will be used:
+   Data2 and then Data3. Values requested by the Door will normally be found
+   in the Data2 Field, only if a value needs a ULONG Data3 must be used.
+
+ - The door has to check the ReturnCode of the FAMEDoorMsg-Struct !! See
+   'FAMEGlobalBBSStructs.h' for definitions of the Returncodes.
+
+ - Note that all structure elements of the struct FAMEDoorMsg are beginning
+   with fdom_ ( i.e. MyFAMEDoorMsg->fdom_Data1 ) !
+
+ - During the support of 64-Bit integers, make sure that you always use the
+   according functions for calculating such integers, or you may delete 
+   byte values because of not supporting the Double ULONG's ! See @{"64-Bit FAQ" LINK 64BIT}
+   for more informations.
+
+
+                @{u}Keyword-Descriptions of FAME-DoorCommands:@{uu}
+
+All Commands are sorted by some Keywords, which describes the specification
+of the Command. This Keywords have the following meaning :
+
+KEYWORD @{b}|@{ub} SPECIFICATION      @{b}|@{ub} DESCRIPTION
+@{b}--------^--------------------^-----------------------------------------------@{ub}
+MC  <->   Must Commands        Every Door must call these Commands once!
+NR  <->   Normal Commands      Most String operations (Retrieve/Send datas)
+NC  <->   Normal Commands      Most String operations (Change datas)
+CF  <->   Call functions       BBS Functions like Editor,Comp,Modem or Line-
+                               length-selectors etc.
+SR  <->   System Commands      (Retrieve/Send datas)
+SC  <->   System Commands      (Change datas)
+AR  <->   Additional Commands  (Retrieve/Send datas)
+AC  <->   Additional Commands  (Change datas)
+RD  <->   Reserved!            Only use them if you know what you are doing!!
+
+
+                              @{u}Define ranges:@{uu}
+
+      MC      1-     9                NR     10-   199
+      NC    200-   399                CF    400-   599
+      SR    600-   699                SC    700-   799
+      AR    800-   899                AC    900-   999
+
+      RD - 1000-  9999  - means not secret but reserved.
+      RD +10000- 99999  + means secret and can't be used in the normal way.
+                          (Developers only !!!)
+@ENDNODE
+
+@REM==============================================================================
+
+@NODE STRUCT "Message-Struct to comunicate with FAME"
+
+               @{b}Messagestruct for FIM-Doors (FAME):@{ub}
+
+To communicate with the DoorPort of FAME, you @{u}*MUST*@{uu} (!) open FAME.library,
+get memory for the structure via @{fg shine}FAMEAllocObject(FOBJ_FAMEDoorMsg)@{fg text} and after
+usage, free the memory with @{fg shine}FAMEFreeObject(FOBJ_FAMEDoorMsg)@{fg text}. If you allocate
+the memory for this structure by yourself, your programs may crash in
+future versions of FAME during the enhancement of this structure!! This is
+TOTALLY different to other BBS-Systems, but it makes it possible to easily
+upgrade the BBS without rewriting all doors. More information about the
+FAME.library functions can be found in the manual @{b}FAME.GUIDE@{ub}.
+
+FAMEDoorMessage struct as defined for FAME V0.366ß and higher:
+
+struct  FAMEDoorMsg {
+struct  Message	fdom_Msg;           /* MessagePort Structure (System)    */
+char    fdom_IOString[202];         /* In/OutPut String                  */
+STRPTR  fdom_StringPtr;             /* String pointer                    */
+long    fdom_Command,               /* Command Node<->Door               */
+        fdom_Data1,                 /* Data 1 to transfer data           */
+        fdom_Data2;                 /* Data 2 to transfer data           */
+ULONG   fdom_Data3;                 /* Data 3 to transfer data           */
+long    fdom_ReturnCode,            /* Returncode                        */
+        fdom_Node;                  /* NodeNumber                        */
+ULONG   fdom_InternalBits;          /* FAME internal data bit flags      */
+APTR    fdom_StructDummy1,          /* APTR 1 for SystemStructs          */
+        fdom_StructDummy2,          /* APTR 2 for SystemStructs          */
+        fdom_StructDummy3;          /* APTR 3 for SystemStructs          */
+STRPTR  fdom_StringPtr2;            /* A second string pointer           */
+ULONG   fdom_Data4,                 /* Data 4 to transfer data (future)  */
+        fdom_BitFlags;              /* A bit mask to give the door infos */
+struct  MsgPort *fdom_ExternalPort; /* External AbortIO port             */
+};
+
+For examples how to use this struct and communicate with FAME, take a look
+at the Door-Programmer documentation and the included examples from the
+developers disk or check out the examples shipped with the Userdevelopment
+archive.
+
+
+                    @{u}Returncodes for the DoorMsgStruct:@{uu}
+
+ReturnCode =  5     Command aborted
+ReturnCode =  4     Command not implemented yet
+ReturnCode =  3     Command denied
+ReturnCode =  2     Command doesn't exists
+ReturnCode =  1     Command not successfully executed
+ReturnCode =  0     Command successfully executed
+ReturnCode = -1     Abort of the Door requested   -> @{b}Door must end now!@{ub}
+ReturnCode = -2     Carrier lost                  -> @{b}Door must end now!@{ub}
+ReturnCode = -3     Unknown error                 -> @{b}Door must end now!@{ub}
+
+On negative Returncodes the Door @{u}*MUST*@{uu} close @{u}*IMMEDIATELY*@{uu} with the last
+command being: @{"MC_ShutDown" LINK MC_ShutDown} !!!
+
+If you are using the doorstartup supplied with the FAMEDevelopment archive, 
+those errors are automatically checked by the Startup and also the appropiate
+actions will be taken if any error occures, so it's strongly recommended to
+use only our supplied Startup header!
+
+@endnode
+
+@node MOREINFO "Additional Informations for DoorProgrammers"
+
+                     @{u}Informations for DoorProgrammers@{uu}
+
+We have changed the complete layout of the DoorStartup found in FAME 
+Developer archive V1.0. Please don't use any of the older startups, as 
+we have now defined a so-called standard for doors, and the DoorStartup
+will be moved in the near future to FAME.library, so please make your own
+startups as compatible as possible to our supplied version.
+
+As special addition we have added the possibility to let the doorstartup
+react on different signals, not only the Doorport signal. This is possible
+by setting the define @{fg shine}FIM_USERSIGMODE@{fg text} to 1 . This is also the default 
+setting, and this require a user function called UserSigHandle(); which is
+called everytime a user defined signal was recieved by the Startup Code. If
+you don't require additional signal checkings, set FIM_USERSIGMODE to 0 or
+uncomment it out, so the startup doesn't require anymore the UserSigHandle()
+function.
+
+If you wish to use our startup, you should call it this way:
+
+@{b}1.@{ub} Initialize your application (get memory, check for nodenumber via the 
+   command line) and make any other allocations you require. Also you have
+   to supply a function called 'ShutDown(long error)' to allow the startup
+   code to call it when any error occures. You should free all your 
+   resources inside this function and maybe also exit your door, but this
+   is not a must. But be warned: 
+
+@{fg shine}   IF OUR STARTUP CALLS YOUR SHUTDOWN() FUNCTION, THE DOORPORT AND THE
+   WHOLE COMMUNICATION TO FAME IS NO LONGER VALID!!! SO DON´T USE ANY
+   OF THE SUPPORT FUNCTIONS OUT OF THE SHUTDOWN() FUNCTION OR YOUR SYSTEM
+   MAY CRASH!@{fg text}
+
+@{b}2.@{ub} Fill out the global Stringpointer 'FAMEDoorPort' with the supplied node
+   number, i.e. @{fg shine}SPrintf(FAMEDoorPort,"FAMEDoorPort%ld",node);@{fg text} and call
+   the FIMStart() function. This will try to lock the message port, 
+   allocates global memory pointers and register your door to FAME.
+   Of course you have to check out the returncode of FIMStart() to indicate
+   any error occured during initialization (See DoorStartup.c for further
+   informations). You may also give FIMStart() some parameters to change it's
+   behaviour, so it's for example possible to pass the FIMF_NOCHECK bitflag
+   to FIMStart() to avoid the auto errorhandling of the DoorStartup. Check
+   out the Example of the Doorstartup for further details.
+
+@{b}3.@{ub} Now the communication to FAME is established, you may now use the supplied
+   support functions to communicate with FAME.
+
+@{b}4.@{ub} When you have finished your door, call FIMEnd() to end the communication
+   to FAME. This function will call your supplied ShutDown() function after
+   removing all allocated doorport stuff, so DON´T USE any of the doorport
+   commands inside the ShutDown() function!
+
+
+That's a short overview how to handle our new DoorStartup, please check also
+the supplied example code for detailed informations about writing doors for
+FAME!
+
+@endnode
+
+@REM==============================================================================
+
+@node DoorList "List of all Commands described in this document"
+
+         @{b}Please choose which Type of Command-Overview you wish :@{ub}
+
+            @{"MC - MUST COMMANDS  " LINK LIST_MC} - Commands you must start once
+            @{"NR - NORMAL COMMANDS" LINK LIST_NR} - Normal commands (Retrieve)
+            @{"NC - NORMAL COMMANDS" LINK LIST_NC} - Normal commands (Change)
+            @{"CF - CALL FUNCTION  " LINK LIST_CF} - Call commands (Editors, etc.)
+            @{"SR - SYSTEM COMMANDS" LINK LIST_SR} - System commands (Retrieve)
+            @{"SC - SYSTEM COMMANDS" LINK LIST_SC} - System commands (Change)
+            @{"AR - ADD. COMMANDS  " LINK LIST_AR} - Additional commands (Retrieve)
+            @{"AC - ADD. COMMANDS  " LINK LIST_AC} - Additional commands (Change)
+            @{"RD - RESERVED COMMS " LINK LIST_RD} - Reserved Commands
+@endnode
+
+@REM ======================================================================
+@REM =                           MC_COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_MC "Must Commands - EVERY DOOR HAS TO USE THEM ONCE !"
+
+- These commands are used to register your Doors, you have to call them
+  at least once when starting/exiting your Door!
+
+	@{"MC_DoorStart         1" LINK MC_DoorStart}		@{"MC_ShutDown          2" LINK MC_ShutDown}
+	@{"MC_ShutDownLastWords 3" LINK MC_ShutDownLastWords}
+
+                            -> 3 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           NR COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_NR "Normal Commands - Retrieve/Send datas"
+
+- These commands are used for most String-Operations, but are Read-only!
+
+	@{"NR_SendStr             10" LINK NR_SendStr}		@{"NR_SendStrCRLF        11" LINK NR_SendStrCRLF}
+	@{"NR_SendStrCon          12" LINK NR_SendStrCon}		@{"NR_SendStrSer         13" LINK NR_SendStrSer}
+	@{"NR_PromptChars         14" LINK NR_PromptChars}		@{"NR_HotKey             15" LINK NR_HotKey}
+	@{"NR_BBSName             16" LINK NR_BBSName}		@{"NR_SysOp              17" LINK NR_SysOp}
+	@{"NR_SetFlagFile         18" LINK NR_SetFlagFile}		@{"NR_GetFlagFile        19" LINK NR_GetFlagFile}
+	@{"NR_ActiveNode          20" LINK NR_ActiveNode}		@{"NR_ActiveNodes        21" LINK NR_ActiveNodes}
+	@{"NR_TimeOut             22" LINK NR_TimeOut}		@{"NR_MainLine           23" LINK NR_MainLine}
+	@{"NR_NodeID              24" LINK NR_NodeID}		@{"NR_MinUpCPS           25" LINK NR_MinUpCPS}
+	@{"NR_GetConfNum          26" LINK NR_GetConfNum}		@{"NR_SearchAccount      27" LINK NR_SearchAccount}
+	@{"NR_StampTime           28" LINK NR_StampTime}		@{"NR_CurrTime           29" LINK NR_CurrTime}
+	@{"NR_ThisConfAccess      30" LINK NR_ThisConfAccess}		@{"NR_Name               31" LINK NR_Name}
+	@{"NR_Password            32" LINK NR_Password}		@{"NR_Location           33" LINK NR_Location}
+	@{"NR_From                34" LINK NR_From}		@{"NR_PhoneNumber        35" LINK NR_PhoneNumber}
+	@{"NR_SlotNumber          36" LINK NR_SlotNumber}		@{"NR_AccessLevel        37" LINK NR_AccessLevel}
+	@{"NR_RatioType           38" LINK NR_RatioType}		@{"NR_Ratio              39" LINK NR_Ratio}
+	@{"NR_CompType            40" LINK NR_CompType}		@{"NR_ModemType          41" LINK NR_ModemType}
+	@{"NR_MessagePosted       42" LINK NR_MessagePosted}		@{"NR_MessageRead        43" LINK NR_MessageRead}
+	@{"NR_NoCalls             44" LINK NR_NoCalls}		@{"NR_TimeLastOn         45" LINK NR_TimeLastOn}
+	@{"NR_TimeUsed            46" LINK NR_TimeUsed}		@{"NR_TimeLimit          47" LINK NR_TimeLimit}
+	@{"NR_TimeRemain          48" LINK NR_TimeRemain}		@{"NR_StampLastOn        49" LINK NR_StampLastOn}
+	@{"NR_ConfAccess          50" LINK NR_ConfAccess}		@{"NR_Uploads            51" LINK NR_Uploads}
+	@{"NR_Downloads           52" LINK NR_Downloads}		@{"NR_BytesUpload        53" LINK NR_BytesUpload}
+	@{"NR_BytesDownload       54" LINK NR_BytesDownload}		@{"NR_DailyByteLimit     55" LINK NR_DailyByteLimit}
+	@{"NR_DailyFileLimit      56" LINK NR_DailyFileLimit}		@{"NR_DailyByteDld       57" LINK NR_DailyByteDld}
+	@{"NR_DailyFileDld        58" LINK NR_DailyFileDld}		@{"NR_DailyByteBonus     59" LINK NR_DailyByteBonus}
+	@{"NR_DailyFileBonus      60" LINK NR_DailyFileBonus}		@{"NR_Expert             61" LINK NR_Expert}
+	@{"NR_NumLines            62" LINK NR_NumLines}		@{"NR_Birthday           63" LINK NR_Birthday}
+	@{"NR_MenuPrompt          64" LINK NR_MenuPrompt}		@{"NR_EditorType         65" LINK NR_EditorType}
+	@{"NR_XferProt            66" LINK NR_XferProt}		@{"NR_LostCarrier        67" LINK NR_LostCarrier}
+	@{"NR_Zoom                68" LINK NR_Zoom}		@{"NR_SysLanguage        69" LINK NR_SysLanguage}
+	@{"NR_Language            70" LINK NR_Language}		@{"NR_LineCount          71" LINK NR_LineCount}
+	@{"NR_AnsiColor           72" LINK NR_AnsiColor}		@{"NR_SentBy             73" LINK NR_SentBy}
+	@{"NR_AutoFileID          74" LINK NR_AutoFileID}		@{"NR_NewMessage         75" LINK NR_NewMessage}
+	@{"NR_Goodbye             76" LINK NR_Goodbye}		@{"NR_ViewFlag           77" LINK NR_ViewFlag}
+	@{"NR_ZippyFlag           78" LINK NR_ZippyFlag}		@{"NR_ReplyMSGFlag       79" LINK NR_ReplyMSGFlag}
+	@{"NR_NukedFiles          80" LINK NR_NukedFiles}		@{"NR_NukedBytes         81" LINK NR_NukedBytes}
+	@{"NR_MinDownCPS          82" LINK NR_MinDownCPS}		@{"NR_GetEditString      83" LINK NR_GetEditString}
+	@{"NR_ResetFlagFile       84" LINK NR_ResetFlagFile}		@{"NR_DeleteFlagFile     85" LINK NR_DeleteFlagFile}
+	@{"NR_DelFlagFileNum      86" LINK NR_DelFlagFileNum}		@{"NR_GetFullArg         87" LINK NR_GetFullArg}
+	@{"NR_GetArgument1        88" LINK NR_GetArgument1}		@{"NR_GetArgument2       89" LINK NR_GetArgument2}
+	@{"NR_GetArgument3        90" LINK NR_GetArgument3}		@{"NR_GetArgument4       91" LINK NR_GetArgument4}
+	@{"NR_WaitChar            92" LINK NR_WaitChar}		@{"NR_GetConFontSize     93" LINK NR_GetConFontSize}
+	@{"NR_ResetANSI           94" LINK NR_ResetANSI}		@{"NR_ResetANSIOnExit    95" LINK NR_ResetANSIOnExit}
+	@{"NR_CONNumLines         96" LINK NR_CONNumLines}		@{"NR_NumberOfChats      97" LINK NR_NumberOfChats}
+	@{"NR_NumberOfPages       98" LINK NR_NumberOfPages}		@{"NR_NumberOfDayPages   99" LINK NR_NumberOfDayPages}
+	@{"NR_NumOfPagesAllowed  100" LINK NR_NumOfPagesAllowed}		@{"NR_NumberOfDayRelogs 101" LINK NR_NumberOfDayRelogs}
+	@{"NR_NumOfRelogsAllowed 102" LINK NR_NumOfRelogsAllowed}		@{"NR_DoorHelp          103" LINK NR_DoorHelp}
+	@{"NR_SetDoorReturnCode  104" LINK NR_SetDoorReturnCode}		@{"NR_GetDoorReturnCode 105" LINK NR_GetDoorReturnCode}
+	@{"NR_ClrFileFlgLst      106" LINK NR_ClrFileFlgLst}		@{"NR_ClrFileFlgLsts    107" LINK NR_ClrFileFlgLsts}
+	@{"NR_GetRelativeStatus  108" LINK NR_GetRelativeStatus}		@{"NR_AbsToRel          109" LINK NR_AbsToRel}
+	@{"NR_RelToAbs           110" LINK NR_RelToAbs}		@{"NR_GetAbortIOPort    111" LINK NR_GetAbortIOPort}
+	@{"NR_GetDoorDatas       112" LINK NR_GetDoorDatas}		@{"NR_GetDoorCallName   113" LINK NR_GetDoorCallName}
+	@{"NR_GetUserLevelFlags  114" LINK NR_GetUserLevelFlags}
+
+                              -> 105 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           NC COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_NC "Normal Commands - Change datas"
+
+- These commands are used for most string-operations, but are write-only,
+  meaning that you can only change datas with them!
+
+	@{"NC_TimeOut           200" LINK NC_TimeOut}		@{"NC_Name             201" LINK NC_Name}
+	@{"NC_Password          202" LINK NC_Password}		@{"NC_Location         203" LINK NC_Location}
+	@{"NC_From              204" LINK NC_From}		@{"NC_PhoneNumber      205" LINK NC_PhoneNumber}
+	@{"NC_AccessLevel       206" LINK NC_AccessLevel}		@{"NC_RatioType        207" LINK NC_RatioType}
+	@{"NC_Ratio             208" LINK NC_Ratio}		@{"NC_CompType         209" LINK NC_CompType}
+	@{"NC_ModemType         210" LINK NC_ModemType}		@{"NC_MessagePosted    211" LINK NC_MessagePosted}
+	@{"NC_MessageRead       212" LINK NC_MessageRead}		@{"NC_NoCalls          213" LINK NC_NoCalls}
+	@{"NC_TimeLastOn        214" LINK NC_TimeLastOn}		@{"NC_TimeUsed         215" LINK NC_TimeUsed}
+	@{"NC_TimeLimit         216" LINK NC_TimeLimit}		@{"NC_TimeRemain       217" LINK NC_TimeRemain}
+	@{"NC_Uploads           218" LINK NC_Uploads}		@{"NC_Downloads        219" LINK NC_Downloads}
+	@{"NC_BytesUpload       220" LINK NC_BytesUpload}		@{"NC_BytesDownload    221" LINK NC_BytesDownload}
+	@{"NC_DailyByteLimit    222" LINK NC_DailyByteLimit}		@{"NC_DailyFileLimit   223" LINK NC_DailyFileLimit}
+	@{"NC_DailyByteDld      224" LINK NC_DailyByteDld}		@{"NC_DailyFileDld     225" LINK NC_DailyFileDld}
+	@{"NC_DailyByteBonus    226" LINK NC_DailyByteBonus}		@{"NC_DailyFileBonus   227" LINK NC_DailyFileBonus}
+	@{"NC_Expert            228" LINK NC_Expert}		@{"NC_NumLines         229" LINK NC_NumLines}
+	@{"NC_Birthday          230" LINK NC_Birthday}		@{"NC_MenuPrompt       231" LINK NC_MenuPrompt}
+	@{"NC_EditorType        232" LINK NC_EditorType}		@{"NC_XferProt         233" LINK NC_XferProt}
+	@{"NC_Zoom              234" LINK NC_Zoom}		@{"NC_SysLanguage      235" LINK NC_SysLanguage}
+	@{"NC_Language          236" LINK NC_Language}		@{"NC_LineCount        237" LINK NC_LineCount}
+	@{"NC_AnsiColor         238" LINK NC_AnsiColor}		@{"NC_SentBy           239" LINK NC_SentBy}
+	@{"NC_AutoFileID        240" LINK NC_AutoFileID}		@{"NC_NewMessage       241" LINK NC_NewMessage}
+	@{"NC_Goodbye           242" LINK NC_Goodbye}		@{"NC_ViewFlag         243" LINK NC_ViewFlag}
+	@{"NC_ZippyFlag         244" LINK NC_ZippyFlag}		@{"NC_ReplyMSGFlag     245" LINK NC_ReplyMSGFlag}
+	@{"NC_NukedFiles        246" LINK NC_NukedFiles}		@{"NC_NukedBytes       247" LINK NC_NukedBytes}
+	@{"NC_MinUpCPS          248" LINK NC_MinUpCPS}		@{"NC_MinDownCPS       249" LINK NC_MinDownCPS}
+	@{"NC_LostCarrier       250" LINK NC_LostCarrier}		@{"NC_NumberOfChats    251" LINK NC_NumberOfChats}
+	@{"NC_NumberOfPages     252" LINK NC_NumberOfPages}		@{"NC_NumberOfDayPages 253" LINK NC_NumberOfDayPages}
+	@{"NC_NumberOfDayRelogs 254" LINK NC_NumberOfDayRelogs}		@{"NC_Nuked            255" LINK NC_Nuked}
+	@{"NC_NukedAfter        256" LINK NC_NukedAfter}
+
+
+                               -> 57 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           CF COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_CF "Call Commands - Used for editors, computertypes etc."
+
+- This commands are used to write your own editors, Modem- or Computer-
+  selectors etc.
+
+	@{"CF_ShowText        400" LINK CF_ShowText}		@{"CF_ShowTextSuffix  401" LINK CF_ShowTextSuffix}
+	@{"CF_ShowTextSufLvl  402" LINK CF_ShowTextSufLvl}		@{"CF_ExecuteCommand  403" LINK CF_ExecuteCommand}
+	@{"CF_InternalCmd     404" LINK CF_InternalCmd}		@{"CF_ZModemSend      405" LINK CF_ZModemSend}
+	@{"CF_ZModemReceive   406" LINK CF_ZModemReceive}		@{"CF_ZModemSendLst   407" LINK CF_ZModemSendLst}
+	@{"CF_ReturnCommand   408" LINK CF_ReturnCommand}		@{"CF_SetFlagFile     409" LINK CF_SetFlagFile}		
+	@{"CF_GetFlagFile     410" LINK CF_GetFlagFile}		@{"CF_CallersLog      411" LINK CF_CallersLog}		
+	@{"CF_UDLog           412" LINK CF_UDLog}		@{"CF_DoorLog         413" LINK CF_DoorLog}		
+	@{"CF_CompType        414" LINK CF_CompType}		@{"CF_ModemType       415" LINK CF_ModemType}
+	@{"----------------------" LINK NOT_USED}		@{"CF_Language        417" LINK CF_Language}
+	@{"CF_NumLines        418" LINK CF_NumLines}		@{"CF_ShTxtSufLvlCyc  419" LINK CF_ShTxtSufLvlCyc}
+	@{"CF_ShowTextSetable 420" LINK CF_ShowTextSetable}		@{"CF_InternReturnCmd 421" LINK CF_InternReturnCmd}
+	@{"CF_DoCallersLog    422" LINK CF_DoCallersLog}		@{"CF_SaveWherePhase  423" LINK CF_SaveWherePhase}
+	@{"CF_RestWherePhase  424" LINK CF_RestWherePhase}		@{"CF_FileCopyMove    425" LINK CF_FileCopyMove}	
+	@{"CF_SysOpChat       426" LINK CF_SysOpChat}		@{"CF_SpecialCmd      427" LINK CF_SpecialCmd}
+	@{"CF_GetUserConfXS   428" LINK CF_GetUserConfXS}
+
+                           -> 29 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           SR COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_SR "System Commands - Retrieve/Send datas"
+
+- This commands are used to read in BBS-specific Information. All commands
+  listed here are READ-ONLY!
+	
+	@{"SR_ConfName        600" LINK SR_ConfName}		@{"SR_ConfLocation     601" LINK SR_ConfLocation}
+	@{"SR_ConfNum         602" LINK SR_ConfNum}		@{"SR_BBSLocation      603" LINK SR_BBSLocation}
+	@{"SR_Status          604" LINK SR_Status}		@{"SR_ScreenAdress     605" LINK SR_ScreenAdress}
+	@{"SR_TaskPri         606" LINK SR_TaskPri}		@{"SR_RawScreenAdress  607" LINK SR_RawScreenAdress}
+	@{"SR_FAMEVersion     608" LINK SR_FAMEVersion}		@{"SR_ChatSet          609" LINK SR_ChatSet}
+	@{"SR_ENVStat         610" LINK SR_ENVStat}		@{"SR_NodeDevice       611" LINK SR_NodeDevice}
+	@{"SR_NodeUnit        612" LINK SR_NodeUnit}		@{"SR_NodeBaud         613" LINK SR_NodeBaud}
+	@{"SR_NodeNumber      614" LINK SR_NodeNumber}		@{"SR_MCI              615" LINK SR_MCI}
+	@{"SR_GetTask         616" LINK SR_GetTask}		@{"SR_NodeBaudRate     617" LINK SR_NodeBaudRate}
+	@{"SR_LogonType       618" LINK SR_LogonType}		@{"SR_ScrLeft          619" LINK SR_ScrLeft}
+	@{"SR_ScrTop          620" LINK SR_ScrTop}		@{"SR_ScrWidth         621" LINK SR_ScrWidth}
+	@{"SR_ScrHeight       622" LINK SR_ScrHeight}		@{"SR_PurgeLine        623" LINK SR_PurgeLine}
+	@{"SR_NonStopText     624" LINK SR_NonStopText}		@{"SR_GoodFile         625" LINK SR_GoodFile}
+	@{"SR_LastAccountNum  626" LINK SR_LastAccountNum}		@{"SR_PurgeLineStart   627" LINK SR_PurgeLineStart}
+	@{"SR_PurgeLineEnd    628" LINK SR_PurgeLineEnd}		@{"SR_BBSOrigin        629" LINK SR_BBSOrigin}
+	@{"SR_DefLineLen      630" LINK SR_DefLineLen}		@{"SR_NumberOfNodes    631" LINK SR_NumberOfNodes}
+	@{"SR_FileDescUndLine 632" LINK SR_FileDescUndLine}		@{"SR_NumberOfConfs    633" LINK SR_NumberOfConfs}
+	@{"SR_ConfNameLoc     634" LINK SR_ConfNameLoc}		@{"SR_FAMEDataFileVers 635" LINK SR_FAMEDataFileVers}
+	@{"SR_ConnectString   636" LINK SR_ConnectString}
+
+                            -> 37 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           SC COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_SC "System Commands - Change datas"
+
+- This commands are used to change BBS-specific Informations. All commands
+  listed here are WRITE-ONLY!
+
+	@{"----------------------" LINK NOT_USED}		@{"----------------------" LINK NOT_USED}
+	@{"SC_ChatSet         702" LINK SC_ChatSet}		@{"SC_ENVStat         703" LINK SC_ENVStat}
+	@{"SC_NonStopText     704" LINK SC_NonStopText}		@{"SC_DefLineLen      705" LINK SC_DefLineLen}
+	@{"SC_FileDescUndLine 706" LINK SC_FileDescUndLine}		@{"SC_GoodFile        707" LINK SC_GoodFile}
+
+                            -> 6 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           AR COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_AR "Additional Commands - Retrieve/Send datas"
+
+- All misc. Commands listed here are READ ONLY !
+
+	@{"AR_GetKey          800" LINK AR_GetKey}		@{"AR_WaitRAWChar     801" LINK AR_WaitRAWChar}
+	@{"AR_EmulateFKeyHelp 802" LINK AR_EmulateFKeyHelp}		@{"AR_GetCharHex      803" LINK AR_GetCharHex}
+	@{"AR_EditFile        804" LINK AR_EditFile}		@{"AR_Dump            805" LINK AR_Dump}
+	@{"AR_UserStatus      806" LINK AR_UserStatus}		@{"AR_NewScan         807" LINK AR_NewScan}
+	@{"AR_Hacks           808" LINK AR_Hacks}		@{"AR_LastConf        809" LINK AR_LastConf}
+	@{"AR_ConfReJoin      810" LINK AR_ConfReJoin}		@{"AR_HighUpCPS       811" LINK AR_HighUpCPS}
+	@{"AR_HighDownCPS     812" LINK AR_HighDownCPS}		@{"AR_Baud            813" LINK AR_Baud}
+	@{"AR_MsgCLS          814" LINK AR_MsgCLS}		@{"AR_FileCLS         815" LINK AR_FileCLS}
+	@{"AR_UGlobal         816" LINK AR_UGlobal}		@{"AR_DGlobal         817" LINK AR_DGlobal}
+	@{"AR_FileBase        818" LINK AR_FileBase}		@{"AR_Hide            819" LINK AR_Hide}
+	@{"AR_MsgRooming      820" LINK AR_MsgRooming}		@{"AR_StringEdit      821" LINK AR_StringEdit}
+	@{"AR_CryptPW         822" LINK AR_CryptPW}		@{"AR_CryptFlag       823" LINK AR_CryptFlag}
+	@{"AR_UserFileBPW     824" LINK AR_UserFileBPW}		@{"AR_DropDTR         825" LINK AR_DropDTR}
+	@{"AR_Userlimit       826" LINK AR_Userlimit}		@{"AR_MaxNameFailure  827" LINK AR_MaxNameFailure}
+	@{"AR_MaxUserPWFail   828" LINK AR_MaxUserPWFail}		@{"AR_MaxSysPWFailure 829" LINK AR_MaxSysPWFailure}
+	@{"AR_MaxNUPFailure   830" LINK AR_MaxNUPFailure}		@{"AR_MaxUserHacks    831" LINK AR_MaxUserHacks}
+	@{"AR_ScreensPath     832" LINK AR_ScreensPath}		@{"AR_SysPWPrompt     833" LINK AR_SysPWPrompt}
+	@{"AR_NewUserPWPrompt 834" LINK AR_NewUserPWPrompt}		@{"AR_UsernamePrompt  835" LINK AR_UsernamePrompt}
+	@{"AR_UserPWPrompt    836" LINK AR_UserPWPrompt}		@{"AR_PausePrompt     837" LINK AR_PausePrompt}
+	@{"AR_SysOpChatColor  838" LINK AR_SysOpChatColor}		@{"AR_UserChatColor   839" LINK AR_UserChatColor}
+	@{"AR_UploadPathI     840" LINK AR_UploadPathI}		@{"AR_DownloadPathI   841" LINK AR_DownloadPathI}
+	@{"AR_AdditioUlPaths  842" LINK AR_AdditioUlPaths}		@{"AR_AdditioDlPaths  843" LINK AR_AdditioDlPaths}
+	@{"AR_NumberofDirs    844" LINK AR_NumberofDirs}		@{"AR_GiveUlBytes     845" LINK AR_GiveUlBytes}
+	@{"AR_TakeDlBytes     846" LINK AR_TakeDlBytes}		@{"AR_FlagFilePath    847" LINK AR_FlagFilePath}
+	@{"AR_StringToNode    848" LINK AR_StringToNode}		@{"AR_GetNodeEnv      849" LINK AR_GetNodeEnv}
+	@{"AR_FullEdStruct    850" LINK AR_FullEdStruct}		@{"AR_SendStr         851" LINK AR_SendStr}
+	@{"AR_SendStrCon      852" LINK AR_SendStrCon}		@{"AR_SendStrSer      853" LINK AR_SendStrSer}
+	@{"AR_ResetNumFlags   854" LINK AR_ResetNumFlags}		@{"AR_SetNumFlag      855" LINK AR_SetNumFlag}
+	@{"AR_GetNumFlag      856" LINK AR_GetNumFlag}		@{"AR_NodeVersion     857" LINK AR_NodeVersion}
+	@{"AR_NodeStartTime   858" LINK AR_NodeStartTime}		@{"AR_ServerVersion   859" LINK AR_ServerVersion}
+	@{"AR_ServerStartTime 860" LINK AR_ServerStartTime}		@{"AR_HotKey          861" LINK AR_HotKey}
+	@{"AR_DropDtrOnNode   862" LINK AR_DropDtrOnNode}		@{"AR_AwayMessage     863" LINK AR_AwayMessage}
+	@{"AR_GetNodeNameTel  864" LINK AR_GetNodeNameTel}
+
+                            -> 65 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           AC COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_AC "Additional Commands - Change datas"
+
+- All misc. Commands listed here are WRITE ONLY !
+
+	@{"AC_UserStatus      900" LINK AC_UserStatus}		@{"AC_NewScan         901" LINK AC_NewScan}
+	@{"AC_HackCount       902" LINK AC_HackCount}		@{"AC_LastConf        903" LINK AC_LastConf}
+	@{"AC_ConfReJoin      904" LINK AC_ConfReJoin}		@{"AC_HighUpCPS       905" LINK AC_HighUpCPS}
+	@{"AC_HighDownCPS     906" LINK AC_HighDownCPS}		@{"AC_Baud            907" LINK AC_Baud}
+	@{"AC_MsgCLS          908" LINK AC_MsgCLS}		@{"AC_FileCLS         909" LINK AC_FileCLS}
+	@{"AC_UGlobal         910" LINK AC_UGlobal}		@{"AC_DGlobal         911" LINK AC_DGlobal}
+	@{"AC_FileBase        912" LINK AC_FileBase}		@{"AC_Hide            913" LINK AC_Hide}
+	@{"AC_MsgRooming      914" LINK AC_MsgRooming}		@{"AC_StringEdit      915" LINK AC_StringEdit}
+	@{"AC_CryptPW         916" LINK AC_CryptPW}		@{"AC_CryptFlag       917" LINK AC_CryptFlag}
+	@{"AC_UserFileBPW     918" LINK AC_UserFileBPW}		@{"AC_Userlimit       919" LINK AC_Userlimit}
+	@{"AC_MaxNameFailure  920" LINK AC_MaxNameFailure}		@{"AC_MaxUserPWFail   921" LINK AC_MaxUserPWFail}
+	@{"AC_MaxSysPWFailure 922" LINK AC_MaxSysPWFailure}		@{"AC_MaxNUPFailure   923" LINK AC_MaxNUPFailure}
+	@{"AC_MaxUserHacks    924" LINK AC_MaxUserHacks}		@{"AC_ScreensPath     925" LINK AC_ScreensPath}
+	@{"AC_SysPWPrompt     926" LINK AC_SysPWPrompt}		@{"AC_NewUserPWPrompt 927" LINK AC_NewUserPWPrompt}
+	@{"AC_UsernamePrompt  928" LINK AC_UsernamePrompt}		@{"AC_UserPWPrompt    929" LINK AC_UserPWPrompt}
+	@{"AC_PausePrompt     930" LINK AC_PausePrompt}		@{"AC_SysOpChatColor  931" LINK AC_SysOpChatColor}
+	@{"AC_UserChatColor   932" LINK AC_UserChatColor}		@{"AC_NumberofDirs    933" LINK AC_NumberofDirs}
+	@{"AC_GiveUlBytes     934" LINK AC_GiveUlBytes}		@{"AC_TakeDlBytes     935" LINK AC_TakeDlBytes}
+	@{"AC_ServerAction    936" LINK AC_ServerAction}		@{"AC_ServerActionCPS 937" LINK AC_ServerActionCPS}
+	@{"AC_AwayMessage     938" LINK AC_AwayMessage}
+	
+
+                            -> 39 commands <-
+@endnode
+
+@REM ======================================================================
+@REM =                           RD COMMANDS                              =
+@REM ======================================================================
+
+@node LIST_RD "Reserved Commands - DON'T USE THEM !"
+
+- This commands are special commands, so only use them if you know what 
+  you are doing !!!
+
+	@{"RD_ShowFlags       1000" LINK RD_ShowFlags}		@{"RD_ShowAllFlags    1001" LINK RD_ShowAllFlags}
+	@{"RD_ConfigLoad      1002" LINK RD_ConfigLoad}		@{"RD_IconifyIs       1003" LINK RD_IconifyIs}
+	@{"RD_Iconify         1004" LINK RD_Iconify}		@{"RD_Spy             1005" LINK RD_Spy}
+	@{"RD_NewUser         1006" LINK RD_NewUser}		@{"RD_LoadAccount     1007" LINK RD_LoadAccount}
+	@{"RD_SaveAccount     1008" LINK RD_SaveAccount}		@{"RD_LoadConfDat     1009" LINK RD_LoadConfDat}
+	@{"RD_SaveConfDat     1010" LINK RD_SaveConfDat}		@{"RD_AppendAccount   1011" LINK RD_AppendAccount}
+	@{"RD_DoOnMaxUserHack 1012" LINK RD_DoOnMaxUserHack}		@{"RD_ServerCommand   1013" LINK RD_ServerCommand}
+	@{"RD_GetMciFlag      1014" LINK RD_GetMciFlag}		@{"RD_MciFlag         1015" LINK RD_MciFlag}
+	@{"RD_LoadAccountMisc 1016" LINK RD_LoadAccountMisc}		@{"RD_SaveAccountMisc 1017" LINK RD_SaveAccountMisc}
+	@{"RD_ASLLocalUlPath  1018" LINK RD_ASLLocalUlPath}		@{"RD_ASLTextViewPath 1019" LINK RD_ASLTextViewPath}
+	@{"RD_ASLSendFilePath 1020" LINK RD_ASLSendFilePath}		@{"RD_StartNodeCmd    1021" LINK RD_StartNodeCmd}
+	@{"RD_BeADoorOnNode   1022" LINK RD_BeADoorOnNode}		@{"RD_OpenDoorPort    1023" LINK RD_OpenDoorPort}
+	@{"RD_CloseDoorPort   1024" LINK RD_CloseDoorPort}		@{"RD_GetServerList   1025" LINK RD_GetServerList}
+	@{"RD_StringToNode    1026" LINK RD_StringToNode}		@{"RD_StringToNodes   1027" LINK RD_StringToNodes}
+ 	@{"RD_CONStatus       1028" LINK RD_CONStatus}		@{"RD_SERStatus       1029" LINK RD_SERStatus}
+	@{"RD_SaveMsgFile     1030" LINK RD_SaveMsgFile}		@{"RD_SaveMsgList     1031" LINK RD_SaveMsgList}
+	@{"RD_FreeMsgListFEd  1032" LINK RD_FreeMsgListFEd}		@{"RD_ActASLULPath    1033" LINK RD_ActASLULPath}
+	@{"RD_ActASLTextViewP 1034" LINK RD_ActASLTextViewP}		@{"RD_ActASLDlPath    1035" LINK RD_ActASLDlPath}
+	@{"RD_NodeScrToFront  1036" LINK RD_NodeScrToFront}		@{"RD_SetServerActCol 1037" LINK RD_SetServerActCol}
+	@{"RD_InitNumFlag     1038" LINK RD_InitNumFlag}		@{"RD_RemoveNumFlag   1039" LINK RD_RemoveNumFlag}
+	@{"RD_ResetNumFlags   1040" LINK RD_ResetNumFlags}		@{"RD_SetNumFlag      1041" LINK RD_SetNumFlag}
+	@{"RD_GetNumFlag      1042" LINK RD_GetNumFlag}		@{"RD_GetUserDataLoc  1043" LINK RD_GetUserDataLoc}
+	@{"RD_ConfName        1044" LINK RD_ConfName}		@{"RD_ConfLocation    1045" LINK RD_ConfLocation}
+	@{"RD_FGetNextConf    1046" LINK RD_FGetNextConf}		@{"RD_FGetPrevConf    1047" LINK RD_FGetPrevConf}
+	@{"RD_FGetConfNum     1048" LINK RD_FGetConfNum}		@{"RD_FGetRealConfNum 1049" LINK RD_FGetRealConfNum}
+	@{"RD_FGetConfBase    1050" LINK RD_FGetConfBase}		@{"RD_FGetAktConf     1051" LINK RD_FGetAktConf}
+	@{"RD_GiveNumFromConf 1052" LINK RD_GiveNumFromConf}		@{"RD_SaveUFlagList   1053" LINK RD_SaveUFlagList}
+        @{"RD_ClearUFlagList  1054" LINK RD_ClearUFlagList}		@{"RD_GetUFlagList    1055" LINK RD_GetUFlagList}
+	@{"RD_GetMailHeader   1056" LINK RD_GetMailHeader}		@{"RD_ShowMailHeader  1057" LINK RD_ShowMailHeader}
+	@{"RD_GetDldFileBase  1058" LINK RD_GetDldFileBase}		@{"RD_RIDldFileBase   1059" LINK RD_RIDldFileBase}
+	@{"RD_PutDldFileBase  1060" LINK RD_PutDldFileBase}
+
+                            -> 61 commands <-
+
+@endnode
+
+@REM ======================================================================
+@REM =                           MUST COMMANDS                            =
+@REM ======================================================================
+
+@node MC_DoorStart "MC_DoorStart          1"
+
+COMMAND: @{b}MC_DoorStart         1@{ub}
+
+Register a new (your) door, Door-Counter increases
+
+YOU HAVE TO USE THIS COMMAND BEFORE USING ANY OTHER COMMAND !
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node MC_ShutDown "MC_ShutDown            2"
+
+COMMAND: @{b}MC_ShutDown          2@{ub}
+
+Tells the node that the door is shutting down, Door-Counter decreases.
+
+YOU HAVE TO USE THIS COMMAND TO EXIT A DOOR ! ALSO IF AN ERROR OCCURS !
+
+See also @{"MC_ShutDownLastWords" LINK MC_ShutDownLastWords} as alternate Command.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node MC_ShutDownLastWords "MC_ShutDownLastWords       3"
+
+COMMAND: @{b}MC_ShutDownLastWords 3@{ub}
+
+Tells the node that the door is shutting down, but unlike @{"MC_ShutDown" LINK MC_ShutDown}
+you can also write some last words before exiting.
+
+@{b}INPUT:@{ub}
+
+IOString <- The String to be send to the user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@REM -------------------- STRING OPERATIONS (READ) --------------------------
+
+@node NR_SendStr "NR_SendStr               10"
+
+COMMAND: @{b}NR_SendStr          10@{ub}
+
+Sends a string to the user.
+
+@{b}INPUT:@{ub}
+
+IOString <- The String to be sent to the user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_SendStrCRLF "NR_SendStrCRLF       11"
+
+COMMAND: @{b}NR_SendStrCRLF      11@{ub}
+
+Sends a string to the user including CR/LF.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to be sent to the user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_SendStrCon "NR_SendStrCon         12"
+
+COMMAND: @{b}NR_SendStrCon       12@{ub}
+
+Sends a string to Console only.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to be sent to console.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_SendStrSer "NR_SendStrSer         13"
+
+COMMAND: @{b}NR_SendStrSer       13@{ub}
+
+Sends a string to serial only
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to be sent to serial.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_PromptChars "NR_PromptChars       14"
+
+COMMAND: @{b}NR_PromptChars      14@{ub}
+
+Prompt the user for a specified number of chars
+
+@{b}INPUT:@{ub}
+
+Data1    <- Max. chars the User can enter.
+Data2    <- Flag for different modes (see below).
+IOString <- String to Display in prompt.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Returncode from internal procedure (usable for Data2 flag 3).
+IOString -> String typed by the user.
+
+@{b}Description of Data2-Flag:@{ub}
+
+Value | Description
+------+----------------------------------------------------------------------
+  0   | Simple String-Input without Line-editing and other features
+------+----------------------------------------------------------------------
+  1   | String-Input for Chatmode. Uses Wordwrapping. (Don't use this to
+      | get a complete string, because after wordwrap the string changes!).
+------+----------------------------------------------------------------------
+  2   | String-Input for Msg-Editor (You can't use this Flag, because it
+      | could cause damage in fact of using a list! Flag disabled!).
+------+----------------------------------------------------------------------
+  3   | String-Input for Bulletin-Viewers (It returns CRSR-Keys left/right,
+      | Up&down for the Bullview to switch the -<X>-BullHelp.txt's). See docs
+      | for more informations about Cycle-Texts. If using this Flag, the 
+      | field Data3 contains the following values for the CRSR-Keys : 
+      |           65 -> Up, 66 -> Down, 67 -> Right, 68 -> Left.
+------+----------------------------------------------------------------------
+  4   | Same as Flag 0, but all typed chars will be displayed as '*'. Useful
+      | for Password-Entries etc. NOTE: If the Sysop has set the Flag
+      | "Display Passwords to SysOp" in the @{"SystemEditor" link "SystemEditor.guide/Main"}, the entered Chars
+      | are only displayed on serial output as '***', the console gets the
+      | real Output!
+------+----------------------------------------------------------------------
+  5   | Currently unused.
+------+----------------------------------------------------------------------
+  6   | A real feature! This is the recommended Flag to use everywhere, users
+      | can enter anything with the full comfort of a "REAL" Line-Editor,
+      | supporting DEL/BACKSPACE, Inserting/Removing of chars, cursor keys
+      | etc..please use this Flag as Default-Value.
+------+----------------------------------------------------------------------
+  7   | The same as 4, but here will be no single char prompted when the user
+      | types something. No single char means of course also *NO* stars (*)
+      | will be printed! If the SysOp has set the Flag "Display Passwords to
+      | Sysop", the typed chars will be printed as real input string, but
+      | only to console.
+------+----------------------------------------------------------------------
+  8   | Numeric mode. Only numeric chars can be typed, no alphabetical chars
+      | allowed in this mode.
+------^----------------------------------------------------------------------
+
+@{b}NOTE:@{ub}
+
+Higher values as 8 for Data2-Flag are reserved and can't be used!
+
+If IOString contains data when calling this command, the user will get this
+Data as default prompt and can edit those datas (flag 6).
+
+@endnode
+
+@node NR_HotKey "NR_HotKey           15"
+
+COMMAND: @{b}NR_HotKey           15@{ub}
+
+Gets a char without waiting for it.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The char typed by the user (ASCII-Value)
+Data3    -> Where the char was typed: 0 = Console, 1 = Serial
+
+@{b}SEE ALSO:@{ub}
+
+@{"AR_GetKey" LINK AR_GetKey}, @{"AR_WaitRAWChar" LINK AR_WaitRAWChar}, @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp}, @{"NR_WaitChar" LINK NR_WaitChar}, @{"AR_HotKey" LINK AR_HotKey}
+@endnode
+
+@node NR_BBSName "NR_BBSName         16"
+
+COMMAND: @{b}NR_BBSName          16@{ub}
+
+Retrieve the BBS-Name
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The BBS Name.
+@endnode
+
+@node NR_SysOp "NR_SysOp             17"
+
+COMMAND: @{b}NR_SysOp            17@{ub}
+
+Retrieve the SysOp Name.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The SysOp Name.
+@endnode
+
+@node NR_SetFlagFile "NR_SetFlagFile        18"
+
+COMMAND: @{b}NR_SetFlagFile      18@{ub}
+
+Add files to the list of flagged files.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of the conference you want to add flag files to.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+IOString <- The file(s) to be flagged, you can flag more files at the same
+            time, but they must have spaces between each other.
+            Maximum of 12 chars per filename and overall 201 chars including
+            the spaces. Note that the BBS filters double filenames !
+
+@{b}RETURN:@{ub}
+
+Data3    -> Error-Message. See description below.
+
+@{b}NOTE:@{ub} 
+
+Data3 Returnvalues:
+
+       0 -> successfully flagged
+       1 -> file is already flagged
+       2 -> length of IOString is less than 1 Byte, i.e. a Null-String.
+      -1 -> list element memory allocation failed.
+      -2 -> given conference not found. normally won't happen, because of
+            the Data1 check.
+
+When giving more than 1 filename to flag, the Returncodes may not contain
+correct values. If you supply only one filename, all returncodes are valid,
+else the Returncode will be set for the last filename supplied in the list.
+@endnode
+
+@node NR_GetFlagFile "NR_GetFlagFile           19"
+
+COMMAND: @{b}NR_GetFlagFile      19@{ub}
+
+Get File from the Flaglist
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of the conference you want to get a flagged file from.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+IOString -> The filename of the flagged file.
+
+@{b}NOTE:@{ub} 
+
+This command counts the current File number internally. So if you start this 
+command and get a filename, you get the next filename of the list by calling
+this command again until the IOString is empty. To reset the flagging 
+pointer, use the Command @{"NR_ResetFlagFile" LINK NR_ResetFlagFile} ! This command resets the flagging
+pointer and gives you the *FIRST* flagged File.
+After getting it, simply call @{b}NR_GetFlagFile@{ub} repeatly until IOString is
+empty.
+@endnode
+
+@node NR_ActiveNode "NR_ActiveNode          20"
+
+COMMAND: @{b}NR_ActiveNode       20@{ub}
+
+Check if a specific Node exists
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you want to check if it exists or not.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returns 1 if Node exists, 0 if it doesn't.
+@endnode
+
+@node NR_ActiveNodes "NR_ActiveNodes         21"
+
+COMMAND: @{b}NR_ActiveNodes      21@{ub}
+
+Retrieve a string of active & inactive nodes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The string contains an X at every position if the relative
+            Node exists. Byte 0 stands for Node0 !
+            A maximum of 200 Nodes will be checked.
+@endnode
+
+@node NR_TimeOut "NR_TimeOut                22"
+
+COMMAND: @{b}NR_TimeOut          22@{ub}
+
+Retrieve the door timeout limit.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the door timeout limit.
+@endnode
+
+@node NR_MainLine "NR_MainLine              23"
+
+COMMAND :@{b}NR_MainLine         23@{ub}
+
+Retrieve the menu prompt arguments prior to the door being entered.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the MainLine, the full argumentstring which was entered
+            when starting the door.
+
+@{b}NOTE:@{ub}       
+
+With FAME it makes no difference if you insert several spaces between the
+arguments typed at the menu prompt because FAME will correctly interpret
+them! But with this Function, you get the same string that the user entered
+when starting your door, meaning that you have to parse IOString yourself.
+If this is too much work for you, try the following Commands: 
+
+            @{"NR_GetFullArg" LINK NR_GetFullArg} or use
+          
+            @{"NR_GetArgument1" LINK NR_GetArgument1}, @{"NR_GetArgument2" LINK NR_GetArgument2}, 
+            @{"NR_GetArgument3" LINK NR_GetArgument3}, @{"NR_GetArgument4" LINK NR_GetArgument4}.
+
+NR_GetFullArg gives you the Mainline, but with only 1 space between the 
+first 4 arguments, all others remain unchanged. The NR_GetArgument(x) 
+Commands give you the desired Arguments (1-4), but *ALWAYS* without the 
+Command-Name, only the Arguments are given! For more information take 
+a look at the chapters for these commands.
+@endnode
+
+@node NR_NodeID "NR_NodeID               24"
+
+COMMAND: @{b}NR_NodeID           24@{ub}
+
+Retrieve the Nodenumber of the current node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The current Nodenumber.
+@endnode
+
+@node NR_MinUpCPS "NR_MinUpCPS           25"
+
+COMMAND: @{b}NR_MinUpCPS         25@{ub}
+
+Retreive min. Upload CPS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Users min. Upload CPS.
+@endnode
+
+@node NR_GetConfNum "NR_GetConfNum        26"
+
+COMMAND: @{b}NR_GetConfNum       26@{ub}
+
+Retrieve the current Confnumber.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the actual Conferencenumber.
+@endnode
+
+@node NR_SearchAccount "NR_SearchAccount         27"
+
+COMMAND: @{b}NR_SearchAccount    27@{ub}
+
+Looks for a specific Account in the User datas.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber you are searching for.
+StructDummy1 <- Pointer to a user.keys Struct.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The User.keys Structure for the specified user.
+
+@{b}NOTE:@{ub} 
+
+You @{b}*MUST*@{ub} check the ReturnCode of this Command!!! If it is non-zero
+then the StructDummy1 Pointer is not valid !
+@endnode
+
+@node NR_StampTime "NR_StampTime        28"
+
+COMMAND: @{b}NR_StampTime        28@{ub}
+
+Retrieve the current timestring.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the current timestring.
+@endnode
+
+@node NR_CurrTime "NR_CurrTime         29"
+
+COMMAND: @{b}NR_CurrTime         29@{ub}
+
+Retrieve the current time in seconds since 00:00:00 Greenwhich Mean Time,
+January 1, 1970.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the current timevalue.
+@endnode
+
+@node NR_ThisConfAccess "NR_ThisConfAccess   30"
+
+COMMAND: @{b}NR_ThisConfAccess   30@{ub}
+
+Retrieve the users conference access of selected Conference.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Conferencenumber you want to know if the user has access to.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            then it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+Data2    -> 1 if the user has access to the conference, else 0.
+@endnode
+
+@node NR_Name "NR_Name             31"
+
+COMMAND: @{b}NR_Name             31@{ub}
+
+Retrieve user name/handle.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the Username.
+@endnode
+
+@node NR_Password "NR_Password         32"
+
+COMMAND: @{b}NR_Password         32@{ub}
+
+Retrieve user Password.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the Password of the User.
+@endnode
+
+@node NR_Location "NR_Location         33"
+
+COMMAND: @{b}NR_Location         33@{ub}
+
+Retrieve Users Location.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the user's location.
+@endnode
+
+@node NR_From "NR_From             34"
+
+COMMAND: @{b}NR_From             34@{ub}
+
+Retrieve user's 'from' (Origin).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the user's origin.
+@endnode
+
+@node NR_PhoneNumber "NR_PhoneNumber      35"
+
+COMMAND: @{b}NR_PhoneNumber      35@{ub}
+
+Retrieve the user's phonenumber.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the user's phonenumber.
+@endnode
+
+@node NR_SlotNumber "NR_SlotNumber       36"
+
+COMMAND: @{b}NR_SlotNumber       36@{ub}
+
+Retrieve the user's slot number.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the user's slot number.
+@endnode
+
+@node NR_AccessLevel "NR_AccessLevel      37"
+
+COMMAND: @{b}NR_AccessLevel      37@{ub}
+
+Retrieve user's access level.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains user's level.
+@endnode
+
+@node NR_RatioType "NR_RatioType        38"
+
+COMMAND: @{b}NR_RatioType        38@{ub}
+
+Retrieve user's ratiotype.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains user's ratiotype.
+@endnode
+
+@node NR_Ratio "NR_Ratio            39"
+
+COMMAND: @{b}NR_Ratio            39@{ub}
+
+Retrieve user's ratio.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains user's ratio.
+@endnode
+
+@node NR_CompType "NR_CompType         40"
+
+COMMAND: @{b}NR_CompType         40@{ub}
+
+Retrieve user's computertype.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains user's computertype Number 
+IOString -> Contains user's computertype.
+@endnode
+
+@node NR_ModemType "NR_ModemType        41"
+
+COMMAND: @{b}NR_ModemType        41@{ub}
+
+Retrieve user's modemtype.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's modemtype number.
+IOString -> Contains User's modemtype.
+@endnode
+
+@node NR_MessagePosted "NR_MessagePosted    42"
+
+COMMAND: @{b}NR_MessagePosted    42@{ub}
+
+Retrieve user's number of messages posted.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's number of messages posted.
+@endnode
+
+@node NR_MessageRead "NR_MessageRead      43"
+
+COMMAND: @{b}NR_MessageRead      43@{ub}
+
+Retrieve the number of messages read.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's messages read.
+@endnode
+
+@node NR_NoCalls "NR_NoCalls          44"
+
+COMMAND: @{b}NR_NoCalls          44@{ub}
+
+Retrieve user's number of calls.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's number of calls.
+@endnode
+
+@node NR_TimeLastOn "NR_TimeLastOn       45"
+
+COMMAND: @{b}NR_TimeLastOn       45@{ub}
+
+Retrieve the time the user last called.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's last time called.
+
+@{b}NOTE:@{ub} 
+
+Data2 contains the seconds since 00:00:00 GMT-Time, January 1, 1970!
+@endnode
+
+@node NR_TimeUsed "NR_TimeUsed         46"
+
+COMMAND: @{b}NR_TimeUsed         46@{ub}
+
+Retrieve time used today (in seconds).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's time used.
+@endnode
+
+@node NR_TimeLimit "NR_TimeLimit        47"
+
+COMMAND: @{b}NR_TimeLimit        47@{ub}
+
+Retrieve time allowed for a user (in seconds).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's time limit.
+@endnode
+
+@node NR_TimeRemain "NR_TimeRemain       48"
+
+COMMAND: @{b}NR_TimeRemain       48@{ub}
+
+Retrieve total time remaining for today (in seconds).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's total time remaining for today.
+@endnode
+
+@node NR_StampLastOn "NR_StampLastOn      49"
+
+COMMAND: @{b}NR_StampLastOn      49@{ub}
+
+Retrieve a date string containing the date when the user last logged on.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's last time called as a 26 Byte ASCII-String.
+@endnode
+
+@node NR_ConfAccess "NR_ConfAccess       50"
+
+COMMAND: @{b}NR_ConfAccess       50@{ub}
+
+Retrieve user's conference access.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's conference access alias.
+@endnode
+
+@node NR_Uploads "NR_Uploads          51"
+
+COMMAND: @{b}NR_Uploads          51@{ub}
+
+Retrieve user's number of uploads (Files).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's number of uploaded Files.
+@endnode
+
+@node NR_Downloads "NR_Downloads        52"
+
+COMMAND: @{b}NR_Downloads        52@{ub}
+
+Retrieve user's number of downloads (Files).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's number of downloaded Files.
+@endnode
+
+@node NR_BytesUpload "NR_BytesUpload      53"
+
+COMMAND: @{b}NR_BytesUpload      53@{ub}
+
+Retrieve user's uploaded bytes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's uploaded bytes.
+Data4    -> Contains the higher ULONG for the uploaded bytes (V1.30+ !)
+
+Data3 contains the lower 32-Bit of the uploaded bytes as usual. Data4 
+contains the higher 32-Bits of the uploaded bytes to make 64-Bit 
+possible. Whenever Data3 exceeds 4.294.967.295 bytes in Size, the Data4
+value will be updated to reflect the new uploaded bytes.
+
+Please look also in the @{"64-Bit FAQ" LINK 64BIT} to get more informations about this
+new feature of FAME.
+@endnode
+
+@node NR_BytesDownload "NR_BytesDownload    54"
+
+COMMAND: @{b}NR_BytesDownload    54@{ub}
+
+Retrieve user's downloaded bytes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's downloaded bytes.
+Data4    -> Contains the higher ULONG for the uploaded bytes (V1.30+ !)
+
+Data3 contains the lower 32-Bit of the uploaded bytes as usual. Data4 
+contains the higher 32-Bits of the uploaded bytes to make 64-Bit 
+possible. Whenever Data3 exceeds 4.294.967.295 bytes in Size, the Data4
+value will be updated to reflect the new uploaded bytes.
+
+Please look also in the @{"64-Bit FAQ" LINK 64BIT} to get more informations about this
+new feature of FAME.
+
+@endnode
+
+@node NR_DailyByteLimit "NR_DailyByteLimit   55"
+
+COMMAND: @{b}NR_DailyByteLimit   55@{ub}
+
+Retrieve user's daily bytes limit.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains user's daily byte limit.
+@endnode
+
+@node NR_DailyFileLimit "NR_DailyFileLimit   56"
+
+COMMAND: @{b}NR_DailyFileLimit   56@{ub}
+
+Retrieve user's daily files limit.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's daily file limit.
+@endnode
+
+@node NR_DailyByteDld "NR_DailyByteDld     57"
+
+COMMAND: @{b}NR_DailyByteDld     57@{ub}
+
+Retrieve user's daily bytes downloaded.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's daily bytes downloaded.
+@endnode
+
+@node NR_DailyFileDld "NR_DailyFileDld     58"
+
+COMMAND: @{b}NR_DailyFileDld     58@{ub}
+
+Retrieve user's daily files downloaded.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's daily files downloaded.
+@endnode
+
+@node NR_DailyByteBonus "NR_DailyByteBonus   59"
+
+COMMAND: @{b}NR_DailyByteBonus   59@{ub}
+
+Retrieve user's daily byte bonus.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's daily byte bonus.
+@endnode
+
+@node NR_DailyFileBonus "NR_DailyFileBonus   60"
+
+COMMAND: @{b}NR_DailyFileBonus   60@{ub}
+
+Retrieve user's daily file bonus.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains User's daily file bonus.
+@endnode
+
+@node NR_Expert "NR_Expert           61"
+
+COMMAND: @{b}NR_Expert           61@{ub}
+
+Retrieve users expert mode.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> 1 means Expertmode is set, 0 means it's not set.
+@endnode
+
+@node NR_NumLines "NR_NumLines         62"
+
+COMMAND: @{b}NR_NumLines         62@{ub}
+
+Retrieve users number of lines to view.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's number of lines.
+
+@{b}NOTE:@{ub} 
+
+The number of lines to view is really one line more than you will get 
+here, because of scrolling texts there should be always one line kept
+as a reserve.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_LineCount" LINK NR_LineCount}, @{"NR_CONNumLines" LINK NR_CONNumLines}, @{"CF_Numlines" LINK CF_Numlines}
+@endnode
+
+@node NR_Birthday "NR_Birthday         63"
+
+COMMAND: @{b}NR_Birthday         63@{ub}
+
+Retrieve users birthday.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's birthday.
+@endnode
+
+@node NR_MenuPrompt "NR_MenuPrompt       64"
+
+COMMAND: @{b}NR_MenuPrompt       64@{ub}
+
+Retrieve users menuprompt.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's menuprompt.
+@endnode
+
+@node NR_EditorType "NR_EditorType       65"
+
+COMMAND: @{b}NR_EditorType       65@{ub}
+
+Retrieve users Editor type.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's editor type.
+@endnode
+
+@node NR_XferProt "NR_XferProt         66"
+
+COMMAND: @{b}NR_XferProt         66@{ub}
+
+Retrieve users (last) used Transfer-Protocol
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's (last) used transfer protocol value.
+IOString -> Contains the User's (last) used transfer protocol name.
+@endnode
+
+@node NR_LostCarrier "NR_LostCarrier       67"
+
+COMMAND: @{b}NR_LostCarrier       67@{ub}
+
+Retrieve users number of lost carriers.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's numbers of lost carriers.
+@endnode
+
+@node NR_Zoom "NR_Zoom             68"
+
+COMMAND: @{b}NR_Zoom             68@{ub}
+
+Retrieve users ZOOM-Type.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's Zoom type.
+@endnode
+
+@node NR_SysLanguage "NR_SysLanguage      69"
+
+COMMAND: @{b}NR_SysLanguage      69@{ub}
+
+Retrieve users text language specification.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's text language specification.
+@endnode
+
+@node NR_Language "NR_Language         70"
+
+COMMAND: @{b}NR_Language         70@{ub}
+
+Retrieve users current language specification.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's current language setting.
+@endnode
+
+@node NR_LineCount "NR_LineCount        71"
+
+COMMAND: @{b}NR_LineCount        71@{ub}
+
+Retrieve users current number of lines viewed.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the current number of lines viewed.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumLines" LINK NR_NumLines}, @{"NR_CONNumLines" LINK NR_CONNumLines}, @{"CF_Numlines" LINK CF_Numlines}
+@endnode
+
+@node NR_AnsiColor "NR_AnsiColor        72"
+
+COMMAND: @{b}NR_AnsiColor        72@{ub}
+
+Retrieve users ANSI-Flag setting.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's Ansiflag.
+@endnode
+
+@node NR_SentBy "NR_SentBy           73"
+
+COMMAND: @{b}NR_SentBy           73@{ub}
+
+Retrieve users Sent-By line.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber from which you want to get the SentByLine
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's Sent-By line.
+@endnode
+
+@node NR_AutoFileID "NR_AutoFileID       74"
+
+COMMAND: @{b}NR_AutoFileID       74@{ub}
+
+Retrieve users Auto FILE_ID.DIZ Flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's File-ID flag.
+@endnode
+
+@node NR_NewMessage "NR_NewMessage       75"
+
+COMMAND: @{b}NR_NewMessage       75@{ub}
+
+Retrieve users NewMessage Status.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's NewMessage flag.
+@endnode
+
+@node NR_Goodbye "NR_Goodbye          76"
+
+COMMAND: @{b}NR_Goodbye          76@{ub}
+
+Retrieve users GoodBye Flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's (fast)GoodBye flag.
+@endnode
+
+@node NR_ViewFlag "NR_ViewFlag         77"
+
+COMMAND: @{b}NR_ViewFlag         77@{ub}
+
+Retrieve users view flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's view flag.
+@endnode
+
+@node NR_ZippyFlag "NR_ZippyFlag        78"
+
+COMMAND: @{b}NR_ZippyFlag        78@{ub}
+
+Retrieve the Zippy Flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's zippy flag.
+@endnode
+
+@node NR_ReplyMSGFlag "NR_ReplyMSGFlag     79"
+
+COMMAND: @{b}NR_ReplyMSGFlag     79@{ub}
+
+Retrieve the reply message flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber from which you want to get the ReplyFlag.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's reply msg flag.
+@endnode
+
+@node NR_NukedFiles "NR_NukedFiles       80"
+
+COMMAND: @{b}NR_NukedFiles       80@{ub}
+
+Retrieve user's number of nuked files.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contain User's number of nuked files.
+@endnode
+
+@node NR_NukedBytes "NR_NukedBytes       81"
+
+COMMAND: @{b}NR_NukedBytes       81@{ub}
+
+Retrieve user's number of nuked bytes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contain User's number of nuked bytes.
+@endnode
+
+@node NR_MinDownCPS "NR_MinDownCPS       82"
+
+COMMAND: @{b}NR_MinDownCPS       82@{ub}
+
+Retrieve users min. download CPS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contain User's min. download CPS.
+@endnode
+
+@node NR_GetEditString "NR_GetEditString    83"
+
+COMMAND: @{b}NR_GetEditString    83@{ub}
+
+Prompt the user for a specified number of chars and edit string.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Max. chars which can be typed.
+Data2    <- Flag for different modes (see below).
+IOString <- String to be inserted into the edit array.
+
+@{b}RETURN:@{ub}
+
+IOString -> Filled string with chars typed by the user.
+Data3    -> Returncode from internal procedure (usable for Data2 flag 3).
+
+@{b}Description of Data2-Flag:@{ub}
+
+Value | Description
+------+----------------------------------------------------------------------
+  0   | Simple String-Input without Line-editing and other features
+------+----------------------------------------------------------------------
+  1   | String-Input for Chatmode. Uses Wordwrapping. (Don't use this to
+      | get a complete string, because after wordwrap the string changes!).
+------+----------------------------------------------------------------------
+  2   | String-Input for Msg-Editor (You can't use this Flag, because it
+      | could cause damage in fact of using a list! Flag disabled!).
+------+----------------------------------------------------------------------
+  3   | String-Input for Bulletin-Viewers (It returns CRSR-Keys left/right,
+      | Up&down for the Bullview to switch the BullHelp.txt's). See docs for
+      | more informations about Cycle-Texts. If using this Flag, the field
+      | Data3 contains the following values for the CRSR-Keys : 
+      |           65 -> Up, 66 -> Down, 67 -> Right, 68 -> Left.
+------+----------------------------------------------------------------------
+  4   | Same as Flag 0, but all typed chars will be displayed as '*'. Useful
+      | for Password-Entries etc. NOTE: If the Sysop had set the Flag 
+      | "Display Passwords to SysOp" in the @{"SystemEditor" link "SystemEditor.guide/Main"}, the entered Chars
+      | are only displayed on serial output as '***', the console gets the
+      | real Output!
+------+----------------------------------------------------------------------
+  5   | Currently unused.
+------+----------------------------------------------------------------------
+  6   | A real feature! This is the recommended Flag to use everywhere a user
+      | could enter anything with the full comfort of a "REAL" Line-Editor,
+      | supporting DEL/BACKSPACE, Inserting/Removing of chars etc..please use
+      | this Flag as Default-Value.
+------+----------------------------------------------------------------------
+  7   | The same as 4, but here will be no single char prompted when the user
+      | types something. No single char means of course also *NO* stars (*)
+      | will be printed! If the SysOp has set the Flag "Display Passwords to
+      | Sysop", the typed chars will be printed as real input string, but
+      | only to console.
+------+----------------------------------------------------------------------
+  8   | Numeric mode. Only numeric chars can be typed, no alphabetical chars
+      | allowed in this mode.
+------^----------------------------------------------------------------------
+
+@{b}NOTE:@{ub}
+
+Higher values as 8 for Data2-Flag are reserved and can't be used!
+
+If IOString contains data when calling this command, the user will get this
+data in the prompt and can edit it (flag 6 only!).
+
+NR_GetEditString is nearly the same as @{"NR_PromptChars" LINK NR_PromptChars}. In fact it is the
+same command, but if you use NR_GetEditString, no Data2 (mode flag) check
+will be done. Here you can use undocumented, obselete and non existing
+modes. Beware of what you are doing, it can result in crashes if you use
+for example flag number 2!
+@endnode
+
+@node NR_ResetFlagFile "NR_ResetFlagFile    84"
+
+COMMAND: @{b}NR_ResetFlagFile    84@{ub}
+
+Reset and get the first file from the flaglist.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber from which you want to get a flagged file.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+IOString -> The filename of the first flagged file.
+
+@{b}NOTE:@{ub} 
+
+Use NR_ResetFlagFile @{b}*FIRST*@{ub} ! You will reset the internal counter
+and get the first flagged file! So to get the whole flagging list of the 
+specified conference, first call NR_ResetFlagFile to get the first filename 
+and then repeatly call @{"NR_GetFlagFile" LINK NR_GetFlagFile} until IOString is empty.
+If NR_ResetFlagFile returns an empty IOString, the flaglist is empty :)
+@endnode
+
+@node NR_DeleteFlagFile "NR_DeleteFlagFile   85"
+
+COMMAND: @{b}NR_DeleteFlagFile   85@{b}
+
+Delete file(s) from a flaglist.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber from which you want to delete flagged 
+            file(s).
+Data2    <- If true the file will not be deleted if the FFFL_NODELETE flag
+            of the file flag is set. If false flag will be deleted in any
+            case.
+IOString <- The file or pattern to delete file(s).
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+You could use the full name or a valid A-DOS filepattern as filename !
+If Data1 is lower than 1 or higher than the maximum conferences, it will be
+set to the current conference.
+
+@endnode
+
+@node NR_DelFlagFileNum "NR_DelFlagFileNum   86"
+
+COMMAND: @{b}NR_DelFlagFileNum   86@{ub}
+
+Delete a file from the flaglist with the fileflagnumber.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The confnumber from which you want to delete a flagged file.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+Data2    <- The number of the flag you want to delete.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_GetFullArg "NR_GetFullArg       87"
+
+COMMAND: @{b}NR_GetFullArg       87@{ub}
+
+Retrieve the full Argumentstring prior to the door being entered.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The string of all arguments given when starting the Door.
+
+@{b}NOTE:@{ub} 
+
+The first four arguments were automatically sorted by FAME (argument by 
+argument seperated with a space), all other arguments remain unchanged!
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_GetArgument1" LINK NR_GetArgument1}, @{"NR_GetArgument2" LINK NR_GetArgument2}, @{"NR_GetArgument3" LINK NR_GetArgument3}, @{"NR_GetArgument4" LINK NR_GetArgument4}
+@endnode
+
+@node NR_GetArgument1 "NR_GetArgument1     88"
+
+COMMAND: @{b}NR_GetArgument1     88@{ub}
+
+Retrieves only the FIRST argument, no other arguments given !
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Will be the first argument.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_GetFullArgs" LINK NR_GetFullArgs}, @{"NR_GetArgument2" LINK NR_GetArgument2}, @{"NR_GetArgument3" LINK NR_GetArgument3}, @{"NR_GetArgument4" LINK NR_GetArgument4}
+@endnode
+
+@node NR_GetArgument2 "NR_GetArgument2     89"
+
+COMMAND: @{b}NR_GetArgument2     89@{ub}
+
+Retrieves only the SECOND argument, no other arguments given !
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Will be the second argument.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_GetFullArgs" LINK NR_GetFullArgs}, @{"NR_GetArgument1" LINK NR_GetArgument1}, @{"NR_GetArgument3" LINK NR_GetArgument3}, @{"NR_GetArgument4" LINK NR_GetArgument4}
+@endnode
+
+@node NR_GetArgument3 "NR_GetArgument3     90"
+
+COMMAND: @{b}NR_GetArgument3     90@{ub}
+
+Retrieves only the THIRD argument, no other arguments given !
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Will be the third argument.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_GetFullArgs" LINK NR_GetFullArgs}, @{"NR_GetArgument1" LINK NR_GetArgument1}, @{"NR_GetArgument2" LINK NR_GetArgument2}, @{"NR_GetArgument4" LINK NR_GetArgument4}
+@endnode
+
+@node NR_GetArgument4 "NR_GetArgument4         91"
+
+COMMAND: @{b}NR_GetArgument4     91@{ub}
+
+Retrieves only the FOURTH argument, no other arguments given !
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Will be the fourth and all other arguments.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_GetFullArgs" LINK NR_GetFullArgs}, @{"NR_GetArgument1" LINK NR_GetArgument1}, @{"NR_GetArgument2" LINK NR_GetArgument2}, @{"NR_GetArgument3" LINK NR_GetArgument3}
+@endnode
+
+@node NR_WaitChar "NR_WaitChar               92"
+
+COMMAND: @{b}NR_WaitChar         92@{ub}
+
+Gets a char with waiting for response.
+
+@{b}INPUT:@{ub}
+
+IOString <- String which will be displayed to the user.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The char typed be the user.
+Data3    -> Where the char was typed: 0 = from Console, 1 = from Serial.
+
+@{b}NOTE:@{ub} 
+
+You get all ASCII-codes and also RAW codes, but the CSI codes are
+filtered by FAME, because the BBS has to check for FKeys and others.
+
+The CRSR-Key-Values from CON: and serial are the following:
+
+                             UP -> 4 
+                           DOWN -> 5 
+                          RIGHT -> 3 
+                           LEFT -> 2
+@{b}SEE ALSO:@{ub}
+
+@{"AR_GetKey" LINK AR_GetKey}, @{"NR_HotKey" LINK NR_HotKey}, @{"AR_WaitRAWChar" LINK AR_WaitRAWChar}, @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp}, @{"AR_HotKey" LINK AR_HotKey}
+@endnode
+
+@node NR_GetConFontSize "NR_GetConFontSize   93"
+
+COMMAND: @{b}NR_GetConFontSize   93@{ub}
+
+Retrieves the Font height and width from Console.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Height of font.
+Data3    -> Width of font.
+@endnode
+
+@node NR_ResetANSI "NR_ResetANSI        94"
+
+COMMAND: @{b}NR_ResetANSI        94@{ub}
+
+Resets the console and serial attributes to standard values.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_ResetANSIOnExit "NR_ResetANSIOnExit  95"
+
+COMMAND: @{b}NR_ResetANSIOnExit  95@{ub}
+
+Sets a flag to force the node to reset console and serial attributes to
+standard values when calling @{"MC_ShutDown" LINK MC_ShutDown} / @{"MC_ShutDownLastWords" LINK MC_ShutDownLastWords}.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_CONNumLines "NR_CONNumLines      96"
+
+COMMAND: @{b}NR_CONNumLines      96@{ub}
+
+Retrieves the number of lines to view on Console.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of lines to view.
+
+@{b}NOTE:@{ub} 
+
+This function is important if you must/want create a so-called "Screen-View"
+and the user has more lines available on his screen than the Sysop on the 
+user's node could display. You may handle the Sysop's Display seperatly 
+from the user's view !
+
+The number of lines to view is really one line more than you will get here,
+because of scrolling texts there should be always one line kept as reserve.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_LineCount" LINK NR_LineCount}, @{"NR_NumLines" LINK NR_NumLines}, @{"CF_Numlines" LINK CF_Numlines}
+@endnode
+
+@node NR_NumberOfChats "NR_NumberOfChats    97"
+
+COMMAND: @{b}NR_NumberOfChats    97@{ub}
+
+Retrieve users number of chats.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains the number of chats.
+@endnode
+
+@node NR_NumberOfPages "NR_NumberOfPages    98"
+
+COMMAND: @{b}NR_NumberOfPages    98@{ub}
+
+Retrieve users number of pages.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of pages.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumberOfDayPages" LINK NR_NumberOfDayPages}, @{"NR_NumOfPagesAllowed" LINK NR_NumOfPagesAllowed}
+@endnode
+
+@node NR_NumberOfDayPages "NR_NumberOfDayPages 99"
+
+COMMAND: @{b}NR_NumberOfDayPages 99@{ub}
+
+Retrieve users number of pages today.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of pages today.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumberOfPages" LINK NR_NumberOfPages}, @{"NR_NumOfPagesAllowed" LINK NR_NumOfPagesAllowed}
+@endnode
+
+@node NR_NumOfPagesAllowed "NR_NumOfPagesAllowed 100"
+
+COMMAND: @{b}NR_NumOfPagesAllowed 100@{ub}
+
+Retrieves the number of pages allowed per day for user's access-level.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of pages allowed per day.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumberOfPages" LINK NR_NumberOfPages}, @{"NR_NumberOfDayPages" LINK NR_NumberOfDayPages}
+@endnode
+
+@node NR_NumberOfDayRelogs "NR_NumberOfDayRelogs 101"
+
+COMMAND: @{b}NR_NumberOfDayRelogs 101@{ub}
+
+Retrieve the number of daily relogins.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of daily relogins.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumOfRelogsAllowed" LINK NR_NumOfRelogsAllowed}
+@endnode
+
+@node NR_NumOfRelogsAllowed "NR_NumOfRelogsAllowed 102"
+
+COMMAND: @{b}NR_NumOfRelogsAllowed 102@{ub}
+
+Retrieve the number of relogins allowed per day.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of relogins per day.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_NumberOfDayRelogs" LINK NR_NumberOfDayRelogs}
+
+@endnode
+
+@node NR_DoorHelp "NR_DoorHelp         103"
+
+COMMAND: @{b}NR_DoorHelp         103@{ub}
+
+Try to load and display online user help
+
+@{b}INPUT:@{ub}
+
+IOString  <- Minimum Version.Revision string. Example: "1.23"
+StringPtr <- Help file name without any pathes.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{u}NOTE:@{uu}
+
+Nearly all Arguments are invalid after usage ! Especially @{"NR_MainLine" LINK NR_MainLine}
+and @{"NR_GetArgument1" LINK NR_GetArgument1} Commands.
+@endnode
+
+@node NR_SetDoorReturnCode "NR_SetDoorReturnCode 104"
+
+COMMAND: @{b}NR_SetDoorReturnCode 104@{ub}
+
+Set Door Returncode.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new DoorReturnCode.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_GetDoorReturnCode "NR_GetDoorReturnCode 105"
+
+COMMAND: @{b}NR_GetDoorReturnCode 105@{ub}
+
+Retrieve Door ReturnCode.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the DoorReturnCode.
+@endnode
+
+@node NR_ClrFileFlgLst "NR_ClrFileFlgLst     106"
+
+COMMAND: @{b}NR_ClrFileFlgLst     106@{ub}
+
+Delete all file flags in a specified conference.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conference number.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_ClrFileFlgLsts "NR_ClrFileFlgLsts    107"
+
+COMMAND: @{b}NR_ClrFileFlgLsts    107@{ub}
+
+Delete all file flags in all conferences.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NR_GetRelativeStatus "NR_GetRelativeStatus 108"
+
+COMMAND: @{b}NR_GetRelativeStatus 108@{ub}
+
+Retrieve the relative status. Has this node got relative conferences set?
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The relative status, if <> 0 then relative is set to on.
+@endnode
+
+@node NR_AbsToRel "NR_AbsToRel          109"
+
+COMMAND: @{b}NR_AbsToRel          109@{ub}
+
+Convert an absolute conference number (real) to the relative one.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Your absolute conference number.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The relative conference number.
+
+@{b}NOTE:@{ub}
+
+If Data2 is 0, the user has no access to the selected conference!
+If you supply a conference number lower than 0 or higher than the maximum
+available conference, the current conference number will be set in Data1.
+@endnode
+
+@node NR_RelToAbs "NR_RelToAbs          110"
+
+COMMAND: @{b}NR_RelToAbs          110@{ub}
+
+Convert a relative conference number to the absolute (real) one.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Your relative conference number.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The absolute conference number.
+
+@{b}NOTE:@{ub}
+
+If you supply a conference number lower than 0 or higher than the maximum
+available conference, the current conference number will be set in Data1.
+@endnode
+
+@node NR_GetAbortIOPort "NR_GetAbortIOPort    111"
+
+COMMAND: @{b}NR_GetAbortIOPort    111@{ub}
+
+Get the AbortIO Messageport.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The AbortIO MsgPort structure
+@endnode
+
+@node NR_GetDoorDatas "NR_GetDoorDatas      112"
+
+COMMAND: @{b}NR_GetDoorDatas      112@{ub}
+
+Get datas of your door like the path for example.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString     -> The path from where FAME has started your door.
+StringPtr    -> The complete path and door filename.
+StructDummy1 -> Pointer to struct dOORS (Developer only).
+
+@{b}NOTE:@{ub}
+
+            @{fg shine}THIS FUNCTION IS ONLY FOR DEVELOPERS, DO NOT USE IT@{fg text}
+                @{fg shine}IF YOU ARE NOT AN OFFICIAL FAME DEVELOPER,@{fg text}
+                        @{fg shine}OR YOUR SYSTEM MAY CRASH !@{fg text}
+@endnode
+
+@node NR_GetDoorCallName "NR_GetDoorCallName   113"
+
+COMMAND: @{b}NR_GetDoorCallName   113@{ub}
+
+Get the DoorCallName.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The DoorCallName.
+@endnode
+
+@node NR_GetUserLevelFlags "NR_GetUserLevelFlags 114"
+
+COMMAND: @{b}NR_GetUserLevelFlags 114@{ub}
+
+Get the level flags for the current user.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> MaxPages
+Data3    -> MaxRelogins
+IOString -> Array of level flags.
+
+@{b}NOTE:@{ub}
+
+You will get an array (IOString) where you can use the level defines to see
+if a level flag is set: 
+
+                        TRUE / 1 = Flag set
+                       FALSE / 0 = Flag not set
+
+If the levelflag you are checking is set to 0, the user isn't able to do
+this command. If the checked value is <> 0, the according command is set
+and the user is able to do this.
+
+For a complete list of all defines look in the FAMEDefine.h file found in
+the developer archive of FAME or click @{"HERE" LINK FLVL_FLAGS} to get an overview of all flags
+defined for this function.
+@endnode
+
+@REM ----------------------------------------------------------------------
+@REM ------------------------- NC commands --------------------------------
+@REM ----------------------------------------------------------------------
+
+@node NC_TimeOut "NC_TimeOut         200"
+
+COMMAND: @{b}NC_TimeOut         200@{ub}
+
+Change the Door timeout limit.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new door timeout.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Name "NC_Name            201"
+
+COMMAND: @{b}NC_Name            201@{ub}
+
+Change users name/handle.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new username of the online user (max. 30 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+If ReturnCode = 1 the username already exists and nothing changed!
+@endnode
+
+@node NC_Password "NC_Password        202"
+
+COMMAND: @{b}NC_Password        202@{ub}
+
+Change users password.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new password of the online user (max. 20 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Location "NC_Location        203"
+
+COMMAND: @{b}NC_Location        203@{ub}
+
+Change users location.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new location of the online user (max. 30 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_From "NC_From            204"
+
+COMMAND: @{b}NC_From            204@{ub}
+
+Change users from (Origin).
+
+@{b}INPUT:@{ub}
+
+IOString <- The new origin of the online user (max. 30 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_PhoneNumber "NC_PhoneNumber     205"
+
+COMMAND: @{b}NC_PhoneNumber     205@{ub}
+
+Change users phone number.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new phonenumber of the online user (max. 15 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_AccessLevel "NC_AccessLevel     206"
+
+COMMAND: @{b}NC_AccessLevel     206@{ub}
+
+Change users access level.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new level of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_RatioType "NC_RatioType       207"
+
+COMMAND: @{b}NC_RatioType       207@{ub}
+
+Change users ratiotype.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ratiotype of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Ratio "NC_Ratio           208"
+
+COMMAND: @{b}NC_Ratio           208@{ub}
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ratio of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_CompType "NC_CompType        209"
+
+COMMAND: @{b}NC_CompType        209@{ub}
+
+Change users computertype code.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new computertype of the online user.
+IOString <- The new computer.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_ModemType "NC_ModemType       210"
+
+COMMAND: @{b}NC_ModemType       210@{ub}
+
+Change users modemtype code.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new modemtype of the online user.
+IOString <- The new modem.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_MessagePosted "NC_MessagePosted   211"
+
+COMMAND: @{b}NC_MessagePosted   211@{ub}
+
+Change users messages posted.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new messages posted by the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_MessageRead "NC_MessageRead     212"
+
+COMMAND: @{b}NC_MessageRead     212@{ub}
+
+Change the number of messages read by the User.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new messages read of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NoCalls "NC_NoCalls         213"
+
+COMMAND: @{b}NC_NoCalls         213@{ub}
+
+Change users number of calls.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new number of calls of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_TimeLastOn "NC_TimeLastOn      214"
+
+COMMAND: @{b}NC_TimeLastOn      214@{ub}
+
+Change time the user last called.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new last time called of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+The Value you pass here has to be a LONG value as given from time() !
+@endnode
+
+@node NC_TimeUsed "NC_TimeUsed        215"
+
+COMMAND: @{b}NC_TimeUsed        215@{ub}
+
+Change users time used today (seconds).
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new time used today of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_TimeLimit "NC_TimeLimit       216"
+
+COMMAND: @{b}NC_TimeLimit       216@{ub}
+
+Change users time allowed today (seconds).
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new time allowed of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_TimeRemain "NC_TimeRemain      217"
+
+COMMAND: @{b}NC_TimeRemain      217@{ub}
+
+Change users total time remaining for today.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new total time remaining for the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Uploads "NC_Uploads         218"
+
+COMMAND: @{b}NC_Uploads         218@{ub}
+
+Change users number of uploaded files.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new number of uploaded files of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Downloads "NC_Downloads       219"
+
+COMMAND: @{b}NC_Downloads       219@{ub}
+
+Change users number of downloaded files.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new number of downloaded files of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_BytesUpload "NC_BytesUpload     220"
+
+COMMAND: @{b}NC_BytesUpload     220@{ub}
+
+Change users number of uploaded bytes.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new uploaded bytes of the online user.
+Data4    <- Contains the higher ULONG for the uploaded bytes (V1.30+ !)
+
+Data3 contains the lower 32-Bit of the uploaded bytes as usual. Data4 
+contains the higher 32-Bits of the uploaded bytes to make 64-Bit 
+possible. Whenever Data3 exceeds 4.294.967.295 bytes in Size, the Data4
+value has to be updated to reflect the new uploaded bytes.
+
+Please look also in the @{"64-Bit FAQ" LINK 64BIT} to get more informations about this
+new feature of FAME.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_BytesDownload "NC_BytesDownload   221"
+
+COMMAND: @{b}NC_BytesDownload   221@{ub}
+
+Change users number of downloaded bytes.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new downloaded bytes of the online user.
+Data4    <- Contains the higher ULONG for the uploaded bytes (V1.30+ !)
+
+Data3 contains the lower 32-Bit of the uploaded bytes as usual. Data4 
+contains the higher 32-Bits of the uploaded bytes to make 64-Bit 
+possible. Whenever Data3 exceeds 4.294.967.295 bytes in Size, the Data4
+value has to be updated to reflect the new uploaded bytes.
+
+Please look also in the @{"64-Bit FAQ" LINK 64BIT} to get more informations about this
+new feature of FAME.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyByteLimit "NC_DailyByteLimit  222"
+
+COMMAND: @{b}NC_DailyByteLimit  222@{ub}
+
+Change users daily byte limit.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily byte limit of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyFileLimit "NC_DailyFileLimit  223"
+
+COMMAND: @{b}NC_DailyFileLimit  223@{ub}
+
+Change users daily file limit.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily files limit of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyByteDld "NC_DailyByteDld    224"
+
+COMMAND: @{b}NC_DailyByteDld    224@{ub}
+
+Change users daily bytes downloaded.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily bytes downloaded of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyFileDld "NC_DailyFileDld    225"
+
+COMMAND: @{b}NC_DailyFileDld    225@{ub}
+
+Change users daily files downloaded.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily files downloaded by the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyByteBonus "NC_DailyByteBonus  226"
+
+COMMAND: @{b}NC_DailyByteBonus  226@{ub}
+
+Change users daily byte bonus.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily byte bonus of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_DailyFileBonus "NC_DailyFileBonus  227"
+
+COMMAND: @{b}NC_DailyFileBonus  227@{ub}
+
+Change users daily file bonus.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new daily file bonus of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Expert "NC_Expert          228"
+
+COMMAND: @{b}NC_Expert          228@{ub}
+
+Change users Expert Mode.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new expert mode of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NumLines "NC_NumLines        229"
+
+COMMAND: @{b}NC_NumLines        229@{ub}
+
+Change users number of lines to view.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new number of lines of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+You have to set Data1 to one line less than the full linelength of the
+screen, because of scrolling texts you need one line in reserve!
+@endnode
+
+@node NC_Birthday "NC_Birthday        230"
+
+COMMAND: @{b}NC_Birthday        230@{ub}
+
+Change users birthday.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new Birthday of the online user (max. 10 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_MenuPrompt "NC_MenuPrompt      231"
+
+COMMAND: @{b}NC_MenuPrompt      231@{ub}
+
+Change users Menuprompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new Menuprompt of the online user (max. 200 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_EditorType "NC_EditorType      232"
+
+COMMAND: @{b}NC_EditorType      232@{ub}
+
+Change users Editor type.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Editor type of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_XferProt "NC_XferProt        233"
+
+COMMAND: @{b}NC_XferProt        233@{ub}
+
+Change users Transfer-Protocol.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new XferProtocol of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Zoom "NC_Zoom            234"
+
+COMMAND: @{b}NC_Zoom            234@{ub}
+
+Change users ZOOM-Type.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ZOOM type of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_SysLanguage "NC_SysLanguage     235"
+
+COMMAND: @{b}NC_SysLanguage     235@{ub}
+
+Change users current System language specifications.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new System language of the online user (max. 30 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Language "NC_Language        236"
+
+COMMAND: @{b}NC_Language        236@{ub}
+
+Change users current language specifications.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new language of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_LineCount "NC_LineCount       237"
+
+COMMAND: @{b}NC_LineCount       237@{ub}
+
+Change users current number of lines viewed.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new number of lines viewed.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_AnsiColor "NC_AnsiColor       238"
+
+COMMAND: @{b}NC_AnsiColor       238@{ub}
+
+Change users ANSI-Flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ANSI flag of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_SentBy "NC_SentBy          239"
+
+COMMAND: @{b}NC_SentBy          239@{ub}
+
+Change users Sent-By line.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber in which you want to change the SentByLine.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+IOString <- The new Sent-By Line of the online user (max 45 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_AutoFileID "NC_AutoFileID      240"
+
+COMMAND: @{b}NC_AutoFileID      240@{ub}
+
+Change users Auto FILE_ID.DIZ.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Auto FILE_ID.DIZ of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NewMessage "NC_NewMessage      241"
+
+COMMAND: @{b}NC_NewMessage      241@{ub}
+
+Change the New Message Status.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new New Message Status of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Goodbye "NC_Goodbye         242"
+
+COMMAND: @{b}NC_Goodbye         242@{ub}
+
+Change the (Fast) Goodbye flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Goodbye Flag of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_ViewFlag "NC_ViewFlag        243"
+
+COMMAND: @{b}NC_ViewFlag        243@{ub}
+
+Change users Viewflag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new View Flag of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_ZippyFlag "NC_ZippyFlag       244"
+
+COMMAND: @{b}NC_ZippyFlag       244@{ub}
+
+Change users Zippyflag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Zippy Flag of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_ReplyMSGFlag "NC_ReplyMSGFlag    245"
+
+COMMAND: @{b}NC_ReplyMSGFlag    245@{ub}
+
+Change the ReplyMsg Flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber you are going to change the ReplyMSG Flag.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+Data2    <- The new ReplyMSG Flag of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NukedFiles "NC_NukedFiles      246"
+
+COMMAND: @{b}NC_NukedFiles      246@{ub}
+
+Change users number of nuked Files.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new nuked Files of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NukedBytes "NC_NukedBytes      247"
+
+COMMAND: @{b}NC_NukedBytes      247@{ub}
+
+Change users number of nuked Bytes.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new nuked Bytes of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_MinUpCPS "NC_MinUpCPS        248"
+
+COMMAND: @{b}NC_MinUpCPS        248@{ub}
+
+Change users min. Upload CPS.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new min. Upload CPS of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_MinDownCPS "NC_MinDownCPS      249"
+
+COMMAND: @{b}NC_MinDownCPS      249@{ub}
+
+Change users min. Download CPS.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Min Download CPS of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_LostCarrier "NC_LostCarrier      250"
+
+COMMAND: @{b}NC_LostCarrier      250@{ub}
+
+Change users number of Lost Carriers.
+
+@{b}INPUT:@{ub}
+
+ Data1    <- The new number of Lost Carriers of the online user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NumberOfChats "NC_NumberOfChats   251"
+
+COMMAND: @{b}NC_NumberOfChats   251@{ub}
+
+Change users number of chats.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new number of chats.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NumberOfPages "NC_NumberOfPages   252"
+
+COMMAND: @{b}NC_NumberOfPages   252@{ub}
+
+Change users number of pages.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new number of pages.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NumberOfDayPages "NC_NumberOfDayPages 253"
+
+COMMAND: @{b}NC_NumberOfDayPages 253@{ub}
+
+Change users number of daily pages.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new number of day pages.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_NumberOfDayRelogs "NC_NumberOfDayRelogs 254"
+
+COMMAND: @{b}NC_NumberOfDayRelogs 254@{ub}
+
+Change the number of daily relogins allowed for users Accesslevel.
+
+@{b}INPUT:@{ub}
+
+Data2    <- The new number of relogins allowed per day.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node NC_Nuked "NC_Nuked             255"
+
+COMMAND: @{b}NC_Nuked             255@{ub}
+
+Called from a Nuker to update the nuked bytes and files of the current user.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of files nuked.
+Data3    <- The number of bytes nuked.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Data1 and Data3 are files and bytes nuked by the nuker and they will be
+added to the user.data.
+
+This command will also call all doors found under the SYSCMD commands
+@{b}NUKED@{ub} and @{b}NUKED<x>@{ub} !
+@endnode
+
+@node NC_NukedAfter "NC_NukedAfter        256"
+
+COMMAND: @{b}NC_NukedAfter        256@{ub}
+
+Called from a Nuker to update the nuked bytes and files of the current user,
+but they will be updated not @{u}BEFORE@{uu} the nuker has shut down.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of files nuked.
+Data3    <- The number of bytes nuked.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Data1 and Data3 are files and bytes nuked by the nuker and they will be
+added to the user.data, but in difference to command @{"NC_Nuked" LINK NC_Nuked} the fields
+won't be updated until the nuker has shut down!
+
+This command will also call all doors found under the SYSCMD commands
+@{b}NUKED@{ub} and @{b}NUKED<x>@{ub} !
+@endnode
+
+@REM ------------------------- CF commands --------------------------------
+
+@node CF_ShowText "CF_ShowText        400"
+
+COMMAND: @{b}CF_ShowText        400@{ub}
+
+Shows a Textfile without Suffix.
+
+@{b}INPUT:@{ub}
+
+IOString <- the complete path and filename of the text to be viewed.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+You have to pass the complete path and Filename, incl. the suffix,
+i.e.: BBS:BULL.TXT !
+@endnode
+
+@node CF_ShowTextSuffix "CF_ShowTextSuffix  401"
+
+Shows a Textfile with Suffix.
+
+COMMAND: @{b}CF_ShowTextSuffix  401@{ub}
+
+@{b}INPUT:@{ub}
+
+IOString <- the complete path and filename of the text to be viewed.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+You have to pass the complete path & filename, but without Suffix!
+I.e.: BBS:BULL could be 'BBS:BULL.TXT' or 'BBS:BULL.GER' etc.
+@endnode
+
+@node CF_ShowTextSufLvl "CF_ShowTextSufLvl  402"
+
+COMMAND: @{b}CF_ShowTextSufLvl  402@{ub}
+
+Shows a Textfile with full suffix & level.
+
+@{b}INPUT:@{ub}
+
+IOString <- the complete path and filename of the text to be viewed.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+You have to pass the complete path & filename, but without Suffix!
+The level will be automatically searched and inserted for you.
+I.e.: BBS:Bull could be 'BBS:BULL100.TXT' or 'BBS:BULL50.GER' etc.
+@endnode
+
+@node CF_ExecuteCommand "CF_ExecuteCommand   403"
+
+COMMAND: @{b}CF_ExecuteCommand   403@{ub}
+
+Execute a menu command including doors if available.
+
+@{b}INPUT:@{ub}
+
+IOString <- The command to be executed.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_InternalCmd "CF_InternalCmd     404"
+
+COMMAND: @{b}CF_InternalCmd     404@{ub}
+
+Execute an internal menu command.
+
+@{b}INPUT:@{ub}
+
+IOString <- The internal menu command to be executed.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_ZModemSend "CF_ZModemSend      405"
+
+COMMAND: @{b}CF_ZModemSend      405@{ub}
+
+Send a file to the user via ZModem protocol.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 100 = Count user bytes and files else not.
+IOString <- The File to be sent to the user.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returns the status: 
+
+                  1 means file has been transfered.
+                  0 means file has been copied to sysop download dir.
+                 -1 means xprzmodem.library not open.
+
+@{b}NOTE:@{ub}
+
+There exists also defines for Data1:
+
+#define DOORUD_DONOTCOUNTBYTES 0
+#define DOORUD_COUNTBYTES      100
+
+@{b}SEE ALSO:@{ub}
+
+@{"CF_ZModemSendLst" LINK CF_ZModemSendLst}, @{"CF_ZModemReceive" LINK CF_ZModemReceive}
+
+@endnode
+
+@node CF_ZModemReceive "CF_ZModemReceive   406"
+
+COMMAND: @{b}CF_ZModemReceive   406@{ub}
+
+Receive files via ZModem protocol.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 100 = Count user bytes and files else not.
+IOString <- The path for the file(s) to be written to.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returns the status: 
+
+                  1 means file has been transfered.
+                  0 means file has been copied to sysop download dir.
+                 -1 means xprzmodem.library not open.
+@{b}NOTE:@{ub} 
+
+You have to pass a valid path to IOString, else the transfer won't start !!!
+
+There exists also defines for Data1:
+
+#define DOORUD_DONOTCOUNTBYTES 0
+#define DOORUD_COUNTBYTES      100
+
+@{b}SEE ALSO:@{ub}
+
+@{"CF_ZModemSend" LINK CF_ZModemSend}, @{"CF_ZModemSendLst" LINK CF_ZModemSendLst}
+
+@endnode
+
+@node CF_ZModemSendLst "CF_ZModemSendLst   407"
+
+COMMAND: @{b}CF_ZModemSendLst   407@{ub}
+
+Send files from the Flaglist to the user via ZModem protocol.
+
+@{b}INPUT:@{ub}
+
+Data1     <- 100 = Count user bytes and files else not.
+StringPtr <- A Stringpointer of nearly unlimited filenames incl. path.
+             Between every single path/filename there must be a space.
+             Maximum filelength of path+filename is 100 chars.
+             Example: "RAM:File1.123 RAM:File2.123 RAM:ENV/TIME"
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returns the status: 
+
+                  1 means file has been transfered.
+                  0 means file has been copied to sysop download dir.
+                 -1 means xprzmodem.library not open.
+
+@{b}NOTE:@{ub} 
+
+There exists also defines for Data1:
+
+#define DOORUD_DONOTCOUNTBYTES 0
+#define DOORUD_COUNTBYTES      100
+
+@{b}SEE ALSO:@{ub}
+
+@{"CF_ZModemSend" LINK CF_ZModemSend}, @{"CF_ZModemReceive" LINK CF_ZModemReceive}
+@endnode
+
+@node CF_ReturnCommand "CF_ReturnCommand  408"
+
+COMMAND: @{b}CF_ReturnCommand  408@{ub}
+
+Execute a command/door.
+
+@{b}INPUT:@{ub}
+
+IOString <- The command to be executed.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub} 
+
+To delete a previous ReturnCommand-Request, overwrite it with a new request
+or use "" to delete it completely.
+@endnode
+
+@node CF_SetFlagFile "CF_SetFlagFile     409"
+
+COMMAND: @{b}CF_SetFlagFile     409@{ub}
+
+Add file to the door-internal flaglist.
+
+
+@{fg shine}                    ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node CF_GetFlagFile "CF_GetFlagFile     410"
+
+COMMAND: @{b}CF_GetFlagFile     410@{ub}
+
+Get file frrom the door-internal flaglist.
+
+
+@{fg shine}                    ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node CF_CallersLog "CF_CallersLog      411"
+
+COMMAND: @{b}CF_CallersLog      411@{ub}
+
+Add a line of text to the callers.log of the current node.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to add to the callers.log.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_UDLog "CF_UDLog           412"
+
+COMMAND: @{b}CF_UDLog           412@{ub}
+
+Add a line of text to the ud.log of the current node.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to add to the ud.log.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_DoorLog "CF_DoorLog         413"
+
+COMMAND: @{b}CF_DoorLog         413@{ub}
+
+Add a line of text to the Door.log of the current node.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to add to the Door.log.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_CompType "CF_CompType        414"
+
+COMMAND: @{b}CF_CompType        414@{ub}
+
+Change Computertype with built-in selector.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Old or default computertype to load, 0 to let user select.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_ModemType "CF_ModemType       415"
+
+COMMAND: @{b}CF_ModemType       415@{ub}
+
+Change Modemtype with built-in selector.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Old or default modemtype to load, 0 to let user select.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@REM --- COMMAND 416 WAS OBSELETE (CF_SYSLANGUAGE) SINCE V0.25 ---
+
+
+@node CF_Language "CF_Language        417"
+
+COMMAND: @{b}CF_Language        417@{ub}
+
+Change Textlanguage (Suffix and language) with built-in selector.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Old or default language to load, 0 to let user select.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_NumLines "CF_NumLines        418"
+
+COMMAND: @{b}CF_NumLines        418@{ub}
+
+Change Number of lines to view with built-in selector.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = Built-In selector should appear with prompting for numbers,
+            higher than 0 means set the given value without prompting.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_LineCount" LINK NR_LineCount}, @{"NR_NumLines" LINK NR_NumLines}, @{"NR_CONNumLines" LINK NR_CONNumLines}
+@endnode
+
+@node CF_ShTxtSufLvlCyc "CF_ShTxtSufLvlCyc  419"
+
+COMMAND: @{b}CF_ShTxtSufLvlCyc  419@{ub}
+
+Shows a Textfile with full Suffix, level & Cycle.
+
+@{b}INPUT:@{ub}
+
+Data1     <- 1 means use Suffix .TXT only. 0 means use users system language.
+IOString  <- The path where the files to be shown are located.
+StringPtr <- The filename itself, without path!
+
+@{b}RETURN:@{ub}
+
+IOString  -> The complete filepath and name with cyclenumber and more...
+
+@{b}EXAMPLE:@{ub}
+
+You pass :
+
+IOString  = "BBS:SCREENS"
+StringPtr = "Bull"
+Data1     = 1
+
+and maybe you get:
+
+IOString  = "BBS:SCREENS/1-Bull.ger" or similar.
+
+If no cycle texts could be found, FAME tries to use:
+
+"BBS:Screens/Bull.ger"
+
+If this file also doesn't exist, FAME tries to use:
+
+"BBS:Screens/Bull.txt".
+@endnode
+
+@node CF_ShowTextSetable "CF_ShowTextSetable 420"
+
+COMMAND: @{b}CF_ShowTextSetable 420@{ub}
+
+Shows a Textfile freely configurable.
+
+@{b}INPUT:@{ub}
+
+Data1        <- 0 means don't cycle, else cycle.
+Data2        <- 1 means use users language, 
+                0 means you have to set the suffix yourself.
+Data3        <- 1 means use suffix .TXT only. 
+                0 means use users system language.
+IOString     <- If Data1 is not 0 IOString is the path where the files to 
+                view are located, else IOString is the full path + filename.
+StringPtr    <- The filename itself, without path!
+StructDummy1 <- "-1" means only users suffix will be added as suffix.
+                "-2" means .GR or if .GR not exists GR1 will be added as
+                suffix. This is used for Paragon Door texts.
+
+If the value of StructDummy1 is higher than 0 (Atol() ) i.e. it's 10, it
+will be used as the Level, like : Menu10.txt.
+If the value of StructDummy1 is 0 (Atol() ), the next lower level text will
+be used, like: Menu300.txt or Menu255.txt. It counts down from 1000 to 0 in
+steps of 5.
+
+@{b}RETURN:@{ub}
+
+IOString     -> The complete filepath and name (with cyclenumber and more).
+
+@{b}NOTE:@{ub} 
+
+StructDummy1 is only available if Data2 is 1!
+@endnode
+
+@node CF_InternReturnCmd "CF_InternReturnCmd 421"
+
+COMMAND: @{b}CF_InternReturnCmd 421@{ub}
+
+Execute an internal command.
+
+@{b}INPUT:@{ub}
+
+IOString <- The command to be executed.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+To delete a previous ReturnCommand-Request, overwrite it with a new request
+or use "" to delete it completely.
+@endnode
+
+@node CF_DoCallersLog "CF_DoCallersLog 422"
+
+COMMAND: @{b}CF_DoCallersLog 422@{ub}
+
+Write to any of the Logfiles.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Phase (type).
+Data2    <- Log type.
+Data3
+IOString <- The string to be add to the <x>.log.
+
+@{b}RETURN:@{ub}
+
+None.
+
+ Log Types:
+
+            0 = Callers.Log only
+            1 = UDLog
+            2 = StartLog
+            3 = DoorLog
+
+@{b}NOTE:@{ub}
+
+Callers.Log will be written in any case!
+@endnode
+
+@node CF_SaveWherePhase "CF_SaveWherePhase  423"
+
+COMMAND: @{b}CF_SaveWherePhase  423@{ub}
+
+Save Where I am phase temporary.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_RestWherePhase "CF_RestWherePhase  424"
+
+COMMAND: @{b}CF_RestWherePhase  424@{ub}
+
+Restore temporary saved Where I am phase.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node CF_FileCopyMove "CF_FileCopyMove    425"
+
+COMMAND: @{b}CF_FileCopyMove    425@{ub}
+
+Copy or move a file.
+
+@{b}INPUT:@{ub}
+
+Data1    <- if 0 then copy, else move file.
+IOString <- Source file to copy/move.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returncode of operation. If false then there was an error.
+@endnode
+
+@node CF_SysOpChat "CF_SysOpChat       426"
+
+COMMAND: @{b}CF_SysOpChat       426@{ub}
+
+Jump into SysOp-Chat.
+
+@{b}INPUT:@{ub}
+
+Data1    <- if 0 last line will be restored.
+Data2    <- if TRUE shifted chat.
+Data3    <- if TRUE no screen to front will be done, else it will.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Data1 indicates (if = 0) that the last displayed string on screen before 
+the SysOp-Chat is called will be buffered and shall be re-displayed after
+exiting the chat. Often useful for buffering input prompts.
+
+Data2 emulates (if = TRUE) a chat like with @{b}SHIFT-F1@{ub} called.
+If Data2 = FALSE it will be a chat like when using F1 only.
+
+If the user is already in SysOp-Chat it's not possible to go in the SysOp-
+Chat again. It's only possible if no SysOp-Chat is currently running.
+
+If it was not possible to go into SysOp-Chat because the user is already
+in a SysOp-Chat, this command return with the @{"DoorPort-Error" LINK STRUCT 38} @{b}1@{ub}, which
+means "@{b}Command not successful executed@{ub}".
+@endnode
+
+@node CF_SpecialCmd "CF_SpecialCmd      427"
+
+COMMAND: @{b}CF_SpecialCmd      427@{ub}
+
+Execute a special door command (BBSCMD, SYSCMD or CONF<X>CMD).
+
+@{b}INPUT:@{ub}
+
+Data1     <- Type of command to be executed (see below!).
+IOString  <- The door command to be executed.
+StringPtr <- The arguments for the door.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+                           @{u}Defines for Data1:@{uu}
+
+      >0 = CONF<Data1>CMD (i.e. Data1=2 will use CONF2CMD commands!)
+      -1 = BBSCMD will be used.
+      -2 = SYSCMD will be used.
+@endnode
+
+@node CF_GetUserConfXS "CF_GetUserConfXS   428"
+
+COMMAND: @{b}CF_GetUserConfXS   428@{ub}
+
+Get a string containing the conference access of a special user.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The usernumber of the user you want to get the conf access.
+
+@{b}RETURN:@{ub}
+
+StringPtr -> A buffer filled with the conference access.
+
+@{b}NOTE:@{ub}
+
+Check fdom_ReturnCode for a failure!!!
+
+StringPtr will be an allocted buffer which will be freed from MainPart 
+after your door exists!
+
+StringPtr contains the conference access of the user in the following form:
+
+                              "X__X__X_X_"
+
+The first char (byte 0) will be conference 1, the second (byte 1) 
+conference 2 and so on. There is *NO* relative conference here! The string
+contains the physical form of your conferences from conference 1 till the
+last conference available. You have to check yourself if the conference
+is in the relative list if you require this. If you want to know anything
+about the relative conferences, use @{"NR_GetRelativeStatus" LINK NR_GetRelativeStatus} to check if the
+relative conferences are activated, and use @{"NR_AbsToRel" LINK NR_AbsToRel} to get the relative
+number of an absolute (real/physical) one.
+
+For better understanding: The '@{b}X@{ub}' chars means that the user has access to
+this conference, everything else means that the user has no access. Please
+check only for '@{b}X@{ub}' and not for the '_' (underscores), as the 'X' is the only
+real important thing to check.
+@endnode
+
+@REM ----------------------------------------------------------------------
+@REM ------------------------- SR commands --------------------------------
+@REM ----------------------------------------------------------------------
+
+@node SR_ConfName "SR_ConfName        600"
+
+COMMAND: @{b}SR_ConfName        600@{ub}
+
+Retrieve the conference name.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferenumber.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+IOString -> The requested conference name.
+@endnode
+
+@node SR_ConfLocation "SR_ConfLocation    601"
+
+COMMAND: @{b}SR_ConfLocation    601@{ub}
+
+Retrieve the conference location.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferenumber.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+IOString -> The requested conference location.
+@endnode
+
+@node SR_ConfNum "SR_ConfNum         602"
+
+COMMAND: @{b}SR_ConfNum         602@{ub}
+
+Retrieve the current conference number.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The actual conference number.
+Data3    -> The relative conference number.
+
+@{b}NOTE:@{ub}
+
+If the relative conference number is 0, then the user has no access to this
+conference, however this should not normally happen here...
+@endnode
+
+@node SR_BBSLocation "SR_BBSLocation     603"
+
+COMMAND: @{b}SR_BBSLocation     603@{ub}
+
+Retrieve the BBS Location.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> The BBS Location.
+@endnode
+
+@node SR_Status "SR_Status          604"
+
+COMMAND: @{b}SR_Status          604@{ub}
+
+Retrieve the current status of the node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the status.
+@endnode
+
+@node SR_ScreenAdress "SR_ScreenAdress    605"
+
+COMMAND: @{b}SR_ScreenAdress    605@{ub}
+
+Retrieve the screen address of the Console.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the (hex) screen address.
+@endnode
+
+@node SR_TaskPri "SR_TaskPri         606"
+
+COMMAND: @{b}SR_TaskPri         606@{ub}
+
+Retrieve the priority the node is running at.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the Node priority.
+@endnode
+
+@node SR_RawScreenAdress "SR_RawScreenAdress 607"
+
+COMMAND: @{b}SR_RawScreenAdress 607@{ub}
+
+Retrieve the raw screen address of the node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the raw screen adress.
+@endnode
+
+@node SR_FAMEVersion "SR_FAMEVersion     608"
+
+COMMAND: @{b}SR_FAMEVersion     608@{ub}
+
+Retrieve the current Version string of FAME.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data1    -> Contains the version number of FAME.
+Data2    -> Contains the revision number of FAME.
+IOString -> Contains the version string of FAME.
+@endnode
+
+@node SR_ChatSet "SR_ChatSet         609"
+
+COMMAND: @{b}SR_ChatSet         609@{ub}
+
+Retrieve the Chatstatus.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the Chat flag status.
+@endnode
+
+@node SR_ENVStat "SR_ENVStat         610"
+
+COMMAND: @{b}SR_ENVStat         610@{ub}
+
+Retrieve the current ENV stat variable code.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the ENV stat variable code.
+@endnode
+
+@node SR_NodeDevice "SR_NodeDevice      611"
+
+COMMAND: @{b}SR_NodeDevice      611@{ub}
+
+Retrieve the device name of the node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the device name.
+@endnode
+
+@node SR_NodeUnit "SR_NodeUnit        612"
+
+COMMAND: @{b}SR_NodeUnit        612@{ub}
+
+Retrieve the device unit number of the node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the unit number of the used device.
+@endnode
+
+@node SR_NodeBaud "SR_NodeBaud        613"
+
+COMMAND: @{b}SR_NodeBaud        613@{ub}
+
+Retrieve the initialized Baudrate of the node.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the initial Baudrate of the node.
+@endnode
+
+@node SR_NodeNumber "SR_NodeNumber      614"
+
+COMMAND: @{b}SR_NodeNumber      614@{ub}
+
+Retrieve the node number.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the node number of this node.
+@endnode
+
+@node SR_MCI "SR_MCI             615"
+
+COMMAND: @{b}SR_MCI             615@{ub}
+
+Send MCI-Text to FAME.
+
+@{b}INPUT:@{ub}
+
+Data1    <- If non zero a return will be sent at the end.
+IOString <- The MCI-string to be interpreted by FAME.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The Returnvalue. 0 if everything is ok, non zero means
+            there was an error.
+@endnode
+
+@node SR_GetTask "SR_GetTask         616"
+
+COMMAND: @{b}SR_GetTask         616@{ub}
+
+Finds current node's task address.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> Is the (struct Process *) of this Node.
+@endnode
+
+@node SR_NodeBaudRate "SR_NodeBaudRate    617"
+
+COMMAND: @{b}SR_NodeBaudRate    617@{ub}
+
+Retrieve users current connect rate.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the connect rate.
+@endnode
+
+@node SR_LogonType "SR_LogonType       618"
+
+COMMAND: @{b}SR_LogonType       618@{ub}
+
+Retrieve the Logontype.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the Logontype.
+
+Possible values are:
+
+                     1 = Local Login
+                     2 = SysOp Login
+                     3 = Modem Login
+@endnode
+
+@node SR_ScrLeft "SR_ScrLeft         619"
+
+COMMAND: @{b}SR_ScrLeft         619@{ub}
+
+Retrieve the screen coordinates.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the coordinate of the left edge of screen.
+@endnode
+
+@node SR_ScrTop "SR_ScrTop          620"
+
+COMMAND: @{b}SR_ScrTop          620@{ub}
+
+Retrieve the screen coordinates.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the coordinate of the Top edge of screen.
+@endnode
+
+@node SR_ScrWidth "SR_ScrWidth        621"
+
+COMMAND: @{b}SR_ScrWidth        621@{ub}
+
+Retrieve the screen coordinates.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the width of the screen.
+@endnode
+
+@node SR_ScrHeight "SR_ScrHeight       622"
+
+COMMAND: @{b}SR_ScrHeight       622@{ub}
+
+Retrieve the screen coordinates.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the height of the screen.
+@endnode
+
+@node SR_PurgeLine "SR_PurgeLine       623"
+
+COMMAND: @{b}SR_PurgeLine       623@{ub}
+
+Abort Serial input.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SR_NonStopText "SR_NonStopText     624"
+
+COMMAND: @{b}SR_NonStopText     624@{ub}
+
+Retrieve the NONSTOP scrolling text flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the nonstop flag.
+@endnode
+
+@node SR_GoodFile "SR_GoodFile        625"
+
+COMMAND: @{b}SR_GoodFile        625@{ub}
+
+Retrieve the result of a tested file after upload.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the filestatus.
+@endnode
+
+@node SR_LastAccountNum "SR_LastAccountNum  626"
+
+COMMAND: @{b}SR_LastAccountNum  626@{ub}
+
+Retrieve the Last Account Number.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of the last available account.
+@endnode
+
+@node SR_PurgeLineStart "SR_PurgeLineStart  627"
+
+COMMAND: @{b}SR_PurgeLineStart  627@{ub}
+
+Begin serial input abort.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SR_PurgeLineEnd "SR_PurgeLineEnd    628"
+
+COMMAND: @{b}SR_PurgeLineEnd    628@{ub}
+
+End serial input abort.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SR_BBSOrigin "SR_BBSOrigin       629"
+
+COMMAND: @{b}SR_BBSOrigin       629@{ub}
+
+Retrieve the BBS Origin.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS Origin.
+@endnode
+
+@node SR_DefLineLen "SR_DefLineLen     630"
+
+COMMAND: @{b}SR_DefLineLen     630@{ub}
+
+Retrieve the default number of textlines.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the default number of textlines.
+@endnode
+
+@node SR_NumberOfNodes "SR_NumberOfNodes   631"
+
+COMMAND: @{b}SR_NumberOfNodes   631@{ub}
+
+Retrieve the number of Nodes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of Nodes.
+@endnode
+
+@node SR_FileDescUndLine "SR_FileDescUndLine 632"
+
+COMMAND: @{b}SR_FileDescUndLine 632@{ub}
+
+Retrieve the Filedescription underline.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the Description underline.
+@endnode
+
+@node SR_NumberOfConfs "SR_NumberOfConfs   633"
+
+COMMAND: @{b}SR_NumberOfConfs   633@{ub}
+
+Retrieve the number of Conferences.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of Conferences.
+@endnode
+
+@node SR_ConfNameLoc "SR_ConfNameLoc     634"
+
+COMMAND: @{b}SR_ConfNameLoc     634@{ub}
+
+Retrieve the conference name and location.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The confnumber you are interested in.
+            If Data1 is lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The requested conference name.
+StructDummy2 -> The requested conference location.
+@endnode
+
+@node SR_FAMEDataFileVers "SR_FAMEDataFileVers 635"
+
+COMMAND: @{b}SR_FAMEDataFileVers 635@{ub}
+
+Retrieve the current Datafile Versionstring of FAME.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the versionnumber used to check for fileheaders.
+Data3    -> Contains the revisionnumber used to check for fileheaders.
+IOString -> Contains the Datafile version string of FAME.
+@endnode
+
+@node SR_ConnectString "SR_ConnectString    636"
+
+COMMAND: @{b}SR_ConnectString    636@{ub}
+
+Retrieve the current users connect string.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the connect string.
+@endnode
+
+@REM ------------------------- SC commands --------------------------------
+
+@node SC_ChatSet "SC_ChatSet         702"
+
+COMMAND: @{b}SC_ChatSet         702@{ub}
+
+Change the Chat status.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 means chat off, else chat on.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SC_ENVStat "SC_ENVStat         703"
+
+COMMAND: @{b}SC_ENVStat         703@{ub}
+
+Change the current ENV stat variable code.
+
+@{b}INPUT:@{ub}
+
+Data1    <- the new ENV stat variable code.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SC_NonStopText "SC_NonStopText     704"
+
+COMMAND: @{b}SC_NonStopText     704@{ub}
+
+Change the NONSTOP scrolling textflag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 means NONSTOP text is off, else NONSTOP text is on.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SC_DefLineLen "SC_DefLineLen     705"
+
+COMMAND: @{b}SC_DefLineLen     705@{ub}
+
+Change the default number of textlines.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new default number of textlines.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node SC_FileDescUndLine "SC_FileDescUndLine 706"
+
+COMMAND: @{b}SC_FileDescUndLine 706@{ub}
+
+Change the Filedescription underline.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString <- The new File Description underline (max. 45 chars).
+@endnode
+
+@node SC_GoodFile "SC_GoodFile        707"
+
+COMMAND: @{b}SC_GoodFile        707@{ub}
+
+Set the result of a tested file after upload.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new filestatus.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Data1 Values:
+
+-1 means the file failed the file check.
+ 0 means the file passed the file check.
+ 1 means the file was not checked.
+@endnode
+
+@REM ------------------------- AR commands --------------------------------
+
+@node AR_GetKey "AR_GetKey          800"
+
+COMMAND: @{b}AR_GetKey          800@{ub}
+
+Check for a keypress without waiting for it.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> 0 means nothing was pressed, 1 means a key was pressed.
+Data3    -> Where the char was typed: 0 = from Console, 1 = from Serial.
+
+@{b}SEE ALSO:@{ub}
+
+@{"NR_HotKey" LINK NR_HotKey}, @{"AR_WaitRAWChar" LINK AR_WaitRAWChar}, @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp}, @{"NR_WaitChar" LINK NR_WaitChar}, @{"AR_HotKey" LINK AR_HotKey}
+@endnode
+
+@node AR_WaitRAWChar "AR_WaitRAWChar     801"
+
+COMMAND: @{b}AR_WaitRAWChar     801@{ub}
+
+Gets a char with waiting for it, also get @{u}ALL REAL RAW@{uu} keys!
+
+@{b}INPUT:@{ub}
+
+IOString <- String will be displayed to the user.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The char typed by the user.
+Data3    -> Where the char was typed: 0 = from Console, 1 = from Serial.
+
+@{b}NOTE:@{ub}
+
+You have to check for FKey/Shift-FKey/Helpkey Rawkey codes yourself. If such
+a Rawkeycode appears, you have to use the @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp} Command.
+
+@{b}SEE ALSO:@{ub}
+
+@{"AR_GetKey" LINK AR_GetKey}, @{"NR_HotKey" LINK NR_HotKey}, @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp}, @{"NR_WaitChar" LINK NR_WaitChar}, @{"AR_HotKey" LINK AR_HotKey}
+
+@endnode
+
+@node AR_EmulateFKeyHelp "AR_EmulateFKeyHelp 802"
+
+COMMAND: @{b}AR_EmulateFKeyHelp 802@{ub}
+
+Emulates a pressed FKey/Shift-FKey/Helpkey on console.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The keytype.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Data1-Values are:
+
+ 1-10 = F1-F10
+11-20 = Shift-F1 - Shift-F10.
+   21 = Helpkey.
+
+If ReturnCode is 1, the node is iconified and this command won't be executed.
+This is needed for more security, as this function only emulates the keys
+pressed by the SysOp and should not be used for other things...
+
+@{b}SEE ALSO:@{ub}
+
+@{"AR_GetKey" LINK AR_GetKey}, @{"NR_HotKey" LINK NR_HotKey}, @{"AR_WaitRAWChar" LINK AR_WaitRAWChar}, @{"NR_WaitChar" LINK NR_WaitChar}, @{"AR_HotKey" LINK AR_HotKey}
+
+@endnode
+
+@node AR_GetCharHex "AR_GetCharHex      803"
+
+COMMAND: @{b}AR_GetCharHex      803@{ub}
+
+
+@{fg shine}                    ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node AR_EditFile "AR_EditFile        804"
+
+COMMAND: @{b}AR_EditFile        804@{ub}
+
+Edit a File with the internal Texteditor.
+
+@{b}INPUT:@{ub}
+
+IOString <- The file to be edited.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Returncode: 0 successful, -2 aborted by user.
+@endnode
+
+@node AR_Dump "AR_Dump            805"
+
+COMMAND: @{b}AR_Dump            805@{ub}
+
+Dump the user's data-structure to a specified file.
+
+@{b}INPUT:@{ub}
+
+IOString <- The filename of the generated user structure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_UserStatus "AR_UserStatus      806"
+
+COMMAND: @{b}AR_UserStatus      806@{ub}
+
+Retrieve the User's status (Active/Deleted/Inactive).
+
+@{b}INPUT:@{ub}
+
+Data2    -> The user status flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_NewScan "AR_NewScan         807"
+
+COMMAND: @{b}AR_NewScan         807@{ub}
+
+Retrieve the Newscan Flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The confnumber from which you want to get the NewScan flag.
+            If Data1 lower than 1 or higher than the maximum conferences,
+            it will be set to the current conference. 
+
+@{b}RETURN:@{ub}
+
+Data2    -> 1 if NewScan is on, 0 if off.
+@endnode
+
+@node AR_Hacks "AR_Hacks           808"
+
+COMMAND: @{b}AR_Hacks           808@{ub}
+
+Retrieve the Hackattempts of the user.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's number of hacks.
+@endnode
+
+@node AR_LastConf "AR_LastConf        809"
+
+COMMAND: @{b}AR_LastConf        809@{ub}
+
+Retrieve the Last conference which was joined by the User.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains the User's last conference on.
+@endnode
+
+@node AR_ConfReJoin "AR_ConfReJoin      810"
+
+COMMAND: @{b}AR_ConfReJoin      810@{ub}
+
+Retrieve the conference which should be joined at every logon.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains the Auto-Rejoin conference of the user.
+@endnode
+
+@node AR_HighUpCPS "AR_HighUpCPS       811"
+
+COMMAND: @{b}AR_HighUpCPS       811@{ub}
+
+Retrieve the highest CPS during uploads.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's highest CPS during Uploads.
+@endnode
+
+@node AR_HighDownCPS "AR_HighDownCPS     812"
+
+COMMAND: @{b}AR_HighDownCPS     812@{ub}
+
+Retrieve the highest CPS during Downloads.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's highest CPS during Downloads.
+@endnode
+
+@node AR_Baud "AR_Baud            813"
+
+COMMAND: @{b}AR_Baud            813@{ub}
+
+Retrieve the Baudrate of the last Logon.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the Baudrate of the User's last Logon.
+@endnode
+
+@node AR_MsgCLS "AR_MsgCLS          814"
+
+COMMAND: @{b}AR_MsgCLS          814@{ub}
+
+Retrieve the ClearScreen-Setting on user's Messageflag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the ClearScreen-Setting on user's Messageflag.
+@endnode
+
+@node AR_FileCLS "AR_FileCLS         815"
+
+COMMAND: @{b}AR_FileCLS         815@{ub}
+
+Retrieve the ClearScreen-Setting on user's Filelist-Flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the ClearScreen-Setting on Filelist-Flag.
+@endnode
+
+@node AR_UGlobal "AR_UGlobal         816"
+
+COMMAND: @{b}AR_UGlobal         816@{ub}
+
+Retrieve the Global Uploadflag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's Global uploadflag.
+@endnode
+
+@node AR_DGlobal "AR_DGlobal         817"
+
+COMMAND: @{b}AR_DGlobal         817@{ub}
+
+Retrieve the Global Downloadflag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's Global downloadflag.
+@endnode
+
+@node AR_FileBase "AR_FileBase        818"
+
+COMMAND: @{b}AR_FileBase        818@{ub}
+
+Retrieve the access to the User File Base.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's access to the User File Base.
+@endnode
+
+@node AR_Hide "AR_Hide            819"
+
+COMMAND: @{b}AR_Hide            819@{ub}
+
+Retrieve users hide flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's hide flag.
+@endnode
+
+@node AR_MsgRooming "AR_MsgRooming      820"
+
+COMMAND: @{b}AR_MsgRooming      820@{ub}
+
+Retrieve the Messagerooming flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's Messagerooming flag.
+@endnode
+
+@node AR_StringEdit "AR_StringEdit      821"
+
+COMMAND: @{b}AR_StringEdit      821@{ub}
+
+Retrieve the StringEdit flag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the User's StringEdit flag.
+@endnode
+
+@node AR_CryptPW "AR_CryptPW         822"
+
+COMMAND: @{b}AR_CryptPW         822@{ub}
+
+Retrieve the CryptPW.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's CryptPW.
+@endnode
+
+@node AR_CryptFlag "AR_CryptFlag       823"
+
+COMMAND: @{b}AR_CryptFlag       823@{ub}
+
+Retrieve the Cryptflag.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains User's Crypt flag.
+@endnode
+
+@node AR_UserFileBPW "AR_UserFileBPW     824"
+
+COMMAND: @{b}AR_UserFileBPW     824@{ub}
+
+Retrieve UserFileBase Password.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains User's UserFileBasePW.
+@endnode
+
+@node AR_DropDTR "AR_DropDTR         825"
+
+COMMAND: @{b}AR_DropDTR         825@{ub}
+
+Drop Carrier on an user.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_Userlimit "AR_Userlimit       826"
+
+COMMAND: @{b}AR_Userlimit       826@{ub}
+
+Retrieve the UserLimit of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Contains BBS Userlimit.
+@endnode
+
+@node AR_MaxNameFailure "AR_MaxNameFailure  827"
+
+COMMAND: @{b}AR_MaxNameFailure  827@{ub}
+
+Retrieve the Maximum number of failures allowed when entering a name.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains BBS MaxNameFailure.
+@endnode
+
+@node AR_MaxUserPWFail "AR_MaxUserPWFail   828"
+
+COMMAND: @{b}AR_MaxUserPWFail   828@{ub}
+
+Retrieve the maximum number of failures allowed when entering a UserPassword.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the BBS MaxUserPWFail.
+@endnode
+
+@node AR_MaxSysPWFailure "AR_MaxSysPWFailure 829"
+
+COMMAND: @{b}AR_MaxSysPWFailure 829@{ub}
+
+Retrieve the maximum number of SystemPassword failures allowed.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the BBS MaxSysPWFailure.
+@endnode
+
+@node AR_MaxNUPFailure "AR_MaxNUPFailure   830"
+
+COMMAND: @{b}AR_MaxNUPFailure   830@{ub}
+
+Retrieve the maximum number of NewUser Password failures allowed.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the BBS MaxNUPFailure.
+@endnode
+
+@node AR_MaxUserHacks "AR_MaxUserHacks    831"
+
+COMMAND: @{b}AR_MaxUserHacks    831@{ub}
+
+Retrieve the maximum number of BBS Userhacks allowed.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the BBS MaxUserHacks.
+@endnode
+
+@node AR_ScreensPath "AR_ScreensPath     832"
+
+COMMAND: @{b}AR_ScreensPath     832@{ub}
+
+Retrieve the Screens path of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS ScreensPath.
+@endnode
+
+@node AR_SysPWPrompt "AR_SysPWPrompt     833"
+
+COMMAND: @{b}AR_SysPWPrompt     833@{ub}
+
+Retrieve the SystemPassword prompt of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS SysPWPrompt.
+@endnode
+
+@node AR_NewUserPWPrompt "AR_NewUserPWPrompt 834"
+
+COMMAND: @{b}AR_NewUserPWPrompt 834@{ub}
+
+Retrieve the NewUserPassword prompt of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS NewUserPWPrompt.
+@endnode
+
+@node AR_UsernamePrompt "AR_UsernamePrompt  835"
+
+COMMAND: @{b}AR_UsernamePrompt  835@{ub}
+
+Retrieve the UserName prompt of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS UsernamePrompt.
+@endnode
+
+@node AR_UserPWPrompt "AR_UserPWPrompt    836"
+
+COMMAND: @{b}AR_UserPWPrompt    836@{ub}
+
+Retrieve the UserPassword prompt of the BBS.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS UserPWPrompt.
+@endnode
+
+@node AR_PausePrompt "AR_PausePrompt     837"
+
+COMMAND: @{b}AR_PausePrompt     837@{ub}
+
+Retrieve the Pauseprompt.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS PausePrompt.
+@endnode
+
+@node AR_SysOpChatColor "AR_SysOpChatColor  838"
+
+COMMAND: @{b}AR_SysOpChatColor  838@{ub}
+
+Retrieve the Sysop-Chat color.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS SysOpChatColor.
+@endnode
+
+@node AR_UserChatColor "AR_UserChatColor   839"
+
+COMMAND: @{b}AR_UserChatColor   839@{ub}
+
+Retrieve the User-Chat color.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the BBS UserChatColor.
+@endnode
+
+@node AR_UploadPathI "AR_UploadPathI     840"
+
+COMMAND: @{b}AR_UploadPathI     840@{ub}
+
+Retrieve the UploadPathI of the actual Conference.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the UploadPathI of the actual conference.
+@endnode
+
+@node AR_DownloadPathI "AR_DownloadPathI   841"
+
+COMMAND: @{b}AR_DownloadPathI   841@{ub}
+
+Retrieve the DownloadPathI of the actual conference.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the DownloadPathI of the actual conference.
+@endnode
+
+@node AR_AdditioUlPaths "AR_AdditioUlPaths 842"
+
+COMMAND: @{b}AR_AdditioUlPaths 842@{ub}
+
+Retrieve the Additional Upload Paths.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the AdditionalUlPaths of the actual conference.
+@endnode
+
+@node AR_AdditioDlPaths "AR_AdditioDlPaths 843"
+
+COMMAND: @{b}AR_AdditioDlPaths 843@{ub}
+
+Retrieve the Additional Download Paths.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString -> Contains the AdditionalDlPaths of the actual conference.
+@endnode
+
+@node AR_NumberofDirs "AR_NumberofDirs    844"
+
+COMMAND: @{b}AR_NumberofDirs    844@{ub}
+
+Retrieve the Number of Dirs.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conference number.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of dirs in the conference.
+
+@{b}NOTE:@{ub}
+
+If Data1 is < 1 or higher than the maximum available conference number,
+you will recieve the Number of Dirs for the current conference!
+@endnode
+
+@node AR_GiveUlBytes "AR_GiveUlBytes     845"
+
+COMMAND: @{b}AR_GiveUlBytes     845@{ub}
+
+Retrieve the GiveUlBytes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of ULBytes given for the actual conference.
+@endnode
+
+@node AR_TakeDlBytes "AR_TakeDlBytes     846"
+
+COMMAND: @{b}AR_TakeDlBytes     846@{ub}
+
+Retrieve the TakeDlBytes.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Contains the number of ULBytes taken for the actual conference.
+@endnode
+
+@node AR_FlagFilePath "AR_FlagFilePath    847"
+
+COMMAND: @{b}AR_FlagFilePath    847@{ub}
+
+Add a file on a Conference Fileflaglist with or without path.
+
+@{b}INPUT:@{ub}
+
+Data1     <- Conferencenumber or if < 1 the actual conference will be used.
+             If Data1 is lower than 1 or higher than the maximum conferences,
+             it will be set to the current conference. 
+Data2     <- FreeDl Flag. If <> 0 it will be a FreeDownloadfile.
+IOString  <- The Filename (without Path!).
+StringPtr <- The Path for the file, "" if no path is known and the BBS 
+             should find the Path.
+
+@{b}RETURN:@{ub}
+
+Data3     -> Errormessage. 0 on success.
+
+@{b}NOTE:@{ub}
+
+You can also flag filenames longer than 12 Chars. Filenames can be up to
+31 chars long, the Pathname is limited to 101 chars.
+
+Data3 Returnvalues:
+
+       0 -> successfully flagged
+       1 -> file is already flagged
+       2 -> length of IOString is less than 1 Byte, i.e. a Null-String.
+      -1 -> list element memory allocation failed.
+      -2 -> given conference not found. normally won't happen here, because
+            of the Data1 check.
+@endnode
+
+@node AR_StringToNode "AR_StringToNode    848"
+
+COMMAND: @{b}AR_StringToNode    848@{ub}
+
+Send a Textstring to a Node (depends on the users settings in "W 18").
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node which the String should be sent to.
+IOString <- The String to be sent to the Node.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If ReturnCode=1, the String wasn't send because the selected node doesn't
+exist ! To avoid this, use @{"NR_ActiveNode" LINK NR_ActiveNode} to check if selected node exists.
+
+AR_StringToNode depends on users settings under command "W 18". This means,
+that the User is able to disable the recieving of messages to him at several
+actions. If you sent it to an user, and he has disabled it in his current
+status (Reading Mail,etc.), the String you've sent will be added to a list
+which will be displayed when the user comes to a position where he will or
+must recieve the messages. All users *MUST* recieve the messages in idle
+mode (Menuprompt).
+@endnode
+
+@node AR_GetNodeEnv "AR_GetNodeEnv      849"
+
+COMMAND: @{b}AR_GetNodeEnv      849@{ub}
+
+Retrieve the Status of a Node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you want the status of.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The status of the Node. Use this one to get a real result!
+Data3    -> The full last Node to Server Command, (it's best to not use this)
+IOString -> The Actionstring displayed at the @{"Server" link "Server.guide/Main"}.
+@endnode
+
+@node AR_FullEdStruct "AR_FullEdStruct    850"
+
+COMMAND: @{b}AR_FullEdStruct    850@{ub}
+
+Retrieve the (filled) struct for external Message-Editor.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> Pointer to struct ExternEditor.
+@endnode
+
+@node AR_SendStr "AR_SendStr         851"
+
+COMMAND: @{b}AR_SendStr         851@{ub}
+
+Sends an unlimited length String to the user.
+
+@{b}INPUT:@{ub}
+
+Data1     <- if <> 0 a "CR/LF" combination will be sent after the string
+             has been sent.
+StringPtr <- The string to be sent to the user.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_SendStrCon "AR_SendStrCon      852"
+
+COMMAND: @{b}AR_SendStrCon      852@{ub}
+
+Sends an unlimited length String to the console.
+
+@{b}INPUT:@{ub}
+
+Data1     <- if <> 0 a "CR/LF" combination will be sent after the string
+             has been sent.
+StringPtr <- The string to be sent to the console.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_SendStrSer "AR_SendStrSer      853"
+
+COMMAND: @{b}AR_SendStrSer      853@{ub}
+
+Sends an unlimited length String to the serial.
+
+@{b}INPUT:@{ub}
+
+Data1     <- if <> 0 a "CR/LF" combination will be sent after the string
+             has been sent.
+StringPtr <- The string to be sent to the serial.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AR_ResetNumFlags "AR_ResetNumFlags   854"
+
+COMMAND: @{b}AR_ResetNumFlags   854@{ub}
+
+Reset NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data3   -> Returncode.
+
+@{u}NOTE:@{uu}
+
+Data3 must be TRUE (<>0) or an internal error has been detected. In this
+case you don't have to use @{"AR_SetNumFlag" LINK AR_SetNumFlag} and @{"AR_GetNumFlag" LINK AR_GetNumFlag} !!!
+@endnode
+
+@node AR_SetNumFlag "AR_SetNumFlag      855"
+
+COMMAND: @{b}AR_SetNumFlag      855@{ub}
+
+Flag an entry in the NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of the new entry. It's up to you to count correctly!
+IOString <- The entry (FileName).
+
+@{b}RETURN:@{ub}
+
+Data3    -> Returncode.
+
+@{u}NOTE:@{uu}
+
+Data3 Returnvalues:
+
+        0 -> successfully flagged.
+       -1 -> memory allocation failed.
+       -2 -> Base not initialized.
+@endnode
+
+@node AR_GetNumFlag "AR_GetNumFlag      856"
+
+COMMAND: @{b}AR_GetNumFlag      856@{ub}
+
+Get an entry from the NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The number of the entry you want to have.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Returncode. See below...
+IOString -> The entry (FileName).
+
+@{u}NOTE:@{uu}
+
+Data3 Returnvalues:
+
+        0 -> successfully flagged.
+       -1 -> entry number not found.
+       -2 -> Base not initialized.
+@endnode
+
+@node AR_NodeVersion "AR_NodeVersion     857"
+
+COMMAND: @{b}AR_NodeVersion     857@{ub}
+
+Get the version and revision of a specific node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node number of your choice.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The version of this Node.
+Data3    -> The revision of this Node.
+@endnode
+
+@node AR_NodeStartTime "AR_NodeStartTime   858"
+
+COMMAND: @{b}AR_NodeStartTime   858@{ub}
+
+Get the start time of a specific Node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node number
+
+@{b}RETURN:@{ub}
+
+Data2    -> The start time/date (UNIX) of this Node.
+IOString -> The start time/date (String) of this Node.
+@endnode
+
+@node AR_ServerVersion "AR_ServerVersion   859"
+
+COMMAND: @{b}AR_ServerVersion   859@{ub}
+
+Get the version and revision of the @{"Server" link "Server.guide/Main"}.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The version of the @{"Server" link "Server.guide/Main"}.
+Data3    -> The revision of the @{"Server" link "Server.guide/Main"}.
+@endnode
+
+@node AR_ServerStartTime "AR_ServerStartTime 860"
+
+COMMAND: @{b}AR_ServerStartTime 860@{ub}
+
+Get the start time of the @{"Server" link "Server.guide/Main"}.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The start time/date (UNIX) of the @{"Server" link "Server.guide/Main"}.
+IOString -> The start time/date (String) of the @{"Server" link "Server.guide/Main"}.
+@endnode
+
+@node AR_HotKey "AR_HotKey          861"
+
+COMMAND: @{b}AR_HotKey          861@{ub}
+
+Gets a char without waiting for it, gets also self definable cursor keys.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Cursor key begining return code. (If 0 they begin with 2)
+
+@{b}RETURN:@{ub}
+
+Data2    -> The char typed by the user.
+Data3    -> Where the char was typed: 0 = from Console, 1 = from Serial.
+
+@{b}NOTE:@{ub}
+
+AR_Hotkey is the same as @{"NR_HotKey" LINK NR_HotKey}, but like @{"NR_WaitChar" LINK NR_WaitChar} it returns also
+cursor keys. Beware, the cursor key returns are maybe others than with the
+command @{"NR_WaitChar" LINK NR_WaitChar} !!!!
+
+You get all ASCII codes, also RAW codes, only the CSI codes and escape
+sequences will be filtered, because the BBS has to check for Function keys
+and more.
+
+You will get the cursorkeys as the following values:
+
+                            Data1 + 2 for UP
+                            Data1 + 3 for DOWN
+                            Data1 + 1 for RIGHT
+                            Data1     for LEFT
+
+                                @{u}Definition:@{uu}
+
+                                 LEFT  = 0
+                                 RIGHT = 1
+                                 DOWN  = 2
+                                 UP    = 3
+
+You now have to add the defined values above to the returncode from Data2
+to checkout if the result is a cursor key.
+
+If you specify that LEFT (the first cursor key) begins with value 160 (set
+Data1 to 160), the cursorkeys will be the following ones:
+
+
+                            CURSOR LEFT  = 160
+                            CURSOR RIGHT = 161
+                            CURSOR UP    = 163
+                            CURSOR DOWN  = 162
+
+@{b}SEE ALSO:@{ub}
+
+@{"AR_GetKey" LINK AR_GetKey}, @{"NR_HotKey" LINK NR_HotKey}, @{"AR_WaitRAWChar" LINK AR_WaitRAWChar}, @{"AR_EmulateFKeyHelp" LINK AR_EmulateFKeyHelp}, @{"NR_WaitChar" LINK NR_WaitChar}
+@endnode
+
+@node AR_DropDtrOnNode "AR_DropDtrOnNode   862"
+
+COMMAND: @{b}AR_DropDtrOnNode   862@{ub}
+
+Drop the Carrier on a specific node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node where the carrier shall be droped.
+
+@{b}RETURN:@{ub}
+
+Nothing.
+@endnode
+
+@node AR_AwayMessage "AR_AwayMessage     863"
+
+COMMAND: @{b}AR_AwayMessage     863@{ub}
+
+Retrieve the actual Away Message.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString     -> The actual Away Message.
+StructDummy1 -> The struct aWAYmSG.
+@endnode
+
+@node AR_GetNodeNameTel "AR_GetNodeNameTel  864"
+
+COMMAND: @{b}AR_GetNodeNameTel  864@{ub}
+
+Retrieve the name and the phone number of a specific node.
+
+@{b}INPUT:@{ub}
+
+Data1      <- The Node you mean. A value < 0 defines the current Node.
+
+@{b}RETURN:@{ub}
+
+IOString   -> Node Name (Short -  max 6 chars).
+StringPtr  -> Node Name (max 127 chars).
+StringPtr2 -> Node phone number (max 127 chars).
+@endnode
+
+@REM ----------------------------------------------------------------------
+@REM --------------------------- AC commands ------------------------------
+@REM ----------------------------------------------------------------------
+
+@node AC_UserStatus "AC_UserStatus      900"
+
+COMMAND: @{b}AC_UserStatus      900@{ub}
+
+Change the Userstatus (Active/Deleted/Inactive).
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Userstatus.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_NewScan "AC_NewScan         901"
+
+COMMAND: @{b}AC_NewScan         901@{ub}
+
+Change the NewScan Flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conferencenumber for which you want to set the NewScan flag.
+Data2    <- The new NewScan Flag. 1 = On, 0 = Off.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_HackCount "AC_HackCount       902"
+
+COMMAND: @{b}AC_HackCount       902@{ub}
+
+Change the Hackcounter.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new hackcounter.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_LastConf "AC_LastConf        903"
+
+COMMAND: @{b}AC_LastConf        903@{ub}
+
+Change the last conference which was joined.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new last conf joined.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_ConfReJoin "AC_ConfReJoin      904"
+
+COMMAND: @{b}AC_ConfReJoin      904@{ub}
+
+Change the Conf which should be joined everytime at logon.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new conf which should be joined everytime at logon.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_HighUpCPS "AC_HighUpCPS       905"
+
+COMMAND: @{b}AC_HighUpCPS       905@{ub}
+
+Change the highest CPS on Uploads.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new highest CPS on Uploads.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_HighDownCPS "AC_HighDownCPS     906"
+
+COMMAND: @{b}AC_HighDownCPS     906@{ub}
+
+Change the highest CPS on Downloads.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new highest CPS on Downloads.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_Baud "AC_Baud            907"
+
+COMMAND: @{b}AC_Baud            907@{ub}
+
+Change the Baudrate of the last logon.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Baudrate of the last Logon.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MsgCLS "AC_MsgCLS          908"
+
+COMMAND: @{b}AC_MsgCLS          908@{ub}
+
+Change the ClearScreen on Message flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ClearScreen on Msg's flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_FileCLS "AC_FileCLS         909"
+
+COMMAND: @{b}AC_FileCLS         909@{ub}
+
+Change the ClearScreen on Filelist flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new ClearScreen on Filelist flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_UGlobal "AC_UGlobal         910"
+
+COMMAND: @{b}AC_UGlobal         910@{ub}
+
+Change the global upload flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new global upload flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_DGlobal "AC_DGlobal         911"
+
+COMMAND: @{b}AC_DGlobal         911@{ub}
+
+Change the global download flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new global download flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_FileBase "AC_FileBase        912"
+
+COMMAND: @{b}AC_FileBase        912@{ub}
+
+Change the access to the User File Base.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new access to the User File Base.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_Hide "AC_Hide            913"
+
+COMMAND: @{b}AC_Hide            913@{ub}
+
+Change the Hide flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Hide flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MsgRooming "AC_MsgRooming      914"
+
+COMMAND: @{b}AC_MsgRooming      914@{ub}
+
+Change the Message-Rooming Flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Msgrooming flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_StringEdit "AC_StringEdit      915"
+
+COMMAND: @{b}AC_StringEdit      915@{ub}
+
+Change the StringEdit flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new StringEdit flag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_CryptPW "AC_CryptPW         916"
+
+COMMAND: @{b}AC_CryptPW         916@{ub}
+
+Change the CryptPW.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new CryptPW (max 11 chars).
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_CryptFlag "AC_CryptFlag       917"
+
+COMMAND: @{b}AC_CryptFlag       917@{ub}
+
+Change the CryptFlag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new CryptFlag.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_UserFileBPW "AC_UserFileBPW     918"
+
+COMMAND: @{b}AC_UserFileBPW     918@{ub}
+
+Change User's File Base PW.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new User File Base PW.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_Userlimit "AC_Userlimit       919"
+
+COMMAND: @{b}AC_Userlimit       919@{ub}
+
+Change the Userlimit of the BBS.
+
+@{b}INPUT:@{ub}
+
+Data3    <- The new BBS Userlimit.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MaxNameFailure "AC_MaxNameFailure  920"
+
+COMMAND: @{b}AC_MaxNameFailure  920@{ub}
+
+Change the max. Name failures.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS MaxNameFailure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MaxUserPWFail "AC_MaxUserPWFail   921"
+
+COMMAND: @{b}AC_MaxUserPWFail   921@{ub}
+
+Change the max. User Password failures.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS MaxUserPWFailure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MaxSysPWFailure "AC_MaxSysPWFailure 922"
+
+COMMAND: @{b}AC_MaxSysPWFailure 922@{ub}
+
+Change the max. System-Password failures.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS MaxSysPWFailure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MaxNUPFailure "AC_MaxNUPFailure   923"
+
+COMMAND: @{b}AC_MaxNUPFailure   923@{ub}
+
+Change the max. NewUser-Password failures.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS MaxNUPFailure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_MaxUserHacks "AC_MaxUserHacks    924"
+
+COMMAND: @{b}AC_MaxUserHacks    924@{ub}
+
+Change max. allowed user hacks.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS MaxUserHacks.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_ScreensPath "AC_ScreensPath     925"
+
+COMMAND: @{b}AC_ScreensPath     925@{ub}
+
+Change the ScreensPath.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS ScreensPath.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_SysPWPrompt "AC_SysPWPrompt     926"
+
+COMMAND: @{b}AC_SysPWPrompt     926@{ub}
+
+Change the System-Password prompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS SysPWPrompt.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_NewUserPWPrompt "AC_NewUserPWPrompt 927"
+
+COMMAND: @{b}AC_NewUserPWPrompt 927@{ub}
+
+Change the NewUser-Password prompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS NewUserPWPrompt.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_UsernamePrompt "AC_UsernamePrompt  928"
+
+COMMAND: @{b}AC_UsernamePrompt  928@{ub}
+
+Change the Username prompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS UsernamePrompt.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_UserPWPrompt "AC_UserPWPrompt    929"
+
+COMMAND: @{b}AC_UserPWPrompt    929@{ub}
+
+Change the User-Password prompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS UserPWPrompt.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_PausePrompt "AC_PausePrompt     930"
+
+COMMAND: @{b}AC_PausePrompt     930@{ub}
+
+Change the Pause prompt.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS PausePrompt.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_SysOpChatColor "AC_SysOpChatColor  931"
+
+COMMAND: @{b}AC_SysOpChatColor  931@{ub}
+
+Change the SysopChat color.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS SysOpChatColor.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_UserChatColor "AC_UserChatColor   932"
+
+COMMAND: @{b}AC_UserChatColor   932@{ub}
+
+Change users SysopChat color.
+
+@{b}INPUT:@{ub}
+
+IOString <- The new BBS UserChatColor.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_NumberofDirs "AC_NumberofDirs    933"
+
+COMMAND: @{b}AC_NumberofDirs    933@{ub}
+
+Change the Number of dirs. For the current conference.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new BBS NumberofDirs.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_GiveUlBytes "AC_GiveUlBytes     934"
+
+COMMAND: @{b}AC_GiveUlBytes     934@{ub}
+
+Change the GiveUlBytes. For the current conference.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Ul bytes given by the BBS.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_TakeDlBytes "AC_TakeDlBytes     935"
+
+COMMAND: @{b}AC_TakeDlBytes     935@{ub}
+
+Change the TakeDlBytes. For the current conference.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The new Dl bytes taken by the BBS.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_ServerAction "AC_ServerAction    936"
+
+COMMAND: @{b}AC_ServerAction    936@{ub}
+
+Write action String to the @{"Server" link "Server.guide/Main"} nodeline.
+
+@{b}INPUT:@{ub}
+
+IOString <- The string to be written to server's action field.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_ServerActionCPS "AC_ServerActionCPS 937"
+
+COMMAND: @{b}AC_ServerActionCPS 937@{ub}
+
+Write action string and Baud/CPS to the server nodeline.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Baud/CPS to the server.
+IOString <- The string to the server.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node AC_AwayMessage "AC_AwayMessage     938"
+
+COMMAND: @{b}AC_AwayMessage     938@{ub}
+
+@{b}INPUT:@{ub}
+
+IOString -> The new Away Message.
+
+@{b}RETURN:@{ub}
+
+Nothing.
+@endnode
+
+@REM ----------------------------------------------------------------------
+@REM ------------------------- RD commands --------------------------------
+@REM ----------------------------------------------------------------------
+
+@node RD_ShowFlags "RD_ShowFlags       1000"
+
+COMMAND: @{b}RD_ShowFlags       1000@{ub}
+
+Shows the Flaglist of the current Conference.
+
+
+@{fg shine}                    ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_ShowAllFlags "RD_ShowAllFlags    1001"
+
+COMMAND: @{b}RD_ShowAllFlags    1001@{ub}
+
+Shows the Flaglists of all Conferences.
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_ConfigLoad "RD_ConfigLoad      1002"
+
+COMMAND: @{b}RD_ConfigLoad      1002@{ub}
+
+Reloads all Configdatas.
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_IconifyIs "RD_IconifyIs       1003"
+
+COMMAND: @{b}RD_IconifyIs       1003@{ub}
+
+Retrieve Iconify Status.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The iconify status flag.
+@endnode
+
+@node RD_Iconify "RD_Iconify         1004"
+
+COMMAND: @{b}RD_Iconify         1004@{ub}
+
+Switch between Iconify and UnIconify.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+No datas needed here, as this Function toggles.
+@endnode
+
+@node RD_Spy "RD_Spy             1005"
+
+COMMAND: @{b}RD_Spy             1005@{ub}
+
+Retrieve or toggles the Spy flag.
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_NewUser "RD_NewUser         1006"
+
+COMMAND: @{b}RD_NewUser         1006@{ub}
+
+Retrieve or toggles the NewUser flag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = set the NewUser flag.
+Data3    <- If Data1=1 the new NewUser flag.
+
+@{b}RETURN:@{ub}
+
+Data2    -> If Data1=0 the NewUser flag.
+@endnode
+
+@node RD_LoadAccount "RD_LoadAccount     1007"
+
+COMMAND: @{b}RD_LoadAccount     1007@{ub}
+
+Load Userdatas.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User you want to load.
+StructDummy1 <- The (allocated) Userdata structure.
+StructDummy2 <- The (allocated) Userkey structure.
+
+@{b}RETURN:@{ub}
+
+Data2        -> An internal error code.
+StructDummy1 -> The (filled) Userdata structure.
+StructDummy2 -> The (filled) Userkey structure.
+
+@{b}NOTE:@{ub}
+
+If you pass either for StructDummy1 or StructDummy2 a NULL pointer, your
+System may crash!
+@endnode
+
+@node RD_SaveAccount "RD_SaveAccount     1008"
+
+COMMAND: @{b}RD_SaveAccount     1008@{ub}
+
+Write Userdatas back.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User you want to save.
+StructDummy1 <- The (filled) Userdata structure.
+StructDummy2 <- The (filled) Userkey structure.
+@endnode
+
+@node RD_LoadConfDat "RD_LoadConfDat     1009"
+
+COMMAND: @{b}RD_LoadConfDat     1009@{ub}
+
+Load UserCnf.data.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User for whom you want to load the 
+                actual conference UserConf.data struct.
+Data2        <- The selected conference.
+                If Data2 lower than 1 or higher than the maximum conferences,
+                it will be set to the current conference.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The Userconfdata structure.
+@endnode
+
+@node RD_SaveConfDat "RD_SaveConfDat     1010"
+
+COMMAND: @{b}RD_SaveConfDat     1010@{ub}
+
+Write UserCnf.data.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User for whom you want to save the
+                actual conference UserConf.data struct.
+Data2        <- The selected conference.
+                If Data2 lower than 1 or higher than the maximum conferences,
+                it will be set to the current conference.
+StructDummy1 <- The Userconfdata structure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_AppendAccount "RD_AppendAccount   1011"
+
+COMMAND: @{b}RD_AppendAccount   1011@{ub}
+
+Add a new Account.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- The filled Userdata structure.
+StructDummy2 <- The filled Userkey structure.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+The UserConf.data structures will be automatically generated and set to 
+default values.
+@endnode
+
+@node RD_DoOnMaxUserHack "RD_DoOnMaxUserHack 1012"
+
+COMMAND: @{b}RD_DoOnMaxUserHack 1012@{ub}
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_ServerCommand "RD_ServerCommand   1013"
+
+COMMAND: @{b}RD_ServerCommand   1013@{ub}
+
+Send Server-command.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Data1 of the Server Msg.
+Data2    <- Data2 of the Server Msg.
+IOString <- String (if needed) for a command.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_GetMciFlag "RD_GetMciFlag      1014"
+
+COMMAND: @{b}RD_GetMciFlag      1014@{ub}
+
+Retrieve the MCI-Flag.
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_MciFlag "RD_MciFlag         1015"
+
+COMMAND: @{b}RD_MciFlag         1015@{ub}
+
+Change the MCI-Flag.
+
+
+@{fg shine}                       ! NOT IMPLEMENTED YET !@{fg text}
+@endnode
+
+@node RD_LoadAccountMisc "RD_LoadAccountMisc 1016"
+
+COMMAND: @{b}RD_LoadAccountMisc 1016@{ub}
+
+Load Misc datas.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User you want to load.
+Data2        <- The selected conference.
+                If Data2 islower than 1 or higher than the maximum
+                conferences, it will be set to the current conference.
+
+@{b}RETURN:@{ub}
+
+Data3        -> An internal error code.
+StructDummy1 -> The Userdata structure.
+StructDummy2 -> The Userdata structure.
+StructDummy3 -> The Userconfdata structure.
+
+@{b}NOTE:@{ub}
+
+If Data2 is lower than 1 or higher than the last conference available, Data2
+will be set to the current conference number.
+@endnode
+
+@node RD_SaveAccountMisc "RD_SaveAccountMisc 1017"
+
+COMMAND: @{b}RD_SaveAccountMisc 1017@{ub}
+
+Write Misc datas.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The Usernumber of the User you want to load.
+Data2        <- The selected conference.
+                If Data2 is lower than 1 or higher than the maximum
+                conferences, it will be set to the current conference.
+StructDummy1 <- The Userdata structure.
+StructDummy2 <- The Userdata structure.
+StructDummy3 <- The Userconfdata structure.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_ASLLocalUlPath "RD_ASLLocalUlPath  1018"
+
+COMMAND: @{b}RD_ASLLocalUlPath  1018@{ub}
+
+Retrieve or change ASL local upload path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ASLLocalUlPath.
+IOString <- If Data1 is non-zero, this is the new path (max 21 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1=0, it contains ASLLocalUlPath.
+@endnode
+
+@node RD_ASLTextViewPath "RD_ASLTextViewPath 1019"
+
+COMMAND: @{b}RD_ASLTextViewPath 1019@{ub}
+
+Retrieve or change ASL local textview path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ASLTextViewPath.
+IOString <- If Data1 is non-zero, this is the new path (max 21 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1=0, it contains ASLTextViewPath.
+@endnode
+
+@node RD_ASLSendFilePath "RD_ASLSendFilePath 1020"
+
+COMMAND: @{b}RD_ASLSendFilePath 1020@{ub}
+
+Retrieve or change ASL local Sendfile path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ASLSendFilePath.
+IOString <- If Data1 is non-zero, this is the new path (max 21 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1=0, it contains ASLSendFilePath.
+@endnode
+
+@node RD_StartNodeCmd "RD_StartNodeCmd    1021"
+
+COMMAND: @{b}RD_StartNodeCmd    1021@{ub}
+
+Start a command (Menu/Door) on another node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you mean.
+IOString <- The command incl. Arguments.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_BeADoorOnNode "RD_BeADoorOnNode   1022"
+
+COMMAND: @{b}RD_BeADoorOnNode   1022@{ub}
+
+This command lets you be a door on another node. This means in detail, this
+command emulates on the given node that you are a Door started on it.
+The Node opens, if needed, it's own FAMEDoorPort(x).
+Now you can access this port like a normal door (which you already are!),
+meaning there is no difference if you were directly started on this node.
+This also means that you have to use the Mustcommands @{"MC_DoorStart" LINK MC_DoorStart}
+& @{"MC_ShutDown" LINK MC_ShutDown} !!!
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you mean.
+IOString <- Arguments given on doorstart (only a joke 8)...but true!)
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_OpenDoorPort "RD_OpenDoorPort    1023"
+
+COMMAND: @{b}RD_OpenDoorPort    1023@{ub}
+
+Opens a DoorPort on a Node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you mean.
+Data2    <- The DoorPorttype.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+DoorPortTypes currently supported:
+
+                                   0 = FIM
+                                   1 = XIM
+                                   2 = TIM
+@endnode
+
+@node RD_CloseDoorPort "RD_CloseDoorPort   1024"
+
+COMMAND: @{b}RD_CloseDoorPort   1024@{ub}
+
+Closes a DoorPort on a Node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node you mean.
+Data2    <- The DoorPorttype.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+DoorPortTypes currently supported:
+
+                                   0 = FIM
+                                   1 = XIM
+                                   2 = TIM
+@endnode
+
+@node RD_GetServerList "RD_GetServerList   1025"
+
+COMMAND: @{b}RD_GetServerList   1025@{ub}
+
+Get the internal ServerlistBase.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The internal Serverlist-base (struct NodeListBase).
+@endnode
+
+@node RD_StringToNode "RD_StringToNode    1026"
+
+COMMAND: @{b}RD_StringToNode    1026@{ub}
+
+Send a Textstring to a Node.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Node to which the String should go.
+IOString <- The String to be sent.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If ReturnCode=1, the String wasn't sent ! Maybe the selected node doesn't
+exist ! To avoid this, use @{"NR_ActiveNode" LINK NR_ActiveNode} to check if selected node exists
+and @{"AR_GetNodeEnv" LINK AR_GetNodeEnv} to retrieve the status of the node. The best way is to use
+the internal ServerNodeList.
+
+This String appears at every position/action on the Node.
+@endnode
+
+@node RD_StringToNodes "RD_StringToNodes   1027"
+
+COMMAND: @{b}RD_StringToNodes   1027@{ub}
+
+Send a Textstring to a list of Nodes.
+
+@{b}INPUT:@{ub}
+
+IOString     <- The String to be displayed on the Nodes.
+StructDummy1 <- The list of Nodes from type struct FAMEDestNodes.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Use @{"NR_ActiveNode" LINK NR_ActiveNode} to check if the Nodes exists and @{"AR_GetNodeEnv" LINK AR_GetNodeEnv} to retrieve
+the status of the nodes. The best way is to use the internal ServerNodeList.
+
+This String appears at every position/action on the nodes.
+@endnode
+
+@node RD_CONStatus "RD_CONStatus       1028"
+
+COMMAND: @{b}RD_CONStatus       1028@{ub}
+
+Get or set the CON Outputflag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 1 means set, else get flag.
+Data2    <- Data1 = 1, sets this value.
+
+@{b}RETURN:@{ub}
+
+Data2    -> Data1 <> 1 gets this value.
+@endnode
+
+@node RD_SERStatus "RD_SERStatus       1029"
+
+COMMAND: @{b}RD_SERStatus       1029@{ub}
+
+Get or set the SER Outputflag.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 1 means set, else get flag.
+Data2    <- Data1 = 1, sets this value.
+
+@{b}RETURN:@{ub}
+
+Data2    -> if Data1 <> 1 gets this value.
+@endnode
+
+@node RD_SaveMsgFile "RD_SaveMsgFile     1030"
+
+COMMAND: @{b}RD_SaveMsgFile     1030@{ub}
+
+Save a Msg from.
+
+@{b}INPUT:@{ub}
+
+Data1        <- Conferencenumber to post the message to.
+Data3        <- File to message flag (see below).
+IOString     <- Path & Filename of message to save.
+StructDummy1 <- Allocated and filled struct MailHeader.
+StringPtr    <- File or directory contents to message.
+
+@{b}RETURN:@{ub}
+
+Data2        -> Returncode (Result, see below).
+
+Results are: 0 = Successful.
+             1 = Your given file doesn't exists.
+             2 = Can't get conference datas from your given conf number.
+             3 = MsgBase lock failed.
+             4 = MsgStatus.dat can't be opened.
+             5 = MsgHeader.dat can't be opened.
+             6 = Filecopy of message failed.
+             7 = Your struct MailHeader isn't valid.
+
+
+Data3 flags: 0 = Nothing to attach.
+             1 = One single file to attach (pass filename via StringPtr).
+             2 = All files of a directory to attach (pass Dirname via
+                 StringPtr field).
+
+@{b}NOTE:@{ub}
+
+Minimum filled elements in struct MailHeader are:
+
+ - fmah_ToName
+ - fmah_FromName
+ - fmah_Subject
+ - fmah_MsgStatus <- @{b}*MUST*@{ub} be set to @{b}TRUE@{ub} !
+ - fmah_Private
+
+If StringPtr is a valid path to a file it will be copied to the mail and a
+flag in the struct MailHeader will be set to mark that there is an 
+attached file.
+
+@endnode
+
+@node RD_SaveMsgList "RD_SaveMsgList     1031"
+
+COMMAND: @{b}RD_SaveMsgList     1031@{ub}
+
+Save a MessageList from External Editor.
+
+@{b}INPUT:@{ub}
+
+Data1        <- Conferencenumber to post the message to.
+StructDummy1 <- Filled struct ExternEditor.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+Get the Pointer to struct ExternEditor with @{"AR_FullEdStruct" LINK AR_FullEdStruct} !
+Also call @{"RD_FreeMsgListFEd" LINK RD_FreeMsgListFEd} before @{"AR_FullEdStruct" LINK AR_FullEdStruct} and make sure that *NO*
+message is written on the node until you use this !
+@endnode
+
+@node RD_FreeMsgListFEd "RD_FreeMsgListFEd  1032"
+
+COMMAND: @{b}RD_FreeMsgListFEd  1032@{ub}
+
+Free the internal MessageList.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_ActASLULPath "RD_ActASLULPath    1033"
+
+COMMAND: @{b}RD_ActASLULPath    1033@{ub}
+
+Retrieve or change Actual ASL Upload Path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ActASLULPath.
+IOString <- If Data1 <>0, this will be the new path (max. 100 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1 = 0, this contains the path.
+@endnode
+
+@node RD_ActASLTextViewP "RD_ActASLTextViewP 1034"
+
+COMMAND: @{b}RD_ActASLTextViewP 1034@{ub}
+
+Retrieve or change Actual ASL TextView Path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ActASLTextViewPath.
+IOString <- If Data1 <>0, this will be the new path (max. 100 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1 = 0, this contains the path.
+@endnode
+
+@node RD_ActASLDlPath "RD_ActASLDlPath    1035"
+
+COMMAND: @{b}RD_ActASLDlPath    1035@{ub}
+
+Retrieve or change Actual ASL Download Path.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = retrieve, <> 0 = change ActASLDlPath.
+IOString <- If Data1 <> 0, this will be the new path (max. 100 chars).
+
+@{b}RETURN:@{ub}
+
+IOString -> If Data1 = 0, this contains the path.
+@endnode
+
+@node RD_NodeScrToFront "RD_NodeScrToFront  1036"
+
+COMMAND: @{b}RD_NodeScrToFront  1036@{ub}
+
+Brings node Screen to Front.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If the Screen is iconified, it will be uniconified.
+@endnode
+
+@node RD_SetServerActCol "RD_SetServerActCol 1037"
+
+COMMAND: @{b}RD_SetServerActCol 1037@{ub}
+
+Change Textcolor of the Serveraction.
+
+@{b}INPUT:@{ub}
+
+Data1    <- Color
+Data2    <- Node
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_InitNumFlag "RD_InitNumFlag     1038"
+
+COMMAND: @{b}RD_InitNumFlag     1038@{ub}
+
+Initialize your own NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your own not initialized struct NumFlagList NumFlagListBase
+                pointer.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{u}NOTE:@{uu}
+
+You must supply a pointer to this struct in StructDummy1:
+
+struct NumFlagList 
+  {
+  struct NumFlagList *Next,
+                     *Prev;
+  char               FileName[102];
+  long               FileNumber;
+  };
+
+Remember to set NumFlagListBase=NULL; !
+
+If StructDummy1 is FALSE an internal error has been detected. In this
+case you don't have to use @{"RD_RemoveNumFlag" LINK RD_RemoveNumFlag}, @{"RD_ResetNumFlags" LINK RD_ResetNumFlags},
+@{"RD_SetNumFlag" LINK RD_SetNumFlag} and @{"RD_GetNumFlag" LINK RD_GetNumFlag} !!!
+
+You can have as many NumFlagListBases as you need! There are no limits on 
+the FAME side.
+
+The only thing to do is to take another NumFlagListBase like this:
+
+     struct NumFlagList *NumFlagListBase1,
+                        *NumFlagListBase2,
+                        *NumFlagListBase3;
+@endnode
+
+@node RD_RemoveNumFlag "RD_RemoveNumFlag   1039"
+
+COMMAND: @{b}RD_RemoveNumFlag   1039@{ub}
+
+Remove your own NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your own initialized struct NumFlagList NumFlagListBase
+                pointer.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{u}NOTE:@{uu}
+
+Don't forget to set your NumFlagListBase=NULL; if you use it again with 
+@{"RD_InitNumFlag" LINK RD_InitNumFlag}!
+@endnode
+
+@node RD_ResetNumFlags "RD_ResetNumFlags   1040"
+
+COMMAND: @{b}RD_ResetNumFlags   1040@{ub}
+
+Reset your own NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your own initilized struct NumFlagList NumFlagListBase
+                pointer.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{u}NOTE:@{uu}
+
+This is the combination of @{"RD_RemoveNumFlag" LINK RD_RemoveNumFlag} and @{"RD_InitNumFlag" LINK RD_InitNumFlag}.
+
+If StructDummy1 is FALSE an internal error has been detected. In this
+case you don't have to use @{"RD_RemoveNumFlag" LINK RD_RemoveNumFlag}, @{"RD_SetNumFlag" LINK RD_SetNumFlag}
+and @{"RD_GetNumFlag" LINK RD_GetNumFlag} !!!
+@endnode
+
+@node RD_SetNumFlag "RD_SetNumFlag      1041"
+
+COMMAND: @{b}RD_SetNumFlag      1041@{ub}
+
+Flag an entry in your own NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The number of the new entry. It's up to you to count it
+                correctly!
+IOString     <- The entry (FileName).
+StructDummy1 <- Your own initialized struct NumFlagList NumFlagListBase
+                pointer.
+
+@{b}RETURN:@{ub}
+
+Data3    -> Returncode. Possible values:
+
+                        0 -> successfully flagged.
+                       -1 -> memory allocation failed.
+                       -2 -> Base not initialized.
+@endnode
+
+@node RD_GetNumFlag "RD_GetNumFlag      1042"
+
+COMMAND: @{b}RD_GetNumFlag      1042@{ub}
+
+Get an entry from your own NumberFlagList.
+
+@{b}INPUT:@{ub}
+
+Data1        <- The number of the entry you want to have.
+StructDummy1 <- Your own initialized struct NumFlagList NumFlagListBase
+                pointer.
+
+@{b}RETURN:@{ub}
+
+IOString -> The entry (FileName).
+Data3    -> Returncode. Possible values:
+
+                        0 -> success.
+                       -1 -> entry number not found.
+                       -2 -> Base not initialized.
+@endnode
+
+@node RD_GetUserDataLoc "RD_GetUserDataLoc  1043"
+
+COMMAND: @{b}RD_GetUserDataLoc  1043@{ub}
+
+Get the location path of the user.datas
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+IOString  -> Name of User.data.
+StringPtr -> Locationpath of all user datas.
+@endnode
+
+@node RD_ConfName "RD_ConfName        1044"
+
+COMMAND: @{b}RD_ConfName        1044@{ub}
+
+Change a conference name.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conference number.
+IOString <- The new conference name.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If Data1 is lower than 1 or higher than the last conference number available,
+Data1 will be set to the current conference number!
+@endnode
+
+@node RD_ConfLocation "RD_ConfLocation    1045"
+
+COMMAND: @{b}RD_ConfLocation    1045@{ub}
+
+Change a conference location.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The conference number.
+IOString <- The new conference location.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If Data1 is lower than 1 or higher than the last conference number available,
+Data1 will be set to the current conference number!
+@endnode
+
+@node RD_FGetNextConf "RD_FGetNextConf    1046"
+
+COMMAND: @{b}RD_FGetNextConf    1046@{ub}
+
+Update your conference pointer to the next available conference.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your struct ConfList pointer.
+
+@{b}RETURN:@{ub}
+
+Data2        -> The new conference number. If relative is on, this value is
+                also relative, else it's the real conference number.
+
+@{b}NOTE:@{ub}
+
+If no next conference is available for the user, this pointer remains un-
+changed, else it will be set to the new conference pointer. 
+
+If Data2 has a negative value no next conference is available for the user.
+
+If you pass a NULL pointer in StructDummy1, it will be set to point to the 
+first available conference that the user has access to.
+@endnode
+
+@node RD_FGetPrevConf "RD_FGetPrevConf    1047"
+
+COMMAND: @{b}RD_FGetPrevConf    1047@{ub}
+
+Update your conference pointer to the previous available conference.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your struct ConfList pointer.
+
+@{b}RETURN:@{ub}
+
+Data2        -> The new conference number. If relative is on, this value is
+                also relative, else it's the real conference number.
+
+@{b}NOTE:@{ub}
+
+If no previous conference is available for the user, this pointer remains un-
+changed, else it will be set to the new conference pointer. 
+
+If Data2 has a negative value no previous conference is available.
+
+If you pass a NULL pointer in StructDummy1, it will be set to point to the 
+first available conference that the user has access to.
+@endnode
+
+@node RD_FGetConfNum "RD_FGetConfNum     1048"
+
+COMMAND: @{b}RD_FGetConfNum     1048@{ub}
+
+Get a pointer to a given conference (relative).
+
+@{b}INPUT:@{ub}
+
+Data1        <- The conference number for which you want to get the ptr.
+
+@{b}RETURN:@{ub}
+
+Data2        -> The new conference number. If relative is on, this value is
+                also relative, else it's the real conference number.
+StructDummy1 -> Your new struct ConfList pointer.   
+
+@{b}NOTE:@{ub}
+
+This functions checks for the relative flag. If relative conferences are on, 
+the number used for conference searching (Data1) is handled as a relative
+conference number, else it will be used to search for the real conference.
+
+@{u}ReturnValues for Data2:@{uu}
+
+ -2  = Given conferencenumber is not available.
+ -3  = Given conferencenumber is available, but user has no access.
+
+In case of -3 your pointer remains unchanged, but if you pass a NULL pointer
+it will now be pointing to the first available conference that the user
+has access to.
+
+If you pass a value lower than 1 or higher than the last available
+conference to Data1, the current conference number will be set instead.
+@endnode
+
+@node RD_FGetRealConfNum "RD_FGetRealConfNum 1049"
+
+COMMAND: @{b}RD_FGetRealConfNum 1049@{ub}
+
+Get a pointer to a given conference (not relative).
+
+@{b}INPUT:@{ub}
+
+Data1        <- The conference number for which you want to get the ptr.
+
+@{b}RETURN:@{ub}
+
+Data2        -> The new conference number, it's always the real one !
+StructDummy1 -> Your new struct ConfList pointer.
+
+@{b}NOTE:@{ub}
+
+If Data2 is negative, your given conference number is not available.
+
+Your pointer normally remains unchanged if Data2 is negative, but if you pass
+a NULL pointer, it will be set to the first available conference if Data2
+is negative.
+
+If you pass a value lower than 1 or higher than the last available conference
+to Data1, the current conference number will be set instead.
+@endnode
+
+@node RD_FGetConfBase "RD_FGetConfBase    1050"
+
+COMMAND: @{b}RD_FGetConfBase    1050@{ub}
+
+Get the conference base pointer.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The conference base pointer.
+
+@{b}NOTE:@{ub}
+
+You can only use the element RelativeNext to get the first available
+conference for the user. 
+
+@{u}Example:@{uu}
+
+struct ConfList *MyConfPtr = DoorMsg -> StructDummy1 -> RelativeNext;
+
+while(MyConfPtr)
+  {
+  ...
+  ...
+  MyConfPtr = MyConfPtr -> RelativeNext;
+  }
+@endnode
+
+@node RD_FGetAktConf "RD_FGetAktConf     1051"
+
+COMMAND: @{b}RD_FGetAktConf     1051@{ub}
+
+Get the current conference pointer.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The current conference pointer.
+
+@{b}NOTE:@{ub}
+
+You can use this pointer to check for following conferences (RD_FGetNextConf)
+or previous conferences (RD_FGetPrevConf).
+
+@{u}Example:@{uu}
+
+while(DoorMsg -> StructDummy1)
+  {
+  ...
+  ...
+  DoorMsg -> StructDummy1 = DoorMsg -> StructDummy1 -> RelativeNext;
+  }
+@endnode
+
+@node RD_GiveNumFromConf "RD_GiveNumFromConf 1052"
+
+COMMAND: @{b}RD_GiveNumFromConf 1052@{ub}
+
+Get the relative/non-relative number from a conference pointer.
+
+@{b}INPUT:@{ub}
+
+StructDummy1 <- Your struct ConfList pointer.
+
+@{b}RETURN:@{ub}
+
+Data2    -> The conference number. If relative is on, this value is
+            also relative, else it's the real conference number.
+@endnode
+
+@node RD_SaveUFlagList "RD_SaveUFlagList   1053"
+
+COMMAND: @{b}RD_SaveUFlagList   1053@{ub}
+
+Forbid Upload procedure from clearing the Upload flag after the transfer.
+
+@{b}INPUT:@{ub}
+
+Data1    <- 0 = clear, else don't clear.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+If Data1 is non zero, the Upload procedure won't clear the list of uploaded
+files and therefor a door may use it. If Data1 is set to zero, you tell the
+upload procedure to clear the uploaded list of files now.
+
+Normally the Upload procedure clears the list after it has finished with
+the filechecking. The FileID procedure as the last thing in the upload chain
+then normally frees the list to give the memory back to system. But this
+is not really a must, because when starting the next upload this list will
+be cleared automatically before the real transfer begins. It's a question
+of memory usage. The best way is to free the list after the upload because
+we don't know how many files are in the list and when the next transfer
+will be performed.
+
+If a door wants to know which files were uploaded after the upload procedure
+it's neccessary to get this list. To get the filled list use the command
+@{"RD_SaveUFlagList" LINK RD_SaveUFlagList} with Data1 set to TRUE. After
+this get the Base pointer of this list with RD_GetUFlagList. After you 
+have read all neccessary infos from the list, use RD_ClearUFlagList to
+clear the list. @{u}Please notice that this list is strictly read-only!@{uu}
+
+If the door no longer needs any information about the uploaded list, use
+RD_SaveUFlagList again with Data1 set to FALSE (0). This sets the upload
+procedure to it's origin state. It's not really bad if you forget to set
+it back, because if your door shuts down this flag will be automatically
+set back by FAME.
+
+@endnode
+
+@node RD_ClearUFlagList "RD_ClearUFlagList  1054"
+
+COMMAND: @{b}RD_ClearUFlagList  1054@{ub}
+
+Clear the Upload flag list now.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@endnode
+
+@node RD_GetUFlagList "RD_GetUFlagList    1055"
+
+COMMAND: @{b}RD_GetUFlagList    1055@{ub}
+
+Retrieve the basepointer of the upload flag list.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The base pointer of the upload flag list.
+@endnode
+
+@node RD_GetMailHeader "RD_GetMailHeader   1056"
+
+COMMAND: @{b}RD_GetMailHeader   1056@{ub}
+
+Retrieve the Mailheader Pointer (SYSCMD: MAILHEADER).
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The MailHeader pointer.
+@endnode
+
+@node RD_ShowMailHeader "RD_ShowMailHeader  1057"
+
+COMMAND: @{b}RD_ShowMailHeader  1057@{ub}
+
+Inform the Node to show the MailHeader (SYSCMD: MAILHEADER).
+
+@{b}INPUT:@{ub}
+
+Data1 -> TRUE to show the MailHeader, otherwise set it to FALSE.
+
+@{b}RETURN:@{ub}
+
+None.
+@endnode
+
+@node RD_GetDldFileBase "RD_GetDldFileBase 1058"
+
+COMMAND: @{b}RD_GetDldFileBase 1058@{ub}
+
+Retrieve the DldFilesBase root list pointer.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+StructDummy1 -> The @{"struct NumFlagList" LINK NumFlagList} *DldFilesBase pointer.
+
+@{b}NOTE:@{ub}
+
+Use RD_GetDldFileBase to retrieve the beginning of the downloaded file
+list. In this list you will find all files downloaded by the currently
+online user since the last download if there was one at this time.
+DldFilesBase is empty if no download has been done yet. DldFilesBase
+will be reinitialized if the user starts a new download or loggs out.
+
+After using @{"RD_RIDldGFileBase" LINK RD_RIDldFileBase  1059} you have to use RD_GetDldFileBase again
+if you want to continue the work with the DldFileBase pointer!
+@endnode
+
+@node RD_RIDldFileBase "RD_RIDldFileBase  1059"
+
+COMMAND: @{b}RD_RIDldFileBase  1059@{ub}
+
+Reinitialize the DldFilesBase list.
+
+@{b}INPUT:@{ub}
+
+None.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+RD_RIDldFileBase reinitializes the DldFilesBase you will get with
+@{"RD_GetDldFileBase" LINK RD_GetDldFileBase}. This means that all list entries will be freed and
+the list pointer reinitialized.
+
+After using RD_RIDldFileBase you have to use @{"RD_GetDldFileBase" LINK RD_GetDldFileBase} again
+if you want to continue the work with the DldFilesBase pointer!
+@endnode
+
+@node RD_PutDldFileBase "RD_PutDldFileBase 1060"
+
+COMMAND: @{b}RD_PutDldFileBase 1060@{ub}
+
+Adds a file to the DldFilesBase list.
+
+@{b}INPUT:@{ub}
+
+Data1    <- The Conference number according to the file to be add.
+IOString <- The filename.
+
+@{b}RETURN:@{ub}
+
+None.
+
+@{b}NOTE:@{ub}
+
+The filled FileNumber of the struct NumFlagList will be used for the
+conference number. This number indicates the Conference (real/physical 
+number) where the file has been downloaded from. If you don't know the
+conference number set it to 0 as Default.
+@endnode
+
+@REM ----------------------------------------------------------------------
+@REM -                       CONTACTS & NUMBERS                           -
+@REM ----------------------------------------------------------------------
+
+
+@node AUTHOR "How to contact the FAME Developer"
+
+  ----------------------------------------------------------------------
+  -                       CONTACTS & NUMBERS                           -
+  ----------------------------------------------------------------------
+
+If you want to contact the author of this document, SieGeL/tRSi, try the 
+following:
+
+@{b}1.@{ub} Call pUNISHMENT iNC. BBS, which is my board. It's also the FAME Support
+   BBS. Numbers are:
+
+                         +49(0) 30 614 25 51 (v.34+)
+
+@{b}2.@{ub} Or contact me via E-Mail:
+
+                              siegel@trsi.de
+
+@{b}3.@{ub} You may also visit our homepage:
+
+                          http://www.trsi.de/inno/
+
+
+If you want to contact Strider, simply call my bbs, too, or try this E-Mail:
+
+                              strider@trsi.de
+
+Also all other (tRSi-iNNOVATiONs) members are available on pUNISHMENT iNC.
+ and pARALYSIS BBS, but FAME-specific questions should be written only on
+         the pUNISHMENT iNC. BBS, as this is the FAME support BBS.
+
+
+   You could also reach us on IRC, channel #FAME. if you have Internet 
+  access, you may visit this channel and talk directly to the developers!
+
+@endnode
+
+@node NOT_USED "Function currently not implemented !"
+
+                @{fg shine}THIS FUNCTION IS CURRENTLY NOT AVAILABLE !@{fg text}
+@endnode
+
+@REM ------------------------------------------------------------------------
+@REM --- TABLES AND DEFINES FOR FUNCTIONS DESCRIBED HERE IN THIS DOCUMENT ---
+@REM ------------------------------------------------------------------------
+
+@node FLVL_FLAGS "FLVL_FLAG Defines for NR_GetUserLevelFlags"
+
+           These are the flags returned by @{"NR_GetUserLevelFlags" LINK NR_GetUserLevelFlags}
+
+
+	#define FLVL_ReadMessages		1
+	#define FLVL_EnterMessage		2
+	#define FLVL_CommenttoSysOp		3
+	#define FLVL_PageSysOp			4
+	#define FLVL_ZoomMail			5
+	#define FLVL_ReadBulletins		6
+	#define FLVL_WHOisOnline		7
+	#define FLVL_UserStatus			8
+	#define FLVL_ZippyTextSearch		9
+	#define FLVL_JoinConference		10
+	#define FLVL_FileListing		11
+	#define FLVL_NewFiles			12
+	#define FLVL_Upload			13
+	#define FLVL_Download			14
+	#define FLVL_ViewFiles			15
+	#define FLVL_FreeResuming		16
+	#define FLVL_EditUserAccount		17
+	#define FLVL_EditPassword		18
+	#define FLVL_EditUserLocation		19
+	#define FLVL_EditUserCityState		20
+	#define FLVL_EditUserName		21
+	#define FLVL_EditPhonenumber		22
+	#define FLVL_Relogin			23
+	#define FLVL_UploadStatus		24
+	#define FLVL_PublicMessageFiles		25
+	#define FLVL_PrivateMessageFiles	26
+	#define FLVL_AttachFile			27
+	#define FLVL_MCIMessages		28
+	#define FLVL_BreakChat			29
+	#define FLVL_OverideChat		30
+	#define FLVL_OverideTime		31
+	#define FLVL_EAllMessages		32
+	#define FLVL_EditFiles			33
+	#define FLVL_EditDirs			34
+	#define FLVL_DeleteMessages		35
+	#define FLVL_AccountEditing		36
+	#define FLVL_SysOpCommands		37
+	#define FLVL_Shell			38
+	#define FLVL_SysOpRead			39
+	#define FLVL_SysOpView			40
+	#define FLVL_SysOpDownload		41
+	#define FLVL_OverideDefaults		42
+	#define FLVL_GlobalUD			43
+	#define FLVL_FastRelogin		44
+	#define FLVL_FastGoodbye		45
+	#define FLVL_ViewBinaryFiles		46
+	#define FLVL_ZoomFilelist		47
+	#define FLVL_NodeChat			48
+	#define FLVL_Hydra			49
+	#define FLVL_RIPGfx			50
+	#define FLVL_CryptMsgs			51
+	#define FLVL_EditUserBirthday		52
+	#define FLVL_DeleteMsginDays		53
+	#define FLVL_OverwriteFiles		54
+	#define FLVL_EditMessages		55
+	#define FLVL_KeepotherMessages		56
+	#define FLVL_OthUsonotherMsg		57
+	#define FLVL_SModem			58
+	#define FLVL_BBSHelp			59
+	#define FLVL_QuietMode			60
+	#define FLVL_OnLineMessageOLM		61
+	#define FLVL_CaptureOnlineUserOLC	62
+	#define FLVL_DisconOnlineUserOLD	63
+	#define FLVL_OnlineUserChatOLG		64
+	#define FLVL_SpyOnlineUserOLS		65
+	#define FLVL_OnlineUserTimeOLT		66
+	#define FLVL_SysOpBinaryView		67
+	#define FLVL_ViewEditCallersLog		68
+	#define FLVL_ViewEditDoorLog		69
+	#define FLVL_ViewEditUDLog		70
+	#define FLVL_AmigaDOSList		71
+	#define FLVL_AmigaDOSDir		72
+	#define FLVL_AmigaDOSInfo		73
+	#define FLVL_ConfAccessEditor		74
+	#define FLVL_ForceWHO			75
+	#define FLVL_RealHidden			76
+	#define FLVL_RenewedSubmission		77
+	#define FLVL_PriorityMsg		78
+	#define FLVL_Obsolete			79
+	#define FLVL_EditFileFlags		80
+@endnode
+
+@node "NumFlagList" "struct NumFlagList * - Definition"
+
+This is the Definition of the struct NumFlagList used by @{"RD_RIDldFileBase" LINK RD_RIDldFileBase}
+and @{"RD_GetDldFileBase" LINK RD_GetDldFileBase}:
+
+struct NumFlagList
+  {
+  struct NumFlagList *Next,          /* Next Filename               */
+                     *Prev;          /* Previous Filename           */
+        char         FileName[102];  /* The Filename                */
+        long         FileNumber;     /* Filenumber from Flagging    */
+        ULONG        BitFlags;       /* Additional flags, see below */
+  };
+
+
+Usage of BitFlags:
+
+byte 0:
+  bit0:		FNFL_OVERWRITE        -  FAMEFileChecker overwrite flag
+  bit1:
+  bit2:
+  bit3:
+  bit4:
+  bit5:
+  bit6:
+  bit7:
+byte 1:
+  bit0:
+  bit1:
+  bit2:
+  bit3:
+  bit4:
+  bit5:
+  bit6:
+  bit7:
+byte 2:
+  bit0:
+  bit1:
+  bit2:
+  bit3:
+  bit4:
+  bit5:
+  bit6:
+  bit7:
+byte 3:
+  bit0:
+  bit1:
+  bit2:
+  bit3:
+  bit4:
+  bit5:
+  bit6:
+  bit7:
+
+@endnode
+
+@node "64BIT" "64-Bit and FAME - Short introduction"
+
+                          @{u}64-Bit Support for FAME@{uu}
+
+FAME is now able to handle all up- and download bytes as @{b}64-Bit@{ub} Values,
+which means that now the new maximum size for the bytes is in the range
+of @{b}18TB@{ub} (18 Terrabytes!), no longer only @{b}4.3GB@{ub}. As the Amiga and all
+related programming tools are only able to handle 32-Bit integers, we
+have decided to write our own 64-Bit functions, which are of course also
+available for doorprogrammers. The following functions are implemented:@{fg shine}
+
+ - Add (+)
+ - Substract (-)
+ - Multiply (*)
+ - Convert to string (including formating)
+ - Converting from a string into 64 bit variable.
+ - Checking for equal (=) / (==)
+ - Checking for higher (>)
+ - Checking for lower (<)@{fg text}
+
+@{b}Add@{ub} is a FAME.library (4.0) function called @{b}FAMEAdd64()@{ub}
+
+@{b}Substract@{ub} is a FAME.library (4.0) function called @{b}FAMESub64()@{ub}
+
+@{b}Convert to string@{ub} is a FAME.library (4.0) function called @{b}FAMENum64ToStr()@{ub}.
+
+NOTE: There is a bug in FAME.library 4.0 if you use FAMENum64ToStr() with 0
+      as the buffer size. In this case FAMENum64ToStr() will *NOT* convert
+      to the string. The string will be left intact.
+      Please use the size of the buffer (-1) you handle to it instead of 
+      using 0 !!! 0 is thought for passing big enough buffers, but this does
+      not work yet!).
+
+The other functions will be available with FAME.library V5.0 also with a new
+and fast multiply function and i hope with a divide function too. Until then
+i will release the functions as source/object code to be able to use them 
+*NOW* too.
+
+Watch out for the release of the @{i}64bit example archive@{ui}.
+
+@endnode

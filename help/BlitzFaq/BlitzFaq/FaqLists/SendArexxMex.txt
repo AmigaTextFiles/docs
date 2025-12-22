@@ -1,0 +1,48 @@
+XINCLUDE rexxstorage.bb2 ;=include/rexx/storage.h
+
+DEFTYPE.MsgPort *replyport
+DEFTYPE.RexxMsg *rexxmsg
+DEFTYPE.l
+
+Statement sendrexx{rexx$}
+
+  ;make complex pointers global or Blitz 1.80 will be confused sometimes
+  SHARED *replyport.MsgPort,*rexxmsg.RexxMsg   
+  name$="BLITZBLANK"
+  *rexxmsg=CreateRexxMsg_(*replyport,0,&name$) 
+  If *rexxmsg                                  
+    *arg=CreateArgstring_(&rexx$,Len(rexx$))
+    If *arg
+      *rexxmsg\rm_Args=*arg
+
+      ;set #RXFF_RESULT to request a resultstring
+      *rexxmsg\rm_Action=#RXCOMM|#RXFF_NOIO|#RXFF_RESULT
+      Forbid_
+      *arexxport=FindPort_(&name$)
+      If *arexxport
+        PutMsg_ *arexxport,*rexxmsg
+        Permit_
+        WaitPort_ *replyport
+        *rexxmsg=GetMsg_(*replyport)
+        If *rexxmsg\rm_Result1=0 AND *rexxmsg\rm_Result2<>0
+
+          ;print resultstring
+          NPrint Peek$(*rexxmsg\rm_Result2)
+          DeleteArgstring_ *rexxmsg\rm_Result2
+        EndIf
+      Else
+        Permit_
+      EndIf
+      DeleteArgstring_ *rexxmsg\rm_Args
+    EndIf
+    DeleteRexxMsg_ *rexxmsg
+  EndIf
+End Statement
+
+;simple test-routine:
+;we want to send many ARexx-messages, so create the port outside only once
+*replyport=CreateMsgPort_()
+If *replyport
+  sendrexx{"BLANK"}
+  DeleteMsgPort_ *replyport
+EndIf

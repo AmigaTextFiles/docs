@@ -1,0 +1,384 @@
+@database MountGuide
+@Author "Peter Hutchison"
+@$VER: MountGuide 1.0 (11/5/00)
+@node main
+
+                @{u}Guide to Mountlists on the Amiga@{uu}
+                        @{u}Peter Hutchison@{uu}
+                           @{u}7/5/2000@{uu}
+
+
+             @{" 1 " link What} What are Mountlists?
+
+             @{" 2 " link Look} What does a mountlist look like?
+
+             @{" 3 " link Describe} Workbench mountlists described
+
+             @{" 4 " link Attrib} The Mountlist attributes
+
+             @{" 5 " link Programs} List of useful Programs
+
+             @{" 6 " link Author} About the Author
+
+
+@endnode
+@node What 
+
+@{b}@{u}1. What are Mountlists?@{uu}@{ub}
+
+	A mountlist is a simple text file the describes the configuration and location of a 
+device connected to the Amiga. It specifies what device it is connected to, what file system 
+or handler to use, its size and other information for that device to work.
+
+ 	Each device has a device name which is accessed by AmigaOS programs by using the name 
+and appending a colon to the end. For example, DF0: is Disk Floppy 0 (the internal floppy 
+drive), RAM: is the Ram Drive, and SPEAK: is a Speach device.
+
+	The AmigaDOS MOUNT command uses mountlists to mount devices at startup or
+during the use of the Amiga.
+
+e.g. MOUNT AUX: from DEVS:Mountlist
+     MOUNT DEVS:DosDrivers/Aux
+
+You can use the ASSIGN  command to list devices with the DEVICES switch and it is possible
+to dismount devices using DISMOUNT.
+e.g
+     ASSIGN AUX: DISMOUNT
+
+@endnode
+@node Look
+
+@{b}@{u}What does a mountlist look like?@{uu}@{ub}
+
+	A type mount list consists of a few remark lines to describe what it is in C comment
+structure (/* ...... */) and one or more descriptor lines and sometimes ends with a hash (#).
+
+/* EXA: Example mount list */
+
+attribute1 = value1
+attribute2 = value2
+attribute3 = value3
+attribute4 = value4
+...
+#
+
+See @{"Attribute list" link Attrib} for a list of attributes and what they do.
+The values can be numbers in decimal or hexadecimal or a string or a filename and so on.
+
+@endnode
+@node Describe
+
+@{u}@{b}3. Workbench mountlists described@{ub}@{uu}
+
+	Workbench comes with a number of mountlists. Upto Workbench 2.0, they were all held 
+in one file in Devs: called Mountlist, each mount entry were appended one after another
+and seperated by hash symbols. 
+
+	From Workbench 2.1, Mountlists were seperated into separate files and placed in a new 
+directory called Devs:DosDrivers. This made adding and removing of devices much easier to 
+manage and only requires to use to drag and drop files there and not using ED to edit one 
+big mountlist.
+
+
+@{u}3.1 PIPE Mountlist@{uu}
+
+/* $VER: PIPE 40.1 (31.8.93)              - Name and version information
+ *
+ * Queue-Handler mount entry              - Description of device
+ */
+
+Handler = L:Queue-Handler                 - Name of handling device
+StackSize = 3000                          - 3Kb of Stack memory needed
+Priority = 5                              - Device priority (high)
+GlobVec = -1                              - Global vector
+
+@{u}3.2 CD0 CDRom Mountlist@{uu}
+
+/* $VER: CD0 40.6 (31.8.93)               - Name and version of device
+*
+ * CD-ROM file system entry               - Description and notes
+ *
+ * This file enables the CD-ROM file system which allows you to read standard
+ * ISO-9660 CD-ROM disks from an Amiga with a SCSI or IDE controller.
+ *
+ * The "Unit" line defines the SCSI address of the CD-ROM drive. Drives
+ * often come configured as unit 2, which is the default. Check the
+ * documentation for your CD-ROM drive to find the exact SCSI address.
+ * Note that most drives let you change this number using jumpers.
+ */
+
+FileSystem = L:CDFileSystem         - Name of File System file (ISO9660)
+Flags = 0                           - Flags (none)
+Surfaces = 1                        - Number of disk surfaces
+SectorsPerTrack = 1                 - Number of sectors (slices) per track
+                                      (a circular data track around the disk)
+SectorSize  = 2048                  - Number of bytes per sector (2K)
+Mask        = 0x7ffffffe            - Memory type mask
+MaxTransfer	= 0x100000              - Size of data chunk per data transfer
+Reserved   = 0                      - Number of reserved tracks
+Interleave = 0                      - Number of interleaved tracks
+LowCyl     = 0                      - Lowest cylinder or track number
+HighCyl    = 0                      - Highest cylinder or track number
+Buffers    = 5                      - Number of memory buffers for data
+BufMemType = 0                      - Type of memory for buffer
+StackSize  = 1000                   - 1K of stack memory for CD0
+Priority   = 10                     - Device priority in system (v. high)
+GlobVec    = -1                     - Global vector valye
+DosType    = 0x43443031             - Name of identifier in ASCII (in this 
+                                      case it is `CD01`).
+
+/* The Device and Unit fields are controlled by tooltypes in the CD0 icon.
+ * 
+ * Device = scsi.device             - Name of device controller
+ * Unit   = 2                       - Device unit on controller eg ID 2
+ */
+
+@{u}3.3 Auxillary Device@{uu}
+
+/* $VER: AUX 40.1 (31.8.93)         - Device name and version
+ *
+ * Aux-Handler mount entry          - Description of device
+ */
+
+Handler   = L:Aux-Handler           - Name of device handler
+StackSize = 1000                    - 1K or stack memory
+Priority  = 5                       - Device priority (high)
+
+@{u}3.4 PC Disk Device@{uu}
+
+/* $VER: PC0 40.1 (31.8.93)         - Name and version of device
+ *
+ * CrossDOS file system entry       - Description and notes
+ *
+ * This file enables CrossDOS on the built-in floppy drive normally
+ * referred to as DF0:. PC1 does the same for DF1. By creating new versions
+ * of this file and changing the Unit line to use other numbers, you can
+ * make CrossDOS available on other devices. For example, changing the value
+ * of Unit to 2 would create a mount file that would enable CrossDOS on DF2.
+ */
+
+FileSystem  = L:CrossDOSFileSystem  - Name of file system file (FAT)
+Device      = mfm.device            - Name of device driver 
+Flags       = 1                     - Flag 1 set
+Surfaces    = 2                     - Number of disk surfaces
+SectorsPerTrack = 9                 - Number of sectors/slices per track
+SectorSize  = 512                   - Size of sector in bytes
+Reserved    = 1                     - Number of reserved tracks
+Interleave  = 0                     - Number of interleaved tracks
+LowCyl      = 0                     - Lowest cylinder/track number
+HighCyl     = 79                    - Highest cylinder/track number
+Buffers     = 5                     - Size of data buffer
+BufMemType  = 0                     - Type of memory for data buffer
+StackSize   = 600                   - Size of stack memory
+Priority    = 10                    - Device priority in system
+GlobVec     = -1                    - Global vector
+DosType     = 0x4D534400            - Device indentifier in ASCII
+                                      (in this case it is `MSD\0`)
+
+
+/* The Unit field is controlled by tooltypes in the PC0 icon.
+ *
+ * Unit = 0                         - Floppy disk unit (DF0:)
+ */
+
+@{u}3.5 Recoverable RAM Device@{uu}
+
+/* $VER: RAD 40.1 (31.8.93)               - Name and version of device
+ *
+ * Recoverable RAM disk mount entry       - Description and notes
+ *
+ * You can create different simultaneous recoverable RAM disks by creating
+ * versions of this file with different Unit values.
+ *
+ * The size of a recoverable RAM disk is controlled by the value of the
+ * HighCyl line. Increasing this value by 1 consumes an additional 11K of
+ * RAM. So the default value of 79 consumes around 880K of memory.
+ */
+
+Device          = ramdrive.device         - Name of device driver (in ROM)
+Unit            = 0                       - Device unit number
+Flags           = 0                       - Flags set
+Surfaces        = 2                       - Number of disk surfaces
+SectorsPerTrack = 11                      - Number of sectors per track
+SectorSize      = 512                     - Size of sectors in bytes
+Reserved        = 2                       - Number of reserved tracks
+Interleave      = 0                       - Number of interleaved tracks
+Buffers         = 5                       - Number of memory buffers
+BufMemType      = 1                       - Type of memory for buffer (Chip)
+
+/* The LowCyl and HighCyl fields are controlled by tooltypes in the RAD icon.
+ *
+ * LowCyl   = 0                           - Lowest cylinder/track number
+ * HighCyl  = 79                          - Highest cylinder/track number
+ *                                          (change this to make it smaller or
+ *                                          larger capacity - 880K)
+ */
+
+@endnode
+@node Attrib
+
+@{b}@{u}4.0 The Mountlist attributes@{uu}@{ub}
+
+Buffers           - Number of memory buffers needed for data transfer from device
+                    to Amiga for processing. 1 Buffer = 512 bytes (approx)
+BufMemType        - Type of memory for the Buffers.0=Any, 1=Chip,
+Control           - Specifies parameters for device or Handler 
+Device            - Name of the device driver which can be in ROM (no path specified)
+                    or on disk  (usually Devs:). This can be overridden by a ToolType.
+DosType           - A four byte Identifier usually in Hexidecimal starting with 0x
+                    See @{"list" link DosType} for common DosTypes.
+FileSystem        - Name of the Filing System needed to access the data on the disk
+                    which can be on ROM (no path specified) or on disk (usually L:)
+                    Used for disk or CD devices.
+Flags             - Special value for driver. Varies between devices. 
+GlobVec           - Global Vector for task. See @{"description" link Vector}.
+Handler           - Name of Handler device file usually in ROM (no path specified)
+                    or on disk (usually located in L:). Use this for special devices
+                    such as speech, pipes, and other odd devices.
+HighCyl           - Number of the highest cylinder or track on the disk. Floppy disks
+                    usually end on 79.
+Interleave        - Number of interleaved tracks. Depends on device. Usually 0.
+LowCyl            - Number of the lowest cylinder or track on the disk. Usually 0.
+Mask              - Value of memory mask to use. Usually based on Last Address of
+                    memory type to use. Most standard Amiga devices uses Chip,
+                    third party devices can use any type of memory. 
+                    @{"Mask Details" link DMAMask}.
+MaxTransfer       - Maximum size of block of data sent to be processed in one go.
+                    For SCSI devices, this does not matter, IDE devices can fail on
+                    high max transfer sizes. Use 0x1FE00 (128K) for a safe value.
+                    This value DOES NOT affect performance of data transfer!
+Mount             - Mount straightaway (1) or later (0).
+Priority          - Priority needed for device task.
+Reserved          - Number of reserved tracks or cylinders. For Amiga floppy disks
+                    and hard disks it is 2 for BootBlock or RDB.
+SectorPerBlock    - For Older Devices (usually 1). Obsolete entry. 
+SectorsPerTrack   - Number of sectors per track. 
+SectorSize        - Size of sector in bytes (in 512 increments)
+StackSize         - Size of memory stack (in 1024 increments)
+Startup           - Specify specific parameters for the device handler or driver
+Surfaces          - Number of disk surfaces. For examples, CDs have 1 surface and
+                    disks can have two or more. Same thing as Heads.
+Unit              - If a device can handle more than one unit then specify the unit 
+                    number. For example, Floppy drives can have units 0-3, IDE can
+                    have units 0-3 and SCSI, units 0-7. Usually this can be overridden
+                    by a Unit Tooltype.
+
+Further details are in the Rom Kernel Manuals for the Expansion library and FileSystem
+Resources.
+
+@endnode
+@node DMAMask
+
+@{b}@{u}4.1 DMA Memory Mask@{uu}@{ub}
+
+	The memory mask specifies what range or memory a device can use. Use ShowConfig
+to display the range of memory addresses that you have available. Select the maximum 
+memory address of that range.
+
+1. The DMAMask should start with 1, 3, 7 or F. If not substitute the higher value in the list. 
+2. Substitute all other digits with F. 
+3. Change the last F to a C. 
+4. Use this value. 
+
+Please look at the above paragraph. If you use MapROM you should check your value as 
+the address quoted by ShowConfig contains a 7 which should be changed. 
+
+The following table gives some examples :-
+
+      Address  |   DMAMask
+   ------------+------------
+    0x001FFFFF | 0x001FFFFC
+    0x005FFFFF | 0x007FFFFC
+    0x07FCFFFF | 0x07FFFFFC
+    0x07FFFFFF | 0x07FFFFFC
+
+@endnode
+@node DosType
+
+@{u}@{b}4.2 DOSTypes or Identifiers@{ub}@{uu}
+
+	A DosType is a four character identifier for that FileSystem or device and it is usually
+specified as a Hexidecimal value.
+
+Identifier  Name        Description
+0x41465301  AFS\1       Advanced Filing System
+0x43443031  CD0\0       CD ROM File System (WB3.1)
+0x43444653  CDFS        CD Filing System (AmiCDFS)
+0x444F5300  DOS\0       Old Filing System (OFS)
+0x444F5301  DOS\1       Fast Filing System for WB1.3 (FFS)
+0x444F5302  DOS\2       Old Filing System Intl (FFS)
+0x444F5303  DOS\3       Fast Filing System Intl for WB1.3 (FFS)
+0x444F5304  DOS\4       Old Filing System Intl, Dir Caching
+0x444F5305  DOS\5       Fast Filing System Intl, Dir Caching
+0x4D414300  MAC\0       Macintosh Filing System (HFS)
+0x4D534400  MSD\0       MessyDos File System (PC-Task hardfile)
+0x4D534800  MSH\0       MessyDos File System (CrossDos)
+0x50445300  PDS\0       Professional Filing System (Direct SCSI)
+0x50465301  PFS\1       Professional Filing System (Normal)
+0x53465300  SFS\0       Smart Filing System
+
+@endnode
+@node Vector
+
+@{u}@{b}4.3 Global Vectors@{ub}@{uu}
+
+Value	Meaning
+ 0    Default global vector, used for handlers written in BCPL.
+      Startup packet comes in a register. 
+-1    No global vector, used for C and ASM handlers.
+      Process has to wait for startup packet. 
+-2    Same as -3, except for handlers written in BCPL.
+-3    No global vector, used for C and ASM handlers.
+      The difference with -1 is that the handler can do DOS IO 	
+      prior to returning its startup packet.  On the flip side,  the handler is responsible for 
+      making sure there is only one instance of itself loaded by providing correct 	
+      arbitration around the poking of the dol_Task field of the DosList structure.  
+      With a GlobVec of -1,  this is taken care of by DOS. 
+
+
+@endnode
+@node programs
+
+@{u}@{b}5.0 List of useful Programs for Mountlists@{ub}@{uu}
+
+Workbench Utilities
+
+HDToolbox       - Disk preperation software. Use `Change Drive Type` and 
+                  Define New and Read Configuration to discover the size and
+                  details of a disk.
+
+Aminet Utilitities
+
+disk/misc/DoMount       - Makes own scsi mountlist
+disk/misc/mount_msdos   - How to autodetect MS DOS partitions
+disk/misc/MountDOS100   - Read/list and mount MSDOS partitions
+disk/misc/MountInfo     - Shows mountlists for auto-mount devices
+disk/misc/NewZipMount   - ZIP mount scripts
+disk/misc/Zip_Mount12   - ZIP guide and mac, ibm mountlists
+disk/salv/GenML13       - Generate mount list entries
+util/wb/MountRemHD      - Handle Syquest EZ media
+
+@endnode
+@node Author
+
+@{u}@{b}6.The Author@{ub}@{uu}
+
+Peter Hutchison
+
+The Guide was written for the Amiga Community. Mountlists have never been properly 
+explained until now. Utilities have been written but the details have been secretive 
+and not widely known and make writing Mountlists difficult without all the information 
+at hand. I hope this guide will now allow users to write Mountlists and DosDrivers with 
+confidence.
+
+Email: pjhutch@blizzard.u-net.com
+
+Web: http://www.blizzard.u-net.com/
+
+All my guides are available from Aminet and my web site in HTML and AmigaGuide format. 
+You are welcome to download and use as you wish!
+
+@endnode
+
+
+

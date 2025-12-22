@@ -1,0 +1,1362 @@
+;*******************************************************
+; NComm HOST SYSTEM
+; Version see below
+;
+; Copyright © 1989 Daniel Bloch ( ->Ver 1.3)
+; Copyright © 1990-1992 Nils-Arne Dahlberg
+;                FREEWARE!!!!
+;*******************************************************
+; revision history
+; by 1.6 these things are added:
+;       Search for menus, bulletins and messages in separate directories
+;       Private messages for all users
+;    1.7
+;       Private user passwords
+;    1.8
+;       Double menus
+;    1.9
+;       More messages areas
+;    1.91
+;       Packing and download of messages
+;    1.92
+;       UL/DL check
+;    1.93
+;       Remote Backup
+;       Cosysop enabeld
+;    1.94
+;       Using extended hayes setup (all reset z0 gives right setup)
+;    1.95
+;       Removed part of page routine..
+;    1.96
+;       Changes in file menu
+;    1.97
+;       Changes in messages menus
+;       Local mode
+;    1.98
+;       Cleanup, changing sysop/cosysop versions
+;    1.99
+;       Change of dos-commands in SYsop menu
+;       change of sysop password placement
+;    2.00
+;       Changed placement of U/D load credits
+;    2.01
+;       Fixed a bug in placement of $name"DL" files
+;       Added Possibility to grab bulletins
+;       Added "waiting " at up/download
+;    2.02
+;       Changed packing program to variable, use what you want as sysop
+;       'Return' leaves password change.
+;    2.03
+;       Just a bugfix
+;    2.04
+;       Changed timout command to make a 300 s timeout for logon as well
+;    2.05
+;       Made a small change to shorten the file
+;    2.06
+;       Added features: filetransfer with Ymodem-Batch and Ymodem-G
+;       Print version number from main menu
+;    2.07
+;       A special reboot, or break facility included, I might take this
+;       into an later E-script
+;    2.08
+;       Changed for an error when HOLD-directory is missing, this
+;       directory might be missing due to the fact that BU-progs not
+;       allways copies empty directories
+;   2.09
+;       Changed password routine to not accept nil password
+;   2.10
+;       YABH (Yet Another Bug-Hunt...)
+;       Missed two \" in delete comment part...
+;       Added Start Script in Sysop mode....
+;       removed a IF $ -line, line no 680 somewhere....
+;   2.10E
+;       Back in english, again...
+;   2.11E
+;       Some small special features
+;       A user questionare is added, upload for just some users,
+;       a bug in login-sequense is corrected.
+;       The messages editing is made in ram: now
+;
+;   2.12
+;       A few minor modifications: Should now work with DTR-hangup function.
+;       ... and you probably don't have to turn your modem off when you want
+;       to log on locally, the script now sends AT Q1E0 before local logons.
+;       (Changed by Torkel Lodberg [?])
+;
+;   2.20
+;       A version made especially for NComm 2.0
+;       Main differences is a better way to handle the user-info
+;   2.21
+;       Minor bug in login section fixed
+;   2.3
+;	Several bug fixes. Demonstrates ANSI in login sequence. Waits for
+;	two seconds after displaying "messages waiting".
+
+SET     $version= "2.3Enad, 930531"
+
+;--------------------------------------------
+; Set these variables to fit your needs
+;--------------------------------------------
+        SET     $dir    = "ncomm:host/"	        ;Directory for misc. files
+                                                ;base of all other
+        SET     $menudir = $dir"menus/"         ;menus here
+        SET     $bulldir = $dir"bulletins/"     ;bulletins here
+        SET     $msgsdir = $dir"msgs/"          ;messages here
+        SET     $uldir  = $dir"files/"          ;Upload directory
+        SET     $dldir  = $dir"files/"          ;Download directory
+        SET     $hold   = $dir"hold/"		;Hold directory
+        SET     $apack   = "c:lha a "		;packing command
+        SET     $alist   = "c:lha l "		;listing command
+        SET     $aextract ="c:lha x "		;extract command
+        SET     $arch    = ".lzh"               ;archive extension
+        SET     $holdzoo = $dir"files/HOLD"$arch        ;Hold file
+        SET     $tmp    = $dir"files/NHS.tmp"   ;Temporary file
+        SET     $sysname = "Boringtown BBS"    	;Name of system
+        SET     $list   = "c:list"              ;Directory lister
+        SET     $qlist  = "c:dir"               ;A quick lister
+	SET	$delete = "c:delete"            ;Delete
+	SET	$copy = "c:copy"                ;Copy
+        SET     $MaxBaud = "2400"               ;Modems Maximum Baud
+        SET     $doscomm = $dir"Ckomm/"         ;dos commands for remote
+
+;All files in hold directory will be deleted at initialization!!!
+
+;-------------------- M A I N   P R O G R A M -----------------------;
+        message "\f"            ;Clear screen
+        REQUEST OFF
+main:   clrstack
+        gosub   init            ;Initialize various stuff
+        gosub   connect         ;Wait for RING and answer the phone
+        timeout 300 goto bibi   ;must have it here i think..
+        when    "\r\nNO CARRIER\r\n" goto NoCarrier
+        gosub   prelog          ;Show opening picture
+;LOGIN gives a returnvariable: $NameOK set to "T" if the name exists
+;and $PassOK is set to true if name and password is OK
+        gosub   login           ;Get name & password
+        timeout 300 goto bibi   ;must have it here i think..
+        if      $PassOK == "T" then goto OK
+WrngName:
+        send    "Wrong!!\n"
+        write   $dir"log" "\n"$date"  "$name"  Wrong password: "$pass"\n"
+        gosub   logout
+        goto    main
+
+;User has logged in
+OK:     write   $dir"log" "\n"$date"  Login: "$name" ("$baud")\n"
+        send    "\n\nYour last logout was:"$inLast"\n"
+        set     $ULCredit = $inulcredit
+        set     $DLCredit = $indlcredit
+        set     $Status = $instatus
+        if      $insysop == "Sysop" then SET $sysacc = "T"
+        if      $insysop == "CoSys" then SET $sysacc = "T"
+        if      $insysop == "CoSys" then SET $cosys = "T"
+; Set right charset
+        set     $charset = $incharset
+; Set right protocol
+        set     $proto = $inproto
+        gosub   SetProto
+        gosub   postlog
+        timeout 2
+        echo    off
+        send    "^[[97x"
+        input   $id "\r"
+        timeout 300 goto bibi   ;must have it here i think..
+        echo    on
+        send    "\nPress [ENTER] to continue..."
+        input   $dummy "\r"
+        send    "\f"
+        IF      !EXISTS $msgsdir$name then goto OK1
+        Send    "\n\nYou have messages waiting.\n"
+        send    "==========================\n\n"
+        delay   2
+OK1:    ascsend $menudir".menu0"
+
+;This is the main loop
+loop:   gosub   MainMenu
+        send    "Are you sure you want to log off (Enter=Y)? "
+        input   $cmd "\r"
+        IF $cmd == "N" THEN goto loop
+        send    "\n"
+        gosub   logout
+        goto    main
+
+
+
+
+;--------------------- S U B R O U T I N E S ----------------------
+
+
+;********************************************************
+;* Initialize the system
+;********************************************************
+init:   config  $dir"host.config"
+        hangup
+        send "\w\w\w+++\w\w\w\wATZ\n" ;Reset to saved default
+        converse "OK" "\w\w\w+++\w\w\w\wATX4V1M0E1\n" ;
+        converse "OK" "\w\w\wATS7=60\n" ;Wait one full minute for carrier
+        wait    "OK"
+        SET     $sysacc = "F"
+        SET     $cosys = "F"
+        echo    off
+        dwhens
+        timeout 0
+        CLI     "delete >nil: "$hold"#?"
+        write   $hold$sysname $sysname"\n Is running on version "$version"\n"
+        return
+
+
+;********************************************************
+;* Wait for CONNECT
+;********************************************************
+connect:
+        dwhens
+        send    " \r"
+        gosub   skip
+conn0:  SET     $Local = "F"
+        message "\n\n\n"$sysname"   [Press '?' for help]\n"
+        message "Waiting on call...\n"
+ConnW:  timeout 300 Goto DoExitQ        ; just wait for 5 minutes
+        input   $char ""        ;Get one character
+        timeout 90 goto noconnect
+        IF !$char == "?" THEN goto conn1
+        message "\n\nSpace = Local logon\n"
+        goto    conn0
+conn1:  IF $char == " " THEN goto Local
+        IF $char == "R" Then goto Local2
+conn2:
+        when    "CONNECT 1200" goto conn1200
+        when    "CONNECT 2400" goto conn2400
+        when    "CONNECT 4800" goto conn4800
+        when    "CONNECT 9600" goto conn9600
+        dtenths 7
+        SET     $baud = $MaxBaud
+        send    "\n\w\wAT\w\wA\n"
+        timeout 90 goto noconnect
+        wait    "NO CARRIER"
+NoConnect:
+        write   $dir"log" "\n\n"$date"  Login Failed\n\n"
+        gosub   init
+        goto connect
+
+conn3:  dwhens
+        timeout 300 goto bibi
+        echo    on
+        gosub   skip
+        return
+
+Local:  message "\nStarting local logon..."
+        SEND    "\n+++\w\wAT\wQ1\wE0\n"
+        SET     $baud = "19200"
+        SET     $Local = "T"
+        goto    conn3
+
+Local2: message "\nStarting local/remote logon.."
+        SEND    "\n+++\w\wAT\wQ1\wE0\n"
+        SET     $baud = "19200"
+        goto    conn3
+
+QuitNHS:
+        config  "NComm:NComm.config"
+        end
+
+conn1200:
+        SET     $baud = "1200"
+        goto    conn3
+conn2400:
+        SET     $baud = "2400"
+        goto    conn3
+conn4800:
+        SET     $baud = "4800"
+        goto    conn3
+conn9600:
+        SET     $baud = "9600"
+        goto    conn3
+;**************************************************************************
+; Check if another program wants NHS to quit.
+; In that case, a file named NHSQUIT shuld be placed in the RAM:C directory
+; you should also let the startup-sequence place DELETE there
+; The place of the file may be changed.
+; The Script tells it is quiting by removing this file
+;***************************************************************************
+DoExitQ:
+        IF !EXISTS "RAM:C/NHSQUIT" THEN goto ConnW
+        Hangup  ; shouldn't be neccesary
+        CLI "RAM:C/DELETE RAM:C/NHSQUIT"
+        QUIT
+        END
+
+;********************************************************
+;* Show "prelog", i.e. the picture to be shown before
+;* login.
+;********************************************************
+prelog: send    "\f"$sysname" ("$baud") up on "$date"\n"
+        send    $NComm" / NComm Host System (NHS) v"$version"\n"
+	send	"\e[33m"
+        send    "Copyright (c) 1989 Daniel Bloch (-> ver 1.3)\n"
+        send    "Copyright (c) 1990 & 1992 Nils-Arne Dahlberg\n\n"
+	send	"\e[31m"
+        ascsend $dir"prelog"
+        return
+
+
+;********************************************************
+;* Show "postlog", i.e. the picture to be shown after
+;* login.
+;********************************************************
+postlog:
+        send    "\n\n"
+        ascsend $dir"postlog"
+;       CLI     "cookie"
+        return
+
+
+;********************************************************
+;* Read user name and password into the variables
+;* $name and $pass.
+;********************************************************
+Login:  echo    on
+        set     $NameOK = "F"
+        if      !EXISTS $dir"userfile" then goto FirstUser
+        set     $firstrun = "T"
+        timeout 120 goto LogSleep
+Loginagain:
+        send    "\n\nYour name: "
+        input   $name "\r"
+        IF      $name == "new" then goto NewUser
+NilPass:
+        send    "\nYour password: "
+        echo    off
+        input   $pass "\r"
+        echo    on
+        IF      $pass == "" then goto NilPass
+        timeout 300 goto bibi
+        send    "\n"
+        set     $SkippPassword = "F"
+        gosub   CheckName
+        if      $PassOK == "T" then return
+        if      !$firstrun == "T" then goto AreYouSure
+        set     $firstrun = "F"
+        send    "\n\nSorry, name or password is incorrect\n"
+        send    "Try again, enter NEW if you havn't logged on before.\n"
+        goto     Loginagain
+AreYouSure:
+        Send    "\nThat was two illegal tries.\n"
+        send    "Are you sure you want to log on? (N/y):"
+        input   $ok "\r"
+        send    "\n"
+        if      $ok == "Y" then goto Login
+        set     $NameOK = "F"
+        return
+; Check if the user exists in the user-file, if it does, read all info
+
+CheckName:
+        set     $NameOK = "F"
+        set     $PassOK = "F"
+        varfile $dir"userfile"
+repeat
+        readvar $x
+        if !$x == "#" then goto NotName
+        if $x == "EOF" then goto NotName
+        readvar $inname
+        if !$inname == $name then goto NotrightName
+        set     $NameOK = "T"
+;The name DO exist, now we read in the rest of the info....
+        readvar $inpass
+        if $inpass == "EOF" then goto EOFExit
+     if  $SkippPassword == "F" then if !$inpass == $pass then goto EOFExit
+        readvar $incharset
+        if $incharset == "EOF" then goto EOFExit
+        readvar $inulcredit
+        if $inulcredit == "EOF" then goto EOFExit
+        readvar $indlcredit
+        if $indlcredit == "EOF" then goto EOFExit
+        readvar $instatus
+        if $instatus == "EOF" then goto EOFExit
+        readvar $insysop
+        if $insysop == "EOF" then goto EOFExit
+        readvar $inproto
+        if $inproto == "EOF" then goto EOFExit
+        readvar $inlast
+        if $inlast == "EOF" then goto EOFExit
+        set     $PassOK = "T"
+        goto    NotName
+;This is where we land in case of a sudden EOF or if the password is wrong
+EOFExit:
+        set     $x = "EOF"
+        write   $dir"log" "\n"$date"  USERFILE CORRUPTED, pleas check!!\n"
+NotrightName:
+        if      $inname == "EOF" then set $x = $inname
+NotName:
+        until   $x == "EOF"
+        varfile Close
+        return
+LogSleep:
+        send    "\n\nLogon terminated after 2 minutes\n"
+        gosub   logout
+        goto    main
+
+;This is used for the first user to logon, it makes her/him to sysop
+FirstUser:
+        set     $issysop = "T"
+        ascsend $dir"FirstUser"
+        set     $NameOK = "F"
+        goto    NewName
+NewUser:
+        ascsend $dir"newuser"
+        set     $issysop = "F"
+Newname:
+        send    "\n\nYour name: "
+        input   $name "\r"
+        send    "\nIs '"$name"' Correct? (y/N)"
+        input   $ok "\r"
+        set     $SkippPassword = "F"
+        if      $issysop == "F" then gosub   CheckName
+        IF      !$ok == "y" then goto Newname
+        IF      $NameOK == "F" then goto NewPassIn
+        send    "\nSorry, the name "$name" already exists!\n"
+        goto    Newname
+NewPassIn:
+        send    "\nYour password: "
+        echo    off
+        input   $pass "\r"
+        echo    on
+        send    "\nOnce more... : "
+        echo    off
+        input   $pass1 "\r"
+        echo    on
+        if      $pass == $pass1 then goto NewPassOK
+        send    "\nSorry, line noice, enter password again\n"
+        goto    NewPassIn
+NewPassOk:
+        gosub   GetCharSet
+        set     $Incharset = $chars
+        gosub   GetTransProto
+        set     $inproto = $trans
+        if      !EXISTS $dir"userfile" then write $dir"userfile" "#\n"
+        write   $dir"userfile"  $Name"\n"
+        write   $dir"userfile"  $Pass"\n"
+        write   $dir"userfile"  $Chars"\n"
+        write   $dir"userfile"  "N\n"
+        write   $dir"userfile"  "N\n"
+        if      $issysop == "T" then write   $dir"userfile" "10\n"
+        if      $issysop == "F" then write   $dir"userfile" "1\n"
+        if      $issysop == "T" then write   $dir"userfile" "Sysop\n"
+        if      $issysop == "F" then write   $dir"userfile" "New\n"
+        write   $dir"userfile"  $Trans"\n"
+        write   $dir"userfile"  $date"\n"
+        write   $dir"log" $date"\n\n  New User: "$name"\n"
+        timeout 300 goto bibi
+        send    "\n"
+; Here is a questionare, its simple, but it should work...
+;just add and delete questions as apropriate
+        send    "\nBefore you enter the BBS, I would like you to answer\n"
+        send    "the following questions:\n"
+        send    "\nAddress (2/4): "
+        input   $tmp "\r"
+        write   $dir"userfile"   $tmp"\n"
+        send    "\nAddress (3/4): "
+        input   $tmp "\r"
+        write   $dir"userfile"   $tmp"\n"
+        send    "\nAddress (4/4): "
+        input   $tmp "\r"
+        write   $dir"userfile"   $tmp"\n"
+        send    "\nComputer: "
+        input   $tmp "\r"
+        write   $dir"userfile"   $tmp"\n"
+        send    "\n\nThank you, I hope you enjoy it here!\n\n"
+        write   $dir"userfile"  "#\n"
+        set     $SkippPassword = "F"
+        gosub   CheckName
+        return
+
+;********************************************************
+;Skip junk from the modem
+;********************************************************
+skip:   timeout 3 goto SkipOK
+more:   wait    ""
+        goto more
+SkipOK: timeout 300 goto bibi
+        return
+
+
+;********************************************************
+;* Log out
+;********************************************************
+logout: ;CLI     "fortune"
+        ascsend $dir"Logout"
+        hangup
+        write   $dir"log" $date"  Logout: "$name"\n"
+        CLI     "delete >nil: "$holdzoo" "$hold"#?"
+        write   $hold$sysname $sysname"\n Runs with version "$version"\n"
+        if      $NameOK == "T" then gosub PreChangeUser
+        if      $nameOK == "T" then set $NewLast = $date
+        if      $NameOK == "T" then gosub ChangeUser
+        return
+
+;********************************************************
+;* User sleeps
+;********************************************************
+bibi:   send    "\n\nGood night!"
+        write   $dir"log" $date"  Sleep disconect\n"
+        gosub   logout
+        goto    main
+
+;********************************************************
+;Main menu
+;********************************************************
+MainMenu:
+        send    "\nCommand (? or ! for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?" THEN ascsend $menudir".menu0"
+        IF $cmd == "!" THEN ascsend $menudir"menu0"
+        IF $cmd == "G" THEN return
+        IF $cmd == "F" THEN gosub FileMenu
+        IF $cmd == "B" THEN gosub BullMenu
+        IF $cmd == "O" THEN gosub page
+        IF $cmd == "S" THEN gosub sysop
+        IF $cmd == "C" THEN gosub Comment
+        IF $cmd == "M" THEN gosub Messages
+        IF $cmd == "E" THEN gosub LetterMenu
+        IF $cmd == "P" THEN gosub ChangePasswd
+        IF $cmd == "L" THEN gosub ListUsers
+        IF $cmd == "V" THEN send "Version:"$version"\n"
+        goto    MainMenu
+
+
+;********************************************************
+;Chat with SYSOP
+;********************************************************
+page:   send    "Calling SYSOP...\n"
+        send    "(press Ctrl-Z to end the conversation)\n"
+        beep
+        dtenths 3
+        beep
+        dtenths 3
+        beep
+        write   $dir"log" $date"  Paged operator\n"
+        when    "^Z" goto EndChat
+chat:   input   $dummy  "\r"
+        send    "\n"
+        goto    chat
+EndChat:
+        dlwhen
+        send    "\n"
+        return
+
+;*********************************************
+;Change Password
+;*********************************************
+ChangePasswd:
+	send   "\n\nWhat do you want to change your password to? (Enter to cancel) "
+        echo    off
+        input   $psw1 "\r"
+        if      $psw1 == "" THEN goto PsQuit
+        echo    on
+        send    "\nOne time more, thanks "
+        echo    off
+        input   $psw2 "\r"
+PsOut:  echo    on
+	IF      !$psw1 == $psw2 THEN goto PsQuit
+        set     $pass = $psw2
+        gosub   PreChangeUser
+	set     $NewPass = $psw2
+	gosub   ChangeUser
+        return
+
+PsQuit: set $psw1 = $pass
+	set $psw2 = $pass
+        goto PsOut
+
+
+;*******************************************************
+;Set transfer protocoll
+;*******************************************************
+SetProto:
+        if      $proto == "X" then MENUSELECT TRANSFER 7 0
+        if      $proto == "Y" then MENUSELECT TRANSFER 7 1
+        if      $proto == "B" then MENUSELECT TRANSFER 7 2
+        if      $proto == "G" then MENUSELECT TRANSFER 7 3
+        if      $proto == "Z" then MENUSELECT TRANSFER 7 4
+        if      $proto == "K" then MENUSELECT TRANSFER 7 5
+        if      $proto == "E" then MENUSELECT TRANSFER 7 6
+        if      $proto == "J" then MENUSELECT TRANSFER 7 7
+        if      $proto == "Q" then MENUSELECT TRANSFER 7 8
+        return
+
+;*******************************************************
+;choose characterset
+;*******************************************************
+GetCharSet:
+        send    "\nWhat character set do you want to use? (L for list):"
+        input   $chars "\r"
+        send    "\n"
+        if      $chars == "L" then ascsend $dir"CharSets"
+        if      $chars == "L" then goto GetCharSet
+        if      $chars == "" then goto GetCharSet
+        varfile $dir"CharSets"
+        set     $y = "F"
+repeat
+        readvar $x
+        if      !$chars == $x then goto NextChars
+        set     $x = "EOF"
+        set     $y = "T"
+NextChars:
+        until   $x == "EOF"
+        varfile close
+        if      $y == "T" then goto CharsetOK
+        send    "\nI don't support charset "$chars". Please reenter.\n"
+        goto    GetCharSet
+CharsetOK:
+        return
+
+;*******************************************************
+;Get transfer protocoll
+;*******************************************************
+GetTransProto:
+        send    "\nWhat Transfer protocol do you want to use? (L for list):"
+        input   $trans "\r"
+        send    "\n"
+        if      $trans == "L" then ascsend $dir"TransProtos"
+        if      $trans == "L" then goto GetTransProto
+        if      $trans == "" then goto GetTransProto
+CheckProto:
+        varfile $dir"TransProtosS"
+        set     $y = "F"
+repeat
+        readvar $x
+        if      !$trans == $x then goto NextTrans
+        set     $x = "EOF"
+        set     $y = "T"
+NextTrans:
+        until   $x == "EOF"
+        varfile close
+        if      $y == "T" then goto TransOK
+        send    "\nI don't support protocol "$trans". Please reenter.\n"
+        goto GetTransProto
+TransOK:
+        return
+
+;*******************************************************
+;Prepeare variables for changeuser
+;*******************************************************
+PreChangeUser:
+        Set     $newpass = $pass
+        Set     $newcharset = $charset
+        Set     $newULCredit = $ULCredit
+        Set     $newDLCredit = $DLCredit
+        Set     $newStatus = $Status
+        Set     $newSysop = $insysop
+        Set     $newProto = $Proto
+        Set     $newLast = $inlast
+        return
+
+;*******************************************************
+;Change a entry in 'userfile'
+;*******************************************************
+ChangeUser:
+        set     $CUOK = "F"
+        cli     "copy >nil: "$dir"userfile to "$dir"userfile.old"
+        cli     "delete >nil: "$dir"userfile"
+        varfile $dir"userfile.old"
+repeat
+        readvar $x
+        write   $dir"userfile" $x"\n"
+        if !$x == "#" then goto CUNotName
+        if $x == "EOF" then goto CUNotName
+        readvar $inname
+        set $x = $inname
+        if $x == "EOF" then goto CUNotName
+        write   $dir"userfile" $inname"\n"
+        if !$inname == $name then goto CUNotrightName
+;The name DO exist, now we read in the rest of the info....
+        readvar $inpass
+        write   $dir"userfile" $newpass"\n"
+        if $inpass == "EOF" then goto CUEOFExit
+        readvar $incharset
+        write   $dir"userfile" $newcharset"\n"
+        if $incharset == "EOF" then goto CUEOFExit
+        readvar $inulcredit
+        write   $dir"userfile" $newULCredit"\n"
+        if $inulcredit == "EOF" then goto CUEOFExit
+        readvar $indlcredit
+        write   $dir"userfile" $newDLCredit"\n"
+        if $indlcredit == "EOF" then goto CUEOFExit
+        readvar $instatus
+        write   $dir"userfile" $newStatus"\n"
+        if $instatus == "EOF" then goto CUEOFExit
+        readvar $insysop
+        write   $dir"userfile" $newSysop"\n"
+        if $insysop == "EOF" then goto CUEOFExit
+        readvar $inproto
+        write   $dir"userfile" $newProto"\n"
+        if $inproto == "EOF" then goto CUEOFExit
+        readvar $inlast
+        write   $dir"userfile" $newLast"\n"
+        if $inlast == "EOF" then goto EOFExit
+        set     $CUOK = "T"
+        goto    CUNotName
+;This is where we land in case of a sudden EOF
+CUEOFExit:
+        set     $x = "EOF"
+        write   $dir"log" "\n"$date"  USERFILE CORRUPTED, pleas check!!\n"
+CUNotrightName:
+        if      $inname == "EOF" then set $x = $inname
+CUNotName:
+        until   $x == "EOF"
+        varfile Close
+
+        return
+
+;*******************************************************
+;List users who have logged in
+;*******************************************************
+ListUsers:
+        send    "\nUsers up to "$date"\n"
+        varfile $dir"userfile"
+repeat
+        readvar $x
+        if !$x == "#" then goto LUNotName
+        if $x == "EOF" then goto LUNotName
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "\nName="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+if $sysacc == "T" then send "Password="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+if $sysacc == "T" then send "Charset="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+if $sysacc == "T" then send "ULCredits="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+if $sysacc == "T" then send "DLCredits="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Userlevel="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+if $sysacc == "T" then send "Protcolls="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Last on="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Address="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Address="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Address="$x"\n"
+        readvar $x
+        if $x == "EOF" then goto LUNotName
+        send    "Computer="$x"\n"
+LUNotName:
+        until   $x == "EOF"
+        varfile Close
+
+        return
+
+;********************************************************
+;File menu
+;********************************************************
+FileMenu:
+        send    "\nFile command (? or ! for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?" THEN ascsend $menudir".menu1"
+        IF $cmd == "!" THEN ascsend $menudir"menu1"
+        IF $cmd == ""  THEN return
+        IF $cmd == "Q" THEN return
+        IF $cmd == "L" THEN gosub ListFiles
+        IF $cmd == "D" THEN gosub Download
+        IF $cmd == "U" THEN gosub Upload
+        IF $cmd == "V" THEN gosub ViewZOO
+        IF $cmd == "S" THEN gosub QListFiles
+        IF $cmd == "EXT" THEN gosub ExtractZOO
+        IF $cmd == "ADD" THEN gosub AddFile
+        IF $cmd == "DEL" THEN gosub Remove
+        IF $cmd == "DIR" THEN gosub Show
+        IF $cmd == "GET" THEN gosub GetHold
+        goto    FileMenu
+
+
+;********************************************************
+;List files in download directory
+;********************************************************
+ListFiles:
+        send    "\n"
+        CLI     $list" "$dldir
+        return
+
+
+;********************************************************
+;List files in download directory quick
+;********************************************************
+QListFiles:
+        send    "\n"
+        CLI     $qlist" "$dldir
+        return
+
+
+;********************************************************
+;Download file
+;********************************************************
+Download:
+        IF $DLCredit == "Y" then goto DownlOK1
+        send    "\nNo files up, no files down....\n"
+        return
+DownlOK1:
+        send    "\nFilename: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" THEN return
+        IF exists $dldir$file THEN goto DownlOK
+        send    "The file '"$file"' does not exist!\n"
+        return
+DownlOK:
+        send    "Choose protocol (return for "$proto"):"
+        input   $nproto "\r"
+        send    "\n"
+        IF $nproto == "" THEN goto XDownload
+        set     $trans = $nproto
+        gosub   CheckProto
+        set     $proto = $trans
+        gosub   SetProto
+XDownload:
+        send    "Waiting...\n"
+        upload  $dldir$file
+        write   $dir"log" $date"  Downloaded "$file" (Xmodem)\n"
+        Set     $DLCredit = "N"
+        return
+
+;********************************************************
+;Upload file
+;********************************************************
+Upload:
+        send    "\nFilename: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" THEN return
+        IF $ULCredit == "Y" then goto ULOK
+        send    "\n\nSorry, you have no upload-credit..\n"
+        return
+ULOK:
+        IF !EXISTS $uldir$file THEN goto UploadOK
+        send    "The file '"$file"' allready exists!\n"
+        return
+UploadOK:
+        send    "Describe the file: "
+        input   $desc "\r"
+        send    "\n"
+GetProto:
+        send    "Choose protocol (return for "$proto"):"
+        input   $nproto "\r"
+        send    "\n"
+        IF $nproto == "" THEN goto XUpload
+        set     $trans = $nproto
+        gosub   CheckProto
+        set     $proto = $trans
+        gosub   SetProto
+XUpload:
+        send    "Waiting...\n"
+        download $uldir$file
+        write   $dir"log" $date"  Uploaded "$file" (Xmodem)\n"
+        IF !$desc == "" THEN CLI "Filenote file "$uldir$file" comment \""$desc"\""
+        set     $DLCredit = "Y"
+        return
+
+;********************************************************
+;Bulletin menu
+;********************************************************
+BullMenu:
+        ascsend $menudir".menu2"
+bull:   send    "\nBulletin number (? or ! for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?"  THEN goto BullMenu
+        IF $cmd == "!"  THEN goto BullMe
+        IF $cmd == ""   THEN return
+        IF $cmd == "Q"  THEN return
+        IF exists $bulldir"bull"$cmd THEN goto ShowBull
+        send    "Illegal bulletin-number!\n"
+        goto    bull
+BullMe:
+        ascsend $menudir"menu2"
+        goto    bull
+ShowBull:
+        send    "\n"
+        ascsend $bulldir"bull"$cmd
+        write   $dir"log" $date"  Read bulletin #"$cmd"\n"
+        goto    bull
+
+
+;********************************************************
+;Sysop menu
+;********************************************************
+;rewrite, add possibility for userupdate
+SysopMenu:
+        ascsend $menudir"menu3"
+Sysop:
+        IF $sysacc == "T" THEN goto SysOK
+        send    "Nope, you're not allowed!\n"
+        write   $dir"log" $date"  Attempted restricted command\n"
+        return
+SysOK:  send    "\nSysop Command (? for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?" THEN goto SysopMenu
+        IF $cmd == "Q" THEN return
+        IF $cmd == ""  THEN return
+        IF $cmd == "L" THEN goto ListLog
+        IF $cmd == "R" THEN goto Priv
+        IF $cmd == "D" THEN goto DeleteLog
+        IF $cmd == "C" THEN goto DeleteComm
+        IF $cmd == "B" THEN goto RemoteBackup
+        IF $cmd == "S" THEN goto StartScript
+        IF $cmd == "U" THEN goto UserUpdate
+
+;********************************************************
+;Execute DOS command
+;********************************************************
+        write   $dir"log" $date"  Executed DOS command: "$cmd"\n"
+        send    "\n Commands that can be executed from remote are:\n"
+        CLI     $list " " $doscomm
+        if      $local == "F" then goto NoLocalDos
+        CLI     $cmd
+        goto sysok
+NoLocalDos:
+        CLI     $doscomm$cmd
+        goto sysok
+
+NoDos:
+        send    "\n\nOnly available in local mode, sorry!!\n\n"
+        goto sysok
+        goto    sysok
+
+
+;********************************************************
+;Delete log file
+;********************************************************
+DeleteLog:
+        if      $local == "F" then goto NoDos
+        IF      $cosys == "T" then goto sysok
+        send    "\nSure? (Enter=N)? "
+        input   $cmd "\r"
+        send    "\n"
+        IF !$cmd == "Y" THEN goto sysok
+        CLI     "delete "$dir"log"
+        write   $dir"log" $date"  Started new log\n"
+        goto sysok
+
+
+;********************************************************
+;Delete private messages
+;********************************************************
+DeleteComm:
+        if      $local == "F" then goto NoDos
+        IF      $cosys == "T" then goto sysok
+        send    "\nDelete all private messages (Enter=N)? "
+        input   $cmd "\r"
+        send    "\n"
+        IF !$cmd == "Y" then goto sysok
+        CLI "delete >nil: "$msgsdir"Comments"
+        write   $dir"log" $date"  Private messages deleted\n"
+        goto sysok
+
+
+;********************************************************
+;List log file
+;********************************************************
+ListLog:
+        send    "\n"
+        ascsend $dir"log"
+        write   $dir"log" $date"  Listed Log\n"
+        goto sysok
+
+
+;********************************************************
+;Remote Backup
+;********************************************************
+RemoteBackup:
+        send    "\nRemote Backup started.\n"
+        CLI     "run >nil: <nil: copy ncomm:host to df1:host all clone"
+        write   $dir"log" $date"  Started Remote Backup\n"
+        goto sysok
+
+;********************************************************
+;Start a script
+;********************************************************
+StartScript:
+        Send    "\n\nThis is a Point of No Return!!!\n\n"
+        send    "When the script is started there is _NO WAY BACK_\n\n"
+        Send    "Continue? (Enter=N)"
+        input   $Cont "\r"
+        If      $cont == "Y" THEN GOTO StartS1
+        goto    sysok
+StartS1:
+        CHAIN   $dir"A.Script"
+
+
+
+;********************************************************
+;Uppdate user
+;********************************************************
+UserUpdate:
+        set     $tmpsysop = $insysop
+        set     $tmplast = $inlast
+        set     $tmpname = $name
+        send    "\nWhat user do you eant to update/change? "
+        input   $name "\r"
+        send    "\n"
+        set     $SkippPassword = "T"
+        gosub   CheckName
+        if      $NameOK == "T" then goto UserUpdateOK
+        send    "\n"$name"Doesn't exist!\n"
+        goto    LeaveUserUpdate
+UserUpdateOK:
+if $insysop == "Sysop" then if !$tmpsysop == "Sysop" then goto LeaveUserUpdate
+        send    "\n"$name" is '"$insysop"'\n"
+  send    "\nUpdate to: (1 = New 2 = Normal User, 9 = CoSysop, 10 = Sysop ) "
+        input   $level "\r"
+        if      $level == "1" then set $newSysop = "New"
+        if      $level == "1" then goto LevelOK
+        if      $level == "2" then set $newSysop = "Normal"
+        if      $level == "2" then goto LevelOK
+        if      $level == "9" then set $newSysop = "Cosys"
+        if      $level == "9" then goto LevelOK
+ if $level == "10" then if $tmpsysop == "Sysop" then set $newSysop = "Sysop"
+ if $level == "10" then if $tmpsysop == "Sysop" then goto LevelOK
+        goto    UserUpdateOK
+LevelOK:
+        send    "\nULCredits="$inULCredit", should be? (Y/N) "
+        input   $inULCredit "\r"
+ if !$inULCredit == "N" then if !$inULCredit == "Y" then goto LevelOK
+ULOK:
+        send    "\nDLCredits="$inDLCredit", should be? (Y/N) "
+        input   $inDLCredit "\r"
+ if !$inDLCredit == "N" then if !$inDLCredit == "Y" then goto ULOK
+        Set     $newpass = $inpass
+        Set     $newcharset = $incharset
+        Set     $newULCredit = $inULCredit
+        Set     $newDLCredit = $inDLCredit
+        Set     $newStatus = $level
+        Set     $newProto = $inProto
+        Set     $newLast = $inlast
+        gosub   ChangeUser
+LeaveUserUpdate:
+        set     $insysop = $tmpsysop
+        set     $inlast = $tmplast
+        set     $name = $tmpname
+        goto    sysop
+
+;********************************************************
+;Comment to sysop
+;********************************************************
+Comment:
+        send    "\n\nSubject: "
+        input   $subject "\r"
+        IF $subject == "" then return
+        SET     $to = "Sysop"
+        SET     $mfile = "Comments"
+        SET     $mtype = "Comment to sysop"
+        goto    Writemess
+
+;********************************************************
+;Messages menu
+;********************************************************
+Messages:
+        ascsend $menudir".menu5"
+Mess1:  send    "\nMessage command (? or ! for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?"  THEN goto Messages
+        IF $cmd == "!"  THEN goto Mess2
+        IF $cmd == ""   THEN return
+        IF $cmd == "Q"  THEN return
+        IF $cmd == "R"  THEN goto Mess3
+        IF $cmd == "W"  THEN goto Mess3
+        GOTO    Mess1
+Mess3:
+        send    "\nArea number (? or ! for menu): "
+        input   $area "\r"
+        IF $area == "?"  THEN goto Mess3a
+        IF $area == "!" THEN goto Mess3b
+        send    "\n"
+        IF exists $msgsdir"messages"$area THEN goto Mess4
+        send    "Illegal Area-number!\n"
+        goto    Mess1
+Mess3a:
+        ascsend $menudir".menu5"
+        goto    Mess3
+Mess3b:
+        ascsend $menudir"menu5"
+        goto    Mess3
+Mess2:  ascsend $menudir"menu5"
+        goto    Mess1
+Mess4:  IF $cmd =="R"   THEN goto Read
+        gosub   Enter
+        goto    Mess1
+
+;********************************************************
+;Enter message
+;********************************************************
+Enter:
+        send    "\nTo (Enter=ALL): "
+        input   $to "\r"
+        IF $to == "" then SET $to = "ALL"
+        send    "\nSubject: "
+        input   $subject "\r"
+        IF $subject == "" then return
+        SET     $mfile = "messages"$area
+        SET     $mtype = "Area"$area
+        goto    Writemess
+
+
+
+;********************************************************
+;Read public messages
+;********************************************************
+Read:
+        ascsend $msgsdir"messages"$area
+        write   $dir"log" $date"  Read message in area "$area"\n"
+        goto    Mess1
+
+
+;********************************************************
+;Read private messages
+;********************************************************
+Priv:   IF !EXISTS $msgsdir"comments" then goto sysok
+        ascsend $msgsdir"comments"
+        write   $dir"log" $date"  Read private messages.\n"
+        goto    sysok
+
+;********************************************************
+;Handle NO CARRIER
+;********************************************************
+NoCarrier:
+        write   $dir"log" $date"  CARRIER LOST\n"
+        gosub   logout
+        goto    main
+
+
+;********************************************************
+;View ZOO file
+;********************************************************
+ViewZOO:
+        send    "\nGive the name of the  "$arch" file: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" then return
+        IF exists $dldir$file then goto ViewOK
+        IF exists $dldir$file$arch then goto ViewOK
+        send    "The file does not exist!\n"
+        return
+ViewOK: write   $dir"log" $date" "$arch" view of "$file"\n"
+        CLI     $alist$dldir$file
+        return
+
+
+;********************************************************
+;Extract ZOO file
+;********************************************************
+ExtractZOO:
+        IF $DLCredit == "Y" then goto DownlOK1
+        send    "\nNo files up, no files down....\n"
+        return
+ExtraZ1:
+        send    "\nGive the name of the  "$arch" file: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" then return
+        IF exists $dldir$file then goto ExtOK
+        IF exists $dldir$file$arch then goto ExtOK
+        send    "The file does not exist!\n"
+        return
+ExtOK:  send    "\nGive the name of the file(s) to extract [Enter=all]: "
+        input   $files "\r"
+        write   $dir"log" $date"  Extracted "$file" "$files"\n"
+        send    "\n"
+        CLI     "delete >nil: "$tmp
+        write   $tmp "CD "$hold"\n"
+        write   $tmp $aextract$dldir$file" "$files"\n"
+        CLI     "execute "$tmp
+        return
+
+
+;********************************************************
+;Add file to HOLD
+;********************************************************
+AddFile:
+        IF $DLCredit == "Y" then goto DownlOK1
+        send    "\nNo files up, no files down....\n"
+        return
+AddF1:
+        send    "\nFilename: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" then return
+        IF exists $dldir$file then goto AddOK
+        send    "The file '"$file"' does not exist!\n"
+        return
+AddOK:  CLI     "COPY "$dldir$file" "$hold
+        write   $dir"log" $date"  Added "$file"\n"
+        return
+
+
+;********************************************************
+;Delete file(s) from HOLD
+;********************************************************
+Remove: send    "\nFilename: "
+        input   $file "\r"
+        send    "\n"
+        IF $file == "" then return
+        write   $dir"log" $date"  Deleted "$file"\n"
+        CLI     "delete \""$hold$file"\""
+        return
+
+
+;********************************************************
+;List files in HOLD directory
+;********************************************************
+Show:
+        send    "\n"
+        CLI     $list" "$hold
+        return
+
+
+;********************************************************
+;Download files in HOLD directory
+;********************************************************
+GetHold:
+        send    "Wait while I pack the files...\n"
+        CLI     "delete >nil: "$holdzoo
+        CLI     $apack$holdzoo" "$hold"*"
+GetPr:
+        send    "Choose protocol (return for "$proto"):"
+        input   $nproto "\r"
+        send    "\n"
+        IF $nproto == "" THEN goto XGet
+        set     $trans = $nproto
+        gosub   CheckProto
+        set     $proto = $trans
+        gosub   SetProto
+XGet:
+        send    "Waiting...\n"
+        upload  $holdzoo
+        write   $dir"log" $date"  Downloaded HOLD"$arch" (Xmodem)\n"
+        CLI     "delete >nil: "$holdzoo
+        return
+
+;********************************************************
+;Letter menu, private mail
+:********************************************************
+LetterMenu:
+        send    "\nLetter command (? or ! for menu): "
+        input   $cmd "\r"
+        send    "\n"
+        IF $cmd == "?" THEN ascsend $menudir".menu4"
+        IF $cmd == "!" THEN ascsend $menudir"menu4"
+        IF $cmd == ""  THEN return
+        IF $cmd == "Q" THEN return
+        IF $cmd == "R" THEN gosub ReadLetter
+        IF $cmd == "W" THEN gosub WriteLetter
+        IF $cmd == "E" THEN gosub DeleteLetter
+        IF $cmd == "G" THEN gosub GrabMail
+        goto    LetterMenu
+
+;********************************************************
+;Enter message
+;********************************************************
+WriteLetter:
+        send    "\nTo: (enter to abort) "
+        input   $to "\r"
+        IF      $to == "" then return
+        gosub CheckName
+        if      $NameOK == "T" THEN goto WLCont
+        send    "There is no user with the name "$to
+        goto    WriteLetter
+WLCont: send    "\nSubject: (enter to abort) "
+        input   $subject "\r"
+        IF      $subject == "" then return
+        SET     $mtype = "Private"
+        SET     $mfile = $to
+        goto    writemess
+
+
+
+;********************************************************
+;Read private messages
+;********************************************************
+ReadLetter:
+        IF !EXISTS $msgsdir$name then goto NoLetter
+        ascsend $msgsdir$name
+        write   $dir"log" $date"  Read private letters \n"
+        return
+NoLetter:
+        send "No private mail to "$name"\n"
+        return
+
+;********************************************************
+;Delete private messages
+;********************************************************
+DeleteLetter:
+        send    "\nErase all private mail? (Enter=N) "
+        input   $cmd "\r"
+        send    "\n"
+        IF !$cmd == "Y" then return
+        CLI "delete >nil: \""$msgsdir$name"\""
+        write   $dir"log" $date"  Private messages deleted\n"
+        return
+
+
+;********************************************************
+;Grab all mail
+;********************************************************
+GrabMail:
+        CLI "copy >nil: \""$msgsdir$name"\" to \""$hold"\""
+        send    "\n\nAdd messageareas (enter=Y) ?"
+        input   $cmd "\r"
+        send    "\n\n"
+ if !$cmd == "N" then CLI "copy >nil: \""$msgsdir"messages#?\" to \""$hold"\""
+        send    "\n\nAdd bulletins (enter=Y) ?"
+        input   $cmd "\r"
+        send    "\n\n"
+ if !$cmd == "N" then CLI "copy >nil: \""$bulldir"bull#?\" to \""$hold"\""
+        write   $dir"log" $date"  Fetched mail\n"
+        goto    gethold
+
+;********************************************************
+;Enter message
+; $to           = to who
+; $mfile        = to wich file
+; $mtype        = type of message
+;********************************************************
+WriteMess:
+        CLI     $delete " >NIL: RAM:__NHSX__TMP__"
+        cli     $copy " >nil: \""$msgsdir$mfile"\" to RAM:__NHSX__TMP__"
+        SET     $header = "\n\nFrom: "$name"\n"
+        SET     $header = $header"To: "$to"\nSubject: "$subject"\n"
+        SET     $header = $header"Date: "$date"\n"
+        SET     $header = $header"-------------------------------\n"
+        write   "RAM:__NHSX__TMP__" $header
+        send    $header
+        send    "[Write in your message below; "
+        send    "end with Ctrl-Z on a blank line]\n\n"
+        when    "^Z" goto endWL
+WLent:  input   $line "\r"
+        send    "\n"
+        write   "RAM:__NHSX__TMP__" $line"\n"
+        goto    WLent
+EndWL:  dlwhen
+        cli     $copy " >nil: RAM:__NHSX__TMP__ to \""$msgsdir$mfile"\""
+        send    "\nMessage saved!^G\n"
+        write   $dir"log" $date"  Entered "$mtype" message\n"
+        return
+
+

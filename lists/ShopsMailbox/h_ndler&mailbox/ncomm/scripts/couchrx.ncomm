@@ -1,0 +1,42 @@
+/* ARexx script that does "WHEN" type checking via lastpos and logs you into a BBS */
+
+username = "Torkel Lodberg\n"
+password = "\p\n"
+
+options results
+address 'ncomm'
+
+clearbuffer
+
+inactivity 0
+
+usersent = FALSE
+passsent = FALSE
+
+do forever
+	wait
+	if RC == 20 then exit
+
+	name = lastpos('FIRST name',result)
+	pass = lastpos('(dots will echo):',result)
+        getout = lastpos('Main Command',result)
+
+	if name ~= 0 & usersent == FALSE then
+	do
+		send username
+                usersent = TRUE
+	end
+
+	if pass ~= 0 & passsent == FALSE then
+	do
+		send password
+		passsent = TRUE
+	end
+
+        if getout ~= 0 then
+	do
+		simplereq 'Entered Main Menu!'
+                exit
+	end
+
+end

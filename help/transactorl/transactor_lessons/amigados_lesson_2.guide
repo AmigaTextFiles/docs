@@ -1,0 +1,190 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "AmigaDOS Seconda Lezione"
+
+@{JLEFT}
+@{b}Seconda Lezione: Exec.library@{ub}
+                                           
+
+
+
+la volta scorsa eravamo arrivati a vedere un piccolissimo programmino
+che illustrava molto sommariamente come si usa una libreria di Amiga
+(apertura/chiamata/chiusura).
+
+Oggi iniziamo a vedere in maniera più approfondita una delle librerie
+di Amiga: @{i}exec.library@{ui}.
+
+
+Questa importante libreria, mette a disposizione dell'utente alcune
+funzioni molto utili e potenti per utilizzare: semafori, porte messaggi,
+task e memoria.
+
+
+Le funzioni più semplici da utilizzare sono quelle per la richiesta e
+per il rilascio di allocazioni di memoria. Anche gestire porte messaggi
+e molto semplice, un po' più complessa diventa la gestione di semafori
+e task.
+
+Come molti di voi sapranno, i semafori servono per regolare il traffico :-).
+La versione per computer ha in pratica lo stesso compito: deve
+regolare l'accesso a particolari risorse "critiche". Una risorsa del
+sistema, si dice  critica quando può succedere che più task possano
+utilizzarla contemporaneamente rischiando di creare errori o
+malfunzionamenti se non sono stati presi particolari accorgimenti per
+evitare ciò. I semafori, infatti nascono per sincronizzare l'accesso ad
+una di queste risorse. Quando esiste un semaforo che controlla una
+determinata risorsa critica, un task che vuole accedervi, deve prima
+ottenere il semaforo, ed una volta che ha utilizzato la risorsa deve
+rilasciare il semaforo.
+
+Se un task cerca di ottenere un semaforo "rosso" (occupato), viene
+sospeso finchè non diventa "verde" (libero).
+
+A questo punto, si potrebbe pensare che ci siano centinaia di semafori
+nel sistema: uno per il floppy, uno per la seriale, uno per la parallela
+e così via. In realtà, per questo genere di dispositivi si ricorre
+all'uso di un device che arbitra l'accesso al dispositivo da lui
+controllato per mezzo di una lista di richieste che verranno eseguite
+nell'ordine di arrivo. Questo perchè, usando i semafori, il rischio di
+generare un deadlock (un blocco) è sempre dietro l'angolo.
+
+
+Facciamo un piccolo esempio. Supponiamo che esistano due semafori: uno
+che regola l'accesso al disco, ed uno alla stampante. Nel sistema stanno
+girando due task, A e B. A, chiede ed ottiene di leggere il disco, nel
+frattempo, il task A viene
+sospeso e viene schedulato il task B che fa richiesta ed ottiene di
+usare la stampante. A questo punto, anche il task B viene sospeso e
+viene ripreso il task A, che disgrazia vuole che anche lui voglia
+accedere al disco per stampare dei dati. Adesso chiede l'accesso alla
+stampante che gli viene negata poichè in uso dal task B. Il task A
+viene sospeso e viene ripreso il task B. Questo, voleva anche lui
+stampare dei dati, ma la logica del programma prevedeva prima il lock
+della stampante e poi del disco che ora è occupato da A: blocco.
+Perchè A non può rilasciare il disco se prima non ha ottenuto la
+stampante e B non può liberare la stampante se prima non ha letto il
+disco.
+
+
+Ora, questo è ovviamente un caso limite, ma se pensate che in media i
+task che girano in un sistema non sono due ma svariate decine, si può
+facilmente vedere che non è poi un'eventualità tanto improbabile.
+Esistono poi diversi algoritmi per cercare di evitare il deadlock, ma
+sono discorsi che esulano da questo corso.
+
+
+Ritornando quindi al discorso dei semafori, l'AmigaOS da la
+disponibilità di crearli al programmatore. In questo modo, la
+probabilità di blocco del sistema è bassa e comunque limitabile ai
+processi che gestiscono il semaforo.
+
+
+Prima di approfondire i semafori, però, analizziamo un'altra struttura
+questa volta invece ampiamente usata dal sistema: le porte messaggi.
+Questo utilissimo e praticissimo meccanismo, consente ai task di
+dialogare fra loro scambiandosi messaggi come se fossero in rete.
+Ovviamente, è necessario a priori stabilire il formato e le
+informazioni contenute nel messaggio, in pratica fissare il protocollo
+di comunicazione.
+
+Con questo meccanismo in pratica sono realizzati il 99% dei task Amiga
+(sto parlando ovviamente dei programmi che usano l'OS).
+
+Anche perchè l'unico modo con cui intuition comunica con i processi
+utenti è tramite l'invio di messaggi. Ecco perchè è necessario
+introdurre il discorso sulle porte messaggi.
+
+Vediamo dunque le funzioni che ci mette a disposizione exec:
+
+
+@{i}        CreateMsgPort()
+
+        PutMsg()
+
+        GetMsg()
+
+        WaitPort()
+
+        ReplyMsg()
+
+        DeleteMsgPort()@{ui}
+
+
+Queste servono per creare una porta messaggi, mandare un messaggio,
+prendere un messaggio, sospendere il task fino all'arrivo di un
+messaggio dalla porta specificata, replicare un messaggio, cancellare la
+porta.
+
+I messaggi, in generale se sono mandati dal sistema @{u}devono@{uu} sempre
+essere replicati, per indicare l'avvenuta ricezione e gestione.
+
+La differenza tra la funzioni @{i}GetMsg@{ui} e @{i}WaitPort@{ui} è che la prima non
+sospende il task se non ci sono messaggi sulla porta ma semplicente
+ritorna NULL, mentre la seconda (come spiega il nome) sospende il task
+in assenza di messaggi e, quando un messaggio arriva, lo risveglia senza
+rimuovere il messaggio dalla porta. Sarà compito del task risvegliato,
+prendere il messaggio, gestirlo e rimandarlo al mittente.
+
+
+Bene, concludo questa seconda lezione con un programmino che illustra
+l'utilizzo delle funzioni di exec per gestire la memoria del programma.
+
+
+#include <exec/memory.h>
+
+#include <proto/exec.h>
+
+void main(void)
+
+{
+
+   APTR point;
+
+   if(point = AllocMem(sizeof(UWORD) * 20,MEMF_CLEAR))
+
+   {
+
+
+
+     [...]
+
+
+
+     FreeMem(point,(sizeof(UWORD) * 20);
+
+   }
+
+}
+
+
+La funzione @{i}AllocMem@{ui}, come la sua cugina @{i}AllocVec@{ui}, richiede il numero di
+bytes da allocare e il tipo di memoria da allocare. Nel file
+@{i}exec/memory.h@{ui} vi sono specificati le varie define @{i}MEMF_XXXXX@{ui} da
+utilizzare. Nel nostro caso, @{i}MEMF_CLEAR@{ui}, richiede al sistema di allocare
+20 word e di azzerarle.
+
+La funzione @{i}FreeMem@{ui}, richiede il puntatore e la quantità di memoria
+allocata. Specificare una dimensione differente può provocare diversi
+scompensi per il quale è nato un tool di debug specifico atto a
+rilevare questo tipo di errore: @{u}mungwall@{uu}.
+
+La cugina @{i}FreeVec@{ui} richiede solo il puntatore poichè le funzioni
+@{i}AllocVec/FreeVec@{ui} leggermente più lente delle cugine, eseguono il
+tracciamento delle dimensioni delle allocazioni; permettendo quindi di
+non specificare all'atto del rilascio, la dimensione del blocco
+precedentemente allocato.
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link amigados_lesson_1.guide}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link amigados_lesson_3.guide}
+@ENDNODE                                                                                             

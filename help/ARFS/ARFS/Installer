@@ -1,0 +1,137 @@
+G4C
+
+winbig -1 -1 408 128 "Installer"
+winsmall -1 -1 408 128
+wintype 11110001
+winout "con:0/11/400/200/Installer Output/auto close"
+varpath ""
+
+xonload
+set editor sys:dtp/bed/bed
+extract installer guipath inst_path
+cd $inst_path
+guiopen installer
+ifexists assign guis
+    ifexists dir guis:tools/fastread
+        installmode = 1
+        lvuse installer 1
+        lvadd ""
+        lvadd "Current Gui4Cli installation found."
+        lvadd ""
+        lvadd "The full Gui4Cli installation is present on"
+        lvadd "your system. Only the ARFS document will be"
+        lvadd "copied to the Gui4Cli/Docs/User drawer, and a"
+        lvadd "small ARexx file to run the examples will be"
+        lvadd "placed in GUIS:Tools."
+    elseifexists assign guis
+        installmode = 2
+        lvuse installer 1
+        lvadd ""
+        lvadd "Older Gui4Cli installation found."
+        lvadd ""
+        lvadd "Your version of the Gui4Cli binary is too old"
+        lvadd "and will be replaced. Please note that this"
+        lvadd "is only a minimal update. The full Gui4Cli"
+        lvadd "archive can be found on Aminet in dev/gui."
+        lvadd ""
+        lvadd "Click on 'Proceed'. A directory requester will"
+        lvadd "appear to choose the path to where you want to"
+        lvadd "install ARFS. A directory will be created."
+    endif
+else
+    installmode = 2
+    lvuse installer 1
+    lvadd ""
+    lvadd "No Gui4Cli installation found."
+    lvadd ""
+    lvadd "The Gui4Cli program is not installed on your "
+    lvadd "system. ARFS will be installed with a minimal"
+    lvadd "Gui4Cli installation. The full Gui4Cli archive"
+    lvadd "can be found on Aminet in the dev/gui drawer."    
+    lvadd ""
+    lvadd "Click on 'Proceed'. A directory requester will"
+    lvadd "appear to choose the path to where you want to"
+    lvadd "install ARFS. A directory will be created."
+endif
+
+xonclose
+ifexists file env:macro
+    delete env:macro
+endif
+guiquit installer
+quit
+
+xlistview 4 2 400 110  "" "" "" 0 txt
+gadid 1
+
+xbutton 4 113 80 12 Proceed
+if $installmode = 1
+    binary = "guis:c/mouse"
+    joinfile $inst_path fastread/docs/ARFS.txt docfile
+    joinfile $inst_path fastread/runner.rexx rexxfile
+    joinfile $inst_path fastread/bin/mouse binfile
+    update installer 2 10
+    ifexists dir guis:docs/user
+        ;nop
+    else
+        makedir guis:docs/user
+    endif
+    gosub installer makemacro
+    update installer 2 20
+    copy $docfile guis:docs/user
+    update installer 2 40
+    copy $rexxfile guis:tools/fastread
+    update installer 2 60
+    copy $binfile guis:c
+    update installer 2 80
+    copy env:macro guis:tools/fastread
+    update installer 2 100
+    lvclear
+    lvadd ""
+    lvadd "Operation Complete. Click on 'Cancel' to Quit."
+endif
+if $installmode = 2
+    binary = "gchelp:bin/mouse"
+    reqfile -1 -1 250 -60 "Select Path..." dir frpath SYS:
+    ifexists dos $frpath
+    orifexists dir $frpath
+        joinfile $frpath FastRead targetdir
+        joinfile $inst_path FastRead srcedir
+        joinfile $inst_path drawer frinfo
+        joinfile $frpath FastRead.info icon
+        joinfile $inst_path Gui4Cli gcfile
+        joinfile $inst_path Gui guifile
+        update installer 2 10
+        gosub installer makemacro
+        update installer 2 20
+        copy $srcedir $frpath
+        update installer 2 40
+        copy $frinfo $icon
+        update installer 2 60
+        copy $gcfile $targetdir        
+        update installer 2 80
+        copy $guifile $targetdir
+        copy env:macro $targetdir        
+        update installer 2 100
+    endif
+    lvclear
+    lvadd ""
+    lvadd "Installation Complete. 'ARexx - First Steps'"
+    lvadd "can be found in:"
+    joinfile $frpath FastRead dir
+    lvadd ""
+    lvadd "$dir"
+    lvadd ""
+    lvadd "Click on 'Cancel' to quit."
+endif    
+
+gauge 90 113 226 12 in button 3 0 0
+gadid 2
+
+xbutton 324 113 80 12  Cancel
+guiclose installer
+
+xroutine makemacro
+..macro = "sys:rexxc/rx gchelp:runner.rexx"
+append env:macro '\necho \"\"\necho \"Press LMB to exit.\"\n$binary\nendcli >nil:'
+

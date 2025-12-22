@@ -1,0 +1,235 @@
+/******************************************************************
+*                                                                 *
+*    Thinker Macro to process a captured BBS message file         *
+*    You will certainly have to customize this for your BBS       *
+*                                                                 *
+*    This macro extracts messages as branches under the branch    *
+*    labeled "new".  Subsequently you can sort the messages       *
+*    and define new branches by subject and move the messages     *
+*    around.  Because the message number is the label, clicking   *
+*    on any thread # or reference # can jump to the referenced    *
+*    message                                                      *
+*                                                                 *
+*    This is for BBS-PC                                           *
+*                                                                 *
+*   The resultant Thinker document looks like                     *
+*                                                                 *
+*   (new)New Messages                                             *
+*      (36157)Music: date time From:  To:                         *
+*         body of message                                         *
+*      (36158)JDR - #36139: date time From:  To:                  *
+*         body of message                                         *
+*                                                                 *
+*   Use SORT BRANCH (First Chars) to sort the new messages        *
+*   by subject matter.  Add new branches (at the same level as    *
+*   "new") for subjects of interest.  Move the messages to these  *
+*   subject branches.  When reading the messages follow the       *
+*   refereneces by double clicking on the reference numbers or    *
+*   follow the threads by clicking on the Reply numbers.          *
+*                                                                 *
+*   This program can be made to run a lot faster at the cost      *
+*   of readability and easy of modification.  The structure       *
+*   chosen (SELECT) is very poor for interpreted languages like   *
+*   ARexx because it must intepret all the code that is not       *
+*   executed in order to find the correct WHEN clause.            *
+*   The file MESSAGE1.THNKR runs MUCH faster but it is more       *
+*   difficult to understand.   Also deleting the comments will    *
+*   help this ARexx program to run faster.                        *
+*                                                                 *
+******************************************************************/
+trace off
+options results
+
+/******************************************************************
+   First part of setup is to find place to add new messages
+******************************************************************/
+
+'get label first new'       /* test for the branch "new" */
+if rc ~= 0 then return 100
+'position save 1'           /* save position of (new) branch */
+headlvl='down'              /* first header down from "new" */
+
+/******************************************************************
+   Now prompt user for the name of the capture file 
+******************************************************************/
+
+'input Enter message file name' /* get name of capture file */
+if rc ~= 0 then return rc
+file=result
+if file='' then return 101
+open('msg',file,'read')         /* open the capture file */
+if rc = 0 then return 106
+
+state=0                         /* looking for message */
+statement=''                    /* initialize message body to null */
+level='down'                    /* initial level of message body */
+
+DO forever                      /* read entire file */
+
+	instr=readln('msg')         /* read a line of file */
+	if eof('msg') ~= 0 then do  /* hit end of file!! */
+		if state = 2 then addtomsgbdy(level,statement) /* finish */
+		leave                   /* leave do forever loop */
+	end
+
+	/****************************************************************
+	   The variable STATE determines how each line of the capture
+	   file is processed.  During header processing HEADSTATE determines
+	   how each line contributes to the header and when the message body
+	   begins
+	****************************************************************/
+
+	SELECT     /* chose STATE action */
+
+		WHEN state = 0 then DO              /* looking for message */
+
+			/***********************************************************
+				This state (0) only occurs at the beginning before any
+				message headers have been found.
+				It is a convenient place to start 
+			************************************************************/
+
+			if ismsg(instr) ~= 0 then do    /* found header */
+				state = 1   
+				number=getnumber(instr)     /* isolate message number */
+				'position restore 1'        /* position to put header */
+				headstate=0                 /* initialize header switch */
+				iterate                     /* go get next line */
+			end
+		END   /* state = 0 */
+
+		WHEN state = 1 then DO   /* process header */
+
+			/**********************************************************
+			   Having found a message header we need to locate the Subject:
+			   To:/From:  and date.  This section will have to be heavily 
+			   customized for  each bulletin board system 
+			**********************************************************/ 
+
+			SELECT  /* chose HEADSTATE action */
+
+				WHEN headstate=0 then DO    /* date on line 2 - BBS-JC */
+					date=space(instr,1)     /* the date info */
+					headstate=1             /* subject */
+					iterate                 /* get next line */
+				end
+				
+				WHEN headstate=1 then DO    /* subject on line 3 -BBS-JC */
+					subject=substr(instr,7)
+					if substr(subject,1,1)='#' then do  /* reference */
+						i=index(subject,' ')-1          /* size of # */  
+						snum=substr(subject,1,i)        /* isolate # */
+						subject=substr(subject,i+4) snum  /* re-arrange */
+					end
+					headstate=2
+					iterate
+				END
+
+				WHEN headstate=2 then DO    /* From: on line 4 - BBS-JC */
+					source=instr
+					headstate=3
+					iterate
+				END
+
+				WHEN headstate=3 then DO    /* To: on line 5 - BBS-JC */
+					head=subject||':' date source substr(instr,3)
+
+					/*************************************************
+						We now have complete header.
+						Add this header and set up for 
+						adding the body of the message subordinate
+						to this header 
+					**************************************************/
+
+					'add after' headlvl '('||number||')'||head /* header */
+					if rc~= 0 then leave
+					headlvl='same'   /* subsequent headers at same level */
+					'position save 1'   /* save position for next header */
+					level='down'        /* insert body as subordinate */
+					statement=''
+					state=2
+					iterate
+				END
+
+			END /* select on headstate */
+
+		END     /* state = 1 */
+
+		WHEN state = 2 then DO   /* process body */
+
+			/*******************************************************
+				process body of message.
+				Always be on lookout for beginning of next message 
+			*******************************************************/ 
+
+			if ismsg(instr) then do     /* end of this message */
+				if addtomsgbdy(level,statement) ~= 0 then leave /*finish */
+				state=1                 /* already found message header */
+				headstate=0             /* begin with first part of hdr */
+				number=getnumber(instr) /* must set up for state 1 */
+				'position restore 1'    /* restore position of header */
+				iterate                 /* start process of header */
+			end
+
+			/***********************************************************
+				blank lines separate paragraphs (Statements) in the 
+				body of the message.
+			************************************************************/
+
+			if instr = '' then do  /* a blank line */
+				if statement ~= '' then do
+					if addtomsgbdy(level,statement) ~= 0 then leave
+					level='same'         /* next statement same level */
+					statement=''
+				end
+			end
+
+			/*************************************************************
+				If line begins with a blank then add hard carriage return
+				to statement so far (preserve indentation)
+				else just concatenate into one large statement.
+			*************************************************************/
+
+			else do   /* concatenate lines of statement */
+				if (substr(instr,1,1) = ' ') & (statement ~= '') then
+					statement=statement||'0a'x
+				statement = statement instr
+			end
+			iterate                     /* next line */
+
+		END /* state 2 */
+
+	END  /* select on state */
+
+END  /* forever reading file */
+
+/********************************************************************
+	Close the capture file and prompt the user to acknowledge the
+	completion of the task so he/she will know when the program is done
+*********************************************************************/
+
+close('msg')
+'input Acknowledge Completion'
+return 'done'    /*  puts "done" on the clipboard */
+
+ismsg: procedure    /* see if line is the beginning of a message */
+	parse arg str
+	if substr(str,1,5) == ' Msg:' then return 1
+	else return 0
+end
+
+getnumber: procedure    /* isolate the message number */
+	parse arg str
+
+	i=index(str,'#')+1
+	j=index(substr(str,i),' ')
+	return substr(str,i,j-1)
+end
+
+addtomsgbdy: procedure  /* add a paragraph (statement) to message */
+	parse arg lvl,stmt
+	
+	if stmt = '' then return 0
+	'add after' lvl stmt
+	return rc
+end

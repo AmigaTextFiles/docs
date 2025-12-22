@@ -1,0 +1,320 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                27.Teil...
+
+Hat mal wieder etwas laenger gedauert, aber ich habe im moment sehr viel zu
+tun. Unter anderem muss ich mich um ein Netzteil fuer meine Festplatte
+kuemmern die ich mir gekauft habe. Das wird auch noch etwas dauern, und
+sobald ich alles fuer die Platte habe muss ich sie mir ja auch noch
+einrichten und mich damit bekannt machen. Also wenn die Teile jetzt
+Zeitlich ein bisschen mehr auseinander liegen, dann denkt nicht ich haette
+euch vergessen, es ist einfach nur die Platte.
+
+Aber weiter gehts...
+
+Das einfache setzen eines Bobs duerfte jetzt ja kein Problem mehr sein,
+oder ?
+Geben wir uns mal an eine Routine die aus einem Wort die X und Y
+Koordinaten errechnet und die Werte fuer den Blitter setzt.
+Allerdings treten da ein paar wichtige sachen auf die man beachten muss.
+Aber fangen wir mal Theoretisch an. Um das Programm einfach zu halten
+arbeiten wir nur mit PAL-Koordinaten. Das heisst das wir zwar einen
+Overscan Screen haben, aber nur Koordinaten von 0 bis 255 erlauben.
+
+Ich gehe diese Theoretischen durchlauf einer solchen Routine mit einem
+Beispielwert durch. Das erleichtert die sache.
+
+Der Beispielwert ist $5167, also Y = $51 und X = $67.
+Die Werte fuer den Bildschirm sind.
+Bitplanes bei $60000,$6002c,$60058 (Verschachtelt)
+Bytes pro Zeile = 44($2c)
+
+Rechnen wir erstmal den Y-Wert aus...
+
+Dazu muessen wir erstmal den anderen Krempel loswerden der noch in dem
+Kontrollwort steht. Das machen wir indem wir es durch $100 Dividieren. Dann
+steht nur noch die $0051 da.
+Also Zeile $51....Da muessten wir normalerweise zum Anfang der Plane nur
+$51 * $2c Addieren. Da wir aber drei verschachtelte Planes haben, muss man
+den ganzen Krempel noch mal drei nehmen. Damit wir uns eine Multiplikation
+zu ersparen nehmen wir die Zeilenzahl direkt mal $84 (3 * $2c).
+Bei Zeile $51 muesste dann $51 * $84 + $60000 gerechnet werden.
+
+Da kommt nach Adam`s Riesen $629c4 bei raus. Das ist also der Zeilenanfang
+an dem der Bobs steht.
+
+Gehen wir jetzt weiter zur Komplizierteren Routine. Holen wir uns erneut
+das Kontrollwort. Mit der Logischen Funktion AND koennen wir den Oberen
+Teil ausmaskieren. Bleibt noch die $67, die die X Koordinate in Pixeln
+angibt. Da wir aber immer nur 15 Pixel verschieben koennen muessen wir
+erstmal mit Hardscrolling so nah wie moeglich an den Punkt rankommen an dem
+der Bob dann hinterher steht. Also brauchen wir erstmal die 6. Teilen wir
+den Krempel durch $10. Jetzt steht die $6 im Wort. Da wir nicht Byteweise
+sondern Wortweise arbeiten, muessen wir die 6 noch verdoppeln. Dazu
+multiplizieren wir es nicht, sondern Addieren das Register zu sich selbst
+dazu. Denn die Multiplikation des MC 68000 sind eine sehr langsame sache.
+Nachdem wir es verdoppelt haben, koennen wir es zu der Adresse der Zeile
+dazuaddieren. Dann stehen wir schon sehr nah am Ziel.
+
+Jetzt muessen wir noch den Wert fuer das Softscrollen errechnen..
+Dazu maskieren wir alles ausser den Softwert mit AND aus. Nehmen den * $100
+um ihn in das Highbyte des hinteren Wortes zu kriegen, und Addieren dazu
+einfach den Rest des BLTCON0 Registers dazu.
+
+Diese Routine macht das eben besprochene. Am Ende der Routine steht in A0
+die Adresse an der der Bob dargestellt wird, und in D0 das Komplette Word
+fuer das BLTCON0 Register.
+
+
+; Beim Aufruf der Routine muss das Kontrollwort schon feststehen und
+; in D7 stehen.
+
+CoordCalc:
+
+        Move.l  d7,d1                   ; Kontrollwort nach D1
+        And.l   #$ff00,d1               ; Alles ausser Y-Werte aus-
+                                        ; maskieren !
+        Divs    #$100,d1                ; Nach unten schieben
+        Muls    #$84,d1                 ; Wert auf dem Screen ermitteln
+        Add.l   #$60000,d1              ; Plus PlayfieldBase
+        Move.l  d1,a0                   ; Nach A0 setzen.
+
+        Move.l  d7,d1                   ; Erneut holen !
+        And.l   #$00f0,d1               ; Unwichtiges ausmaskieren
+        Lsr.l   #3,d1                   ; Ersetzt Divs $10 und verdoppeln
+        Add.l   d1,a0
+
+        Move.l  d7,d1                   ; !!!
+        And.l   #$f,d1                  ; Ausmaskieren !
+        Swap    d1
+        Lsr.l   #4,d1
+        Move.w  #%0000100111110000,d0   ; BLTCON0-Wert ohne Scrollwert
+                                        ; nach d0
+        Add.w   d1,d0                   ; D1 zu D0 addiert ergibt BLTCON0
+        Clr.l   d1                      ; Werte nur in D0 und A0 lassen
+        Clr.l   d7
+
+        Bsr.l   Set_bob                 ; Bob setzen.
+        Rts
+
+So diese koennt ihr direkt hinter die Set_Bob-Routine setzen. Da diese
+Routine vor der Set_bob aufgerufen werden muss, muesst ihr in dem oberen
+Teil des Listings aus dem Bsr.l Set_Bob ein Bsr.l Coordcalc machen.
+Davor setzt ihr zum Probieren die Zeile
+
+        Move.l  #$5167,d7
+
+Damit es schonmal laeuft.
+Dann muesst ihr noch die Set_Bob Routine aendern, das nicht mehr die festen
+Werte geschrieben werden, sondern D0 nach BLTCON0 und A0 nach BLTDPT
+geschrieben wird, das muesstet ihr finden.
+Als letztes koennt ihr noch in der Clearschleife aus der -1 eine 0 machen,
+damit der Screen Schwarz wird und man die Raender links und rechts von Bob
+sehen, obwohl es ja auch ganz Interressant ist sie zu sehen.
+
+Um diesen Bob auf dem Screen rumflitzen zu lassen, muessen wir eigentlich
+nur noch eine Routine schreiben die der Coordcalc-Routine laufend neue
+Koordinaten uebergibt. Das sollte dann jeden Bildschirm aufbau passieren.
+Also muessen wir die abfrage der Bildschirmposition einbauen, die Tabelle
+mit den Positionen und die Routine die die Koordinaten uebergibt und die
+Tabelle rotiert.
+Allerdings fehlt dann noch etwas...Naemlich eine Routine die den alten Bob
+loescht damit die Reste nicht auf dem Bildschirm bleiben. Das ist zwar ein
+netter Effekt, aber auch nicht unbedingt das was wir wollen.
+
+So hier erstmal das Prograemmchen. Ich habe keine Koordinatentabelle
+benutzt weil sie Platz wegnimmt, und ich ausserdem keine lust habe mir die
+Finger an so einer Tabelle wund zu schreiben. Das Position des Bobs wird
+durch einen ADD befehl veraendert.
+
+Start:
+Execbase=       4
+Openlibrary=    -408
+Vposr=          $dff004
+Forbid=         -30-102
+Permit=         -30-108
+Bltafwm=        $dff044
+Bltalwm=        $dff046
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltamod=        $dff064
+Bltdmod=        $dff066
+Bltapt=         $dff050
+Bltdpt=         $dff054
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltsize=        $dff058
+Cop1lc=         $dff080
+
+        Move.w  #$0020,Dmacon
+        Move.w  #$4000,Intena
+        Move.l  Execbase.w,a6
+        Jsr     Forbid(a6)
+
+
+        Move.l  #$60000,a0
+        Move.l  #$9588/4,d0
+Clearloop:
+        Move.l  #0,(a0)+
+        Dbf     d0,Clearloop
+
+        Bsr.l   Makecl
+
+
+Wait:   Move.l  Vposr,d0
+        And.l   #$1ff00,d0
+        Cmp.l   #$1000,d0
+        Bne.s   Wait
+        Bsr.l   Kill_old
+        Bsr.l   Get_Pos
+        Btst    #6,$bfe001
+        Bne.s   Wait
+
+        Move.l  Execbase.w,a6
+        Jsr     Permit(a6)
+        Lea     Gfxname(pc),a1
+        Jsr     Openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,Dmacon
+        Move.w  #$c000,Intena
+        Move.l  38(a6),Cop1lc
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $05f000,a0
+        Move.l  a0,$dff080
+
+        Move.l  #$00e00006,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$00e40006,(a0)+
+        Move.l  #$00e6002c,(a0)+
+        Move.l  #$00e80006,(a0)+
+        Move.l  #$00ea0058,(a0)+
+        Move.l  #$008e1a64,(a0)+
+        Move.l  #$009039d1,(a0)+
+        Move.l  #$00920030,(a0)+
+        Move.l  #$009400d8,(a0)+
+        Move.l  #$01003200,(a0)+
+        Move.l  #$01080058,(a0)+
+        Move.l  #$010a0058,(a0)+
+;----------------------------------------------
+        Move.l  #$01800000,(a0)+
+        Move.l  #$0182071d,(a0)+
+        Move.l  #$0184088e,(a0)+
+        Move.l  #$0186044f,(a0)+
+        Move.l  #$0188000f,(a0)+
+        Move.l  #$018a000c,(a0)+
+        Move.l  #$018c0008,(a0)+
+        Move.l  #$018e0004,(a0)+
+;----------------------------------------------
+        Move.l  #$fffffffe,(a0)+
+        Rts
+Waitblit:
+        Btst    #6,Dmaconr
+        Bne.s   Waitblit
+        Rts
+Set_bob:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,Bltafwm
+        Move.w  #$ffff,Bltalwm
+        Move.w  d0,Bltcon0
+        Move.w  #0,Bltamod              ; Quellmodulo = 0 (rawblit)
+        Move.w  #38,Bltdmod             ; Zielmodulo = 38 (planes = $2c)
+        Move.l  #$5e000,Bltapt          ; Quelladr.
+        Move.l  a0,Bltdpt               ; Zieladr.
+        Move.w  #96*64+3,Bltsize        ; Bltsize und Start
+        Rts
+
+; Beim Aufruf der Routine muss das Kontrollwort schon feststehen und
+; in D7 stehen.
+
+CoordCalc:
+
+        Move.l  d7,d1                   ; Kontrollwort nach D1
+        And.l   #$ff00,d1               ; Alles ausser Y-Werte aus-
+                                        ; maskieren !
+        Divs    #$100,d1                ; Nach unten schieben
+        Muls    #$84,d1                 ; Wert auf dem Screen ermitteln
+        Add.l   #$60000,d1              ; Plus PlayfieldBase
+        Move.l  d1,a0                   ; Nach A0 setzen.
+
+        Move.l  d7,d1                   ; Erneut holen !
+        And.l   #$00f0,d1               ; Unwichtiges ausmaskieren
+        Lsr.l   #3,d1                   ; Ersetzt Divs $10 und verdoppeln
+        Add.l   d1,a0
+
+        Move.l  d7,d1                   ; !!!
+        And.l   #$f,d1                  ; Ausmaskieren !
+        Swap    d1
+        Lsr.l   #4,d1
+        Move.w  #%0000100111110000,d0   ; BLTCON0-Wert ohne Scrollwert
+                                        ; nach d0
+        Add.w   d1,d0                   ; D1 zu D0 addiert ergibt BLTCON0
+        Clr.l   d1                      ; Werte nur in D0 und A0 lassen
+        Clr.l   d7
+
+        Bsr.l   Set_bob                 ; Bob setzen.
+        Move.l  a0,Old_Pos              ; Position fuer loeschroutine
+                                        ; merken !
+        Rts
+
+Kill_Old:
+        Bsr.l   Waitblit
+        Move.l  #$-1,Bltalwm
+        Move.w  #38,Bltdmod
+        Move.w  #%0000000100000000,Bltcon0
+        Move.l  Old_Pos,Bltdpt
+        Move.w  #96*64+3,Bltsize
+        Rts
+
+Get_Pos:
+        Move.w  Position,d7
+        Add.w   #$101,Position
+        Bsr.l   Coordcalc
+        Rts
+
+Old_Pos:        Dc.l $60000
+Position:       Dc.w 0
+Gfxname:        dc.b "graphics.library",0
+
+>Extern         "bob.raw",$5e000
+
+Wichtig ist allerdings eines.
+Da ich die Kill_Old Routine vor der Get_Pos Routine aufrufe, und sie die
+Koordinaten erst beim Ersten Aufruf von Get_Pos kriegt muesst ihr das
+reservierte Langwort Old_pos mit irgendeiner Adresse fuellen.
+Ich hatte naemlich nur geschrieben
+
+Old_pos:        Dc.l 0
+
+Und mein Amiga stuerzte jedesmal nach dem Druck auf die Maustaste ab.
+
+Was war passiert:
+Beim ersten Aufruf der Kill_Old Routine hat der Blitter als Destination
+fuer seine Loeschaktion die 0 als Adresse gekriegt. Und da bei 0 und $4
+sehr wichtige Daten liegen war das nicht so gut. Das Programm lief ohne
+Probs weiter. Sobald ich aber das Programm beenden wollte und auf die
+Maustaste drueckte stuerzte er ab. Ganz klar - er holte sich die Execbase
+nach A6 und sprang Openlibrary an. Da aber nicht mehr die Execbase sondern
+Irgendetwas in $4 stand, ging er daran zu grunde.
+
+Solche sachen bringen mich dann immer um denn Verstand. Ich sitze dann
+immer wie Apathisch vor der Kiste. Schreibe nach und nach alle Routinen neu
+und nicht passiert.
+Beim Essen ist es mir dann eingefallen was das schief gelaufen ist.
+So kanns gehen...
+
+Da ich wiegesagt keine Tabelle fuer die position dabei gesetzt habe,
+solltet ihr das mal selber versuchen. Es duerfte allerdings kein Problem
+fuer euch sein. Denn ihr habt das ja schon mehrmals gemacht.
+Ihr koennt auch mal versuchen die Routine auf mehrere Bobs um zu schreiben.
+Dabei werdet ihr dann auf eine Sache stossen die dem Thema Bobs einen sehr
+komplizierten Touch geben. Und wir werden uns damit sehr stark auseinander
+setzen muessen.
+
+Naja, ich will euch nicht den Mut nehmen....
+
+Schoenen Tag noch
+
+                Jeff Kandle

@@ -1,0 +1,680 @@
+@database "KickFlash.guide"
+
+@node Main "KickFlash"
+                            KickFlash-500
+             A FlashROM kickstart adapter board project
+                  to suit the Amiga 500/600/2000 
+             
+	     V1.0 2003 by RedSkull @ Digital Corruption
+                      redskulldc@yahoo.com.au
+
+Introduction
+
+     @{" Read me FIRST! " link FIRST}
+     @{" Requirements " link REQUIREMENTS}
+     @{" Description  " link DESCRIPTION}
+     @{" What is in this archive? " link WHAT}
+     @{" How does it work? " link HOW}
+
+Building the board 
+
+     @{" Where to start " link GETSTART} 
+     @{" Things to keep in mind " link MIND} 
+     @{" What next? " link BUILD2}
+     @{" After you have built it " link FINISHED}
+     @{" Troubleshooting  " link BROKEN}
+
+Programming Kickstart images
+
+     @{" Legal issues " link LEGAL}
+     @{" Burning a 512k image " link BURN512}
+     @{" Burning a 256k image " link BURN256}
+     @{" Burning a 1MB  image " link BURN1MB}
+     @{" Program Information " link TECH}
+     @{" Re-compiling the program " link COMP}
+
+Miscellaneous
+
+     @{" Project History " link HISTORY}
+     @{" Program Future " link PLANNED}
+
+@endnode
+
+
+@node FIRST "Read me first"
+
+@{b}Before you do anything@{ub}
+
+This project has the potential to blow the arse (Ass for you Yanks)
+out of your computer if you wire it up incorrectly.
+
+I will not accept any responsibility for any damage: software,
+hardware or otherwise that may result if you construct this
+project, and install it in your computer.
+
+The board works fine on my A500 REV5a and should work fine on 
+other models (500+,600,1500,2000) BUT HAS NOT BEEN TESTED ON THEM!
+
+If you are not deterred by this read on.....
+
+@endnode
+
+@node REQUIREMENTS "Requirements"
+
+@{b}REQUIREMENTS@{ub}
+
+  o A 680x0 based Amiga computer with a single Kickstart socket.
+      (generally 500/600/2000 models fit this requirement)
+
+  o Previous experience with constructing electronic projects
+
+    @{b}!!! This is NOT a project for beginners !!!@{ub}
+
+  o Soldering Iron, wire, tools, experimenter pc board etc.
+
+  o Schematics for your machine (easily found on the web).
+
+  o The following components:
+
+    2 x 29F040 FlashROM chips. PLCC or DIL packages.
+    1 x 74LS86, 1 x 74LS32, 3 x 4.7k 1/4W resistors
+    2 x DPDT switches, 1 x SPDT (centre-off) switch
+    1 x 40 pin WireWrap IC socket
+    2 x sockets for the flash chips, 32pinPLCC or DIL.
+    3 x IC test clips (see the pics)
+
+  o A 'C' compiler if you wish to modify the driver programs,
+    the source for which are included.
+
+  o I recommend that you have at least 2MB of memory(at least while
+    you are flashing the chips) and the ECS chipset. Most kickstarts
+    over 37.350 get a bit shitty when then find you only have an
+    OCS chipset.
+
+@endnode
+
+
+@node DESCRIPTION "Description"
+
+@{b}DESCRIPTION@{ub}
+
+KickFlash-500 is a hardware project to suit Classic Amiga computers
+that have a single kickstart socket.
+
+The existing Kickstart chip (any version) is removed from the system
+board, installed on the KickFlash-500 board, which is then inserted
+into the empty kickstart socket.
+
+When installed, the KickFlash-500 board provides the following features:
+
+  o Choice of 2 switch-selectable 256/512k Kickstart images, in addition
+    to the existing kickstart chip.
+
+  o Instead of 2 x 512k images, the board can be switched to allow 
+    1 x 1MB kickstart image. This gives you an extra 512k to store all
+    of your favourite Resident modules, device drivers, libraries, or
+    anything else you can think of that you would like available at boot
+    time. All of the OS3.9 Setpatch fixes for example.
+
+    Until now AFAIK, the only amiga which supports 1MB kickstarts is the
+    A1200, and even then there has never been a publicly released 1MB
+    kickstart version, nor any public discussion of how to configure your
+    machine to use a 1MB kickstart.
+
+  o Since FlashROM chips are used in the design, the kickstart images
+    stored on the KickFlash-500 can be easily re-programmed in-system,
+    with no need to remove the chips from the board.
+
+    This is ideal for people who want to experiment with modifying 
+    kickstart for extra features or bug-fixes. It also does away with
+    some limitations that exist with soft-kicked kickstart images.
+
+  o As a side benefit, the board can also be used to program rom images
+    into FlashROMs for use outside the Classic Amiga system.
+
+    One notable use would be to re-program the BIOS chip from your
+    Amiga One, should it fail, or if you want to modify 'U-Boot' yourself,
+    but are worried about rendering your AmigaOne un-usable.
+
+    Indeed, the 29F040 chips were selected for this project, so
+    that I could reprogram the BIOS chip on my AmigaOneXE.
+
+
+@endnode
+
+
+
+@node HOW "How does it work?"
+
+@{b}How does the KickFlash-500 board work?@{ub}
+
+@{b}Simple explanation@{ub}
+
+The KickFlash-500 plugs into the kickstart socket in your
+Classic Amiga 500/600/200 and behaves like any number of other
+kickstart switchers, offering you a choice of 2 other 512k
+kickstarts in addition to the existing kickstart on your machine.
+
+The difference with other switchers is that no other kickstart
+chips are required, and the 2 optional kickstart images can be 
+changed under program control whenever you wish, without 
+dissassembling the machine, or removing chips.
+
+
+
+@{b}Long, boring, drawn-out technical explanation@{ub}
+
+Classic Amiga models which have a single kickstart socket
+(A500/600/2000 among others) employ a mask programmed
+read-only-memory (PROM) to store the kickstart image.
+
+The kickstart ROM corresponds loosely to the BIOS (basic 
+input output services) chip found on PC compatibles.
+
+It contains the program code required to initialise the
+machine at power-on time, boot a HD or diskette ii inserted.
+Kickstart also contains many of the device drivers, libraries
+and other executable modules which are used by many user
+programs. "intuition.library" and "scsi.device" are two examples.
+
+Depending on which kickstart version you have installed, you
+either have a 256k or 512k PROM installed.
+
+These PROM's are programmed once only at the factory, and
+cannot have their contents altered.
+
+Kickstart 0.x and 1.x machines have a 128k x 16bit PROM (256k).
+Kickstart 2.x and 3.x machines have a 256k x 16bit PROM (512k).
+
+FlashROM IC's behave identically to PROMS when they are in 
+READ mode. They can however be erased and reprogrammed many
+thousands of times.
+
+The 29F040 FlashROM is a 512k x 8bit device. In the circuit
+we use 2 x 29F040 chips, each wired to the low and high data
+lines (D0-D7, D8-D15) to give a 512k x 16bit (1MB) kickstart space.
+Several switches on the board also allow the memory sapce to be 
+configured as 2 seperate 256k x 16bit (512k) kickstart spaces.
+
+The 29F040 FlashROM is a 5V only device, which significantly 
+simplifies interfacing to the Classic Amiga.
+
+
+@{b}How is the kickstart PROM addressed?@{ub}
+
+
+The GARY chip in the Amiga 500/600(?)/2000 takes care of virtually
+all of the address decoding within the machine.
+
+When the processor outputs an address withing the 512k range of
+$F80000-$FFFFFF, the /ROMEN output of GARY (pin 21) goes to a
+logic low level. /ROMEN is connected to the /OE (Output Enable)
+input of the kicstart chip, which then presents the word stored
+at the relevant address on the data bus.
+
+256k kickstart PROMS ignore Address line A17, so they appear twice 
+in the memory space : $F80000-$FBFFFF and again at $FC0000-$FFFFFF.
+
+GARY also generates /ROMEN in the address range $E00000-$E7FFFF,
+which is designated in the Amiga memory map as the second half
+of Kickstart when using a 1MB kickstart image.
+
+/ROMEN is also generated for addresses in the range $000000-$07FFFF
+as reset, but this will be discussed elsewhere in this document.
+
+
+@{b}How are the FlashROMS addressed?@{ub}
+
+
+Refer to the KickFlash-500 schematic.
+
+Switches 1 and 2 in their OFF positions enable the kickstart PROMS, 
+and disable the FlashROMs by showing a TTL high on their /OE inputs.
+
+When Switch 1 is ON, the FlashROMs appear in the kickstart memory
+areas instead of the kickstart PROM.
+
+Switch 3 determines whether one of the 2 512k images appears or
+if the board will appear as a 1MB kickstart image.
+
+
+@{b}How are the FlashROMs programmed?@{ub}
+
+
+The 29F040 Flash chips are written to (at the bus level) in an
+identical way as ordinary RAM. However, to avoid spurious writes,
+a simple algoritm (a sequence of special writes) is used before
+each data byte is written to the FlashROMs.
+
+Look at the 29F040 data sheet, or the source code listings to
+see how this is accomplished.
+
+One important thing to note is that the 29F040 requires it's
+/OE input to be high during write cycles.
+
+When switch 1 of OFF and switch 2 in ON, the following occurs:
+
+  o The Kickstart PROM is enabled for @{b}reading@{ub} in the 
+    $F80000-$FFFFFF memory space.
+
+  o The 512k bank selected by switch 3 appears for @{b}reading@{ub}
+    in the $E00000-$E7FFFF memory space.
+
+  o The 512k bank selected by switch 3 also appears for @{b}writing@{ub}
+    in the $F80000-$FFFFFF memory space.
+
+    This happens because the FlashROM receives /ROMEN on it's
+    /CE (chip enable) for both $E00000-$E7FFFF and $F80000-$FFFFFF, 
+    but only receives /OE in $E00000-$E7FFFF.
+
+ 
+@{b}How are the enable signals derived?@{ub}
+
+Address line A20 is low during $E00000-$E7FFFF but high during
+$F80000-$FFFFFF.
+
+The 74LS86 and 74LS32 chips use A20 to gate the split the /ROMEN
+signal to both the kickstart PROM and FlashROMS when in programming
+mode.
+
+A20 is also used at switch 3 to select high and low banks in the
+FlashROMS when in 1MB mode.
+
+The GARY chip doesn't generate the /ROMEN signal in the Kickstart
+area during a write operation, otherwise you would have bus 
+contention between the Kickstart PROM, and the Data Buffers.
+
+A19 and A20 are XOR'ed to provide the /CE signal for FlashROMs
+when in program mode.
+The output will be low between $E00000-$E7FFFF and $F80000-$FFFFFF.
+The signal is not fully decoded, but due to the complicated 
+write setup codes, it does not pose a problem when writes occur
+in other parts of the system map that satisfy this condition.
+ 
+
+@endnode
+@node WHAT "What is in the Archive?"
+
+@{b}What can be found in the archive?@{ub}
+
+This archive contains:
+
+  o This AmigaGuide file.
+
+  o Full Schematic diagrams for the project.
+
+  o Pin-outs for the IC's used in the project.
+    #NOTE# These pin-outs are for the AMD FlashROMS that I used.
+    If you are using parts from a different manufacturer, ensure
+    that you have the correct pin-outs for their part numbers.
+
+  o sample pics of 2 prototype units that I have constructed.
+
+  o Sample pics of the 'KickFlash' program running.
+
+  o Executable programs to drive the board, with source.
+
+  o Full source code for the above programs
+    #NOTE# Programming algorithms for FlashROMS from other
+    manufacturers (other than AMD) may be slightly different,
+    and require simple changes to the abovementioned source code.
+
+  
+
+@endnode
+
+
+@node GETSTART "Getting Started"
+
+@{b}Getting Started@{ub}
+
+First thing to do is locate a source for 29F040 chips.
+
+Decide whether you want to use DIL or PLCC chips.
+
+DIL are much easier solder (see the pics of the PLCC prototype!),
+but you will need a DIL->32PLCC adapter if you want to program 
+AmigaOne BIOS chips.
+
+I ordered mine (DIL) via mail order from www.futurlec.com
+Worked out at on $4.25 U.S. each + shipping. They have plenty of
+other really interesting stuff at competitive prices.
+
+The other components should be readily available anywhere.
+
+Next, work out a board layout that can be installed in your machine
+without obstructing anything else you may have in there.
+Have a look at the pic of the board installed in my 500 for
+an idea of what I mean.
+
+When you are satisfied, solder the IC sockets in place.
+
+Be extra careful when you are putting the board together not to
+break the legs on the wire-wrap socket, you don't want to
+have to take it back out.
+
+
+@endnode
+
+@node MIND "Things to keep in mind while constructing it"
+
+@{b}Things to keep in mind@{ub}
+
+Refer to the Schematic and also pics of the prototypes.
+
+Not shown in the schematic are the 5v and Gnd connections for
+all of the IC's used in the project. Refer to the Pinouts
+Supplied in this archive.
+
+All signals apart from A19,A20,/WE are taken from the wire-wrap
+socket which plugs into the vacant kickstart socket on the
+motherboard.
+
+Pin 12 (/OE) of the kickstart chip needs to be bent outwards
+before being inserted into the wire-wrap socket, since it
+no longer just receives the /ROMEN signal.
+the /ROMEN signal used by the board is taken from pin 12 on
+the wire-wrap socket.
+
+The signals I call A0-A17 in the circuit diagram are the names
+of the pins on the kickstart socket, which are NOT the same
+as the Address lines A0-A17 in the Amiga itself.
+If you look at your Amiga500 schematic you will see that 
+'AddressLine 1' of the Amiga is connected to 'A0' of the Kickstart
+PROM. AddressLine2 to A1, and so on till AddressLine18 which is
+connect to A17 on the KS PROM.
+
+Be aware that A17 may be on Pin1 or on Pin31 of the Kickstart
+socket, depending on what model you have.
+
+
+Make careful note of the orientation of the switches in the
+schematic diagram.
+
+@endnode
+
+
+@node BUILD2 "What next?"
+
+@{b}What next?@{ub}
+
+How you put the board together is really up to you.
+
+If you are keen, you could use the schematic to produce a
+printed circuit board.
+
+They are easier to build of course, but very difficult to modify
+if you want to add extra functions to the board later on.
+
+As you can see from the pics, I just built my prototypes from
+rainbow cable and a couple of Tandy experimenter boards.
+
+The circuit evolved somewhat from the initial idea, so I'm
+glad I did it that way.
+
+Try and keep you wiring close to the board, since you will need
+to make sure that you clear other components on the motherboard.
+
+@endnode
+
+
+@node FINISHED "It's finished, turning your machine on."
+
+@{b}After you have finished.@{ub}
+
+Check and DOUBLE check your work.
+
+Incorrect wiring of the project DOES have the potential
+to severely damage your machine.
+
+Make sure that you have connected the /WE and A20 flying leads
+to the correct pins on the GARY chip.
+
+With switches 1 and 2 in the OFF position, turn your
+machine on. It should boot up as normal.
+
+@{b}!! -> The machine will NOT boot with switch 2 ON. <- !!@{ub}
+
+Once the machine has booted, switch 2 can be safely switched to
+ON at any other time.
+
+
+@endnode
+
+
+@node BROKEN "It doesn't work Red, you bastard!"
+
+@{b}Troubleshooting@{ub}
+
+You turn your machine on and it won't boot anymore!
+
+  o Ensure that Switches 1 and 2 are wired correctly, according to
+    the schematic diagram.
+
+  o With switches 1 and 2 OFF, use a logic probe to check the
+    /OE pins on both the kickstart PROM and the FlashROM chips.
+   PROM should be pulsing, the FlashROM should be constantly HIGH.
+
+  o With switch 1 OFF and switch 2 ON, KS's /OE should be pulsing.
+    Load up your favourite monitor program and do a memory dump
+    from $E00000 while monitoring the /OE pins of the FlashROMs.
+    It should pulse low while the dump is happening, then stay high.
+
+  o With switch 1 OFF and switch 2 ON, do a memory dump from 
+    $F80000 while monitoring the /OE pins of the FlashROMs. 
+    It should stay high.
+
+  o Make sure the /WE inputs of the FlashROMs are pulsing.
+
+  o Make sure you aren't trying to run Kickstarts later than 37.350
+    with an OCS chipset.
+
+
+@endnode
+
+
+@node LEGAL "Legal Issues"
+
+@{b}Legal Issues@{ub}
+
+Because of the nature of this project, you will be in a position
+where you will be able to burn a copy of kickstart images 
+into the FlashROMs without requiring the original kickstart
+PROM.
+
+Technically, this is illegal if you don't own a machine with
+a legitimate copy of the kickstart image you are burning, and
+provided you aren't running that other machine at the same time.
+
+The "Amiga Forever" package from Cloanto provides an inexpensive
+LEGAL way to obtain the rights to use ALL publicly released 
+kickstart images for your own personal use. At the same time it
+gives you the latest version of the WinUAE emulator package.
+
+Let your conscience be your guide in this matter.
+
+
+@endnode
+
+@node BURN512 "Burning a 512k Kickstart image"
+
+@{b}Burning a 512k image@{ub}
+
+Use switch 3 to select the low or high 512k bank.
+
+Then open a shell window:
+
+>Flash KickImage <retn>
+
+
+Assuming KickImage is in the current directory and the 
+'Flash' program is in your current path of course.
+
+The Flash program will determine if the selected bank needs to 
+be erased first, and alert you as necessary.
+
+Pretty easy huh?
+
+
+@endnode
+
+@node BURN256 "Burning a 256k Kickstart image"
+
+@{b}Burning a 256k image@{ub}
+
+Due to the fact that the FlashROM kickstart memory spaces are
+512k in size, burning a 256k image requires that the image
+appears twice in the space.
+
+Easiest way is to open a shell window:
+
+>Copy KickImage Kick2 <retn>
+>Join KickImage Kick2 TO Image512 <retn>
+
+Assuming KickImage is in the current directory of course.
+
+The file "Image512" now contains the required file to burn.
+
+
+
+@endnode
+
+
+@node BURN1MB "Burning a 1MB Kickstart image"
+
+@{b}Burning a 1MB image@{ub}
+
+Due to the way the programmer is designed, a 1MB image
+must be programmed as two seperate 512k images.
+
+In 1MB mode, the LOW bank appears in the $E00000-$E7FFFF
+space, while the HIGH bank appears in the $F80000-$FFFFFF
+memory space.
+
+The way you create the image for the extra 512k space is
+really up to you, and beyond the scope of this article.
+
+If you are able to build this project, you're more than
+likely quite capable at figuring out how to do it.
+
+@{b}The only thing that needs to be kept in mind is this:@{ub}
+
+At power-on or after a reset, kickstart appears at
+memory locations $000000-$07FFFF due to the /OVL signal
+input on the GARY chip being reset low.
+
+The 680x0 begins executing instructions from Memory location
+$000004.
+
+In a normal 256/512k kickstart system this is a mirror of
+the instruction at $F80004 ($FC0004 on 256k KS), which normally
+holds a JMP instruction to the initialisation code within the
+exec.library.
+
+In 1MB mode, you MUST mirror the JMP instruction in the low
+bank, exactly as it appears in the high bank, since the low
+bank will appear in memory on a RESET or power-on condition.
+
+Other than that you are free to put whatever you like in the
+extra 512k memory area when running in 1MB mode.
+
+@endnode
+
+
+@node TECH "Program Information"
+
+@{b}PROGRAM INFORMATION@{ub}
+
+Source code in C and ASM is included in the archive.
+
+Development machine was a WinUAE (0.8.22R6) PC with
+SAS/C 6.58 and PHXAss 4.40.
+
+Test machine was an A500 with a REV5A motherboard.
+
+There are plenty of comments in the ASM code, and the
+C part is very simple indeed.
+
+The program is command line driven, but a GUI version
+wouldn't be too difficult to create, since Kickstart is
+not disabled while programming the FlashROMs is carried out.
+
+
+The program uses the 'data polling DQ7' algorithm, since
+I found it marginally easier to program than the 'toggle bit'
+algorithm.
+
+Astute readers may notice that the program setup codes I
+use in the assembler source code don't match the codes in
+the programming specifications.
+This is because the Amiga internally connects it's
+address lines A1-A18 to the rom chips A0-A17 inputs.
+Therefore the setup codes are shifted one bit to the left.
+
+   555 -> AAA, 2AA -> 554
+
+** If you are using Flash chips other than AMD, you **
+** may need to change the erase/programming code!   **
+
+
+
+@endnode
+
+
+@node PLANNED "Planned Improvements"
+
+@{b}PLANNED IMPROVEMENTS@{ub}
+
+Nothing in particular really.
+
+An A1200/4000 version would be very similar in design, even
+easier actually, since there is already limited support on the
+motherboard for FlashROMs and 1MB kickstart images.
+
+Maybe make a GUI based version of the control program?
+
+Any suggestions regarding hardware or software improvements
+are always welcome.
+
+email me at redskulldc@yahoo.com.au
+
+
+Bear in mind that I will NOT, under any circumstances answer
+any questions you may have about building the project.
+Everything you need is in this project archive.
+
+Since I am not providing the labour or parts, the quality of
+the finished product is up to you.
+
+If you are not up to building it, then DON'T!
+
+@endnode
+
+
+
+
+
+@node HISTORY "History"
+
+@{b}Project History@{ub}
+
+
+V1.0 20/05/03  First release of the A500 based project.
+
+@endnode
+
+
+@node COMP "Re-Compiling the program"
+
+@{b}Re-Compiling the Program@{ub}
+
+
+Assuming that you have SAS/C 6.58 correctly installed, just
+open up the source drawer and click on the build icon.
+
+PHXAss is used to build the 'flash.o' module.
+Just use "PHXAss flash.asm<ret> from the command line.
+
+@endnode
+
+

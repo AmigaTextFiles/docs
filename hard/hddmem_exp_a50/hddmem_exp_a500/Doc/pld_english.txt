@@ -1,0 +1,186 @@
+                             Introduction.
+
+Pld version of the board contains of 6 chips (or even 4, you have
+rom with IDE support hdd, i.e. kickstart 37.300+).
+
+These chips are:
+1. dd21 - pld FX740LC68 (manufactured by ALTERA, licensed by INTEL)
+   (costs about 20$)
+2. multiplexer chips dd16, dd17, dd18
+3. memory regeneration counter dd20
+4. 27C2000 rom chips - dd14,dd15
+
+The part of the board, which contains other small logic chips
+could be cut off or even not be made at all.
+                               |
+-------------------------------|-----------------
+|                        |   | |                |
+|                        ----- |                |
+| component side               |^| |^|  |^| |^| |
+|                              | | | |  | | | | |
+|                              |_| |_|  |_| |_| |
+|                              |                |
+|                              |^| |^|  |^| |^| |
+|                              | | | |  | | | | |
+|                   -------    |_| |_|  |_| |_| |
+|                   |     |    |                |
+|                   | pld |    |                |
+|                   |     |    |^| |^|  |^| |^| |
+|                   |     |    | | | |  | | | | |
+|                   -------    |_| |_|  |_| |_| |
+|                              |                |
+|                              |                |
+----                    -------|-----------------
+   |                    |      |
+   |                    |       \
+   |                    |        \
+   ----------------------         cutting line
+
+
+  Unfortunately, pld version was not checked as it's not possible to find
+such a chip in Ekaterinburg (in Russia), but the chip was simulated in all
+modes, thus it's 80% guaranteed that you won't need to make any changes.  If
+you're not experienced enough in pld programming, choose pld-free version
+to avoid the risk.
+
+  You'll need to push sys_rst button when switching the power on in order
+to init pld registers.
+
+
+                             PLD information.
+
+  PLD FX740LC-15 contains 40 trigger elements + logic gates to
+make and-or elements. Modern programming devices support such chips.
+It's also possible to program it through parralel port of IBM PC using
+Pldshell software through JTAG interface. There are two versions if this
+chip:  with ram-logic matrix and flash-logic matrix. You need the
+flash-logic matrix in order to save the information in chip after
+power-down. It's possibly called FX840LC68-15. The best way is to ask
+the seller about these chips. Do not buy pld chip of MAX family.
+They are goos and inexpensive, but you'll need to draw a board and
+make rom image for MAX2+ scheme description language.
+
+  See gfx/fx-740.png for detaled description of this chip
+
+
+                           ROM chip contents.
+
+  Making of the rom chip contents is similar to making of the scheme,
+but there are a lot of features added. All the 40 triggers of the chip
+are used so you will unlikely optimize anything for this pld and this
+set of features. :) pld resources are used almost at 100%...
+
+  PLD uses state machine (pld/state_machine.gif), which works in two
+modes and ensures kickstart to recognize stanard ide ports (A600 or A1200)
+while accessing $DE1000 address. As you may see at the above mentioned
+figure, the kickstart reads using 010->011->100->101 stages 1101 sequence
+from D15 data line that shows IDE-chip presense. The second mode allows
+to get 1001 code, which can be used to determine if there is a pld present.
+Mode can be selected using internal pld register id_dis. When id_dis=0
+it is allowed to recognize the ide-chip (1101), and recognition is not
+made when id_dis=1 (1001).
+
+  Internal registers are accessible through $B8xxxx address.
+This address is reserved by Amiga makers and that is why I used it. ;-)
+If you prefer other address, you may choose one of your own
+in pld/hm010.pds file (if you can).
+
+  You need d14 to be equal to 1 when writing to this area.
+If it contains 0, the internal pld register wouldn't be written to.
+d15 bit contains data needed to write to the register. While reading
+from $B8xxxx the register contents is transferred to d15. While reading
+or writing to $B8xxxx one of seven registers is accessed. This register
+is selected by state machine (pld/state_machine.gif). E.g. in order to
+write to id_dis you need to do the following:
+
+moveq.l #0,d0
+move.w  d0,$de1000
+move.w  d0,$de1000
+move.w  #%X100000000000000,$b80000   ; X is id_dis bit contents
+
+  Note that two writes to $DExxxx make the state machine go to 010 stage.
+
+  When id_dis=0 it is possible to access id_dis, hdd_dis, and mem_dis
+registers. When id_dis=1 it is possible to access id_dis, c0_mem_en,
+f8_mem_en, f8_wr_en, and con_dis registers. Besides that, id_dis bit
+contents is responsible for ID-code, which is needed to recognize HDD
+and load scsi.device in Amig  memory. Control-LCommand-RCommand reset
+doesn't change registers. The sys_rst button resets all the registers to 0.
+
+  Registers bit mapping:
+
+con_dis:   (access in 001 state)
+  0 - normal operation
+  1 - the current state for all the registers (including the con_dis bit
+      itself) is saved and doesn't change on any writes to any ports.
+      This is the latchinng bit. It is possible to change it from 0 to 1
+      only once. Only sys_rst can be used to put 0 in it again. This is
+      useful to for protection from unauthorised access or random writes
+      of some programs.
+
+id_dis:    (access in 010 state)
+  0 - is set after writing and next reading from $dexxxx 1101 sequence
+      at d15 line ($d). scsi.device is loaded into memory by this code.
+
+  1 - is set after writing and next reading from $dexxxx 1001 sequence
+      at d15 line ($9). This code can be used to determine whether is pld
+      installed.
+
+mem_dis:   (access in 100 state)
+  0 - there is possibly a memory at $200000-$9fffff and $c00000-$d7ffff
+      (if it's installed).
+  1 - 68000's access to $200000-$9fffff and $c00000-$d7ffff are ignored
+      by the board (memory is switched off).
+
+hdd_dis:   (access in 011 state)
+  0 - there are HDD ports at $daxxxx and HDD chip at $de1000 is recognized
+      (1101 when id_dis=0).
+  1 - HDD ports at $daxxxx aer switched off and HDD chip at $de1000 is not
+      recognised (1111 when id_dis=0). This is just a switch-off of HDD
+      and it's recognition.
+
+c0_mem_en: (access in 100 state)
+  0 - 1.5Mb of ram at $800000-$97ffff are unchanged.
+      No ram at $c00000-$d7ffff.
+  1 - 1.5Mb of ram at $800000-$97ffff is transferred to $c00000-$d7ffff
+      (remapped to $c0).
+
+f8_mem_en: (access in 111 state)
+  0 - 0.5Mb of ram at $980000-$9fffff is unchanged.
+      Rom is at $f80000-$ffffff.
+  1 - 0.5Mb of ram at $980000-$9fffff is transferred to
+      $f80000-$ffffff (hardware ram to rom remapping).
+      Rom is switched off.
+
+f8_wr_en:  (access in 000 state)
+  0 - if f8_mem_en=1, writing to $f80000-$ffffff is not possible.
+      This is complete rom emulation.
+  1 - if f8_mem_en=1, writing to $f80000-$ffffff is possible.
+      You are able to write to "rom", set breakpoints etc. ;)
+
+
+                           IDE HDD ports and RAM.
+
+  IDE HDD ports and HDD chip recognition is made the same way as on a600
+or a1200. Therefore all the kickstarts (starting from 37.300) can work with
+the standard scsi.device. pld doesn't have an autoconfig feature, and basic
+kickstart only recognises 4Mb at $600000 as pcmcia-ram. In order to
+recognise another 4Mb at $200000 you need to run prog/add4m utility. ;)
+The best way, though, is to use patched kickstart 39.106 from a1200.
+See doc/rom_kick_english.txt for details on that.
+
+
+                                 Simulation.
+
+  pld/hm010.pds file contains emulation of 68000/68010 cycles when
+accessing ram, rom, ide ports etc in simulation section.
+
+
+                                  Bugs.
+
+  CD-ROM won't be working for the unknown reason; HDDs work fine though. :(
+Maybe someone could hack into this and tell me what more bits are used
+in ide ports. I know only about d15 bit da8000 (allows irq passing),
+da9000 (irq flag) and  daa000 (irq passing to int2). Unfortunately Amiga
+makers don't tell even the fact that accessing $da2000 puts cs0, and
+accessing $da3000 puts cs1. ;-)

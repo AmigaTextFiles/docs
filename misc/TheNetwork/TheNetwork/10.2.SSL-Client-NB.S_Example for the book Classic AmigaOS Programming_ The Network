@@ -1,0 +1,1021 @@
+;APS00000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+		INCDIR	"Develop:NDK_3.2/Include_I/"
+		INCLUDE "dos/dos.i"
+		INCLUDE "lvo/dos_lib.i"
+		INCLUDE "lvo/exec_lib.i"
+		INCLUDE "lvo/bsdsocket_lib.i"
+		INCLUDE "lvo/amisslmaster_lib.i"
+		INCLUDE "lvo/amissl_lib.i"
+		INCLUDE "utility/tagitem.i"
+
+
+; ---- Constants for local use
+
+NONE		= 0
+CONNECTING	= 1
+CONNECTED	= 2
+
+
+; ---- Constants used by the socket library
+
+AF_INET		= 2
+SOCK_STREAM	= 1
+SOCK_DGRAM 	= 2
+
+SOL_SOCKET	= $FFFF
+
+SO_ERROR	= $1007
+SO_EVENTMASK	= $2001
+
+FIOASYNC	= $8004667d
+FIONBIO		= $8004667e
+FIONREAD	= $4004667f
+
+FD_ACCEPT	= $01
+FD_CONNECT	= $02
+FD_OOB		= $04
+FD_READ		= $08
+FD_WRITE	= $10
+FD_ERROR	= $20
+FD_CLOSE	= $40
+
+EINPROGRESS	= 36
+
+SBTM_GETVAL		= $80000000
+SBTM_SETVAL		= $80000001
+
+SBTC_SIGEVENTMASK	= 8
+SBTC_ERRNOLONGPTR	= 48
+SBTC_HERRNOLONGPTR	= 50
+SBTC_ERRNOSTRPTR	= 28
+
+
+; ---- Constants used by the SSL library
+
+AMISSLMASTER_MIN_VERSION 	= 5
+
+AmiSSL_SocketBase		= (TAG_USER+$01)
+AmiSSL_ErrNoPtr			= (TAG_USER+$0b)
+AmiSSL_UsesOpenSSLStructs	= (TAG_USER+$0c)
+AmiSSL_GetAmiSSLBase		= (TAG_USER+$0d)
+AmiSSL_GetAmiSSLExtBase		= (TAG_USER+$0e)
+
+SSL_VERIFY_PEER			= $01
+SSL_VERIFY_FAIL_IF_NO_PEER_CERT	= $02
+
+SSL_CTRL_MODE			= 33
+SSL_CTRL_SET_TLSEXT_HOSTNAME	= 55
+SSL_MODE_AUTO_RETRY		= 4
+TLSEXT_NAMETYPE_host_name	= 0
+
+SSL_ERROR_NONE			= 0
+SSL_ERROR_SSL			= 1
+SSL_ERROR_WANT_READ		= 2
+SSL_ERROR_WANT_WRITE		= 3
+SSL_ERROR_WANT_X509_LOOKUP	= 4
+SSL_ERROR_SYSCALL		= 5
+
+X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT = 18
+
+
+		; Store argument pointers
+
+		MOVE.L	d0,ArgLen
+		MOVE.L	a0,ArgBase
+
+		; Open libraries we need
+
+ 		MOVE.L	4.W,a6			; a6 = ExecBase
+ 		MOVEQ.L	#AMISSLMASTER_MIN_VERSION,d0
+		LEA.L	AmiName(PC),a1
+		JSR	_LVOOpenLibrary(a6)
+		MOVE.L	d0,AmiBase
+		BEQ.W	.NoSSL
+		LEA.L	DosName(PC),a1
+		JSR	_LVOOldOpenLibrary(a6)
+		MOVE.L	d0,DosBase
+		BEQ.W	.NoDos
+		LEA.L	SockName(PC),a1
+		JSR	_LVOOldOpenLibrary(a6)
+		MOVE.L	d0,SockBase
+		BEQ.W	.NoSock
+
+		; Allocate the signal
+
+		MOVEQ.L	#-1,d0			; Any free signal
+		JSR	_LVOAllocSignal(a6)
+		MOVE.L	d0,Signal
+		BMI.W	.NoSignal
+		MOVEQ.L	#1,d1
+		ASL.L	d0,d1
+		MOVE.L	d1,SignalMask
+
+		; Get the output handle of the CLI/Shell
+
+		MOVE.L	DosBase(PC),a6		; a6 = DOS
+		JSR	_LVOOutput(a6)
+		MOVE.L	d0,OutHand		; BPTR console handle
+		BEQ.W	.NoOut
+
+		; Check the arguments
+
+		BSR.W	ProcessArgs		; Get hostname from args
+		BMI.W	.Exit			; Exit in case of error
+
+		; Print the hostname
+
+		LEA.L	.HostStr(PC),a0
+		BSR.W	Print
+		LEA.L	HostName,a0
+		BSR.W	Print
+
+		; Resolve the hostname into an IP address
+
+		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		LEA.L	HostName,a0
+		BSR.W	GetIPAddress
+		MOVE.L	d0,IPAddress		; Store the IP address
+		BEQ.W	.Exit			; Zero means error.
+
+		; Print the IP address
+
+		LEA.L	.IPAddrStr(PC),a0
+		BSR.W	Print
+		JSR	_LVOInet_NtoA(a6)
+		MOVE.L	d0,a0
+		BSR.W	Print
+
+		; Prepare the socket
+
+		BSR.W	PrepareSocket
+		TST.L	Socket(PC)		; Check socket
+		BMI.W	.Exit			; Negative socket is error
+		LEA.L	.SockOpenStr(PC),a0
+		BSR.W	Print			; Print socket open message
+
+		; Prepare the SSL context object
+
+		BSR.W	PrepareSSL
+		BMI.W	.Close			; Error? Cleanup and exit
+
+		; Start the connection
+
+		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		MOVE.L	Socket(PC),d0		; LONG sd
+		MOVEQ.l	#16,d1			; LONG addrlen
+		LEA.L	.SockAddrIn(PC),a0	; APTR addr
+		JSR	_LVOconnect(a6)
+		TST.L	d0			; Check the result
+		BEQ.B	.NoErr			; Zero = no error
+
+		CMPI.L	#EINPROGRESS,ErrNo	; Just an "in progress"?
+		BNE.B	.Close			; No - a real error
+
+.NoErr		LEA.L	.ConnectStr(PC),a0
+		BSR.W	Print
+
+		; The main loop of the program
+
+.MainLoop	MOVE.L	4.W,a6			; a6 = ExecBase
+		MOVE.L	SignalMask(PC),d0	; ULONG Socket signal
+		ORI.L	#SIGBREAKF_CTRL_C,d0	; ULONG Ctrl+C signal
+		JSR	_LVOWait(a6)		; Wait for signals
+
+		MOVE.L	d0,d1
+		ANDI.L	#SIGBREAKF_CTRL_C,d0	; User Ctrl+C break?
+		BNE.B	.UserBreak		; Yes.
+
+		AND.L	SignalMask(PC),d1	; Socket signal?
+		BEQ.B	.MainLoop		; No. Wait again.
+
+		BSR.W	ProcessSocket		; Yes. Process socket event
+		BNE.B	.Close			; Non-zero = connection gone
+
+		BRA.B	.MainLoop		; Keep looping.
+
+
+		; Show message before closing
+
+.UserBreak	LEA.L	.BreakStr(PC),a0
+		BSR.W	Print
+
+		; Close the socket
+
+.Close		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		MOVE.L	Socket(PC),d0		; Socket descriptor
+		BMI.B	.Exit				; None? No need to close it
+		JSR	_LVOCloseSocket(a6)
+
+		; Close AmiSSL
+
+.Exit		BSR.W	CleanUpSSL
+
+		; Close the libraries
+
+.NoOut		MOVE.L	4.W,a6			; a6 = ExecBase
+		MOVE.L	Signal(PC),d0		; Signal number
+		JSR	_LVOFreeSignal(a6)
+.NoSignal	MOVE.L	SockBase(PC),a1
+		JSR	_LVOCloseLibrary(a6)
+.NoSock		MOVE.L	DosBase(PC),a1
+		JSR	_LVOCloseLibrary(a6)
+.NoDos		MOVE.L	AmiBase(PC),a1
+		JSR	_LVOCloseLibrary(a6)
+.NoSSL		MOVEQ	#0,d0
+		RTS
+
+
+
+		DC.B	"$STACK:20480",0
+.HostStr	DC.B	"Hostname: ",0
+.IPAddrStr	DC.B	10,"IP address: ",0
+.SockOpenStr	DC.B	10,"Socket open..",10,0
+.ConnectStr	DC.B	"Connecting..",10,0
+.BreakStr	DC.B	"User break!",10,0
+		EVEN
+
+.SockAddrIn	DC.W	AF_INET	; Family
+		DC.W	443	; Port number
+IPAddress:	DC.L	0	; IP address
+		BLK.B	8,0	; sin_zero
+
+
+; ========================================================================
+; Setup the socket library and create a non-blocking socket
+
+PrepareSocket:	LEA.L	.Tags(PC),a0		; APTR tags
+		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		JSR	_LVOSocketBaseTagList(a6)
+
+		; Get the socket descriptor
+
+		MOVEQ.L	#AF_INET,d0		; LONG domain
+		MOVEQ.L	#SOCK_STREAM,d1		; LONG type
+		MOVEQ.L	#0,d2			; LONG protocol
+		JSR	_LVOsocket(a6)
+		MOVE.L	d0,Socket		; Store socket descriptor
+		BMI.B	.NoSocket		; Negative result = error
+
+		; Request events on the socket
+
+		MOVE.L	#SOL_SOCKET,d1		; LONG level
+		MOVE.L	#SO_EVENTMASK,d2	; LONG optname
+		MOVEQ.L	#4,d3			; LONG optlen
+		LEA.L	.EventMask(PC),a0	; APTR optval
+		JSR	_LVOsetsockopt(a6)
+
+		; Make socket non-blocking
+
+		MOVE.L	Socket(PC),d0		; LONG sd
+		MOVE.L	#FIONBIO,d1		; LONG request
+		LEA.L	.Arg(PC),a0		; APTR argp
+		JSR	_LVOIoctlSocket(a6)
+
+.NoSocket	RTS
+
+
+.Arg		DC.L	1
+.EventMask	DC.L	FD_CONNECT|FD_READ|FD_WRITE|FD_CLOSE|FD_ERROR
+
+.Tags		DC.L	SBTM_SETVAL|SBTC_SIGEVENTMASK
+SignalMask:	DC.L	0
+		DC.L	SBTM_SETVAL|SBTC_ERRNOLONGPTR
+		DC.L	ErrNo
+		DC.L	SBTM_SETVAL|SBTC_HERRNOLONGPTR
+		DC.L	HErrNo
+		DC.L	TAG_END
+
+
+; ========================================================================
+
+
+PrepareSSL:	MOVE.L	AmiBase(PC),a6		; a6 = AmiBase
+		MOVEQ.L	#35,d0			; ULONG API version
+		LEA.L	.SSLTags(PC),a0		; APTR Taglist
+		MOVE.L	SockBase(PC),4(a0)	; Place APTR in taglist
+		JSR	_LVOOpenAmiSSLTagList(a6)
+
+		TST.L	SSLBase(PC)
+		BEQ.B	.Error
+
+		; Get context object for client operation
+
+		MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+		JSR	_LVOTLS_client_method(a6)
+		MOVEA.L	d0,a0				; APTR Method
+		JSR	_LVOSSL_CTX_new(a6)
+		MOVE.L	d0,CtxObj
+		BEQ.B	.Error
+
+		; Use the default verification paths
+
+		MOVE.L	d0,a0
+		JSR	_LVOSSL_CTX_set_default_verify_paths(a6)
+
+		; Set verification mode and callback
+
+		MOVE.L	CtxObj(PC),a0		; APTR Context object
+		MOVEQ.L	#SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT,d0
+		LEA.L	VerifyCB(PC),a1		; APTR callback function
+		JSR	_LVOSSL_CTX_set_verify(a6)
+
+		; Get SSL object
+
+		MOVE.L	CtxObj(PC),a0		; APTR Context object
+		JSR	_LVOSSL_new(a6)
+		MOVE.L	d0,SSLObj
+		BEQ.B	.Error
+
+		; Use the socket for the SSL connection
+
+		MOVE.L	d0,a0			; APTR SSL object
+		MOVE.L	Socket(PC),d0
+		JSR	_LVOSSL_set_fd(a6)
+
+		; Specify hostname for hosts with multiple domains
+
+		MOVEQ.L	#SSL_CTRL_SET_TLSEXT_HOSTNAME,d0	; LONG cmd
+		MOVEQ.L	#TLSEXT_NAMETYPE_host_name,d1		; LONG larg
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		LEA.L	HostName,a1		; APTR parg
+		JSR	_LVOSSL_ctrl(a6)
+
+		; Do any renegotiation in the background
+
+		MOVEQ.L	#SSL_CTRL_MODE,d0	; LONG cmd
+		MOVEQ.L	#SSL_MODE_AUTO_RETRY,d1	; LONG larg
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		SUB.L	a1,a1			; APTR parg
+		JSR	_LVOSSL_ctrl(a6)
+
+		MOVEQ.l	#0,d0
+		RTS
+
+
+.Error:		MOVEQ.L	#-1,d0
+		RTS
+
+
+.SSLTags	DC.L	AmiSSL_SocketBase,0
+		DC.L	AmiSSL_UsesOpenSSLStructs,0
+		DC.L	AmiSSL_GetAmiSSLBase,SSLBase
+		DC.L	AmiSSL_GetAmiSSLExtBase,SSLExtBase
+		DC.L	AmiSSL_ErrNoPtr,ErrNo
+		DC.L	TAG_DONE
+
+
+; ------------------------------------------------------------------------
+; The callback function that is called for each certificate in the chain
+
+VerifyCB:	MOVEM.L	a0/a1/a6,-(a7)
+		MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+
+		; Check the pre-verify result
+
+		MOVE.L	5*4(sp),a0		; APTR CTXStore obj
+		MOVE.L	4*4(sp),d0		; LONG pre_verify
+		BEQ.B	.Failed			; Failed when pre_verify is 0
+
+		; Show success string
+
+		MOVE.L	a0,a1			; Store CTXStore object
+		LEA.L	.SuccessStr(PC),a0
+		BSR.W	Print
+
+		; Get pointer to X509 object of current cert
+
+		MOVE.L	a1,a0			; Retrieve CTXStore object
+		JSR	_LVOX509_STORE_CTX_get_current_cert(a6)
+		MOVE.L	d0,a0			; APTR X509 object
+		BSR.W	PrintCert
+
+		; Leave indicating success
+
+.Success	MOVEM.L	(a7)+,a0/a1/a6
+		MOVEQ.L	#1,d0			; Return true
+		RTS
+
+
+		; Get the error code
+
+.Failed		JSR	_LVOX509_STORE_CTX_get_error(a6)
+		CMPI.L	#X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,d0
+		BNE.B	.ShowError		; Not self-signed?
+
+		; Show self-sign warning
+
+		LEA.L	.SelfSignStr(PC),a0
+		BSR.W	Print
+		BRA.B	.Success
+
+
+		; Convert the code into a string
+
+.ShowError	JSR	_LVOX509_verify_cert_error_string(a6)
+
+		; Print it to the console
+
+		LEA.L	.FailedStr(PC),a0
+		LEA.L	.FailedData(PC),a1
+		MOVE.L	d0,(a1)			; APTR Error string
+		BSR.W	Printf
+
+		; Leave indicating failure
+
+		MOVEM.L	(a7)+,a0/a1/a6
+		MOVEQ.L	#0,d0			; Return false
+		RTS
+
+
+
+
+.SuccessStr	DC.B	"Certificate verification successful!",10,0
+.SelfSignStr	DC.B	"Certificate is self-signed!",10,0
+.FailedStr	DC.B	"Certificate verification failed! (%s)",10,0
+.FailedData	DC.L	0
+
+
+; ========================================================================
+; Get the socket event(s) and call the apropriate action(s)
+
+ProcessSocket:	MOVE.L	SockBase(PC),a6		; A6 = SockBase
+		LEA.L	.Events(PC),a0		; APTR events_ptr
+		JSR	_LVOGetSocketEvents(a6)
+		MOVE.L	d0,d7			; Event socket descriptor
+		BMI.B	.Done			; No socket! Nothing to do.
+
+		LEA.L	.EventStr(PC),a0
+		BSR.W	Print
+
+		MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_ERROR,d0		; Is the FD_ERROR bit set?
+		BEQ.B	.NotErr			; No. Check the next event
+		BSR.W	EventError		; Yes. Process the event
+		MOVEQ	#-1,d0			; Indicate to stop
+		RTS
+
+.NotErr		MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_CONNECT,d0		; Is the FD_CONNECT bit set?
+		BEQ.B	.NotConn		; No. Check the next event
+		BSR.B	EventConnect		; Yes. Process the event
+
+.NotConn	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_WRITE,d0		; Is the FD_WRITE bit set?
+		BEQ.B	.NotWrite		; No. Check the next event
+		BSR.B	EventWrite		; Yes. Process the event
+
+.NotWrite	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_READ,d0		; Is the FD_READ bit set?
+		BEQ.B	.NotRead		; No. Check the next event
+		BSR.W	EventRead		; Yes. Process the event
+
+.NotRead	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_CLOSE,d0		; Is the FD_CLOSE bit set?
+		BEQ.B	.Done			; No. Done all events
+		BSR.W	EventClose		; Yes. Process the event
+		MOVEQ	#-1,d0			; Indicate to stop
+		RTS
+
+.Done		CMPI.W	#CONNECTING,MyStatus
+		BNE.W	.NoSSLCheck
+		BRA.W	CheckSSLStatus	; Returns its own result in D0
+
+.NoSSLCheck	MOVEQ	#0,d0			; Indicate to continue
+		RTS
+
+
+.Argp		DC.L	0
+.Events		DC.L	0
+.EventStr	DC.B	"Event! ",0
+
+
+; ------------------------------------------------------------------------
+; Start the SSL handshake process
+
+EventConnect:	LEA.L	.ConnectedStr(PC),a0
+		BSR.W	Print
+
+		MOVE.W	#CONNECTING,MyStatus
+.Done		RTS
+
+
+.ConnectedStr	DC.B	"FD_CONNECT",10,0
+
+
+; ------------------------------------------------------------------------
+; Nothing to do for the write event
+
+EventWrite:	LEA.L	.WriteStr(PC),a0
+		BSR.W	Print
+		RTS
+
+.WriteStr	DC.B	"FD_WRITE",10,0
+
+
+; ------------------------------------------------------------------------
+; Read all data sent by the server
+
+EventRead:	LEA.L	.ReadStr(PC),a0
+		BSR.W	Print
+
+		; Only read when SSL is connected
+
+		CMPI.W	#CONNECTED,MyStatus	; SSL session connected?
+		BNE.W	.Done				; No? Nothing to do
+
+		; Read data into the buffer
+
+		MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+		MOVE.L	#4095,d0		; LONG Buffer size
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		LEA.L	Buffer,a1		; APTR Buffer
+		JSR	_LVOSSL_read(a6)
+		MOVE.L	d0,.FmtData		; Copy result for printing
+		BMI.B	.Negative		; Negative = possible error
+
+		; Show contents of buffer
+
+;		LEA.L	Buffer,a0		; APTR buffer
+;		MOVE.B	#0,(a0,d0)		; Terminate buffer
+;		BSR	Print
+
+		; Show how many bytes received
+
+		LEA.L	.FmtStr(PC),a0		; APTR FormatString
+		LEA.L	.FmtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+.Done		RTS
+
+		; Check if it is a real error
+
+.Negative	MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		JSR	_LVOSSL_get_error(a6)
+		CMPI.L	#SSL_ERROR_WANT_READ,d0	; Not done reading yet?
+		BEQ.B	.AllOK			; Not a problem
+		CMPI.L	#SSL_ERROR_WANT_WRITE,d0; Not done writing yet?
+		BEQ.B	.AllOK			; Not a problem
+
+		BSR.W	PrintSSLErr		; Print error.
+		RTS
+
+		; Not an error, all well
+
+.AllOK		LEA.L	.NewLine(PC),a0		; APTR newline
+		BRA	Print
+
+
+.ReadStr	DC.B	"FD_READ ",0
+.FmtStr		DC.B	"read %ld bytes"
+.NewLine	DC.B	10,0,0
+.FmtData	DC.L	0
+
+
+; ------------------------------------------------------------------------
+; Retrieve the error and print it
+
+EventError:	LEA.L	.ErrorStr(PC),a0
+		BSR.W	Print
+
+		TST.L	ErrNo		; ErrNo has been set?
+		BNE.B	.ShowIt		; Yes. Then print it
+
+		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVE.L	#SOL_SOCKET,d1		; LONG level
+		MOVE.L	#SO_ERROR,d2		; LONG optname
+		LEA.L	ErrNo(PC),a0		; APTR optval
+		LEA.L	.ErrNoLen(PC),a1	; APTR optlen
+		JSR	_LVOgetsockopt(a6)
+
+.ShowIt		BSR.W	PrintErr
+		RTS
+
+
+.ErrorStr	DC.B	"FD_ERROR ",0
+.ErrNoLen	DC.L	4
+
+
+; ------------------------------------------------------------------------
+; Receive all data still in the internal buffer.
+
+EventClose:	LEA.L	.CloseStr(PC),a0
+		BSR.W	Print
+
+		; Only read when SSL is connected
+
+		CMPI.W	#CONNECTED,MyStatus	; SSL status connected?
+		BNE.W	.Done			; Not connected, no data
+		MOVE.L	#NONE,MyStatus		; No longer connected
+
+		; Receive into the buffer
+
+		MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+.Loop		MOVE.L	#4095,d0		; LONG Buffer size
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		LEA.L	Buffer,a1		; APTR Buffer
+		JSR	_LVOSSL_read(a6)
+		MOVE.L	d0,.FmtData		; Copy result for printing
+		BMI.W	PrintSSLErr		; Negative? That's an error.
+		BEQ.B	.NoData			; Zero means no more data
+
+		; Show how many bytes received
+
+		LEA.L	.FmtStr(PC),a0		; APTR FormatString
+		LEA.L	.FmtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+		BRA.B	.Loop			; Read more data
+
+		; Print last message and exit
+
+.NoData		LEA.L	.NoDataStr(PC),a0
+		BSR	Print
+.Done		RTS
+
+
+.CloseStr	DC.B	"FD_CLOSE",10,0
+.NoDataStr	DC.B	"No more data to read. Closing..",10,0
+.FmtStr		DC.B	"read %ld bytes from internal buffer",10,0
+.FmtData	DC.L	0
+
+
+; ========================================================================
+; Keep track of the SSL handshake
+
+CheckSSLStatus:	MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		JSR	_LVOSSL_connect(a6)
+		CMPI.L	#1,d0			; Check result
+		BNE.B	.CheckResult		; One = all is well
+		MOVE.W	#CONNECTED,MyStatus	; New status
+
+		LEA.L	.HandshakeStr(PC),a0
+		BSR.W	Print
+
+		; Show cipher used
+
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		JSR	_LVOSSL_get_current_cipher(a6)
+		MOVEA.L	d0,a0
+		JSR	_LVOSSL_CIPHER_get_name(a6)
+		MOVEA.L	d0,a0
+		BSR.W	Print
+
+		LEA.L	.NewLine(PC),a0
+		BSR.W	Print
+
+		; Show certificate information
+
+		MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		JSR	_LVOSSL_get1_peer_certificate(a6)
+		TST.L	d0			; Was a cert sent?
+		BEQ.B	.SendReq			; No? Do not print
+
+		MOVEA.L	d0,a0			; APTR X509 object
+		BSR.W	PrintCert		; Print cert info
+
+		; Calculate the length of the GET request string
+
+.SendReq	LEA.L	GetRequest,a0		; APTR Get request
+		MOVEQ.L	#0,d0			; D0 = Length counter
+.Count		TST.B	(a0)+			; Null-terminator?
+		BEQ.B	.Counted			; Yes. Done counting
+		ADDQ.L	#1,d0			; Count another char
+		BRA.B	.Count
+
+		; Send the request string.
+
+.Counted	MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		LEA.L	GetRequest,a1		; APTR Get request
+		JSR	_LVOSSL_write(a6)
+		MOVE.L	d0,.WrtData		; Copy result for printing
+
+		; Show how many bytes were sent
+
+		LEA.L	.WrtStr(PC),a0		; APTR FormatString
+		LEA.L	.WrtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+
+.AllOK		MOVEQ	#0,d0
+		RTS
+
+
+.CheckResult	MOVE.L	SSLObj(PC),a0		; APTR SSL object
+		JSR	_LVOSSL_get_error(a6)
+		CMPI.L	#SSL_ERROR_WANT_READ,d0	; Not done reading yet?
+		BEQ.B	.AllOK			; Not a problem
+		CMPI.L	#SSL_ERROR_WANT_WRITE,d0; Not done writing yet?
+		BEQ.B	.AllOK			; Not a problem
+
+		BSR.W	PrintSSLErr		; Print error.
+		MOVEQ.L	#-1,d0			; Signal problem
+		RTS
+
+
+.HandshakeStr	DC.B	"SSL handshake done. Using: ",0
+.WrtStr		DC.B	"written %ld bytes"
+.NewLine	DC.B	10,0,0
+.WrtData	DC.L	0
+
+
+
+; ========================================================================
+
+CleanUpSSL:	TST.L	SSLBase(PC)		; Check SSLBase was opened
+		BEQ.B	.NoCtx			; No? No SSL and Ctx objects
+
+		MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+		MOVE.L	SSLObj(PC),d0		; Get SSL object
+		BEQ.B	.NoSSL			; Got none? Skip!
+		MOVEA.L	d0,a0
+		JSR	_LVOSSL_free(a6)
+
+.NoSSL		MOVE.L	CtxObj(PC),d0		; Get Ctx object
+		BEQ.B	.NoCtx			; Got none? Skip!
+		MOVEA.L	d0,a0
+		JSR	_LVOSSL_CTX_free(a6)
+
+.NoCtx		MOVE.L	AmiBase(PC),a6		; a6 = AmiBase
+		JSR	_LVOCloseAmiSSL(a6)
+.NoAmi		RTS
+
+
+
+; ========================================================================
+; Check the argument length
+; Copy the argument into the HostName buffer
+; Use that to create the GET reguest string
+
+ProcessArgs:	MOVE.L	ArgLen(PC),d0		; Length of the arguments
+		CMPI.W	#5,d0			; At least 5 characters?
+		BMI.B	.ArgLenErr		; No? Error!
+		CMPI.L	#255,d0			; Fit the buffer?
+		BPL.B	.ArgLenErr		; No? Error!
+
+		; Copy into the hostname buffer
+
+		MOVE.L	ArgBase(PC),a0		; APTR Source
+		LEA.L	HostName,a1		; APTR Destination
+		SUBQ.L	#2,d0
+.CopyArg	MOVE.B	(a0)+,(a1)+
+		DBF	d0,.CopyArg
+		MOVE.B	#0,(a1)			; Null-terminator
+
+		; Create GET request
+		MOVE.L	4.w,a6			; a6 = Exec Base
+		LEA.L	.RequestStr(PC),a0	; APTR Format string
+		LEA.L	.RequestData(PC),a1	; APTR Data for string
+		LEA.L	PutChar(PC),a2		; APTR Callback function
+		LEA.L	GetRequest,a3		; APTR Buffer to print to
+		JSR	_LVORawDoFmt(a6)
+
+		MOVEQ.L	#0,d0
+		RTS
+
+		; Show error message
+
+.ArgLenErr	LEA.L	.ArgErrStr(PC),a0
+		BSR.W	Print
+		MOVEQ.L	#-1,d0
+		RTS
+
+
+.ArgErrStr	DC.B	"Please provide a hostname argument.",10,0
+
+.RequestStr	DC.B	"GET / HTTP/1.0",$0D,$0A,"host: %s",$0D,$0A,$0D,$0A,0
+.RequestData	DC.L	HostName
+
+
+; ========================================================================
+; Resolve the hostname into an IP address to connect to
+
+GetIPAddress:	JSR	_LVOgethostbyname(a6)
+		TST.L	d0			; Successful result?
+		BEQ.B	.NoAddr			; No? Show error message
+
+		MOVE.L	d0,a0			; APTR Hostent struct
+		CMPI.L	#4,12(a0)		; LONG Length: must be 4
+		BNE.B	.NoAddr
+
+		MOVE.L	16(a0),a0		; APTR 1st addr in list
+		MOVE.L	(a0),A0			; APTR IP address
+		MOVE.L	(a0),d0			; DWORD IP address
+		RTS
+
+
+.NoAddr		LEA.L	.ErrorStr(PC),a0
+		BSR.W	Print
+		MOVEQ.L	#0,d0			; Return 0 as IP address
+		RTS
+
+.ErrorStr:	DC.B	" - unable to resolve!",10,0,0
+
+
+; ========================================================================
+; Expect X509 object pointer in a0 and SSLBase in a6
+
+
+PrintCert:	TST.L	a0			; Check APTR X509 object
+		BEQ.W	.Error			; NULL? Nothing to print
+		MOVEM.L	a0/a1/a5,-(a7)
+
+		MOVE.L	a0,a5			; APTR X509 object
+
+		; Print the subject
+
+		JSR	_LVOX509_get_subject_name(a6)
+		MOVEA.L	d0,a0
+		LEA.L	CertString,a1		; APTR buffer for string
+		MOVE.L	#255,d0			; ULONG buffer size
+		JSR	_LVOX509_NAME_oneline(a6)
+
+		LEA.L	.SubjectStr(PC),a0
+		LEA.L	.SubjectData(PC),a1
+		BSR	Printf
+
+		; Print the issuer
+
+		MOVE.L	a5,a0			; APTR X509 object
+		JSR	_LVOX509_get_issuer_name(a6)
+		MOVEA.L	d0,a0
+		LEA.L	CertString,a1		; APTR buffer for string
+		MOVE.L	#255,d0			; ULONG buffer size
+		JSR	_LVOX509_NAME_oneline(a6)
+
+		LEA.L	.IssuerStr(PC),a0
+		LEA.L	.IssuerData(PC),a1
+		BSR	Printf
+
+		MOVEM.L	(a7)+,a0/a1/a5
+.Error		RTS
+
+
+.SubjectStr	DC.B	"  Subject: %s",10,0,0
+.SubjectData	DC.L	CertString
+.IssuerStr	DC.B	"  Issuer:  %s",10,0,0
+.IssuerData	DC.L	CertString
+
+
+; ========================================================================
+; Get the top value from the error queue as a human readable string.
+
+PrintSSLErr:	MOVE.L	SSLBase(PC),a6		; a6 = SSLBase
+
+		JSR	_LVOERR_get_error(a6)
+
+		MOVE.l	#250,d1			; ULONG buffer size
+		LEA.L	Buffer,a0		; APTR buffer
+		JSR	_LVOERR_error_string_n(a6)
+
+		LEA.L	.PreStr(PC),a0
+		BSR.W	Print
+
+		LEA.L	Buffer,a0		; APTR buffer with string
+		BSR.W	Print
+
+		LEA.L	.PostStr(PC),a0
+		BSR.W	Print
+
+
+		RTS
+
+.PreStr		DC.B	"SSL Error: ",0
+.PostStr	DC.B	10,0
+
+
+; ========================================================================
+; Convert ErrNo to human readable string and print that
+
+PrintErr:	MOVE.L	SockBase(PC),a6		; a6 = SocketBase
+
+		MOVE.L	ErrNo(PC),d0		; ULONG error code
+		CMPI.L	#10000,d0		; Code in the 10000 range?
+		BMI.B	.CodeOK			; No. No need to change
+		SUBI.L	#10000,d0		; Change to normal range
+
+.CodeOK		LEA.L	.Tags(PC),a0		; APTR tags
+		MOVE.L	d0,4(a0)		; Place error code
+		JSR	_LVOSocketBaseTagList(a6)	; Get error string
+		TST.L	d0			; Success?
+		BNE.B	.TagErr			; No! Do not print
+
+		MOVE.L	.Tags+4(PC),a0		; APTR Error string
+		BSR.B	Print			; Show user
+
+		LEA.L	.Str(PC),a0
+		LEA.L	ErrNo(PC),a1
+		BSR.B	Printf
+
+.TagErr		RTS
+
+.Str		DC.B	" (Error %ld)",10,0
+.Tags		DC.L	SBTM_GETVAL|SBTC_ERRNOSTRPTR
+		DC.L	0
+		DC.L	TAG_END
+
+
+; ========================================================================
+; Print format string in A0, data stream in A1 to console (CLI/Shell)
+
+Printf:		MOVEM.L	d0-d7/a0-a6,-(a7)
+
+		MOVE.L	4.w,a6			; a6 = Exec Base
+		LEA.L	PutChar(PC),a2		; APTR Callback function
+		LEA.L	Buffer,a3		; APTR Buffer to print to
+		JSR	_LVORawDoFmt(a6)
+
+		LEA.L	Buffer,a0		; APTR Buffer to print
+		BSR.B	Print
+
+		MOVEM.L	(a7)+,d0-d7/a0-a6
+		RTS
+
+
+PutChar:	MOVE.B	d0,(a3)+		; Place char into string
+		RTS
+
+
+; ========================================================================
+; Print string in A0 to console (CLI/Shell)
+
+Print:		MOVEM.L	d0-d7/a0-a6,-(a7)
+
+		MOVE.L	OutHand(PC),d1		; BPTR console handle
+		MOVE.L	a0,d2			; APTR String to print
+
+		MOVEQ	#0,d3			; Reset counter in D3
+.CountLoop	TST.B	(a0)+			; Check for null-terminator
+		BEQ.B	.Counted		; Found it? Done counting
+		ADDQ.L	#1,d3
+		BRA.B	.CountLoop		; Keep counting
+
+.Counted	MOVE.L	DosBase(PC),a6		; A6 = DOS
+		JSR	_LVOWrite(a6)		; Print string to console
+
+.NoOut		MOVEM.L	(a7)+,d0-d7/a0-a6
+		RTS
+
+
+
+; ========================================================================
+
+ArgLen:		DC.L	0
+ArgBase:	DC.L	0
+
+OutHand:	DC.L	0
+
+MyStatus:	DC.W	NONE
+Signal:		DC.L	0
+ErrNo:		DC.L	0
+HErrNo:		DC.L	0
+Socket:		DC.L	-1
+Closed:		DC.W	0
+
+CtxObj:		DC.L	0
+SSLObj:		DC.L	0
+
+SSLBase:	DC.L	0
+SSLExtBase:	DC.L	0
+AmiBase:	DC.L	0
+DosBase:	DC.L	0
+SockBase:	DC.L	0
+
+AmiName:	DC.B	"amisslmaster.library",0
+DosName:	DC.B	"dos.library",0
+SockName:	DC.B	"bsdsocket.library",0
+
+
+; ========================================================================
+
+		SECTION TCPConnect,BSS
+
+HostName:	DS.B	256
+GetRequest:	DS.B	286
+CertString:	DS.B	256
+Buffer:		DS.B	4096
+
+

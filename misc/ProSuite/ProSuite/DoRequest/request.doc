@@ -1,0 +1,175 @@
+
+DoRequest Programmer Guide
+From the Amiga Programmer's Suite Book 1, by RJ Mical
+Copyright (C) 1987, Robert J. Mical
+
+
+
+
+
+============================================================================
+=== DOREQUEST PROGRAMMER'S REFERENCE========================================
+============================================================================
+
+The DoRequest() function manages requesters for you.  This is a simple 
+routine that bases its efforts on a data structure called ReqSupport.
+You initialize a ReqSupport structure and then call DoRequest() 
+with the address of it.  DoRequest() displays the requester and then 
+handles the user's interaction with the requester until an end condition 
+is found, at which time control is returned to you.  When DoRequest() 
+returns, the GadgetID of the last selected gadget can be found in your 
+support structure's SelectedGadgetID field.  
+
+Normally, the DoRequest() function ends when the user has selected one 
+of your requester gadgets with the ENDGADGET flag set.  There is one 
+special case, however:  your GadgetHandler procedure, should you 
+specify a vector to one (described below), must return a long value 
+of zero or non-zero.  If it returns a non-zero value, the requester 
+is closed and control is returned to your program.  
+
+There are several procedure vectors in the ReqSupport structure.  
+By filling in these vectors, you specify that you want DoRequest() 
+to call your procedures if certain events occur while the requester 
+is being displayed.  For example, the GadgetHandler procedure vector 
+allows you to specify the address of a procedure that should be called 
+whenever the user selects one of your requester gadgets.  The 
+MouseMoveHandler lets you respond when mouse movements are reported.  
+You set a procedure vector to NULL if you want no action taken when 
+that event occurs.  The vectors are itemized under "Initializing the 
+ReqSupport" below.  
+
+This is an example of setting a procedure vector:
+    LONG gotGadget(gadget, x, y)
+    struct Gadget *gadget;
+    SHORT x, y;
+    {
+        printf("Got a gadget with ID of %ld\n", gadget->GadgetID);
+        if (gadget->GadgetID == END_OF_THE_WORLD) return(TRUE);
+        return(FALSE);
+    }
+
+        ...
+        reqsupport.GadgetHandler = gotGadget;
+        DoRequest(&reqsupport);
+
+
+
+And that's all there is to DoRequest().  It's just a convenience tool 
+for requester programmers.  I created it once long time ago, and now 
+I never have to bother creating such a mechanism again.  And now 
+neither do you.  
+
+Consider carving this routine to suit your needs.  If it doesn't do what 
+you want, hack it!  For example, my original routine didn't handle 
+DISKINSERTED events, but I needed DISKINSERTED events for the 
+FileIO Requester so this routine handles them now!  
+
+
+
+
+=== Initializing the ReqSupport structure ===================================
+
+These are the ReqSupport structure fields that must be initialized 
+before you call DoRequest().  
+
+
+struct Requester Requester;
+    Yes, a complete Requester structure!  Make it a good one.
+
+
+struct Window *Window;
+    As all requesters open in windows, before you open a requester 
+    you must have opened a window, even if it's a window that's opened 
+    just for the requester.  You write the address of the window 
+    structure (as returned by Intuition's OpenWindow() function) into 
+    this variable.  
+
+
+LONG (*StartRequest)();
+    This is a procedure vector.  If this field is not NULL, the 
+    routine pointed to by this field will be called after the requester 
+    is created but before any event processing takes place.  Your 
+    routine will be passed no arguments.  
+
+
+LONG (*GadgetHandler)();
+    This is a procedure vector.  If this field is not NULL, the 
+    routine pointed to by this field will be called with each 
+    GADGETUP event.  GADGETUP events occur whenever the user 
+    selects a gadget that has the RELVERIFY flag set.  Your 
+    GadgetHandler will passed three arguments:  the address of 
+    the gadget and the x and y coordinates of the gadget hit.  
+    Your routine must return a long value of zero or non-zero, 
+    depending on whether you want the requester to be terminated.  
+    If it returns a non-zero value, the requester will be closed 
+    and control returned to your program.  
+
+LONG (*NewDiskHandler)();
+    This is a procedure vector.  If this field is not NULL, the 
+    routine pointed to by this field will be called with each 
+    DISKINSERTED event.  Your NewDiskHandler will be passed no 
+    arguments.
+
+LONG (*MouseMoveHandler)();
+    This is a procedure vector.  If this field is not NULL, the 
+    routine pointed to by this field will be called when the 
+    mouse moves.  The mouse is seen to move when the user has 
+    selected a requester gadget that has the FOLLOWMOUSE flag set.
+    Your MouseMoveHandler will be passed no arguments.
+
+
+
+
+
+============================================================================
+=== DOREQUEST FUNCTION CALL ================================================
+============================================================================
+
+*** DoRequest() **********************************************************
+
+NAME
+    DoRequest  --  Creates and manages a requester
+
+
+SYNOPSIS
+    DoRequest(ReqSupport);
+
+
+FUNCTION
+    Creates a requester according to the specifications laid out
+    by you in a ReqSupport structure, and manages the interaction
+    with the requester for you.  In the end this routine returns control
+    to you with an identifier describing which gadget the user selected
+    to terminate the requester; this identifier can be found in the
+    SelectedGadgetID field of your ReqSupport structure.
+
+    Note that if anything goes wrong while trying to create the 
+    requester (usually out of memory) this routine returns 
+    immediately with the SelectedGadgetID field set to zero.
+    Because of this, you should either avoid GadgetIDs of zero
+    or at least you should have your Cancel Gadget have an
+    ID of zero.
+
+    You can specify routines that will be called when certain events
+    occur while the requester is displayed.  For instance, you can
+    specify that a particular routine be called every time the
+    user selects any of the requester gadgets.  See the documentation
+    and the ReqSupport structure for details about what
+    routine vectors you can supply.
+
+
+INPUTS
+    ReqSupport = pointer to a ReqSupport structure
+
+
+RESULT
+    Returns the identifier of the gadget that ended the requester
+    in the ReqSupport's SelectedGadgetID field.
+    If anything goes wrong (usually out of memory) the SelectedGadgetID
+    field is set to zero.
+
+
+EXAMPLE
+    See the FileIO Requester source code for a detailed example of using
+    this routine.
+

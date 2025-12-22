@@ -1,0 +1,306 @@
+
+        Hardware Access Using The AmigaBASIC And ARexx Interpreters.
+        ------------------------------------------------------------
+
+                                   Part 1.
+                                   -------
+
+        (This wil be the FIRST of a number of articles about direct
+        hardware access using either AmigaBASIC OR ARexx Interpreters.)
+
+
+  Preface:-
+  ---------
+
+  Ever since the birth of the AMIGA, (A1000), it has had some sort of
+  programming language for YOU to use and write YOUR own experimental
+  programs with. These languages were issued ~FREE~ as part of the
+  ~Operating System~ so that the likes of yourselves could produce simple
+  TOOLS and UTILITIES for everyone to use. Eventually other ~FREE~,
+  ~SHAREWARE~ and ~COMMERCIAL~ languages appeared for the AMIGA in ALL
+  guises and some cracking applications were/are-being developed for
+  these machines irrespective of how old they are.
+
+  There were basically three ~FREE~ languages over the years from year
+  one of the AMIGAs birth and these were:-
+
+  1) MetaComCo's (R), ABasic Interpreter. This was issued in the early
+     days and will no longer be mentioned again. It is useful for simple
+     hacks and with the patch supplied on AMINET will work on a standard
+     A1200(HD).
+
+  2) Microsoft's (R), AmigaBASIC Interpreter. This WILL be the interpreter
+     of choice for any BASIC language coding. It is quite powerful for an
+     interpreter and IF you have read the article in Issue 45 of......
+
+                        http://www.thecryptmag.com/
+
+     ......then you WILL have discovered how to use AmigaBASIC on an
+     A1200(HD) with KickStart 3.1x... :)
+     YES!, it is possible, so go to the above site and read the article of
+     how it is done OR alternatively download the article from:-
+
+             http://main.aminet.net/dev/basic/AmigaBASIC-Info.lha
+
+  3) ARexx. A derivative of IBM's REXX scripting language, is also quite
+     powerful although in standard form you can't generate any type of GUI,
+     (Graphical User Interface), to make your program(s) more user friendly.
+     This interpreter works with ALL Classic AMIGAs using KickStart 2.0x
+     and OS 2.0x up to 3.9x. (It is a compromise on the A1 and OS 4.xx+.)
+
+  These three ~FREE ISSUE~ interpreters have been part of the AMIGAs
+  evolution and some interesting programs have been developed using them.
+
+  The series of articles over the next few issues of the magazine will be
+  dedicated to accessing low level HardWare registers to gain access to the
+  external ports using these two interpreters. There will be NO articles
+  about specific low level GRAPHICS access as there are numerous amounts
+  of source code and articles about the subject on AMINET:-
+
+                          http://main.aminet.net/
+
+  (I might include direct sound access, but again, there is a mass of
+  information about it on AMINET.)
+
+  I will be describing how to access the AMIGA NTSC to PAL video change
+  register first. This is probably the simplest piece of low level hardware
+  access that does a useful, external, task.
+
+  This will be in AmigaBASIC first then ARexx. Have fun and ENJOY simple
+  solutions to often difficult problems... :)
+
+  Enjoy... :)
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+  The Back Door:-
+  ---------------
+
+  Anyone who knows me also knows my phrases:-
+
+  1) There is ALWAYS a back door for YOUR use, programming wise, all you
+     have to do is find it!. Confessions of a hacker... He he... :)
+  2) Don't bother to re-invent the wheel AMIGA-WISE as WorkBench has done
+     ALL of the hard work for you, just use your common sense and exploit
+     it!. I will describe my TestCardRTG program later in the series.
+  3) The vast majority of computer users DO-NOT require 32 bit, umpteen
+     channel 'digital' audio, AND/OR 32 bit, 2560x1600, 240 Hz, Wide Screen
+     resolutions.
+  4) Most users are visually impared, that is, they wear some sort of eye
+     assistance. Therefore the AMIGAs standard resolutions are more than
+     enough for general developement work.
+  5) Most people do NOT have perfect stereophonic hearing so the AMIGAs
+     standard audio facilities are more than enough.
+  6) As you get older your responses become slower so multi-core CPUs
+     running at several GHz internal clock-(multiplier) speeds are NOT of
+     great importance, just, plain old simple usability.
+  7) Don't worry about notifying the operating system that you want to use
+     a resource, just grab that resource and use it.
+
+  I will be showing you several back doors that I have exploited over the
+  years and hope that some of YOU readers expand on them and develop your
+  own ideas for simple add-ons, tools and utilities... :)
+
+  FROM NOW ON I WILL ASSUME THAT A STANDARD AMIGA A1200(HD) IS GOING TO BE
+  USED AND THAT YOU HAVE A COPY OF AmigaBASIC WITH ALL OF THE FD FILES
+  ALSO. YOU WILL NOT NEED ANY EXTRA REQUIREMENTS, ONLY A FULL INSTALLATION
+  OF THE RELEVANT AMIGA OPERATING SYSTEM OF YOUR CHOICE. HAVE FUN!!!... :)
+
+  All ~register(s)~, ~address(es)~ and ~data~ values will be in decimal
+  for AmigaBASIC OR hexa-decimal for ARexx and will be for ALL standard
+  classic AMIGAs. OCS, (Original Chip Set), is also assumed to make
+  everything backwards compatible... :)
+
+  The one exception is below...
+
+  From now on......
+    Set = Logic 0.
+  Reset = Logic 1.
+
+============================================================================
+
+  Let Us Start With The NTSC/PAL Switching Hardware Register:-
+  ------------------------------------------------------------
+
+  This is the easiest of the direct hardware register accesses. It will
+  ONLY work on AMIGAs with ECS or AGA chipsets, OCS and RTG will NOT
+  work!!!. I will assume a standard A600(HD), note that I have deviated
+  from the standard A1200(HD) also... :)
+
+  We will be changing video mode PAL to NTSC and vice versa with a single
+  BASIC statement. The hardware register to be changed is 14676444 decimal
+  OR 0xDFF1DC hexadecimal, bit 5. Bit 5 when reset to 1 switches to PAL and
+  set to 0 switches to NTSC.
+
+  CAUTION!!!, ensure that the TV/Monitor attached to the AMIGA can switch
+  between these two modes.
+
+  The AmigaBASIC code will be in OLD-STYLE line number format so people
+  of all ages can understand it...
+
+  REMEMBER MY CRITERIA FROM MAGAZINE ISSUE 44.
+
+  I write in what I call ~baby-basic~, that is, I always use the ~LET~
+  statement to set up variables; also the ~IF.....THEN~ statement(s).
+  I NEVER use the ~ELSE~ or ~ELSE[ ]IF~ statements as in my opinion it
+  makes the code more difficult to understand when you are very young.
+  I do use the ~END[ ]IF~ statement if it is absolutely neccessary though.
+
+  AmigaBASIC Code:-
+  -----------------
+
+10 REM A PAL-NTSC switching program for AmigaBASIC on an A600(HD).
+20 REM Public Domain, 2006, from B.Walker, G0LCU.
+30 REM Set up a simple screen using AmigaBASIC's default window.
+40 REM Bit 5 of register 0xDFF1DC set to 0 switches the video mode
+50 REM to NTSC, reset to 1 switches the video mode to PAL.
+
+60 REM Clear the running window.
+70 CLS
+
+80 REM Create a simple menu.
+90 PRINT
+100 PRINT " PAL-NTSC switching demo, press:-"
+110 PRINT
+120 PRINT " ~P~ or ~p~ for PAL video."
+130 PRINT " ~N~ or ~n~ for NTSC video."
+140 PRINT
+150 PRINT " ~Q~ or ~q~ to Quit."
+160 REM This is the main loop.
+170 LET a$=INKEY$
+180 IF a$="P" OR a$="p" THEN POKE 14676444&,32
+190 IF a$="N" OR a$="n" THEN POKE 14676444&,0
+200 IF a$="Q" OR a$="q" THEN GOTO 230
+210 GOTO 170
+
+220 REM Quit back to workbench.
+230 SYSTEM
+
+  As can be seen from the above simple BASIC code only one bit of one
+  address, (register), 14676444 decimal, (00DFF1DC hexadecimal), is
+  altered. This is bit 5, which when set to 0 enables NTSC and when reset
+  to 1 switches to PAL and vice versa.
+
+  So therefore of the binary byte, bit 5, shown as a *......
+
+         Register 14676444, bits 76543210
+                                 ||||||||
+                                 00*00000
+                                   |
+  ......above is decimal value 32 -+, which is 2^5, (2x2x2x2x2).
+  During normal usage this byte is set to decimal 32 for PAL use OR 0
+  for NTSC use depending on the country. It is set up during bootup.
+
+  Therefore so long as you don't change any other bit all will be well.
+
+----------------------------------------------------------------------------
+
+  ARexx Code:-
+  ------------
+
+/* Direct HW programming using ARexx; the video mode switch. */
+/* Run from a Shell or CLI only, type 'RX Video-Mode.rexx[RETURN/ENTER]' */
+/* without the quotes. Bit 5 of register 0xDFF1DC is set to 0 to switch */
+/* the video mode to NTSC and reset to 1 to switch the video mode to PAL. */
+
+/* Set up any constants or variables. */
+  copyright='9'x'$VER: Video-Mode.rexx_Version_1.00.00_20-09-2006_(C)G0LCU.'
+
+/* Use ECHO for ordinary printing to the screen and SAY for printing results. */
+  DO FOREVER
+    ECHO 'c'x
+    SAY copyright
+    ECHO 'a'x'd'x'9'x'9'x'0) Video mode set to NTSC.'
+    ECHO '9'x'9'x'1) Video mode set to PAL.'
+    ECHO 'a'x'd'x'9'x'9'x'2) Quit this program.'
+    ECHO 'a'x'd'x'9'x'9'x'Type in a number and then press ENTER/RETURN:-'
+    PULL number
+    IF number='0' THEN CALL ntsc
+    IF number='1' THEN CALL pal
+    IF number='2' THEN CALL getout
+  END
+
+/* Switch the video mode to NTSC. */
+ntsc:
+  EXPORT('00DFF1DC'x,'00'x,1)
+  RETURN
+
+/* Switch the video mode to PAL. */
+pal:
+  EXPORT('00DFF1DC'x,'20'x,1)
+  RETURN
+
+/* Exit the program safely. */
+getout:
+  EXIT(0)
+
+----------------------------------------------------------------------------
+
+                       That's all there is to it. :)
+                    Now go to HW_ACCESS_PART2 and enjoy.
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Freeware and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200(HD) in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. Also tested on an A600(HD) in 2MB and 6MB
+    modes. All test conditions were/are running STANDARD KS2.0x to 3.1x,
+    and using standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~docs/hard~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

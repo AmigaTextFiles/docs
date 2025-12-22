@@ -1,0 +1,268 @@
+
+Networking under DOS on PC-Task by megacz@usa.com in 2006-09-03
+=====================================================----------
+
+
+
+about
+-----
+
+This textfile describes step by step what to do in order to get
+networked under DOS on PC-Task using PPPD and some other box
+already connected to the network(lan/internet).
+
+Please note: network under PC-TASK depends on ur CPU really bad!
+             68040 should be sufficient + plus optimized subsystems
+             like: exec and graphics - r welcome, this means that
+             u should use:
+
+              - rom remapper,exec44,cyberbugfix,fblit,systempatch,
+                poolmem,fscreen
+
+             or if u got GFX board:
+
+              - rom remapper,exec44,systempatch,poolmem
+             
+
+Additional : if u plan to use exec44 and systempatch, exclude the
+             exec and interrupts patches completly in systempatch
+             as they might cause troubles!
+
+
+
+requirements
+------------
+
+Needed things:
+
+              - Amiga with 68020+, os2.04+, fastmemory
+
+              - DOS OS, like MS-DOS 5.0+ or better FreeDOS -
+                preferably 1.0 but it will work with 0.9x too.
+                (http://www.freedos.org/)
+                
+              - DOSPPPD 0.6, the main serial connection app. -
+                (freeware and included.)
+
+              - TCPDRV 2.01 or NTCPDRV which consumes less memory -
+                this is our TCP/IP kernel, the most important thing!
+                (freeware and included.)
+ 
+              - PC-TASK 4.0+ - it should work with the demo too -
+                1 meg in the emulation will be enough.
+                
+              - serial.device 43.4 but should work with 37.x+ too.
+
+              - NULLMODEM cable and some other box with free serial port
+                and preferably pppd started in daemon mode, it should work
+                with windows dial up server too,
+                (generic nullmodem driver for windows 95+ included) -
+                NOTE: if u got more than one serial in ur Amiga and using
+                      MiamiDx u can just link up those two ports together
+                      and set NATD in Miami otherwise use external box.
+
+
+
+preparing pc boot floppy
+------------------------
+
+Well, dont do it on a real floppy its a waste of time! Download:
+
+http://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/beta9sr2/disksets/1440KB/B9BOOT01.IMG
+
+and mount it using ConfigDisk form CrossDOS Package or isomount
+(http://www.aminet.net/util/rexx/isomount123.lha) from Aminet.
+
+delete all the directories on that floppy so u will be having
+about 800 kilos free, dont worry it will boot without any problems,
+and extract there our files.
+
+
+
+PC-Task setup
+-------------
+
+First of all DONT use PC-Task_Dynamic version, it will not work!
+
+
+Tooltypes for 4.4:
+
+(CACHEOVERRIDE=$1000000)
+(FORCEFASTMEM)
+(BIOSFILE=NONE)
+CPUID=68040
+TIMERFACTOR=1
+
+
+In program:
+
+-Configure videomodes u like and use EGA/VGA
+ so the overall timmings will be okay.
+
+-Mark Serial checkbox
+
+-"Priority when selected" -1 or less, dont go
+ any higher when TIMERFACTOR is higher that 1
+ as it will lockup ur machine for good.
+
+-"Priority when not selected" -1 or less, read
+ point above.
+
+-"Conventional Memory" 640
+
+-"Extended Memory" 384 or more
+
+-Drive A, set to that u have mounted the image file,
+ if mounted with isomount it would be SPC0:
+
+-Click on "Save configuration" and "Start"
+
+
+
+box setup
+---------
+
+Linux, open shell, su to root and type:
+
+pppd /dev/ttyS1 57600 passive netmask 255.255.255.0 xonxoff local 192.168.55.1:192.168.55.2
+
+if u need details type: man pppd
+if u need ip-forwarding or NAT refer to the os manual.
+
+
+Windows, go "dialup-networking" and find "dialup server" somewhere 
+in the menu, plus add our genric modem to the modems in "control panel" .
+See links at the end of this file, there is a site that explains
+how to setup "dialup server".
+
+
+Amiga(MiamiDX), refer to MiamiDX.guide on how to configure NAT and interfaces.
+it should be very intuitive to the ppl who have some experience with the modem
+otherwise study the .guide its not that hard to get NULLMODEM link to work ;)
+
+
+
+emulator
+--------
+
+After u have booted the DOS in so called "safe mode" type:
+
+pppdd com1 57600 debug mtu 296 mru 296 netmask 255.255.255.0 xonxoff local 192.168.55.2:192.168.55.1
+ntcpdrv -mtu=296 -ip=192.168.55.2 -netmask=255.255.255.0 -gateway=192.168.55.1
+
+thats all, u should be able to ping the other side.
+this is of course a working example, study manulas 
+of pppd for DOS and tcpdrv to customize.
+I hardly recommend 'pppdd' instead of 'pppd' coz
+of linking problems.
+
+example output of pppdd:
+___
+sent [LCP ConfReq id=0x1 <mru 296> <asyncmap 0xa0000> <magic 0x68e7f32> <pcomp> <accomp>]
+fsm_sdata(LCP): Sent code 1, id 1.
+Timeout 53ce:29e4 in 3 seconds.
+LCP: sending Configure-Request, id 1
+rcvd [LCP ConfReq id=0x1 <asyncmap 0xa0000> <auth chap msoft> <magic 0x1143fcd9> <pcomp> <accomp> < 11 04 05 dc> < 13 13 01 30 62 d9 c9 d9 fc 43 11 a0 c1 da c9 4f 08 00 00>]
+fsm_rconfreq(LCP): Rcvd id 1.
+lcp_reqci: rcvd ASYNCMAP (a0000) (ACK)
+lcp_reqci: rcvd AUTHTYPE (c223) (NAK)
+lcp_reqci: rcvd MAGICNUMBER (1143fcd9) (ACK)
+lcp_reqci: rcvd PCOMPRESSION (ACK)
+lcp_reqci: rcvd ACCOMPRESSION (ACK)
+lcp_reqci: rcvd unknown option 17 (REJ)
+lcp_reqci: rcvd unknown option 19 (REJ)
+lcp_reqci: returning CONFREJ.
+sent [LCP ConfRej id=0x1 < 11 04 05 dc> < 13 13 01 30 62 d9 c9 d9 fc 43 11 a0 c1 da c9 4f 08 00 00>]
+fsm_sdata(LCP): Sent code 4, id 1.
+rcvd [LCP ConfReq id=0x2 <asyncmap 0xa0000> <auth chap msoft> <magic 0x1143fcd9> <pcomp> <accomp>]
+fsm_rconfreq(LCP): Rcvd id 2.
+lcp_reqci: rcvd ASYNCMAP (a0000) (ACK)
+lcp_reqci: rcvd AUTHTYPE (c223) (NAK)
+lcp_reqci: rcvd MAGICNUMBER (1143fcd9) (ACK)
+lcp_reqci: rcvd PCOMPRESSION (ACK)
+lcp_reqci: rcvd ACCOMPRESSION (ACK)
+lcp_reqci: returning CONFNAK.
+sent [LCP ConfNak id=0x2 <auth pap>]
+fsm_sdata(LCP): Sent code 3, id 2.
+rcvd [LCP ConfReq id=0x3 <asyncmap 0xa0000> <auth pap> <magic 0x1143fcd9> <pcomp> <accomp>]
+fsm_rconfreq(LCP): Rcvd id 3.
+lcp_reqci: rcvd ASYNCMAP (a0000) (ACK)
+lcp_reqci: rcvd AUTHTYPE (c023) (ACK)
+lcp_reqci: rcvd MAGICNUMBER (1143fcd9) (ACK)
+lcp_reqci: rcvd PCOMPRESSION (ACK)
+lcp_reqci: rcvd ACCOMPRESSION (ACK)
+lcp_reqci: returning CONFACK.
+sent [LCP ConfAck id=0x3 <asyncmap 0xa0000> <auth pap> <magic 0x1143fcd9> <pcomp> <accomp>]
+fsm_sdata(LCP): Sent code 2, id 3.
+calltimeout, calling 53ce:29e4.
+sent [LCP ConfReq id=0x1 <mru 296> <asyncmap 0xa0000> <magic 0x68e7f32> <pcomp> <accomp>]
+fsm_sdata(LCP): Sent code 1, id 1.
+Timeout 53ce:29e4 in 3 seconds.
+LCP: sending Configure-Request, id 1
+rcvd [LCP ConfAck id=0x1 <mru 296> <asyncmap 0xa0000> <magic 0x68e7f32> <pcomp> <accomp>]
+fsm_rconfack(LCP): Rcvd id 1.
+Untimeout 53ce:29e4.
+sent [PAP AuthReq id=0x1 user="" password=""]
+upap_sauth: Sent id 1.
+Timeout 2cb7:2960 in 3 seconds.
+rcvd [PAP AuthAck id=0x1 msg=""]
+upap_rauthack: Rcvd id 1.
+Untimeout 2cb7:2960.
+sent [IPCP ConfReq id=0x1 <addr 192.168.55.2> <compress VJ 0f 01>]
+fsm_sdata(IPCP): Sent code 1, id 1.
+Timeout 53ce:2946 in 3 seconds.
+IPCP: sending Configure-Request, id 1
+rcvd [IPCP ConfReq id=0x1 <compress VJ 0f 01> <addr 192.168.55.1>]
+fsm_rconfreq(IPCP): Rcvd id 1.
+ipcp_reqci: received COMPRESSTYPE (45) (ACK)
+ipcp_reqci: received ADDR (192.168.55.1) (ACK)
+ipcp_reqci: returning Configure-ACK
+sent [IPCP ConfAck id=0x1 <compress VJ 0f 01> <addr 192.168.55.1>]
+fsm_sdata(IPCP): Sent code 2, id 1.
+rcvd [IPCP ConfAck id=0x1 <addr 192.168.55.2> <compress VJ 0f 01>]
+fsm_rconfack(IPCP): Rcvd id 1.
+Untimeout 53ce:2946.
+ipcp: up
+sifaddr ppp0: local 192.168.55.2, remote 192.168.55.1, netmask 255.255.255.0.
+___
+
+
+to test the TCP connectivity use some IRC client 
+like IRCABI or JPIRC, also note that u have
+no DNS here, only IP.
+
+ftp://ftp.trumpet.com.au/tcp-abi/ircabi.zip
+ftp://ftp.irc.org/irc/clients/msdos/jpirc/jpirc092.zip (included)
+
+
+
+final
+-----
+
+Serial networking is a big X, coz of different default settings
+on particular boxes, if it will not work for some reason for u
+by a first time, please dont give up! Just play with the options.
+
+
+
+links
+-----
+
+http://www.freedos.org/                                           -FREEDOS HOMEPAGE
+http://www.bootdisk.com/                                          -BOOTDISKS
+http://www.nu2.nu/bootdisk/network/                               -ALTERNATIVE NETWORKING
+http://www.windowsnetworking.com/articles_tutorials/dunservr.html -DIALUP SERVER TUTORIAL!
+http://www.opus.co.tt/dave/indexall.htm                           -LOTS OF DOS PROGGIES
+http://www.fdisk.com/doslynx/                                     -NETWORK PROGGIES
+http://www.loop-back.com/null-mod.html                            -NULLMODEM WIRING
+http://en.wikipedia.org/wiki/Null_modem                           -NULLMODEM WIRING_2
+http://www.lammertbies.nl/comm/info/RS-232_null_modem.html        -NULLMODEM WIRING_3
+
+
+
+offline
+-------
+
+have fun.
+bye bye!
+e-mail: megacz@usa.com

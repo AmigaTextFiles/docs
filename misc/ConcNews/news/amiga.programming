@@ -1,0 +1,4681 @@
+Article 21065 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!think.com!ames!sun-barr!rutgers!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Amiga doesn't pre-emptive multitask? (...)
+Message-ID: <36302@cbmvax.commodore.com>
+Date: 22 Oct 92 13:36:40 GMT
+References: <1c0b66INNam0@agate.berkeley.edu> <paulk.20wy@terapin.com> <1992Oct22.013827.24706@netcom.com> <1c5oktINNcvd@agate.berkeley.edu>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 24
+
+In article <1c5oktINNcvd@agate.berkeley.edu> pete@plutonium.CChem.Berkeley.EDU (Pete Goodeve) writes:
+>Just to make sure I hadn't missed it the first time, I went back to FindPort
+>again, and I stand by my statement that it has *no* protection.  Somebody
+>prove me wrong, please...
+
+FindPort() is missing protection prior to V39.  FindPort() protects itself
+properly in V39 and up.  Note:  this does not protect the RESULT after
+the return from FindPort(), so you still need some protection if you
+expect to PutMsg() to that port.  That protection could be Forbid()/Permit(),
+or any other higher-level protocol.  Such a protocol would by any kind
+of guarantee that a named port won't vanish on you.  For example, if
+a library opens a port when it is first opened, and deletes it when it
+is last closed, then holding the library open is all the protocol you
+need to guarantee the persistence of that port from the time you FindPort()
+it until you're done with it.
+
+>                                            -- Pete --
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"I believe it's bad luck to be superstitious."
+
+Article 22102 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!wupost!uwm.edu!rutgers!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: New hardware reference guide?
+Message-ID: <37062@cbmvax.commodore.com>
+Date: 16 Nov 92 14:37:23 GMT
+References: <37026@cbmvax.commodore.com> <1992Nov15.153046.4994@imada.ou.dk>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 99
+
+In article <1992Nov15.153046.4994@imada.ou.dk> breese@monet.imada.ou.dk (Bjoern Reese) writes:
+>In article <37026@cbmvax.commodore.com> chrisg@cbmvax.commodore.com (Chris  
+>Green) writes:
+>> In article <1992Nov13.083504.58455@qut.edu.au> podesta@qut.edu.au writes:
+>> >Come on now!! How many advanced system software, that was written on a
+>> >1.3 A500 with no harddrive will work on a A4000???
+>> 	A LOT.
+>
+>Ahhh! But not all? That's interesting.
+>
+>Does anybody have any info (what software did break, and what
+>was the possible cause?)
+
+Sure.  There are lots of reasons stuff that ran under 1.3 on A500's
+breaks on the A4000.  Here is a partial list, off the top of my head:
+
+- Breaks under ECS or higher (writing to chip registers that were
+  undefined under the original chipset, writing non-zero values
+  to reserved bits of existing registers, failing to handle non-zero
+  values in reserved bits when reading existing registers)
+- Breaks under AA or higher (same basic kinds of reasons, also
+  making bad assumptions about the chipset)
+- Breaks with fast RAM installed (forgetting to request MEMF_CHIP
+  when necessary)
+- Breaks on a 1MB chip-RAM system with no fast RAM (assumes if memory
+  > 512K, then some MEMF_FAST must be available).
+- Breaks on a 2MB chip-RAM system with no fast RAM (eg. A1200).  Same
+  reason as above.
+- Breaks on 68020 and up, 68030 and up, or 68040 and up.  The usual
+  reasons are:
+	- Software timing-loops or other processor speed dependencies
+	- Use of "MOVE SR" instruction (priviledged on 68010)
+	- Self-modifying code fails to work due to presence of caches
+	  (depending on the code path and cache size, you might work
+	  on the 020 and 030 but not the 040, for example)
+	- Use of high 8 bits of address pointer to store type-data
+	  (all Amiga pointers must be 32-bit accurate)
+	- Has an enforcer hit (this is generally fatal on 68040 and up)
+- Breaks due to dependency on undocumented side-effect of the OS.  Some
+  examples:
+	- Depending on certain registers defined as "trash" actually
+	  being preserved across a function call.
+	- Assuming values of "trash" registers, eg. "noticing" that
+	  A1 points to the RastPort on the return from a certain
+	  graphics call.
+	- Taking the return code from the wrong register (eg. D1 or A0).
+	- Depending on "slowness" of the OS.  New releases often have
+	  faster routines, and one source of problem is a race condition
+	  or a missing WaitBlit() that you survive only by virtue of
+	  having a slower CPU or an older (less optimized) OS.
+	- Poking read-only members of structures or private structures
+	  (eg. writing to IntuitionBase)
+	- Passing the wrong flag to a function or a structure.  (The
+	  best example of this is placing the IDCMP flag ACTIVEWINDOW
+	  into the NewWindow.Flags field by mistake.  V35 added a NewWindow
+	  flag with that numeric value.  This caused massive enforcer hits
+	  and software death -- we put in a kludge to protect against this
+	  case).
+	- Passing non-zero values in reserved fields (eg. BitMap->Pad byte).
+- Breaks due to "abuse of system".  Examples include:
+	- Incorrectly or incompletely taking over the system
+	- Not using system-supplied mechanisms (one application
+	  "knew" that under 1.3, audio.device was third (or whereever, it
+	  doesn't matter what the exact position was) on the device list.
+	  Rather than call OpenDevice(), it just took the third device
+	  pointer.
+	- Assuming the ROM size or location.  (jumping to the start of the
+	  ROM in order to reset the computer amounts to jumping to middle
+	  of the ROM now that the ROM is 512K large).
+	- We have well-defined requirements on floppies, as far as
+	  the settle-times, track-to-track times, etc.  Some programmers
+	  empirically determine that they can shave (say) 3 ms off every
+	  seek.  Not all drives sold for the Amiga can handle this.
+	- Similarly, violating the timing and handshaking requirements
+	  of the keyboard.
+
+There are plenty of other reasons, but these are a pretty good sampling.
+Virtually _all_ of these were addressed in some form or other, even
+in the original 1.0 RKMs.
+
+In fairness, you have to add to the list such OS-related problems as:
+- Changes in poorly-defined areas of the system.  Occasionally, the
+  exact behavior of a function changes due to the fact that we are
+  unaware how certain non-documented or under-documented aspects
+  have been used in the field.
+- Accidental changes in behavior of a system function.  Sometimes
+  in extending, enhancing, or speeding up a function, a small behavioral
+  aspect might be altered.  If this aspect was part of the function's
+  definition, then that would consitute a bug.  If not, then it
+  may not technically be a bug, but it can kill software.
+
+>Bjoern Reese                   |     Email: breese@imada.ou.dk
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"I believe it's bad luck to be superstitious."
+
+Article 22079 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!decwrl!contessa!mwm
+From: mwm@contessa.palo-alto.ca.us (Mike Meyer)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: A Style Guide Question
+Message-ID: <mwm.2nu7@contessa.palo-alto.ca.us>
+Date: 16 Nov 92 07:08:02 GMT
+References: <17474@pitt.UUCP>
+Organization: Missionaria Phonibalonica
+Lines: 45
+X-NewsSoftware: Amiga Yarn 3.4, 1992/08/12 15:49:52
+
+In <17474@pitt.UUCP>, dan@cs.pitt.edu (Dan Drake) wrote:
+> This is a style guide question.
+> 
+> To be consistent in my user interface, I am using buttons called done and 
+> cancel, that reside in all of my windows.  I want the user to be able to
+> activate these buttons through their keyboard equivalents: eg d for done, 
+> and c for cancel.  Now on several of these windows, I want the user to type
+> text into a beveled box which I handle manually.  THe problem is that if the
+> user wants to type a d or a c, there is some ambiguity concerning what 
+> should happen.  Will the buttons be activated, or should the characters
+> appear in the "textbox"?  I have 2 solutions, and would be interested in
+> any other solutions or recommendations.
+
+I just designed an interface around this same problem.
+
+> 1.) If a text box is active, the user must click on the buttons to activate
+> them.  I consider this unacceptable because it ruins the orthogonality of
+> the interface.  You can't have some things work in one window, and not in
+> others.
+
+I don't particularly like that one, either. It didn't change the
+orthoganality of the interface (i.e. - all buttons would be the same),
+but it meant you'd have to use the mouse to get to the keyboard
+shortcuts.
+
+> 2.) Use (ALT|CTRL|right amiga) key to activate the buttons in all cases.
+> Alt doesn't work because European languages use it.  Control is awkward
+> for left handed people to use like me. (I like to keep one hand on the
+> mouse, and one on the keyboard), Right Amiga is somewhat awkward too.
+
+You forgot that in standard text gadgets, CTRL can do usefull things.
+
+> 3.) Don't use keyboard equivalents.  I really don't like this option.
+
+I agree; it's unacceptable. But you forgot:
+
+4.) Add menu items Done and Cancel that are identical to the buttons,
+	and have the shortcuts be Amiga-D and Amiga-C.
+
+That's what I settled on. That made *all* my keyboard shortcuts be
+Amiga-<>, and doesn't interfere with the text entry gadget (which was
+the bulk of the application). If you're going to have modes where it
+wouldn't be active, you might make unadorned d and c work, as well.
+
+	<mike
+
+
+Article 22165 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: A Style Guide Question
+Message-ID: <37104@cbmvax.commodore.com>
+Date: 17 Nov 92 16:31:21 GMT
+References: <17474@pitt.UUCP> <mwm.2nu7@contessa.palo-alto.ca.us>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 32
+
+In article <mwm.2nu7@contessa.palo-alto.ca.us> mwm@contessa.palo-alto.ca.us (Mike Meyer) writes:
+>4.) Add menu items Done and Cancel that are identical to the buttons,
+>	and have the shortcuts be Amiga-D and Amiga-C.
+
+This is not a good idea.  First of all, Amiga-C is the _standard_ key
+equivalent for "copy to clipboard".  Let's try not to abuse those
+standards that have appeared in at least some number of apps.
+
+Second, the fact that menu keys are processed while string gadgets
+are active is effectively a "bug" in Intuition 1.3 and earlier.  2.0
+and higher Intuition cannot readily support this.  (Note that I called
+it a bug.  I'm not saying that the bug produces undesirable behavior).
+
+There needs to be some modeless way to strike the key-equivalent for
+a gadget even while a string gadget is active.  There isn't a good
+universal way right now.
+
+The Amiga Style Guide addresses this problem by recommending that
+<ENTER> in a string gadget deactivate the string gadget but not close
+the window or take any other drastic action.  The idea is that <ENTER>
+followed by "D" or "C" would have the desired effect.
+
+Any better solution requires additional support from the OS.
+
+>	<mike
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"I believe it's bad luck to be superstitious."
+
+Article 22149 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!zaphod.mps.ohio-state.edu!ub!dsinc!bagate!cbmvax!chrisg
+From: chrisg@cbmvax.commodore.com (Chris Green)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Bug in ViewPorts under 2.0
+Message-ID: <37090@cbmvax.commodore.com>
+Date: 17 Nov 92 12:31:59 GMT
+References: <1992Nov16.065000.1070@doug.cae.wisc.edu>
+Reply-To: chrisg@cbmvax.commodore.com (Chris Green)
+Organization: Commodore, West Chester, PA
+Lines: 32
+
+In article <1992Nov16.065000.1070@doug.cae.wisc.edu> pochanay@cae.wisc.edu (Adisak Pochanayon) writes:
+>
+>    I have been writing some code that performs horizontal scrolling of
+>extremely large bitmaps (quickly).  This code works properly under both
+>1.3 and 2.0 in lowresolution.  It also works under 1.3 in hi-res fine.
+>However, when I use 2.0 and hi-res I get a wierd problem.  The RxOffset
+>in the RasInfos structure shifts the offset into the bitmap by two
+>pixels instead of 1.  Is this a bug under 2.0???  Or do I have to set
+>any special flags in the view or viewport that I'm using.  Has anybody
+>tried horizontal scrolling with a hires screen???  Why can 1.3 be accurate
+>in scrolling to a single pixel and then 2.0 only to multiples of two
+>(actually, it multiplies RxOffset by two or at least that's the way I
+>can duplicate the result in 1.3).
+>
+>    Please e-mail me with any help at pochanay@cae.wisc.edu asap.
+>Thanks.
+
+
+	This is the infamous "RxOffset Bug". 1.1,1.2,1.3, + 3.0 interpret the
+RxOffset in the correct manner (as hires pixels). Somehow 2.0 started
+interpreting it as low-resolution coordinates without anyone noticing
+before it was too late. This was fixed in 3.0. You'll have to make
+your code version sensitive.
+
+-- 
+*-------------------------------------------*---------------------------*
+|Chris Green - Graphics Software Engineer   - chrisg@commodore.COM      f
+|                  Commodore-Amiga          - uunet!cbmvax!chrisg       n
+|My opinions are my own, and do not         - icantforgettheimpression  o
+|necessarily represent those of my employer.- youmadeyouleftaholeinthe  r
+|"A screaming comes across the sky..."      - backofmyhead              d
+*-------------------------------------------*---------------------------*
+
+Article 22273 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!spool.mu.edu!darwin.sura.net!ukma!cs.widener.edu!dsinc!bagate!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: GRIPE! about refreshing string gadgets
+Message-ID: <37149@cbmvax.commodore.com>
+Date: 19 Nov 92 14:46:23 GMT
+References: <paulk.28zg@terapin.com>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 99
+
+In article <paulk.28zg@terapin.com> paulk@terapin.com (Paul Kienitz) writes:
+>In my current project, I have lots of string gadgets, and sometimes
+>they need to be enabled and disabled in response to other input, and
+>sometimes they need to have their text contents altered, and sometimes
+>both at once.  I've noticed that all versions of Intuition do a LOUSY
+>JOB of refreshing string gadgets in different states, when the string
+>is shorter than the gadget and I'm also using the 2.x feature of
+>having different colors for active and inactive string gadgets.
+>Furthermore, different versions mess up in different ways.
+
+Intuition does not do a "lousy" job of this at all.  There is a single
+buglet that I know of, and it only affects 2.0, not 1.3 or 3.0.  (That
+hardly qualifies as "all versions").  This bug involves StringExtend
+string gadgets whose background color is set to be other than zero.
+If one string gadget is disabled, then all string gadgets earlier in the
+list will have some remnant of the ghosting pattern in their container.
+
+If you wish to report any other bug, please describe that bug.  Also,
+be sure to remove a string gadget from the window before modifying
+its contents or the fields of any of its structures.
+
+> - Pad the current string in the gadget with spaces so as to
+>    completely fill the visible space with text.  Under 2.x, pad it
+>    so the terminating nul char falls just after the end of the
+>    visible space, under 1.x pad it so the nul is just inside the end
+>    or else it will refresh one character space OUTSIDE the
+>    boundaries of the gadget.
+
+There is a version-based difference in how wide the area to be cleared
+will be.  Well-designed gadgets come out the same under all versions,
+but ill-specified ones may have their appearance altered depending on
+the OS version.  Under 1.3 and earlier, Intuition clears only a whole
+number of characters.  If you're using Topaz 8, and you make your gadget
+70 pixels wide, Intuition clears only the largest multiple of the font
+width (8 in this case) less than the gadget width.  That would be 64
+in this case.
+
+Under 2.0 and up, we needed to respect the declared gadget's width.  This
+caused too many visual problems, so we only did it for StringExtend gadgets.
+The visual problems were caused when someone did something like:
+
+(DON'T DO THIS, THIS EXAMPLE IS WRONG)
+Declare a topaz 8 string gadget to be 70 pixels wide.  Now observe that
+the gadget appears to be only 64 pixels wide.  Make a border suitable
+to cover a 64-pixel wide gadget (eg. a box 66 pixels wide).  Now V1.3
+only rendered in 64 pixels of the string, so the visuals worked.  2.0
+and up tried to use all 70 (as the programmer _requested_), and this overwrote
+the borders.  The programmer erred by specifying 70 pixels instead of
+64 for the gadget, or erred by sizing the border to fit a 64 instead of
+a 70-pixel wide gadget.
+
+This bug was so frequently seen in applications that Intuition grew
+Yet Another Kludge, and we only do the right thing (respecting the gadget's
+declared width) for StringExtend gadgets, whichwe assume are well-designed,
+since they're new for 2.0.  If you add StringExtend to a gadget you designed
+in this "ill-specified" way, you must fix your bug.
+
+The other thing with width of rendering is that some people got tricky
+and allowed the cursor to "hang out" of the edge of the gadget render area.
+This was done by specifying a container width of (maxchars+1)*font-width.
+So a three-character topaz-8 gadget of width 32 had this property.  (Intuition
+used to only blast up to maxchars*fontwidth).  The cursor could actually
+exceed the gadget render area, which is bad for a number of reasons.  Such
+applications now find that the full 32 pixels will be set to background
+color, instead of the former 24.
+
+In case people are curious as to why Intuition had to change behavior,
+the answer lies in a few areas.  Blasting the gadget's declared width
+is required in order to support proportional fonts (and compatibility aside,
+is the preferred behavior for monospace fonts too).  Not allowing the
+cursor to "hang outside" the render area is required by the way the cursor
+is drawn under 2.0 and up, which in turn is mandated by the fact that
+modern gadgets must not make "canvas assumptions", that is to say, must
+not assume the state of the pixels that it's rendering on top of, unless
+it can _ensure_ that state.
+
+>    anyway, come to think of it), RefreshGList the gadget a second
+>    time with the window rastport's write mask temporarily set to
+>    zero.  This lets Intuition know the current string length,
+>    without doing any actual rendering.
+
+Do you think Intuition is supposed to respect the write mask you set
+in your window?  I don't think it's correct for it to do so, and under
+1.3 it accidentally does in some places.  Under 2.0 and up, we've caught
+all these cases, and Intuition ensures that it's rendering comes out
+how it _needs+ it to be.  Assuming your mask will curtail Intuition's
+activity is called "relying on a side-effect".  Relying on a side-effect
+is a compatibility bug in your app.
+
+Your example code is poking into the StringInfo of a gadget currently
+attached to a window.  This is illegal.  You must remove the gadget
+from the window before playing with it.
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"I believe it's bad luck to be superstitious."
+
+Article 22223 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Aspect ratio from display database -- How?
+Message-ID: <37134@cbmvax.commodore.com>
+Date: 18 Nov 92 17:04:51 GMT
+References: <shf.721983639@well.sf.ca.us>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 25
+
+In article <shf.721983639@well.sf.ca.us> shf@well.sf.ca.us (Stuart H. Ferguson) writes:
+>I want to open a screen that mimics the Workbench so my program will run
+>under the user's prefered display configuration.  I think I understand
+>about public screen and mode-id's and the display database.
+
+For a given mode ID, you can find much of what you need in the DisplayInfo
+structure.  You can use GetDisplayInfoData() with the DTAG_DISP option
+to get this structure.  The DisplayInfo.Resolution field gives you the
+"ticks" per pixel of a given mode.  Ticks are an arbitrary unit, but
+the number of ticks on a display is a crude constant.  That is to say,
+it's typically of the same order, regardless of monitor type.  The
+ratio of Resolution.X to Resolution.Y is the aspect ratio.
+
+How ticks per pixel converts to pixels per inch is not defined, but
+there might be a way in the future for the user to effectively measure
+pixels per inch on his particular screen, and inform the system.
+
+>		Stuart Ferguson		(shf@well.sf.ca.us)
+
+     Peter
+
+Article 22152 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cbmvax!chrisg
+From: chrisg@cbmvax.commodore.com (Chris Green)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: system-friendly screen-hack ?
+Message-ID: <37092@cbmvax.commodore.com>
+Date: 17 Nov 92 12:50:58 GMT
+References: <1992Nov16.192637.29578@ifi.uio.no>
+Reply-To: chrisg@cbmvax.commodore.com (Chris Green)
+Organization: Commodore, West Chester, PA
+Lines: 23
+
+In article <1992Nov16.192637.29578@ifi.uio.no> christim@ifi.uio.no (Christian Moen) writes:
+>I need to write to a screen blindingly fast, but want to do this
+>in a system-friendly manner. I've thought about grabbing the
+>bitplane-pointers in the screen-structure, but is this really
+>system-friendly ?  What about future DIG/RTG ?
+
+	NEVER, NEVER use the imbedded Screen BitMap structure. Use
+Screen->RastPort->BitMap. Under DIG, or on systems with more than 
+8 bitplanes, the copy of the bitmap can't be valid.
+
+>
+>I've also thought about using the graphics.library BltBitMap function,
+>put I think I'm better off not using the blitter.
+
+	BltBitMap will work fine under DIG/RTG.
+-- 
+*-------------------------------------------*---------------------------*
+|Chris Green - Graphics Software Engineer   - chrisg@commodore.COM      f
+|                  Commodore-Amiga          - uunet!cbmvax!chrisg       n
+|My opinions are my own, and do not         - icantforgettheimpression  o
+|necessarily represent those of my employer.- youmadeyouleftaholeinthe  r
+|"A screaming comes across the sky..."      - backofmyhead              d
+*-------------------------------------------*---------------------------*
+
+Article 20113 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: How do you get a SINGLE character read?
+Message-ID: <BvG2uC.GAE@unx.sas.com>
+Date: 1 Oct 92 13:30:12 GMT
+References: <1992Sep28.164347.13534@scic.intel.com> <jow.01xk@hcast.adsp.sub.org>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 24
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <jow.01xk@hcast.adsp.sub.org>, jow@hcast.adsp.sub.org (Juergen Weinelt) writes:
+|> In article <1992Sep28.164347.13534@scic.intel.com> gatlin@scic.intel.com (Robert Gatlin) writes:
+|> >I am writting a program in C (Lattice) and need to read a single
+|> >character from the keyboard without having to wait for the user
+|> >to hit <CR>. I have tried to use the ansii getc() function, but
+|> >obviously waits for a <CR>. The I*M version of Turbo C has a
+|> >non-ansii standard function getch() which does what I want. Is
+|> >a similar function or workaround available for Amiga C?
+
+Check out RawIO on Fred Fish disk #85 (Yes, 85).  It contains
+source to a function to change the console window to raw mode
+based on a Lattice C filehandle.  This still works with Lattice
+and SAS/C version 5.x.  Under 6.0, functions are provided in the
+library to do this.
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 22580 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!pipex!warwick!coventry!csg019
+From: csg019@cch.coventry.ac.uk (-~=Zaphod=~-)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Cracking games
+Message-ID: <ByBs2B.K3F@cck.coventry.ac.uk>
+Date: 26 Nov 92 13:27:42 GMT
+References: <By9Dz6.10C@usenet.ucs.indiana.edu>
+Sender: news@cck.coventry.ac.uk (news user)
+Organization: Coventry University
+Lines: 51
+Nntp-Posting-Host: cc_sysh
+
+In article <By9Dz6.10C@usenet.ucs.indiana.edu> shulick@navajo.ucs.indiana.edu writes:
+
+>I'd like to know how cracking games is done.  Not because I want to
+>crack them & copy them, but because I want to learn how one can trace
+>the adresses to rip out graphics and music.  I want to try to program a
+>decent mod-ripper or graphic-ripper, but i need to understand this
+>first.  Someone mentioned a disassembler and doing something-rather.. I
+>can't recall.  Can someone please help?  Thanks.
+
+To crack games you will need:
+
+1.Hardware reference manual.
+2.An indepth knowledge of the amiga and the way it works.
+3.An in depth of 68000 assembly language.
+4.Amiga disk drives inside and out. (Shows you how to do MFM loaders.)
+
+Most games are protected by using one long track for each sector.
+The loader for this disk format is stored on the boot block, which will
+always be readable, this is where most of the cracking takes place.
+
+I won't tell you exactly how its done, because there are some people who don't
+take kindly to this kind of thing.
+
+In a nut-shell you must:
+
+1..Use a dissembler on the boot block.
+2..Find out how long the tracks are. (Search for the disk registers.)
+3..Write an assembly language program that mimics the loader, but after 
+   reading the track in, it writes it in amiga dos format to another disk.
+   After you've done this you will have a copy or the original in amiga
+   dos format. It won't work as it is.
+4..You must now use a dissembler on the new boot block, change the loader
+   from loading a protected disk, to loading amiga dos tracks.
+   Forget the trackdisk.device, most of the hardware will have been
+   tampered with.
+
+If your disk does not work, then the chances are that the disk protection
+has been changed after loading the program.
+
+Getting rid of password protection is done by searching for the text, then
+searching for a routine that access the address of the text, though the
+text is usually coded with exclusive ORs.
+
+I'm not sure what you could use the graphics/sound for though, if you are
+writting a demo, you get no brownie points for originality.
+
+-- 
+*******************************************************************************
+*        ///  A member of S.H.I.T. (Super High Intelligence Team)    ///      *
+*       ///        Fight, defeat and kill organized laming.         ///       *
+****\\\X//********Steven Haggerty**csg019@uk.ac.cov.cck ok?*****\\\X//*********
+
+Article 22749 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!lunic!eru.mt.luth.se!enterpoop.mit.edu!usc!zaphod.mps.ohio-state.edu!cs.utexas.edu!uunet!spool.mu.edu!agate!stanford.edu!rutgers!ub!dsinc!bagate!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: BOOPSI and Styleguide question
+Message-ID: <37371@cbmvax.commodore.com>
+Date: 30 Nov 92 23:56:33 GMT
+References: <1est9mINN4rg@uni-paderborn.de>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 51
+
+In article <1est9mINN4rg@uni-paderborn.de> fillg1@uni-paderborn.de (Michael Illgner) writes:
+>Hi,
+>
+>I have some questions concerning the BOOPSI gadgets and images. Is it legal to
+>change the colors of for example a LEFTARROW image by copying the screens DrawInfo
+>and supplying a new Pen array ? I want to interchange the colors of a button gadget,
+>so in its normal stage it should be grey an in selected state blue. Is this styleguide
+>conform ? 
+
+You can't supply different pen arrays for different states, so this won't
+work.  The system arrows are really designed to operate in a window border.
+The system really needs a set of arrows for 'inside the window' use.
+
+>Next question, I want to write an palette requester for Kick3.0, therefor I need a
+>button which is filled with the selected color and I want the normal 3D-look frame around
+>it. How can I accomplish this ? Is it possible to render a BOOPSI gadget using 2 images
+>like the interior filled rectangle and a frame ?
+
+Boopsi gadgets get GM_RENDER methods, in which they can do all kinds of
+rendering.  This can include actual rendering and/or passing IM_DRAW to
+a gadget's image, which, if boopsi, can also do all kinds of rendering.
+
+The boopsi frameiclass image class supports exactly what you need.  In
+your OM_NEW method for your gadget, you can create a frame with NewObject()
+on frameiclass, with IA_FrameType of FRAME_BUTTON.  This will give you
+a filled frame, over which you can render your text.  For example:
+
+	case GM_RENDER:
+
+		...	/* Get RP, etc */
+		/* Now draw the frame, with state=IDS_NORMAL or IDS_SELECTED */
+		DrawImageState( rp, myframeimage, 0, 0, state, drawinfo );
+		PrintIText( rp, labeltext, 0, 0 );
+
+>Is it possible to get the images or even the gadgets from the gadtools gadgets ? This
+>would be the key for a uniform look of the gadgets.
+
+frameiclass provides you the ability to get GadTools-styled frames.
+
+NB: Under 2.0, only the thin frame (FRAME_DEFAULT) is supported by
+frameiclass.  The GadTools-style FRAME_BUTTON and the GadTools string-gadget
+FRAME_RIDGE are new for V39.
+
+>							Michael
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"Opinions enlarged to show detail"
+
+Article 23103 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!spool.mu.edu!agate!dog.ee.lbl.gov!network.ucsd.edu!rutgers!cbmvax!jesup
+From: jesup@cbmvax.commodore.com (Randell Jesup)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SYS_Asynch
+Message-ID: <37609@cbmvax.commodore.com>
+Date: 7 Dec 92 04:37:31 GMT
+References: <1992Dec7.030827.27513@newshub.ccs.yorku.ca>
+Reply-To: jesup@cbmvax.commodore.com (Randell Jesup)
+Organization: Commodore, West Chester, PA
+Lines: 41
+
+wlanders@nexus.yorku.ca (W L Anderson) writes:
+>What exactly is the SYS_Asynch tag with supposed to do with SystemTagList?
+>I thought it was supposed to run the command specificed asynchronously, but 
+>I've been unable to get it to.  The code I'm using is below.
+
+>	} else {
+>		SystemTags("dir work:downloads > CON:0/0/640/80/Dir/CLOSE/WAIT",
+>			   SYS_Output, Output,
+
+add			   SYS_Input, NilFH,
+where NilFH is the result of Open("NIL:",MODE_OLDFILE);  Otherwise System()
+will cause your Input() filehandle to be closed, if the command is actually
+run Async.  Read the autodocs.
+
+>			   SYS_Asynch, NULL,
+				       ^^^^
+				       TRUE
+
+>			   TAG_END, NULL);
+>	}
+> 
+>	SystemTagList("date", TAG_END, NULL);
+>	sleep(200);
+>	printf("exiting now\n");
+>} 
+>
+>The date gets printed only after the output from the dir command completes.
+>Any ideas?
+
+	See above.  You set SYS_ASYNCH to false, which is the default.  If
+you had set it to true, you probably would crash (see above again).
+
+	I assume you're running 37.175.  (People, when asking for help it
+never hurts to include version number info...)
+
+-- 
+To be or not to be = 0xff
+-
+Randell Jesup, Jack-of-quite-a-few-trades, Commodore Engineering.
+{uunet|rutgers}!cbmvax!jesup, jesup@cbmvax.cbm.commodore.com  BIX: rjesup  
+Disclaimer: Nothing I say is anything other than my personal opinion.
+
+Article 24312 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!uunet!stanford.edu!rutgers!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: RKM description of WaitPort()
+Message-ID: <38305@cbmvax.commodore.com>
+Date: 5 Jan 93 15:50:15 GMT
+References: <1993Jan1.221013.26070@urbana.mcd.mot.com> <1ib7peINNele@uwm.edu>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 77
+
+In article <1ib7peINNele@uwm.edu> bloc1469@ee.ee.uwm.edu (Gregory R Block) writes:
+>In article <1993Jan1.221013.26070@urbana.mcd.mot.com> qbarnes@urbana.mcd.mot.com (Quentin Barnes) writes:
+>>It seems to me to OS is waking up the task before it has attached the
+>>message to the specified port
+
+>No, it's just possible to send a signal to a port without sending a
+>message.
+
+In general (99.999%?) one doesn't signal a port without sending a
+message.  That's not the issue at all.  I'll show two quite possible
+scenarios for the order of message arrival and application processing
+of messages, and you'll see quite easily how the signal might be
+set even though there are no waiting messages.
+
+Because messages queue but signals don't, there can be multiple
+messages for one signal (in this case two).  Thus, an application
+must remove ALL messages from the message port when it wakes up,
+which is why you often see:
+
+	while ( msg = GetMsg( port ) )
+	{
+	    ...
+	}
+
+Scenario A:
+
+ - Message 1 arrives and is queued, and the signal is set.
+
+ - Message 2 arrives and is queued, and signal is set (which has
+   no effect, since the signal was already set).
+
+ - Your application wakes up, clearing the signal.
+
+ - The application GetMsg()s Message 1 and processes it.
+
+ - The application GetMsg()s Message 2 and processes it.
+
+ - The application finds no further messages, so Wait()s for the next
+   signal.
+
+OK, now consider a slightly different order of arrival:
+
+
+Scenario B:
+
+ - Message 1 arrives and is queued, and the signal is set.
+
+ - Your application wakes up, clearing the signal.
+
+ - The application  GetMsg()s Message 1 and starts to process it.
+
+ - Message 2 arrives and is queued, and the signal is set.
+
+ - Your application finishes with Message 1, and like all well-written
+   applications, you loop back to see if there are any more messages
+   queued, and you find Message 2, so you GetMsg() that and process
+   it.  NOTE that you didn't WaitPort() a second time, so the signal
+   is not cleared.
+
+ - You're done with Message 2, and find no further messages on your
+   port, so you WaitPort().
+
+ - You wake up immediately because there was a left-over signal, as
+   described above.  So you check for messages, and there are none.
+
+To summarize:  because messages queue and signals do not, you have to
+exhaust the message port for every signal received.  Because you do
+that, you might end up with a set signal whose messages you've already
+processed.
+
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"Opinions enlarged to show detail"
+
+Article 24768 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!uunet!zaphod.mps.ohio-state.edu!ub!dsinc!bagate!cbmvax!cbmehq!cbmfra!forgeas
+From: forgeas@swinjm.adsp.sub.org (Jean-Michel Forgeas)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: 680x0 Branch Instructions?
+Message-ID: <zADhs*Bb2@swinjm.adsp.sub.org>
+Date: 12 Jan 93 12:22:59 GMT
+References: <1993Jan7.184445.25823@fcom.cc.utah.edu>
+Reply-To: forgeas@swinjm.adsp.sub.org (Jean-Michel Forgeas)
+Organization: The Software Winery
+Lines: 42
+X-Newsreader: Arn V1.00 alpha rel2
+
+In article <1993Jan7.184445.25823@fcom.cc.utah.edu>, Val Kartchner writes:
+
+> I know what the eight common ones do.  (BRA, BSB, BLS, BLE, BEQ, BNE, BGE,
+> BGT)  I think that four of the others are used for branches based on
+> unsigned compares, but I'm not sure which ones.  (BCS, BCC, BPL, BMI?)
+> What practical use are the other four branch instructions?
+
+I saved an article from Matt Dillon 2 years ago, it is very
+useful :
+
+: From: dillon@overload.Berkeley.CA.US (Matthew Dillon)
+: Newsgroups: comp.sys.amiga.programmer
+: Subject: Re:  Macro-68 Questions
+: Message-ID: <dillon.7619@overload.Berkeley.CA.US>
+: Date: 12 May 91 17:50:11 GMT
+:
+:     BCC == BHS      >= 0 unsigned comparison
+:     BCS == BLO      <  0 unsigned
+:     BHI             >  0 unsigned
+:     BLS             <= 0 unsigned
+:
+:     BGE             >= 0 signed comparison
+:     BLT             <  0 signed
+:     BGT             >  0 signed
+:     BLE             <= 0 signed
+:
+:     BMI             <  0 after test (note that BLT is < 0 after a signed
+:                          compare, same as BMI except that overflow is
+:                          checked for.  However, after a TST or MOVE
+:                          instruction, BMI is the same as BLT because the
+:                          V bit is set to zero).
+:     BEQ             == 0
+:     BNE             != 0
+:
+:     BVC             no overflow on signed operation
+:     BVS             overflow on signed operation
+:
+:                                             -Matt
+--
+ Jean-Michel Forgeas      uunet!cbmvax!cbmehq!cbmfra!swinjm!forgeas
+ 16170 Bordeville                            __
+ France                                      \/
+
+Article 25701 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!Germany.EU.net!ira.uka.de!rz.uni-karlsruhe.de!not-for-mail
+From: UKGV@DKAUNI2.BITNET (Dietmar Heidrich)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Memory allocation
+Message-ID: <1kobeq$1na@nz12.rz.uni-karlsruhe.de>
+Date: 3 Feb 93 11:48:42 GMT
+Sender: usenet@nz12.rz.uni-karlsruhe.de
+Organization: University of Karlsruhe, Germany
+Lines: 26
+
+In article    <C1uCGL.KnD@unx.sas.com> Doug Walker wrote:
+> MEMF_PUBLIC does not mean anything.
+>
+> It has never meaned anything.
+>
+> It will never mean anything.
+>
+> This is because it is so badly misused that no system VM code could
+> ever take advantage of it.  Any VM additions to the OS will not use
+> the MEMF_PUBLIC bit.
+
+I think I am going to correct this statement.  Here in Germany a public
+domain VRAM-Manager has been published by M*rkt & T*chn*k that is using
+this bit.  Memory allocated with MEMF_PUBLIC is not written to disk
+during swapping.  For all programmers, follow this instruction:
+
+Allocate anything except ports and other structures that need to be
+shared by more than one process at the same time WITHOUT MEMF_PUBLIC.
+MEMF_PUBLIC means this piece of memory MUST stay where it is.  Memory
+allocated without public status is allowed to be swapped to disk.
+There is also the condition that the memory has to be FASTMEM.  CHIP
+memory cannot be swapped.
+
+At least, using MEMF_PUBLIC with care and thought is a good style.
+
+Dietmar Heidrich, Germany
+
+Article 27820 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!uunet!caen!uvaarpa!adastra!mbs
+From: mbs@adastra.cvl.va.us (Michael B. Smith)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Stopping dos VOLUME requesters
+Message-ID: <mbs.1sml@adastra.cvl.va.us>
+Date: 18 Mar 93 11:50:01 GMT
+References: <1993Mar17.165913.64930@qut.edu.au>
+Organization: Well, I haven't decided on a name yet...
+Lines: 41
+X-NewsSoftware: GRn-beta 1.16g (16.3.93) by Michael B. Smith & Mike Schwartz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+
+In article <1993Mar17.165913.64930@qut.edu.au> podesta@qut.edu.au writes:
+> Greetings.
+
+Salutations.
+
+> When loading a file through the DOS library, the system will pop up an
+> "Insert disk PORK in any drive" requester.
+>
+> Is there a way to attempt to open a file using a volume name and have it
+> instantly fail if the disk is not present, rather than have the system open
+> a requester? Some flag in some structure, perhaps?
+
+        struct Process
+                *me = (struct Process *) FindTask (NULL);
+        APTR
+                my_winptr = me->pr_WindowPtr;
+        BPTR
+                fh;
+        int
+                err;
+
+        me->pr_WindowPtr = -1;
+        fh = Open ("PORK:filename", MODE_OLDFILE);
+        me->pr_WindowPtr = my_winptr;
+
+        if (!fh) {
+                err = IoErr ();
+                /* Likely errors:
+                **
+                **      ERROR_DEVICE_NOT_MOUNTED
+                **      ERROR_DIR_NOT_FOUND
+                **      ERROR_OBJECT_NOT_FOUND
+                */
+        }
+
+> Thanks in advance.
+
+De nada.
+--
+  //   Michael B. Smith
+\X/    mbs@adastra.cvl.va.us  -or-  uunet.uu.net!virginia.edu!adastra!mbs
+
+Article 30949 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!pipex!bnr.co.uk!bnrgate!nott!torn!howland.reston.ans.net!darwin.sura.net!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Producer/Consumer model on Amiga
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <C7AABB.GD5@unx.sas.com>
+Date: Wed, 19 May 1993 17:09:10 GMT
+References:  <C7A562.B1H@sparc0a.cs.uiuc.edu>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 62
+
+
+In article <C7A562.B1H@sparc0a.cs.uiuc.edu>, maxwell@sparc0a.cs.uiuc.edu (Scott Maxwell) writes:
+|> I guess I'm wondering whether you always have to ReplyMsg() to _every_
+|> message you receive via GetMsg() (I always see this done, but I don't
+|> know whether it's actually necessary).
+
+No, you don't need to do a ReplyMsg() as long as your second task
+knows how to dispose of the message.
+
+Basically, a message is just a block of memory with some fields at
+the beginning that allow you to add it to linked lists (the linked
+lists are attached to the MsgPort you send it to.)  PutMsg takes your
+message and queues that memory block to the target MsgPort.  GetMsg
+removes it from that MsgPort and passes a pointer to it to you.
+
+If AmigaDOS or Intuition sends you a message, you MUST REPLY TO IT.
+However, if you're simply talking to yourself, as in this case, you
+can really do whatever you want.
+
+One example:
+
+   1. Task B allocates MsgPortB using CreatePort(), giving the port a name
+   2. Task A uses FindPort() to find MsgPortB
+   3. Task A allocates MessageA using AllocMem()
+   4. Task A uses PutMsg() to send the MessageA to MsgPortB
+   5. Task B uses GetMsg() to receive the message
+   6. After using the message, task B uses FreeMem() to free it.
+   7. Go back to step 3 and repeat until done
+
+This scenario works fine, but it has one drawback - if you send lots
+of messages, you're calling AllocMem and FreeMem a whole heck of a 
+lot.  Why do that when you've already got messages allocated?
+How about this instead:
+
+   1. Task B allocates MsgPortB using CreatePort(), giving the port a name
+   2. Task A allocates MsgPortB using CreatePort(), it's nameless
+   3. Task A uses FindPort() to find MsgPortB
+   4. Task A calls GetMsg() on MsgPortA.
+     4a. If no message is available, Task A allocates one and
+         increments a count of allocated messages
+     4b. If a message is available, Task A uses it
+   5. Task A sets the mn_ReplyPort field to point to MsgPortA
+   5. Task A uses PutMsg to send the message
+   6. Task B uses GetMsg to receive it
+   7. After using the message, task B calls ReplyPort
+   8. Go back to step 4 and repeat until done
+   9. Until task A's message count is zero, do:
+      9a. Task A uses GetMsg on MsgPortA
+         9a1. If no message, do a WaitPort()
+         9a2. Otherwise free the message and decrement the message count
+
+It's a little more complicated, but much more efficient.
+
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 30613 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!uunet!europa.eng.gtefsd.com!darwin.sura.net!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Exec RawDoFmt
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <C6xCB7.3CG@unx.sas.com>
+Date: Wed, 12 May 1993 17:23:30 GMT
+References: <C6v9wr.CvH@unx.sas.com> <1993May12.133954.3498@imada.ou.dk>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 77
+
+
+In article <1993May12.133954.3498@imada.ou.dk>, breese@monet.imada.ou.dk (Bjorn Reese) writes:
+|> > In article <Miles_Willmek.0jfy@saug.UUCP>, Miles_Willmek@saug.UUCP (Miles  
+|> Willmek) writes:
+|> > >Can somebody help me with Exec's RawDoFmt() function.  I cant seem to get
+|> > >string types (%s, %b)to output anything (except spaces if I specify a field
+|> > >width.
+|> > >
+|> > >I'm pretty sure its not my code.  Does RawDoFmt() work?
+|> 
+|> The parameter for %s (strings) must be a pointer to the string,
+|> not the string itself, as in Printf().
+
+The "string itself" and the "pointer to the string" are actually the
+same thing in C.  A string literal is really a char * that points to
+the beginning of the string.  Hence, the parameter for %s is the same
+for Printf() and RawDoFmt().
+
+Here is example code that uses RawDoFmt() to print a string and a
+decimal value.  BE CAREFUL when printing integers if you use four-byte
+integers (the default for SAS/C and most other compilers) - unlike 
+normal C, you must use %ld instead of %d when printing "int" variables
+and constants if you use RawDoFmt().
+
+#include <stdarg.h>
+#include <string.h>
+#include <clib/dos_protos.h>
+#include <clib/exec_protos.h>
+#include <pragmas/dos_pragmas.h>
+#include <pragmas/exec_pragmas.h>
+
+extern struct Library *DOSBase;
+
+int myprintf(char *ctl, ...);
+
+int main(void)
+{
+   myprintf("This is a %s (%ld)\n", "test", 42);
+   return 0;
+}
+
+int myprintf(char *ctl, ...)
+{
+   char buffer[256];
+   va_list args;
+
+   va_start(args, ctl);
+
+   /*********************************************************/
+   /* NOTE: The string below is actually CODE that copies a */
+   /*       value from d0 to A3 and increments A3:          */
+   /*                                                       */
+   /*          move.b d0,(a3)+                              */
+   /*          rts                                          */
+   /*                                                       */
+   /*       It is essentially the callback routine needed   */
+   /*       by RawDoFmt.                                    */
+   /*********************************************************/
+
+   RawDoFmt(ctl, args, (void (*))"\x16\xc0\x4e\x75", buffer);
+
+   va_end(args);
+
+   Write(Output(), buffer, strlen(buffer));
+
+   return 0;
+}
+
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 2574 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!europa.eng.gtefsd.com!tsg.com!rpi!ghost.dsi.unimi.it!univ-lyon1.fr!taloa.unice.fr!taloa.unice.fr!beust
+From: beust@sophia.inria.fr (Cedric Beust)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: DOS Device
+Date: 14 Dec 1993 09:03:57 GMT
+Organization: INRIA Sophia-Antipolis. FRANCE
+Lines: 25
+Message-ID: <BEUST.93Dec14100358@indri.inria.fr>
+References: <80012135@prox.stgt.sub.org> <CHz9EJ.Myn@unx.sas.com>
+NNTP-Posting-Host: indri.inria.fr
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+In-reply-to: walker@twix.unx.sas.com's message of Mon, 13 Dec 1993 14:25:27 GMT
+
+
+   In article <80012135@prox.stgt.sub.org>, "Boris Folgmann" <Boris@prox.stgt.sub.org> writes:
+|> I need to write an own DOS handler.
+|> 
+|> - How is it done?
+|> - Is there an easy way to do it with the new SAS/C 6.50?
+|> - Is some linkable code provided to do it easy? How does it works?
+|> - Is it possible to incorporate my device in my program, that means to
+|>   mount it when the program starts and to remove it when the program exits?
+|>   (I think Edge from Innovatronics does the same)
+
+      You will find an article that might help you on :
+
+/anonymous@avahi.inria.fr:/amiga/programming-a-device-article
+
+      I'm currently finishing an article on handlers too (I'm not the
+      author of the device article). I will announce it here when it's
+      ready and proofread.
+
+--
+Cedric BEUST, beust@sa.inria.fr, Bull Research Koala project
+Pho:(33) 93.65.78.11(.65 Fax), INRIA, B.P.93 - 06902 Sophia Antipolis, FRANCE.
+
+
+Article 2942 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: SAS/C: CTRL-C Handling
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CIE4Iw.3rp@unx.sas.com>
+Date: Tue, 21 Dec 1993 15:04:08 GMT
+References: <1993Dec16.184709.2391@dres.dnd.ca> <1993Dec19.234933.18097@jupiter.sun.csd.unb.ca>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 23
+
+
+In article <1993Dec19.234933.18097@jupiter.sun.csd.unb.ca>, i6t4@jupiter.sun.csd.unb.ca (Nick MacDonald) writes:
+|>     void __regargs __chkabort(void);
+|> 
+|>     void __regargs __chkabort(void)
+|>     {
+|>     }
+|> 
+|> This will replace the function called for a control-c with a
+|> function that does nothing.
+
+If you are using Version 6.50 or above, and you HAVE NOT replaced
+__chkabort in your own code yet, you can use the NOCHKABORT option
+on the SC command to accomplish the same thing.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 3886 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!darwin.sura.net!hearst.acc.Virginia.EDU!adastra!mbs
+Newsgroups: comp.sys.amiga.programmer
+From: mbs@adastra.cvl.va.us (Michael B. Smith)
+Subject: Re: Using Display Database
+Distribution: world
+References:  <CJEw08.466@dm.unibo.it>
+X-NewsSoftware: GRn 2.0j Jan 8, 1994
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+Message-ID: <mbs.2n2o@adastra.cvl.va.us>
+Date: Mon, 10 Jan 94 22:14:00 EDT
+Organization: Well, I haven't decided on a name yet...
+Lines: 170
+
+In article <CJEw08.466@dm.unibo.it> favre@cs.unibo.it (Dimitri Favre) writes:
+> I'm developping a tool and I need to allow user to use whatever screen
+> it wants. I'm searching a demo code showing how to use the display database
+> (I mean, the Monitors in Devs:Monitors) to implement a WorkBench like
+> screen Requester (even through GadToolBox).
+
+Here is some example code from GRn. It compiles with commercial and
+registered DICE; but should be trivial to modify for SAS/C. It DOES
+require asl.library v38 or higher. Regardless, you can take the
+information from ModeSize() and FitWB() and come up with routines
+that should work on v37 as well.
+--
+  //   Michael B. Smith
+\X/    mbs@adastra.cvl.va.us  -or-  uunet.uu.net!virginia.edu!adastra!mbs
+
+static ULONG
+ModeSize (ULONG modeID, int *x, int *y)
+{
+	/*
+	**  ModeSize
+	**
+	**	Returns the size of the passed ModeID.
+	**	The 'X' and 'Y' sizes are stored in the parameters.
+	**
+	**	On failure, returns INVALID_ID.
+	**	On success, returns modeID.
+	*/
+	struct DimensionInfo
+		di;
+
+	if (GetDisplayInfoData (NULL, (void *) &di, sizeof di, DTAG_DIMS, modeID)) {
+		*x = di.TxtOScan.MaxX - di.TxtOScan.MinX + 1;
+		*y = di.TxtOScan.MaxY - di.TxtOScan.MinY + 1;
+		return modeID;
+	}
+
+	return INVALID_ID;
+}
+
+static ULONG
+FitWB (int *x, int *y)
+{
+	/*
+	**  FitWB:   returns the modeID which "first fits" the passed X and
+	**	     Y parameters, and is suitable for a Workbench screen.
+	**
+	**  On failure, returns INVALID_ID.
+	*/
+
+	ULONG
+		modeID = INVALID_ID;
+	int
+		X = 0,
+		Y = 0;
+	struct DisplayInfo
+		ds;
+
+	while ((modeID = NextDisplayInfo (modeID)) != INVALID_ID) {
+
+		if (ModeNotAvailable (modeID))
+			continue;
+
+		if ((modeID & MONITOR_ID_MASK) == DEFAULT_MONITOR_ID)
+			continue;
+
+		if (GetDisplayInfoData (NULL, (void *) &ds, sizeof (struct DisplayInfo), DTAG_DISP, modeID))
+			if (!(ds.PropertyFlags & DIPF_IS_WB))
+				continue;
+
+		if (ModeSize (modeID, &X, &Y) != INVALID_ID) {
+			if (X >= *x && Y >= *y) {
+				*x = X;
+				*y = Y;
+				return modeID;
+			}
+		}
+	}
+
+	return INVALID_ID;
+}
+
+#define MINIMUM_HEIGHT	    200
+#define MINIMUM_WIDTH	    600
+
+__geta4 __asm ULONG
+ScreenModeHook (__a0 struct Hook *myhook,
+		__a2 struct ScreenModeRequester *myScreenReq,
+		__a1 APTR data)
+{
+	ULONG
+		modeID = (ULONG) data;
+	int
+		x,
+		y;
+
+	if (ModeNotAvailable (modeID))
+		return FALSE;
+
+	if (ModeSize (modeID, &x, &y) == INVALID_ID)
+		return FALSE;
+
+	if (x < MINIMUM_WIDTH || y < MINIMUM_HEIGHT)
+		return FALSE;
+
+	return TRUE;
+}
+
+int
+GetScreenMode (ULONG *modeID, int *height, int *width, int *autoscroll)
+{
+	int
+		rslt,
+		mode_width  = *width ? *width : DEFAULT_WIDTH,
+		mode_height = *height ? *height : DEFAULT_HEIGHT;
+	ULONG
+		pref_mode = FitWB (&mode_width, &mode_height);
+	struct Hook
+		ScreenReqHook;
+	struct ScreenModeRequester
+		*screenReq;
+	static const char
+		routine [] = { "GRn - Select Screen Mode" };
+
+	ScreenReqHook.h_Data = NULL;
+	ScreenReqHook.h_Entry = (ULONG (*)()) ScreenModeHook;
+	ScreenReqHook.h_SubEntry = NULL;
+
+	screenReq = (struct ScreenModeRequester *) AllocAslRequestTags (ASL_ScreenModeRequest,
+		/*
+		** initial conditions
+		*/
+		ASLSM_InitialDisplayID,     pref_mode,
+		ASLSM_InitialDisplayWidth,  mode_width,
+		ASLSM_InitialDisplayHeight, mode_height,
+		/*
+		** setup stuff
+		*/
+		ASLSM_SleepWindow,  TRUE,
+		ASLSM_TitleText,    routine,
+		ASLSM_MinWidth,     MINIMUM_WIDTH,
+		ASLSM_MinHeight,    MINIMUM_HEIGHT,
+		ASLSM_FilterFunc,   &ScreenReqHook,
+		/*
+		** what can the user specify
+		*/
+		ASLSM_DoWidth,	    TRUE,
+		ASLSM_DoHeight,     TRUE,
+		ASLSM_DoAutoScroll, TRUE,
+		TAG_DONE);
+
+	if (!screenReq) {
+		panic ("Failed, couldn't allocate ScreenModeRequester");
+	}
+
+	if (!AslRequest (screenReq, NULL)) {
+		rslt = 0;
+	}
+	else {
+		*modeID = screenReq->sm_DisplayID;
+		*height = screenReq->sm_DisplayHeight;
+		*width	= screenReq->sm_DisplayWidth;
+		*autoscroll = screenReq->sm_AutoScroll;
+		rslt = 1;
+	}
+
+	FreeAslRequest (screenReq);
+
+	return rslt;
+}
+
+
+Article 3951 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!uunet!hearst.acc.Virginia.EDU!adastra!mbs
+Newsgroups: comp.sys.amiga.programmer
+From: mbs@adastra.cvl.va.us (Michael B. Smith)
+Subject: Re: Get WindowPtr of CLI-Windows?
+Distribution: world
+References:  <1E25B549H000493E2H@newton.han.de>
+X-NewsSoftware: GRn 2.0j Jan 8, 1994
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+Message-ID: <mbs.2naj@adastra.cvl.va.us>
+Date: Tue, 11 Jan 94 17:38:41 EDT
+Organization: Well, I haven't decided on a name yet...
+Lines: 150
+
+In article <1E25B549H000493E2H@newton.han.de> NEWTON@MULTICOM.han.de writes:
+> my problem is how to get the WindowPtr of the actual CLI-Window where my
+> program is running in.
+>
+> It means:
+> I have the FileHandlePtr to the IO-File:
+>
+> 1: MyFileHandle := Open(ADR("CON:"), newFile);
+> or
+> 2: MyFileHandle := Output();
+>
+> and need the WindowPtr of the Window open bye 'CON:' if there is an
+> Outputwindow.
+>
+> My Language is Modula-II but if your example is in 'C', I can read it too.
+
+This is an FAQ. Here is my solution:
+
+/*
+**	ConWindow.c
+**
+**	Michael B. Smith
+**	February 2, 1993
+**
+**	No rights reserved. :)
+*/
+
+#include <exec/types.h>
+#include <exec/ports.h>
+#include <exec/memory.h>
+
+#include <dos/dos.h>
+#include <dos/dosextens.h>
+
+#include <clib/dos_protos.h>
+#include <clib/exec_protos.h>
+
+#include <intuition/intuition.h>
+
+struct MsgPort *
+WhichPort (BPTR file)
+{
+	/*
+	**  WhichPort
+	**
+	**	If file is passed and non-NULL, find the MsgPort of
+	**	its handler process. If file is NULL, then if I am
+	**	a process, return the MsgPort of my console handler.
+	**
+	**	See The AmigaDOS Manual, pp. 425 & 395, and
+	**	AmigaMail II-24.
+	*/
+
+	struct MsgPort
+		*rslt = NULL;
+
+	if (file) {
+		rslt = ((struct FileHandle *) (file << 2))->fh_Type;
+	}
+	else {
+		struct Task *me = FindTask (NULL);
+
+		if (me->tc_Node.ln_Type == NT_PROCESS)
+			rslt = ((struct Process *) me)->pr_ConsoleTask;
+	}
+
+	return rslt;
+}
+
+struct Window *
+WhichWindow (struct MsgPort *port)
+{
+	/*
+	**  WhichWindow
+	**
+	**	Send a ACTION_DISK_INFO to the port passed in. It must be
+	**	a message-port for a console handler. That will return a
+	**	pointer to a filled-in "struct InfoData" and the window
+	**	will be contained in the id_VolumeNode field.
+	**
+	**	Note that the window will be NULL for an AUTO or AUX console.
+	*/
+
+	struct InfoData
+		*info;
+	long
+		rslt = 0;
+
+	/* info must be long-word aligned */
+	info = AllocVec (sizeof (struct InfoData), MEMF_PUBLIC);
+	if (!info)
+		return NULL;
+
+	if (port) {
+		rslt = DoPkt1 (port, ACTION_DISK_INFO, (long) (info >> 2));
+
+		if (rslt) {
+			rslt = info->id_VolumeNode;
+		}
+	}
+	FreeVec (info);
+
+	return (struct Window *) rslt;
+}
+
+int
+main (int argc, char **argv)
+{
+	struct MsgPort
+		*port;
+	struct Window
+		*mywin;
+
+	/*
+	**  If we get an argument, use Input (), otherwise find the default...
+	*/
+
+	/*
+	**  You must be careful that Input() is from CON:. If not, results
+	**  are undefined in this context...
+	*/
+	if (argc > 1) {
+		printf ("Window from Input()\n");
+		port = WhichPort (Input ());
+	}
+	else {
+		printf ("Window from ConsoleTask\n");
+		port = WhichPort (NULL);
+	}
+
+	if (port) {
+		mywin = WhichWindow (port);
+		if (!mywin)
+			printf ("Couldn't find window\n");
+		else {
+			printf ("Left %ld, Top %ld,  Width %ld, Height %ld\n",
+				mywin->LeftEdge, mywin->TopEdge,
+				mywin->Width,	 mywin->Height);
+		}
+	}
+	else {
+		printf ("Couldn't find port\n");
+	}
+
+	exit (0);
+}
+
+--
+  //   Michael B. Smith
+\X/    mbs@adastra.cvl.va.us  -or-  uunet.uu.net!virginia.edu!adastra!mbs
+
+
+Article 4043 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!wega.fibronics.de!pfm.PFM-Mainz.DE!babylon!rbabel
+From: rbabel@babylon.rmt.sub.org (Ralph Babel)
+Newsgroups: comp.sys.amiga.programmer,comp.sys.amiga.datacomm
+Subject: Re: The meaning of library base ptrs
+Message-ID: <15381@babylon.rmt.sub.org>
+Date: 12 Jan 1994 14:39:45 +0100
+Followup-To: comp.sys.amiga.programmer
+References: <CJ1JD1.Hwr@sugar.NeoSoft.COM> <zaphod.02vj@cayman.priconet.de> <rDT7u*ct5@aargh.adsp.sub.org> <thai0009.758159857@gold.tc.umn.edu>
+Lines: 96
+Xref: dd.chalmers.se comp.sys.amiga.programmer:4043 comp.sys.amiga.datacomm:2260
+
+Douglas L Thain wrote:
+
+> _every_ task/process is required to call OpenLibrary
+> explicitly, as per C= instructions.  This technique has
+> been incidentally valid on previous releases, but has
+> never been legal.
+
+This is not true.
+
+Up to and including 1.2, the official documentation never
+even mentioned that topic, and several of the example
+programs provided by Commodore and its engineers _did_ share
+library base pointers, so it was clearly _not_ required to
+reopen every library in a subtask.
+
+As of Workbench 1.3, the only _exceptions_ (i.e. it was
+_still_ legal to share all _other_ libraries' base pointers)
+were the IEEE libraries, which Dale Luck had rewritten to
+support the 6888x and arbitrary other coprocessors (see [1,
+2]). This did not really have anything to do with different
+library _bases_, though, but with the support for non-6888x
+coprocessors via the MathIEEE.resource, as Exec saves and
+restores the FPU context only for 6888x-compatible
+coprocessors automatically upon task switches. Dale
+suggested that the MathIEEE.resource patch tc_Switch and
+tc_Launch for that purpose (via the TaskOpenLib call-back).
+
+Under 2.x, someone (who - as Hans put it - should probably
+be embarrassed :-) decided that unique library bases for
+every opener might be a useful concept (which I don't
+doubt), but made the mistake of declaring this the new
+default behavior (see [3]).
+
+The problem lies not so much with application programs
+spawning new tasks, as these application subtasks generally
+make use of local per-task data anyway, and reopening all
+libraries and keeping their bases as part of that local data
+segment is trivial. It may be somewhat of a problem to make
+your high-level-language compiler automatically use these
+"local" base symbols, but this is completely beside the
+point.
+
+The real problem lies with shared libraries (or devices)
+based on other shared libraries the functions of which are
+called on the schedule of the client of the higher-level
+library. If - as some people claim - _all_ "sub"-libraries
+have to be reopened for _every_ opener/client/task of the
+higher-level library, this requires that either
+
+(a) all calls to lower-level libraries be deferred to a
+    global library task to ensure that the library base
+    obtained once during library initialization is used only
+    from the task that originally opened the library. This
+    would introduce two extra task switches for every
+    library call. Have fun!
+
+(b) _All_ such libraries (and I really mean _all_ of them) -
+    even if they _don't_ require that any per-client data be
+    kept by the library itself - suddenly have to create and
+    return a new instance of the library base structure upon
+    every OpenLibrary() to hold the base addresses of all
+    libraries that are used by any of _its_ function
+    entries. (As somebody else already pointed out, this may
+    also cause problems with SetFunction().)
+
+Neither of these two approaches seems desirable, so I
+maintain that the best solution would be to assume that all
+library base pointers - UNLESS EXPLICITLY DOCUMENTED NOT TO
+BE SHARABLE - _can_ be reused in subtasks. It may be
+unnecessary to depend on that assumption if one is merely
+writing application programs or SAS-style libraries, but for
+properly designed libraries/APIs that require that a context
+structure be allocated explicitly by the caller and freed
+upon exit, anything else doesn't make sense. This would have
+been possible for ixemul.library and socket.library, too,
+had they added an extra pointer parameter to (the internal
+versions of) all library functions. No-one said that this
+extra parameter would have to be visible externally; it may
+well be hidden inside a stub function that loads a global
+symbol into the appropriate parameter register, similar to
+the library base symbols in the amiga.lib stubs.
+
+To cut a long story short: There's only _one_ solution:
+Library base pointers _must_ be sharable by _default_.
+_Exceptions_ to that rule are permissible, but must be
+documented as such explicitly.
+
+Time to fix the RKMs.
+
+References:
+
+[1] RKM Libraries & Devices, 1.3 edition, page 547.
+
+[2] AmigaMail, volume 1, pages XIII-5 to XIII-7.
+
+[3] RKM Libraries, 2.0 edition, page 467.
+
+
+Article 4075 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!darwin.sura.net!news-feed-2.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: The meaning of library base ptrs
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CJKrz2.2v8@unx.sas.com>
+Date: Thu, 13 Jan 1994 15:49:50 GMT
+References: <CJ1JD1.Hwr@sugar.NeoSoft.COM> <zaphod.02vj@cayman.priconet.de> <rDT7u*ct5@aargh.adsp.sub.org> <thai0009.758159857@gold.tc.umn.edu> <15381@babylon.rmt.sub.org>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 32
+
+
+In article <15381@babylon.rmt.sub.org>, rbabel@babylon.rmt.sub.org (Ralph Babel) writes:
+|> have to be reopened for _every_ opener/client/task of the
+|> higher-level library, this requires that either
+|> 
+|> (a) all calls to lower-level libraries be deferred to a
+|>     global library task to ensure that the library base
+|>     obtained once during library initialization is used only
+|>     from the task that originally opened the library. This
+
+You're assuming that the restriction must be ENFORCED by every
+library.  This isn't so.  If a library has need of per-opener
+data, like other library bases, then it needs to store that
+data somehow (the easiest way that I know of being libinitr.o).
+If a library doesn't need it, it doesn't need to do anything
+different or unusual.  Openers who depend on that are asking
+for trouble, but that's their problem.
+
+It does add some overhead to the system if the libraries are
+opened by many tasks.  I think it would be a good idea for
+Commodore to promise that graphics.library, intuition.library
+and others remain shareable.  If they did that, much of the
+problem would go away.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 280 of alt.sources.amiga:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!cs.utexas.edu!swrinde!sgiblab!rtech!amdahl!JUTS!dwl10
+From: dwl10@juts.ccc.amdahl.com (Dave Lowrey)
+Newsgroups: alt.sources.amiga
+Subject: Re: ReadArgs() source wanted
+Message-ID: <a3KS02Jb5b1p01@JUTS.ccc.amdahl.com>
+Date: 27 Jan 94 18:43:21 GMT
+References: <OLIPHANT.94Jan25123330@cogsci.ucsd.edu>
+Reply-To: dwl10@JUTS.ccc.amdahl.com (Dave Lowrey)
+Organization: Amdahl Corporation, Cincinnati, Ohio
+Lines: 17
+
+In article <OLIPHANT.94Jan25123330@cogsci.ucsd.edu> oliphant@cogsci.ucsd.edu (Mike Oliphant) writes:
+>anybody here have source that uses the dos.library ReadArgs() routine to
+>read arguments from a string? I can get it to work fine when reading arguments
+>from the command line, but when I pass in my own RDArgs structure, the call to
+>ReadArgs() fails. I can't get it to work for the life of me
+> 
+Make sure your string ends in a newline '\n' and a null
+
+>mike (who wonders why CBM doesn't document dos.library in the libraries RKM)
+
+The DOS calls ARE in the online AutoDocs. You can get them from
+CBM for $25.00 (I think).
+-- 
+                          | These be my words, not my employer's!
+"Dare to be stupid!"      |
+Weird Al Yankovik         | Dave Lowrey - Amdahl Corp. Cincinnati, OH
+                          | dwl10@juts.ccc.amdahl.com
+
+
+Article 5345 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!vixen.cso.uiuc.edu!sdd.hp.com!col.hp.com!news.dtc.hp.com!hplextra!hplb!hpwin052!hpqmoea!neilg
+From: neilg@hpqtdya.sqf.hp.com (Neil Gall)
+Subject: Re: Public implementation of Lists/Nodes?
+Sender: news@hpqmoea.sqf.hp.com (SQF News Admin)
+Message-ID: <CKLMu3.HL1@hpqmoea.sqf.hp.com>
+Date: Wed, 2 Feb 1994 13:30:03 GMT
+References: <BEUST.94Feb2114402@indri.inria.fr>
+Nntp-Posting-Host: hpqto014.sqf.hp.com
+Organization: Hewlett-Packard LTD, South Queensferry, Scotland
+X-Newsreader: TIN [version 1.1 PL8.8]
+Lines: 116
+
+Cedric Beust (beust@indri.inria.fr) wrote:
+
+:       I was wondering if someone had re-written the functions
+:       NewList(), AddTail(), etc... in order to be able to use them in
+:       a non-Amiga environment? I really like them and
+:       would like to use the same API in my work (and avoid
+:       implementing them personally of course :-)).
+
+I implemented Exec-style lists in C++ for a project I was working on
+about three months ago.  They're really easy to implement once you
+work out what's going on.  Here's a solution in C:
+
+You need to define the structures:
+
+struct List
+{
+    struct Node *Head;
+    struct Node *Tail;
+    struct Node *TailPred;
+};
+
+struct Node
+{
+    struct Node *Succ;
+    struct Node *Pred;
+};
+
+And the following functions:
+
+void NewList(struct List *list)
+{
+    list->Head = (struct Node *)&list->Tail;
+    list->Tail = NULL;
+    list->TailPred = (struct Node *)list;
+}
+
+void AddHead(struct List *list,struct Node *node)
+{
+    node->Succ=list->Head;
+    node->Pred=(struct Node *)list;
+    list->Head->Pred=node;
+    list->Head=node;
+}
+
+void AddTail(struct List *list,struct Node *node)
+{
+    node->Succ=(struct Node *)&list->Tail;
+    node->Pred=list->TailPred;
+    list->TailPred->Succ=node;
+    list->TailPred=node;
+}
+
+struct Node *RemHead(struct List *list)
+{
+    struct Node *node=NULL;
+
+    if (list->Head->Succ)
+    {	
+    	node=list->Head;
+    
+	list->Head->Succ->Pred=(struct Node *)list;
+	list->Head=list->Head->Succ;
+    }
+    
+    return node;
+}
+
+struct Node *RemTail(struct List *list)
+{
+    struct Node *node=NULL;
+    
+    if (list->TailPred->Pred)
+    {
+    	node=list->TailPred;
+    
+    	list->TailPred->Pred->Succ=list->TailPred;
+    	list->TailPred=list->TailPred->Pred;
+    }
+    
+    return node;
+}
+
+void Remove(struct Node *node)
+{
+    node->Succ->Pred=node->Pred;
+    node->Pred->Succ=node->Succ;
+}
+
+That's all I can remember at the moment.  AddHead() can be generalised
+to get Insert(list,node,pred), and Enqueue() is done simply by scanning
+the list for a node with the right priority (you have to include a
+priority field into the node structure).
+
+In C++, these were really good.  List and Node were classes, and everything
+which was "listable" was derived from Node, inheriting all the Node methods.
+If I remember correctly, most of the operations were List methods, so say
+you had a list called foo, and wanted to add a node bar, you did
+
+	foo.AddTail(bar);
+	
+Then I overloaded << to mean AddTail(), so you could say
+
+	foo << bar;
+	
+Of course this returned foo, so you could say
+
+	foo << bar << baz << boz;
+	
+to add a number of objects to the tail of the list.  Similarly you
+could use >> to mean RemHead, thus implementing a queue with
+operators.
+
+--
+Neil Gall				Queensferry Telecoms Operation
+neilg@hpqtdya.sqf.hp.com		Hewlett-Packard Ltd.
+031-331-7895				South Queensferry, Scotland
+
+
+Article 5437 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!rutgers!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Find device name and unit number
+Message-ID: <CKpKFK.A6u@unx.sas.com>
+Date: 4 Feb 94 16:28:29 GMT
+References: <2isjec$8ok@midland.co.nz>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 49
+Originator: jamie@cdevil.unx.sas.com
+Nntp-Posting-Host: cdevil.unx.sas.com
+
+
+In article <2isjec$8ok@midland.co.nz>, pid@midland.co.nz (Philip D'Ath) writes:
+>I am maintaining an application, and need to be able to find out the device
+>name and unit number from a reference such as "DH0".
+>
+>So, for example, lets say that someone has a GVP hard drive, that is
+>called DH0:.  If DH0: is selected, then I want to be able to find out
+>that it is using the device "gvpscsi.device", and unit x.
+>
+>I've had a look through a reasonable amount of documentation, but haven't
+>managed to find a method to do this yet.
+
+#include <dos/dosextens.h>
+#include <dos/filehandler.h>
+
+...
+        struct DosList *dlist, *tdlist;
+        struct FileSysStartupMsg *fssm;
+        ULONG unit;
+        char dvrname[34], *nptr;
+        int i;
+
+        dlist = LockDosList(LDF_DEVICES|LDF_READ);
+
+        tdlist = dlist;
+        tdlist = FindDosEntry(tdlist, "DH0", LDF_DEVICES);
+
+        fssm = (struct FileSysStartupMsg *)BADDR(tdlist->dol_Startup);
+
+        strcpy(dvrname, (char *)BADDR(fssm->fssm_Device));
+        unit = fssm->fssm_Unit;
+
+        UnLockDosList(LDF_DEVICES|LDF_READ);
+...
+
+At this point, 'unit' contains the unit number, and 'drvname' has the
+device driver name... you'll need to add appropriate error checking, of
+course, and this will only work under 2.0+ of the OS...
+
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article 5651 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!math.ohio-state.edu!jussieu.fr!univ-lyon1.fr!swidir.switch.ch!scsing.switch.ch!news.dfn.de!rrz.uni-koeln.de!teralon!dino.dinoco.de!yaps.dinoco.de!arno
+From: arno@yaps.dinoco.de (Arno Eigenwillig)
+Message-ID: <710.ANN@yaps.dinoco.de>
+Date: Tue, 08 Feb 1994 15:44:25 +0100
+Organization: Yet Another Private Site in Meckenheim, Germany
+Newsgroups: comp.sys.amiga.programmer
+Reply-To: arno@yaps.dinoco.de (Arno Eigenwillig)
+Subject: Re: How to detatch from cli.
+References: <2ivot9$o3d@harbinger.cc.monash.edu.au>
+X-Newsreader: Ann 0.10
+Lines: 33
+
+Hi!
+
+In article <2ivot9$o3d@harbinger.cc.monash.edu.au>,
+	ins557g@aurora.cc.monash.edu.au (Mark Brophy) writes:
+
+> 	can someone enlighten me on how to detatch from the cli
+> 	in a C program. At the moment I'm forkl() ing which
+> 	seems a little like overkill???
+
+1. The first code hunk of your program should be a little assembler
+routine which backups the pointer to the next segment, zeroes the
+original pointer, creates a new process with the backuped pointer, and
+terminates.
+
+2. Alternatively, it is said that zeroing the cli_Module field in the
+CommandLineInterface structure BCPL-pointed to by a CLI process' pr_CLI
+will prevent the DOS from unloading any of your code so that you may use
+a technique like described above to keep your whole program in memory,
+malking a HLL implementation of auto detaching easier.
+
+3. Although Ralph Babel's excellent Amiga Guru Book documents both
+methods above, he suggests RUNning the program as the most compatible
+way, although having a program RUN itself implies just the overhead you
+wanted to avoid in the first place.
+
+Any comments welcome.
+
+--                  __                            __
+Arno Eigenwillig __/// arno@yaps.dinoco.de     __/// FIDO-Net (untested)
+++49-2225-5870   \XX/  ARNO@FUTURE.ZER.sub.org \XX/ 2:2402/330.99  2:2440/99
+
+Objects may be divided up in three categories: malfunctioning objects,
+objects getting broken and objects getting lost. [Russel Baker]
+
+
+Article 5653 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!uni-heidelberg!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: How to detach from cli.
+Message-ID: <1994Feb8.193709@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References:  <1994Feb8.110410.22728@dmu.ac.uk>
+Date: Tue, 8 Feb 1994 18:37:09 GMT
+Lines: 29
+
+In article <1994Feb8.110410.22728@dmu.ac.uk>, se1pt@dmu.ac.uk (Paul Toyne) writes:
+> Cli detaching from assembler is very easy, and goes like follows :
+> 
+> 	Section	Start,CODE
+> 
+> _Start:
+> 	; Check for WB startup, if so  Jmp _Program
+> 
+> 	; Open dos library
+> 
+> 	Lea	_Start(pc),a0
+> 	Move.l	(a0),d3		; Pointer to segment list.
+> 	Clr.l	(a0)		; Make dos think that this program
+> 				;  only contains one hunk, so that it
+> 				;  doesn't de-allocate the memory from
+> 				;  our program.
+
+This is VERY bad programming practise.  You should not touch the
+segment list.
+
+The correct way to do detaching (whatever reason you might have
+to not use "run") is to NULL out the cli_Module pointer, and
+start a new process with this segment and with a different
+entry point (use CreateNewProc).
+
+An example can be found in the source code to `term'.
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 6136 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!uni-heidelberg!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: How to detach from cli.
+Message-ID: <1994Feb17.165346@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <80d.ANN@yaps.dinoco.de>  <1994Feb8.193709@informatik.uni-kl.de>   <1994Feb8.110410.22728@dmu.ac.uk> <19940209145315.M.F.C.vdnHout@sp0099.kub.nl> <19940216211004.M.F.C.vdnHout@sp0002.kub.nl>
+Date: Thu, 17 Feb 1994 15:53:46 GMT
+Lines: 37
+
+In article <19940216211004.M.F.C.vdnHout@sp0002.kub.nl>, M.F.C.vdnHout@kub.nl  (Marco van den Hout) writes:
+> "feck@informatik.uni-kl.de (Christoph Feck IRZ)" says about detaching:
+>  
+> 1) clear the cli_module pointer... okay that's easy.. that prevents the
+>    program to be unloaded when it exits..
+> 2) start a process (using CreateNewProc) with the same seglist and a
+>    different entry point...
+>  
+> This I don't get - RKRM Includes & Autodocs says  NP_SegList and
+> NP_Entry are mutually exclusive.. then how can you use the same
+> seglist while starting at another entry point? Only way I see is to
+> check if the program was already started at the beginning..
+
+Either:
+Use NP_Entry.  Send the new process a startup message
+(to pr_MsgPort).  In this message place a pointer to the
+seglist.  The called task can free this seglist later.
+Be sure to exit the calling task only after you got an 'OK'
+reply from the detached task.  If your program isn't going
+to be 'resident' (reentrant), you can avoid all the message
+passing and just store the segment pointer in a variable,
+which is referenced via A4.  The entry function must then
+use __saveds of course.
+
+Or:
+In the non-reentrant case, you can use NP_SegList, and check
+a global variable first (like you suggested).
+
+> By the way, I'm trying to program this in assembler, not in C.
+
+That doesn't matter :)
+
+Ciao,
+Christoph
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 6455 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!xlink.net!pfm.PFM-Mainz.DE!babylon!rbabel
+From: rbabel@babylon.pfm-mainz.de (Ralph Babel)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Send CTRL-C to Execute_, how?
+Message-ID: <16901@babylon.pfm-mainz.de>
+Date: 24 Feb 1994 06:10:59 +0100
+References: <104444@cup.portal.com> <2kg8g5$sbh@nemesis.jpl.nasa.gov>
+Lines: 11
+
+Jeff Dickson wrote:
+
+> Joel_-_Corn@cup.portal.com wrote:
+>
+>> How would one send a CTRL-C to a command started with
+>> Execute_ or SystemTagList_?
+>
+> Find the task that was named after the command EXECUTEd or
+> SYSTEMTAGLISTed (e.g. FindTask) [...]
+
+Ambiguous and not documented (and in fact not true).
+
+
+Article 6493 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!uknet!EU.net!news.eunet.fi!news.funet.fi!nntp.hut.fi!nntp.hut.fi!s37732v
+From: s37732v@snakemail.hut.fi (Markus Juhani Aalto)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Sizeable GUI
+Date: 25 Feb 94 07:22:14 GMT
+Organization: Helsinki University of Technology, Finland
+Lines: 39
+Distribution: inet
+Message-ID: <S37732V.94Feb25092214@delta.hut.fi>
+References: <2kimqj$m1v@ugle.unit.no>
+NNTP-Posting-Host: delta.hut.fi
+In-reply-to: ketil@brosme.dhmolde.no's message of 24 Feb 1994 17:06:27 GMT
+
+
+In article <2kimqj$m1v@ugle.unit.no> ketil@brosme.dhmolde.no (Ketil Hunn) writes:
+
+> Path: nntp.hut.fi!news.funet.fi!news.eunet.fi!dkuug!news.eunet.no!nuug!trane.uninett.no!ugle.unit.no!brosme.dhmolde.no!ketil
+> From: ketil@brosme.dhmolde.no (Ketil Hunn)
+> Newsgroups: comp.sys.amiga.programmer
+> Date: 24 Feb 1994 17:06:27 GMT
+> Organization: University of Trondheim, Norway
+> Lines: 10
+> NNTP-Posting-Host: brosme.dhmolde.no
+> X-Newsreader: TIN [version 1.2 PL0]
+
+> Working on a sizable (and font-adaptable) requester, I found that when
+> shrinking the windowsize, the gadgets sometimes stay visible in the window's
+> borders.  This can be avoided by activating the parent window and then the
+> sized window.  This results in a 'flicker', thoug.
+
+> Is there another way of redrawing the window-borders AFTER you have arranged
+> the gadgets according to the new window-sizes?
+
+> Ketil Hunn
+> ketil@lyr.dhmolde.no
+
+RefreshWindow or something like that should do the job but it isn't the
+best possible way. In my opinion you get best results by listening
+RESIZE VERIFY message and when you receive it you detach your gadgets
+from the window. When RESIZE message comes you then attach gadgets back.
+This is little more work but it will result in faster window resizing.
+--
+
+
+**************************************************************************
+*         Markus Aalto              | Helsinki University of Technology  *
+*                                   |                                    *
+*  EMail: s37732v@vipunen.hut.fi    | Faculty of Electric Engineering    *
+*  Phone/Fax: 358-0-8746991         |                                    *
+*                                   | Undergraduate in Computer Science  *
+**************************************************************************
+        
+
+
+Article 6529 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!Germany.EU.net!netmbx.de!zib-berlin.de!news.belwue.de!news.uni-ulm.de!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Sizeable GUI
+Message-ID: <1994Feb25.154747@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <2kimqj$m1v@ugle.unit.no> <2kjii9$4uf@nigel.msen.com>
+Date: Fri, 25 Feb 1994 14:47:47 GMT
+Lines: 18
+
+> Ketil Hunn (ketil@brosme.dhmolde.no) wrote:
+> : Working on a sizable (and font-adaptable) requester, I found that when
+> : shrinking the windowsize, the gadgets sometimes stay visible in the window's
+> : borders.  This can be avoided by activating the parent window and then the
+> : sized window.  This results in a 'flicker', thoug.
+
+You might use the GM_LAYOUT method along with the GA_RelSpecial
+attribute to let the gadgets resize synchronous to window size
+changes (that is, the gadgets are refreshed in their new size,
+not in the old size).
+
+Hope that helps,
+Christoph
+
+Oh forgot, special gadget relativity is new to 3.0.
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 6577 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!Germany.EU.net!news.dfn.de!news.belwue.de!news.uni-stuttgart.de!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Boopsi questions
+Message-ID: <1994Feb27.060713@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <1994Feb23.012608@informatik.uni-kl.de> <2km384$lsd@zetar.cs.pdx.edu>
+Date: Sun, 27 Feb 1994 05:07:13 GMT
+Lines: 25
+
+In article <2km384$lsd@zetar.cs.pdx.edu>, idr@cs.pdx.edu (Dancing Fool of Epsilon) writes:
+> One thing that you really should get is the source code from the
+> Libraries manual off the Fish disks...I forget which disk.  It has
+> source code for a BOOPSI gadget class, and how to make two BOOPSI
+> gadgets talk to each other without program intervention.  It also
+
+I already know about these things...
+
+> sounded like you were making a BOOPSI class for file handling?  I don't
+
+Yes.  streamclass.
+
+> think this is such a good idea.  All BOOPSI dispatchers must be able to
+> execute in Intuition's context, this means as a TASK, not a process. 
+
+As long as I don't add my streamclass objects to a window, Intuition
+won't even KNOW about the existance of the objects.
+
+> Therefore it's not safe to use dos.library.  There maybe something about
+> you implementation that may make it work, but it doesn't seem very safe.
+
+It is safe.  Safer than sex :)
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 6578 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!Germany.EU.net!news.dfn.de!news.belwue.de!news.uni-stuttgart.de!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Boopsi questions
+Message-ID: <1994Feb27.061616@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <1994Feb23.012608@informatik.uni-kl.de> <2km384$lsd@zetar.cs.pdx.edu> <S37732V.94Feb26102011@beta.hut.fi>
+Distribution: inet
+Date: Sun, 27 Feb 1994 05:16:16 GMT
+Lines: 21
+
+In article <S37732V.94Feb26102011@beta.hut.fi>, s37732v@snakemail.hut.fi (Markus Juhani Aalto) writes:
+> In article <2km384$lsd@zetar.cs.pdx.edu> idr@cs.pdx.edu (Dancing Fool of Epsilon) writes:
+> > sounded like you were making a BOOPSI class for file handling?  I don't
+> > think this is such a good idea.  All BOOPSI dispatchers must be able to
+> > execute in Intuition's context, this means as a TASK, not a process. 
+> 
+> BOOPSI doesn't mean that it should be able to execute in Intuition's
+> context. For example OM_NEW, OM_SET, OM_GET, OM_UPDATE etc.. work
+> just fine in you process context. GM_**** methods are used from
+> intuition directly so these aren't working in your process context.
+> 
+> Also file handling can be made directly with Packets which is the
+> best way to do it properly anyhow. And packets can be used from
+> tasks.
+
+the file.stream subclass (of streamclass) uses packets
+(for asynchronous I/O).  It still calls DOS to open/close
+files though.
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 6996 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!Germany.EU.net!netmbx.de!zib-berlin.de!uni-paderborn.de!billy
+From: billy@uni-paderborn.de (Michael Boehnisch)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: ROM-WHACK and C
+Date: 7 Mar 1994 13:19:32 GMT
+Organization: Universitaet Paderborn, Germany
+Lines: 18
+Message-ID: <2lf9l4$bom@news.uni-paderborn.de>
+References: <2lefha$45o@itu1.sun.ac.za>
+NNTP-Posting-Host: riga.uni-paderborn.de
+X-Newsreader: TIN [version 1.2 PL2]
+
+Philip Manning 93-12374 (pmanning@cs.sun.ac.za) wrote:
+: Two in one here...
+: Does anybody know how to call ROM-WHACK from a guru? I'm running 1.3
+: (still!). I assume you need to have been running WB in that mode before it
+: crashed.
+
+If you are experiencing a guru, ROM-Wack already is running.  You need
+a serial terminal hooked to your RS232 port, set to 9600 Baud, 8 Bits,
+no parity, 1 stop bit.
+All input and output of ROM Wack is directed through this port, this is
+hard-wired and not changable AFAIK.
+[..]
+
+--
+*** Michael Boehnisch ********************************* billy@uni-paderborn.de
+Die hier ausgedrueckten Ansichten sind NICHT Public Domain, sondern Shareware.
+Falls Sie auf Dauer meiner Meinung sein wollen,  ueberweisen Sie bitte DM 50.-
+auf das Kto. Nr. 161 377 21 bei der Spk. Paderborn (BLZ 472 501 01).
+
+
+Article 7059 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!ugle.unit.no!flode.nvg.unit.no!trondviggo.nvg.unit.no!and-back-again
+From: kirk@nvg.unit.no (Jorgen Kirksather)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: ROM-WHACK and C
+Date: 8 Mar 1994 13:55:52 +0100
+Organization: Nettverksgruppa - UNIT
+Lines: 14
+Message-ID: <2lhsko$k4d@trondviggo.nvg.unit.no>
+References: <2lefha$45o@itu1.sun.ac.za>
+NNTP-Posting-Host: trondviggo.nvg.unit.no
+
+Actually, if you have already reached the Guru, you can't get to
+Rom-Whack (I think.) The trick is to watch the power-led. When it
+flashes, type a DEL on the terminal keyboard. This should invoke
+RW. This works fine on my A2000A, ks 1.3, connected to a
+Tandberg v2200 (as far as I can remeber) terminal via a null-
+modem cable.
+
+JK
+
+
+Article 7057 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!sun4nl!sci.kun.nl!polder!rhialto
+From: rhialto@polder.ubc.kun.nl (Olaf Seibert)
+Subject: Re: Using Message Ports in C, and in Pascal...
+Message-ID: <rhialto.763123144@polder.ubc.kun.nl>
+Sender: news@sci.kun.nl (News owner)
+Nntp-Posting-Host: polder.ubc.kun.nl
+Organisation: Polderland Language & Speech Technology
+Organization: University of Nijmegen, The Netherlands
+References: <2klupi$3h5@canopus.cc.umanitoba.ca> <k+Mqu*7tc@peti.GUN.de>
+Date: Tue, 8 Mar 1994 10:39:04 GMT
+Lines: 43
+
+In <k+Mqu*7tc@peti.GUN.de> simons@peti.GUN.de (Peter Simons) writes:
+>The reason is that PutMsg() and other routines exptect a pointer to a
+>'Message' structure as parameter, which is just the node header to
+>chain them in a list, a pointer to the reply port and the length of
+>the message. Obviously, the length specifies how many byte of actual
+>data are appended. Now, most programmer define their own structure
+>which is a usual 'Message' plus the to-be-sent data and send this
+>structure off.
+>
+>You do not really need to typecast the structure, but otherwise your
+>compiler would complain because he expects a pointer to 'Message' and
+>not to 'whateverMessage'. In fact, it doesn't make a difference for
+>the routine it's just common practise to cast in such situations.
+
+In fact, there is a slightly different solution, that is on average
+about the same amount of typing, but somewhat cleaner.
+
+Suppose you have
+
+struct MyMsg {
+	struct Message msg;
+	int data;
+} *mymsg;
+
+and you want to PutMsg() it. Now you could do
+
+	PutMsg((struct Message *)mymsg, ...);
+
+but also
+
+	PutMsg(&mymsg->msg, ...);
+
+This lets the compiler check the types better, because there is no
+cast. This solution works for almost all AmigaOS structures; the
+most annoying ones that don't work are MinList vs. List and MinNode
+vs. Node. These are interchangable for most List manipulating functions,
+yet the types are different.
+
+>        bye, Peter
+-Olaf.
+--
+___ Olaf 'Rhialto' Seibert      D787B44DFC896063 4CBB95A5BD1DAA96 
+\X/ There are no lemurs in this post    rhialto@polder.ubc.kun.nl
+
+
+Article 7653 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!news.eunet.fi!news.csc.fi!news.funet.fi!nntp.hut.fi!nntp.hut.fi!s37732v
+From: s37732v@snakemail.hut.fi (Markus Juhani Aalto)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Boopsi, layers and clipping???
+Date: 20 Mar 94 08:33:25 GMT
+Organization: Helsinki University of Technology, Finland
+Lines: 70
+Distribution: inet
+Message-ID: <S37732V.94Mar20103326@alpha.hut.fi>
+References: <1994Mar19.115854.29062@ida.liu.se>
+NNTP-Posting-Host: alpha.hut.fi
+In-reply-to: d92patla@odalix.ida.liu.se's message of Sat, 19 Mar 1994 11:58:54 GMT
+
+In article <1994Mar19.115854.29062@ida.liu.se> d92patla@odalix.ida.liu.se (Patrik Lantto) writes:
+
+> Hello!
+
+> Here's a delicate problem for someone to solve!
+
+> What's the proper way to do clipping when rendering a boopsi-gadget?
+
+> I've tried the following:
+
+> ...
+
+>     struct GadgetInfo *ginfo = msg->gpr_GInfo;;
+>     struct Region *old;
+
+>     LockLayerInfo(ginfo->gi_Layer->LayerInfo);
+>     LockLayer(NULL, ginfo->gi_Layer);
+
+>     old = InstallClipRegion(ginfo->gi_Layer, myclipregion);
+
+>     ... Rendering ...
+
+>     InstallClipRegion(ginfo->gi_Layer, old);
+>     UnlockLayer(ginfo->gi_Layer);
+>     UnlockLayerInfo(ginfo->gi_Layer->LayerInfo);
+
+> ...
+
+
+> Rendering will be called whenever I change a prop-gadget, and
+> it works just fine, but the problem comes when my window needs
+> refreshing. The rendering routine will be called, it will render
+> inside my clipregion, but as the routine returns, the clipregion
+> is cleared, ie. nothing can be updated inside the window until it
+> is moved or resized. I guess the problem is that I'm inside a pair
+> of BeginUpdate() and EndUpdate(), but what to do about it?
+
+You have propably guessed correctly as it can be a problem. You can get
+around it however. First you check if it's window you are drawing
+to (get window ptr from GadgetInfo). Check if the WINDOWREFRESHING
+flag is up in Flags field and if it is then call EndUpdate(layer,FALSE)
+and after you have made rendering call BeginUpdate(layer).
+
+Note that you must call EndUpdate before you install new CLip region.
+
+> Any help, suggestions or whatever will be appreciated.
+
+I hope this helps. Oh and you can propably use BeginRefresh() and 
+EndRefresh() too.
+
+
+> - Patrik
+
+> Patrik Lantto                            Email: d92patla@und.ida.liu.se
+> Plojaregatan 26                          Phone:           +46 13 212225
+> S-583 30  LINKOPING    Best comic: "Ha! Wild Zontars couldn't drag that
+> Sweden                           information out of me! Do your worst!"
+
+
+--
+
+
+**************************************************************************
+*         Markus Aalto              | Helsinki University of Technology  *
+*                                   |                                    *
+*  EMail: s37732v@vipunen.hut.fi    | Faculty of Electric Engineering    *
+*  Phone/Fax: 358-0-8746991         |                                    *
+*                                   | Undergraduate in Computer Science  *
+**************************************************************************
+        
+
+
+Article 7661 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!sun4nl!wtrlnd!desert.wlink.nl!Jaba
+From: Jaba@desert.wlink.nl (Jan van.den.Baard)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Boopsi, layers and clipping???
+Message-ID: <Jaba.0i34@desert.wlink.nl>
+Date: 20 Mar 94 16:41:18 GMT
+Distribution: world
+Organization: Digital Desert
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+X-GateSoftware: AmiGate 0.16 (25.2.94)
+Lines: 53
+
+Hello Patrik,
+In a message of 19 Mar 94 you wrote about Boopsi, layers and clipping???:
+
+ PL> Hello!
+
+ PL> Here's a delicate problem for someone to solve!
+
+ PL> What's the proper way to do clipping when rendering a boopsi-gadget?
+
+ PL> I've tried the following:
+
+ PL> ...
+
+ PL>     struct GadgetInfo *ginfo = msg->gpr_GInfo;;
+ PL>     struct Region *old;
+
+ PL>     LockLayerInfo(ginfo->gi_Layer->LayerInfo);
+ PL>     LockLayer(NULL, ginfo->gi_Layer);
+
+ PL>     old = InstallClipRegion(ginfo->gi_Layer, myclipregion);
+
+ PL>     ... Rendering ...
+
+ PL>     InstallClipRegion(ginfo->gi_Layer, old);
+ PL>     UnlockLayer(ginfo->gi_Layer);
+ PL>     UnlockLayerInfo(ginfo->gi_Layer->LayerInfo);
+
+ Try this.
+
+        struct GadgetInfo *ginfo = msg->gpr_GInfo;
+        struct Region *old;
+        BOOL update = FALSE;
+
+        if ( ginfo->gi_Layer->Flags & LAYERUPDATING ) {
+                EndUpdate( ginfo->gi_Layer, FALSE );
+                update = TRUE;
+        }
+
+        old = InstallClipRegion(ginfo->gi_Layer, myclipregion);
+
+        ... Rendering ...
+
+        InstallClipRegion(ginfo->gi_Layer, old);
+
+        if ( update )
+                BeginUpdate( ginfo->gi_Layer );
+
+Bye,
+         // Jaba Development
+        //  Fido : 2:285/404.29 (Jan van.den.Baard)
+    \\ //   Fido : 2:285/502.7    "   "   "    "
+     \X/    EMail: jaba@desert.wlink.nl
+
+
+Article 4392 of comp.sys.amiga.applications:
+Newsgroups: comp.sys.amiga.applications,comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!Germany.EU.net!netmbx.de!zrz.TU-Berlin.DE!cs.tu-berlin.de!math.fu-berlin.de!hpcsst.mppmu.mpg.de!postmaster
+From: "Stefan Stuntz" <stuntz@informatik.tu-muenchen.de>
+Subject: Re: MUI 2.0 bug!
+Content-Type: text/plain; charset=iso-8859-1
+Message-ID: <64531381@hpcsst.mppmu.mpg.de>
+Sender: news@math.fu-berlin.de (Math Department)
+Nntp-Posting-Host: hpcsst.mppmu.mpg.de
+Content-Transfer-Encoding: 8bit
+Organization: Home of MUI and MFR.
+X-Newsreader: IntuiNews 1.2 Beta 17 (5.2.94)
+References: <2lndmr$5u0@helios.ffi.no> <64531299@hpcsst.mppmu.mpg.de> <2lp6sl$c2k@helios.ffi.no> <2m123n$8nc@helios.ffi.no> <64531322@hpcsst.mppmu.mpg.de> <2m4e0r$f8v@hpsystem1.informatik.tu-muenchen.de> <2m4l6t$ng4@helios.ffi.no> <2m71kn$kta@hpsystem1.informatik.tu-muenchen.de> <1994Mar17.154855@informatik.uni-kl.de>
+Mime-Version: 1.0
+Date: Thu, 17 Mar 1994 23:05:26 GMT
+Lines: 64
+Xref: dd.chalmers.se comp.sys.amiga.applications:4392 comp.sys.amiga.programmer:7607
+
+Christoph Feck wrote:
+
+CF> Wrong.  MUI uses only rootclass which actually is in no way
+CF> related to Intuition (the fact that BOOPSI functions are in
+CF> intuition.library doesn't mean that rootclass is based on
+CF> Intuition functions.
+
+Correct. I would have loved to do all my works based on gadgetclass,
+but it turned out that this class is just too silly for auto-layout
+GUIs. The most important thing for such a GUI is that all their
+contents to know about their min/max/default sizes before a
+parent window is actually opened. This implies some kind
+of setup method with environment information (fonts, etc.).
+Neither gadgetclass nor any other classes distributed by
+Commodore are capable of doing such things (not in V37, not
+in V38, not in V39, not in V40, maybe never?), it seems noone
+there ever thaught about auto-layout. These types of boopsi
+gadgets are completely useless for creating automatic,
+font-sensitive user interfaces.
+
+But since there are some really nice boopsi gadgets flowing
+around (colorwheel, gradient slider, etc.), I wrote
+a boopsi interface class for MUI, which allows every subclass
+of gadgetclass to be used as MUI object in a MUI window.
+Due to the missing features of gadgetclass, there are
+some drawbacks (e.g. the programmer needs to specify min/max
+sizes when creating the object), but it works.
+
+CF> MUIs area class is NOT based on gadgetclass.  Of course,
+CF> this has both downsides and upsides.  I think starting with
+CF> OS 3.0 it makes more sense to base such a system on
+CF> gadgetclass (hint hint ;)
+
+Sorry, I can't see any automatic layout capabilities in OS 3.0.
+Maybe you could tell us a bit more about this. BTW, I don't call
+GFLG_RELxxxxx flags automatic layout, I call it nonsense :-)
+
+CF> Of course letting MUI run on the applications process isn't
+CF> bad either.
+
+It's the only way accomplish certain goals. Did you ever try to
+make an intuition gadget pay attention to clip regions? Virtual
+groups would be impossible with your user interface running
+on several different tasks.
+
+Yes, sometimes its nice to have input.device.task handle gadgets.
+That's why the Amiga has the best "prop gadget feeling" of every
+platform and that's why I decided to have MUI's prop gadgets also
+handled by input.device.task. But having a complete user interface
+under input.device control is simply not necessary and brings up
+lots of refreshing problems.
+
+CF> It replaces gadgetclass, which is not only the baseclass of
+CF> all gadgets in the system, but also the superclass for any
+CF> gadgets we have (like colorwheel, datatypes etc.), and for
+CF> any gadgets we will see in the future (apart from new MUI
+CF> classes :)
+
+True. But due to MUIs boopsi interface class, all MUI applications
+can benefit from new boopsi classes. Of course things would be
+a bit nicer with new MUI classes... :-)
+
+Greetings, Stefan.
+
+
+Article 7736 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!ugle.unit.no!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!gatech!news-feed-1.peachnet.edu!concert!bigblue.oit.unc.edu!not-for-mail
+From: utoddl@guitar.oit.unc.edu (Todd M. Lewis)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: RKRM Libraries mystery: child task and library pointers
+Date: 18 Mar 1994 15:32:42 GMT
+Organization: The University of North Carolina at Chapel Hill
+Lines: 100
+Message-ID: <2mchiq$lc6@bigblue.oit.unc.edu>
+References: <2m8akk$fua@kruuna.Helsinki.FI>
+NNTP-Posting-Host: guitar.oit.unc.edu
+
+In article <2m8akk$fua@kruuna.Helsinki.FI> hipoyhon@kruuna.Helsinki.FI (Harri  
+I Poyhonen) writes:
+>[...]RKRM doesn't
+>explicitly state *why* library bases shouldn't be shared, guess it has
+>something to do with library data area integrity.
+
+superb guessing on your part.  Actually, it could be lots of other
+reasons.  If the library isn't documented as being sharable, then
+you can only guess, and sooner or later you will guess wrong.
+
+>This raises following questions: Can I go on sharing the library pointers? 
+
+Yes.
+
+>Safely?
+
+No.  At least not without some more precautions.
+
+>If I make sure that the library is used by at most one task at a time?
+
+Not relevant.
+
+>What are the library bases that must *not* be shared?
+
+Unbounded set.  Only libraries documented as sharable are sharable.
+That list is much smaller.  However, consider that BOOPSI methods
+get called from Intuition's context.  Therefore anything that gets
+done by a BOOPSI method had better be done by dedicated code or by
+a sharable library.
+
+The rule to follow is that each using task/process _must_ open and
+close the libraries it uses.  Now, IF you do that, AND IF the base
+value returned by the OpenLibrary() call in each of your tasks
+just happens to be the same for a given library, then you can use
+the same global variable to hold the library base pointer for all 
+your tasks.  If in the future one of these libraries changes on
+you and no longer uses the same base for each opener then you
+need to handle that gracefully.  The code below handles that.
+Use and enjoy
+
+/*
+ * Call OpenSharableBaseLibrary() to open libraries
+ * whose bases must be shared among tasks.  It fails (returns NULL)
+ * if the library can't be opened or if the base value returned
+ * is not the same as the value the rest of the tasks are using.
+ *   The 3rd parameter is a pointer to your global base pointer
+ * for the library in question.  DO NOT assign the return value
+ * to your global base pointer--the routine does that if it should,
+ * and if the library were previously opened and this open failed
+ * you would wipe out the global variable that other tasks were
+ * using.
+ */
+struct Library *OpenSharableBaseLibrary( char *libname, 
+                                         LONG ver, 
+					 struct Library **base )
+{
+  struct Library *tmpbase;
+  
+  tmpbase = OpenLibrary( libname, ver );
+
+  if ( (*base == NULL)  || ( *base == tmpbase )  )
+        *base = tmpbase;
+    else
+      {
+        if ( tmpbase )
+	  CloseLibrary( tmpbase );
+	tmpbase = NULL;
+      }
+  return tmpbase;
+}
+
+/*--------------------------------------------------------------------*/
+/* Example use in a subtask.  Note that the return value is NOT
+ * assigned to the global base pointer.  Note also that
+ * every successful open is paired with a close from within the same
+ * task.
+ *   When closing the library, you cannot assume that a non-NULL global
+ * base pointer implies that your task's Open...() was sucessful.  That
+ * value may have been supplied by other tasks which may be using the
+ * pointer.  You will need some other mechanism to determine whether
+ * to close a given library.  (In this example we use the fact that
+ * we are in the if()... statement block.)
+ */
+if ( OpenSharableBaseLibrary( "intuition.library", 0L, &IntuitionBase ) )
+  {
+    if ( OpenSharableBaseLibrary( "gorp.library", 0L, &GorpBase ) )
+      {
+        do_neat_task_stuff();
+        CloseLibrary( GorpBase );
+      }
+     else
+        task_error( ERROR_LIB_BASE_NOT_SHARABLE, "gorp.library" );
+    CloseLibrary( IntuitionBase );
+  }
+ else
+    task_error( ERROR_LIB_BASE_NOT_SHARABLE, "intuition.library" );
+
+--
+Todd_Lewis@unc.edu   ASDF - Amiga Software Developers Forum
+               "Where the Pizza Meets the Code"
+
+
+Article 7786 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!agate!ihnp4.ucsd.edu!munnari.oz.au!comp.vuw.ac.nz!actrix!tower!johnv
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Assembler problem
+References: <inf01.763313949@apollo23> <1994Mar14.132455.15233@jupiter.sun.csd.unb.ca> <2m381p$52d@zetar.cs.pdx.edu> <johnv.0i8g@tower.actrix.gen.nz>
+    <2mfch8INNnin@iraun1.ira.uka.de>
+Distribution: world
+From: johnv@tower.actrix.gen.nz (John Veldthuis)
+Message-ID: <johnv.0ico@tower.actrix.gen.nz>
+Date: Tue, 22 Mar 94 03:17:41 +1200
+Organization: Amiga Virus Extermination Services, TAUG
+Lines: 22
+
+Quoted from <2mfch8INNnin@iraun1.ira.uka.de> by s_heidri@ira.uka.de (Dietmar Heidrich):
+> John Veldthuis (johnv@tower.actrix.gen.nz) wrote:
+> : Quoted from <2m9louINNei4@iraun1.ira.uka.de> by s_heidri@irau32.ira.uka.de (Dietmar Heidrich):
+> : > In article <2m381p$52d@zetar.cs.pdx.edu>, idr@cs.pdx.edu (Dancing Fool) writes:
+> : > 
+> : > The is no thing such as a "new syntax".  What you are talking about is a
+> : > modified syntax form for 8, 16, and 32 bit offsets introduced with the
+> : > 68020 back in 1984/5.
+> 
+> : Of course there is. You must have a really old assembler. It goes like this
+> : move.l	d1,4(a1)	;old syntax
+> : move.l	d1,(4,a1)	;new syntax
+> : or
+> : jsr	_LVOOpenLibrary(a6)	;old syntax
+> : jsr	(_LVOOpenLibrary,a6)	;new syntax
+> 
+> There is no new syntax. Reread my posting. 1984 is certainly not new.
+> You are simply repeating the modified syntax form. Please read posts
+> before you respond to them.
+
+Get a life and read mine.  It is is refered to as NEW SYNTAX.  It may well
+be modified and it is BUT it is REFERED to as NEW SYNTAX
+
+
+Article 8535 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nac.no!eunet.no!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Optimizing linking with Blink
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <Cnr3EL.LA6@unx.sas.com>
+Date: Mon, 4 Apr 1994 19:56:44 GMT
+References:  <marcel.0if6@desert.wlink.nl>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 36
+
+
+In article <marcel.0if6@desert.wlink.nl>, marcel@desert.wlink.nl (Marcel Timmermans) writes:
+|> Hello All,
+|> 
+|> I have a problem. I want to do optimizing linking with blink (6.7). So only  the
+|> procedures wich the main program needed must be include in the finale
+|> executable.
+|> 
+|> I have the following example of the "with"-file:
+|> 
+|> FROM	MainModule.obj
+|> LIBRARY
+|> 		DH0:modules/obj/Intuition.obj
+|> 		DH0:modules/obj/Exec.obj
+|> 		Dh0:modules/obj/Dos.obj
+|> TO MainModule SC SD
+|> 
+|> Can somebody tell me how the structure of the object file must be? So that i can
+|> optimizing linking.
+
+You can use any AmigaDOS-format object file as a library.
+
+In fact, you can use the JOIN command to combine all your object 
+files into a single library:
+
+   join DH0:modules/obj/Intuition.obj DH0:modules/obj/Exec.obj \
+        DH0:modules/obj/Dos.obj AS mylib.lib
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 8638 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!gatech!swrinde!ihnp4.ucsd.edu!pacbell.com!decwrl!pa.dec.com!zowie.zso.dec.com!ridder
+From: ridder@zowie.zso.dec.com (Hans)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Version string
+Date: 6 Apr 1994 19:40:05 GMT
+Organization: Digital Equipment Corporation - DECwest Engineering
+Lines: 27
+Message-ID: <2nv36l$p4q@usenet.pa.dec.com>
+References: <1994Apr2.115917.19252@krk.fi> <CnqruC.I4J@unx.sas.com>
+NNTP-Posting-Host: zowie.zso.dec.com
+
+In article <CnqruC.I4J@unx.sas.com> jamie@cdevil.unx.sas.com (James Cooper) writes:
+>
+>In article <1994Apr2.115917.19252@krk.fi>, jts@krksun.krk.fi (Janne Siren) writes:
+>>Can I have space in the program name in the $VER: version string? This
+>>worls but what does the style guide say about it:
+>>
+>>My Program v1.00 Beta (...date...)
+>>
+>>Should I use '_' instead of space in the name and version number?
+>
+>The Style Guide does not say one way or the other, but other documentation
+>I have seen states that you should NOT have spaces in the $VER: string,
+>other than to separate the fields.
+
+How about using the (often overlooked) NBSP or Non Breaking Space
+character, which will print as space but not be regarded as a space by
+the VERSION command.  I believe it's code is 0xa0, so just make the
+string "My\0xa0Program v1.00..."
+
+>Jim Cooper
+
+-hans
+-- 
+  Hans-Gabriel Ridder <ridder@rust.zso.dec.com>
+  DECwest Engineering, Bellevue, Washington, USA
+  "I'd rather be writing MACRO-20!"
+  Any opinions expressed are not those of my employer, honest.
+
+
+Article 8689 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nntp.uio.no!nac.no!eunet.no!EU.net!howland.reston.ans.net!vixen.cso.uiuc.edu!uxa.cso.uiuc.edu!n-dade
+From: n-dade@uxa.cso.uiuc.edu ()
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: how do the math libraries work?
+Date: 7 Apr 1994 22:09:29 GMT
+Organization: University of Illinois at Urbana
+Lines: 29
+Message-ID: <2o20ap$klh@vixen.cso.uiuc.edu>
+References: <2nulca$k04@tornews.torolab.ibm.com>
+NNTP-Posting-Host: uxa.cso.uiuc.edu
+
+mail delivery system here says "rs6nltc.torolab.ibm.com"? Host
+unknown!, so I post instead:
+
+In comp.sys.amiga.programmer you write:
+
+>Someone told me that if I use the math libraries in my C programs,
+>they will automatically use a math co-processor if it is
+>available, yet will still work on machines that lack one.
+>Is this true?
+
+Yes, for the IEEE math libraries. No for the ffp libraries.
+When the IEEE libraries are opened for the first time they
+look around for
+
+ 1) an 6888x hooked directly to the cpu (by looking at the AttnFlags in execbase
+ 2) a memory mapped 6888x or equivalent (by looking for a IEEEMathResource)
+ 3) and if neither is found, they use their own software routines.
+
+Once the library has decided how it is going to do its math, it
+creates its jump table so that the library vectors go straight to
+the correct routines. (This way it doesn't spend time deciding how
+to perform each math operation each time it is asked to perform a
+math operation).
+
+The IEEEMathResource lets you have an 6888x in a 68000 system.
+
+-Nicolas Dade / n9rzb / nicolas-dade@uiuc.edu
+
+
+Article 8830 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!agate!msuinfo!cl-next4!dunham
+From: dunham@gdl.msu.edu (Steve Dunham)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: 3.0-style propgadgets?
+Date: 11 Apr 1994 00:51:06 GMT
+Organization: Michigan State University
+Lines: 37
+Message-ID: <2oa6tq$18em@msuinfo.cl.msu.edu>
+References: <2o9ci3$eh@yrsa.ifi.uio.no>
+NNTP-Posting-Host: cl-next4.cl.msu.edu
+X-Newsreader: TIN [version 1.2 PL1]
+
+Håkon Enger (haakone@ifi.uio.no) wrote:
+
+: Hello, everybody!
+
+:   Does anybody know how to create propgadgets that look like the
+: ones on Workbench windows in 3.0+? These are NOT the same as the ones
+: I get with the NEWLOOK flag set, nor have I succeded in getting these
+: with BOOPSI. Is it a new BOOPSI class?
+
+I missed this too the first time that I read the RKM.  You have to set
+BORDERLESS to get the 3D effect. eg.
+
+
+
+  g=NewObject(NULL, "propgclass",
+	      GA_RelRight, - 17,
+	      GA_Width, 18,
+	      GA_Top, screen->WBorTop+screen->Font->ta_YSize + 1,
+	      GA_RelHeight, - (9 + 1 + screen->WBorTop + screen->Font->ta_YSize),
+	      GA_RightBorder, 1,
+	      GA_Previous,0l,
+//	      ICA_TARGET, ICTARGET_IDCMP,
+	      PGA_Freedom, FREEVERT,
+	      PGA_Total, 10,
+	      PGA_Top, 1,
+	      PGA_Visible, 1,
+	      PGA_NewLook,1,
+	      PGA_Borderless,1,           /* This tag does the job */
+	      TAG_DONE);
+
+This should work (note that you have to LockPubScreen(NULL) to get the
+pointer `screen').  This is from test code for my scroller class, so
+the size might not be right.
+
+
+Steve Dunham
+dunham@gdl.msu.edu
+
+
+Article 8901 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!uunet!pipex!zaphod.crihan.fr!univ-lyon1.fr!ghost.dsi.unimi.it!icil64.cilea.it!LABENRSA
+From: labenrsa@icil64.cilea.it
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: BOOPSI Images
+Date: 11 Apr 1994 17:10:19 GMT
+Organization: CILEA
+Lines: 28
+Message-ID: <2oc09r$kb9@ghost.sm.dsi.unimi.it>
+References: <inf01.766057539@apollo23>
+Reply-To: labenrsa@icil64.cilea.it
+NNTP-Posting-Host: icil64.cilea.it
+
+In article <inf01.766057539@apollo23>, inf01@apollo23.uni-trier.de (Hans-Joerg Frieden) writes:
+>Hi there.
+>After I have read the BOOPSI chapter in the RKRM twice, there are still some
+>things I didn't quite get. I found that BOOPSI Images are somewhat left out 
+>of the discussion. Perhaps someone who has some experience with BOOPSI Images
+>could write a short posting about it. I have tried some programming with these,
+>but my code is prone to crash. 
+>
+>Thanks!
+>Greetinx, hans-Joerg.
+>
+
+What do you intend to do? Using images from the standard classes (easy)
+or create your own image classes (easiest class to do in BOOPSI, but
+still requires thorough understanding of some details)?
+
+Besides the BOOPSI stuff itself, are you confortable with the nastiness
+of shared code (i.e. geta4() or __saveds in functions, no printf(), etc...)
+This accounts for many, many crashes in new BOOPSer's code.
+
+		Regards,
+		Andy
+
+------
+Andy Zanna
+ZANNA%LABEN@icil64.cilea.it
+
+
+Article 9002 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!ugle.unit.no!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!darwin.sura.net!osceola.cs.ucf.edu!longwood.cs.ucf.edu!not-for-mail
+From: kruse@longwood.cs.ucf.edu (Holger Kruse)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Removing Task started with CreateNewProc
+Date: 11 Apr 1994 17:45:44 -0400
+Organization: University of Central Florida
+Lines: 52
+Message-ID: <2ocge8$mpo@longwood.cs.ucf.edu>
+References: <rknopCo3z57.Azo@netcom.com>
+NNTP-Posting-Host: longwood.cs.ucf.edu
+
+rknop@netcom.com (Robert Knop) writes:
+
+>I have a parent process that creates a child process with the dos.library
+>CreateNewProc, using the NP_Entry tag (as opposed to the NP_SegList tag).
+>When I want to finish the task, the parent process sends a message to the
+>child process, telling it to clean up.  The child process cleans up
+>_everything_ it has allocated, and then does:
+
+>ReplyMsg(msg);
+>Wait(0L);
+
+>When the parent process gets the reply to the "clean up" message, it takes
+>that to mean that the child process is cleaned up and ready to be killed, so
+>it calls RemTask(childprocess).
+
+I see two problems with your method:
+ - Exec might preempt your child task during ReplyMsg(msg), so when
+   you RemTask() it, it is still within the ReplyMsg(), and has not
+   yet reached the Wait(). This might not be fatal though.
+ - Here is the real problem: RemTask() should not be used for DOS
+   processes, because DOS processes have a DOS environment, that
+   needs cleanup, too. This is done automatically for you if you
+   just "fall through", i.e. execute a RTS at the end of your
+   subroutine. Then the program executes the necessary DOS-related
+   cleanup and removes the task from exec's list.
+
+The code I use in one of my programs looks like this:
+
+main process:
+
+  CreateNewProc(....)
+  -- some synchronization for startup --
+  [...task is running...]
+  Wait(SIGBREAKF_CTRL_F); /* I guess you could use messages instead of
+						  signals here, too) */
+  /* nothing else to do here. Child task has finished */
+
+child process:
+
+  -- some synchronization for startup --
+  [... task is running ...]
+  Forbid(); /* necessary to make sure that the task is really removed
+			   before the main program _assumes_ that it is gone. */
+  Signal(parent,SIGBREAKF_CTRL_F);
+  /* fall through to the end of the C function */
+
+If you use messages instead of signals the synchronization gets quite
+similar to the one used by Workbench.
+
+Holger Kruse
+kruse@cs.ucf.edu
+
+
+Article 8965 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!news.eunet.fi!prime.mdata.fi!mits!rkaivola
+From: rkaivola@mits.mdata.fi (Risto Kaivola)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Removing Task started with CreateNewProc
+Date: 12 Apr 1994 10:46:39 +0200
+Organization: MITS - Helsinki - Finland
+Lines: 34
+Message-ID: <rkaivola.766139627@mits>
+References: <rknopCo3z57.Azo@netcom.com>
+NNTP-Posting-Host: mits.mdata.fi
+
+rknop@netcom.com (Robert Knop) writes:
+
+>[weird crashes when a parent task is attempting to remove a child
+> task in Wait(0L)]
+
+>(1) Is RemTask what you are supposed to use to delete AmiagDOS processes, just
+>as you do Exec Tasks?  I couldn't find another function that seemed more
+>appropriate for getting rid of the task.  (The entry in the AmigaDOS manual
+>about CreateNewProc certainly didn't mention anything, but that entry looks
+>like it was written by somebody either in a hurry to get it finished, or who
+>didn't like typing a whole lot.)
+
+I'm not sure exactly what is wrong with your code or the operating
+system or the documentation, but I think the following is typically
+done when a child task wants to remove itself:
+     Forbid();
+     RemTask(NULL);
+
+The advantage here is that if the child task is executing code
+for which the memory was allocated by someone else, this guarantees
+that when the allocator of the memory frees the memory, it won't
+pull the carpet from under the child.
+
+>(2) Is my code that I discuss here likely OK, meaning that I am getting a
+>weird problem with something else that corrupts memory or some such?
+
+This is just a guess, but it may be that the OS does strange things
+when a task executing some critical pieces of code is removed. 
+
+>-Rob Knop
+
+-- 
+Risto Kaivola
+(Internet address:   rkaivola@mits.mdata.fi)
+
+
+Article 8989 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!sun4nl!sci.kun.nl!severus.mbfys.kun.nl!rhialto
+From: rhialto@mbfys.kun.nl (Olaf Seibert)
+Subject: Re: Removing Task started with CreateNewProc
+Message-ID: <Co5Cvx.8I2@sci.kun.nl>
+Sender: news@sci.kun.nl (News owner)
+Nntp-Posting-Host: severus.mbfys.kun.nl
+Organization: University of Nijmegen, The Netherlands
+References: <rknopCo3z57.Azo@netcom.com>
+Date: Tue, 12 Apr 1994 12:47:56 GMT
+Lines: 30
+
+In <rknopCo3z57.Azo@netcom.com> rknop@netcom.com (Robert Knop) writes:
+>I have a parent process that creates a child process with the dos.library
+>CreateNewProc, using the NP_Entry tag (as opposed to the NP_SegList tag).
+>When I want to finish the task, the parent process sends a message to the
+>child process, telling it to clean up.  The child process cleans up
+>_everything_ it has allocated, and then does:
+>
+>ReplyMsg(msg);
+>Wait(0L);
+>
+>When the parent process gets the reply to the "clean up" message, it takes
+>that to mean that the child process is cleaned up and ready to be killed, so
+>it calls RemTask(childprocess).
+
+First, I would add a Forbid() before the ReplyMsg(), so that the parent
+can't possibly see the reply before the child has terminated.
+
+Second, since it is a DOS *Process*, you can't just call RemTask() on it.
+The best way is to have it fall of the edge of the world, in this
+case, to let it return from the function you initially started.
+It will do the cleanup as is judged necessary by the CreateNewProc()
+function.
+This also works for Tasks, by the way. In practice, there is rarely
+need to RemTask() another Task.
+
+>-Rob Knop
+-Olaf.
+--
+___ Olaf 'Rhialto' Seibert                                 rhialto@mbfys.kun.nl
+\X/ An original idea. That can't be too hard. The library must be full of them.
+
+
+Article 8951 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!Germany.EU.net!netmbx.de!zib-berlin.de!news.belwue.de!news.uni-ulm.de!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: BOOPSI Images
+Message-ID: <1994Apr11.212804@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <inf01.766057539@apollo23> <2obnar$ttj@msuinfo.cl.msu.edu>
+Date: Mon, 11 Apr 1994 19:28:04 GMT
+Lines: 19
+
+In article <2obnar$ttj@msuinfo.cl.msu.edu>, dunham@gdl.msu.edu (Steve Dunham) writes:
+> Hans-Joerg Frieden (inf01@apollo23.uni-trier.de) wrote:
+> : Hi there.
+> : After I have read the BOOPSI chapter in the RKRM twice, there are still some
+> : things I didn't quite get. I found that BOOPSI Images are somewhat left out 
+> : of the discussion. Perhaps someone who has some experience with BOOPSI Images
+> : could write a short posting about it. I have tried some programming with these,
+> : but my code is prone to crash. 
+> 
+> Did you read the Appendix?  A lot of the BOOPSI information is
+> there. You have to pass a DrawInfo structure in your Taglist when you
+> call CreateObject.
+
+Hm, not passing a required tag shouldn't cause a crash :)
+Have you switched off stack checking?  Any access to global
+varibales (saveds or geta4 required)?  Maybe post some code?
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 9115 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.hardware,comp.sys.amiga.programmer,alt.sys.amiga.demos,comp.sys.amiga.games
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!vixen.cso.uiuc.edu!uwm.edu!msuinfo!netnews.upenn.edu!dsinc!scala!mks
+From: mks@scala.scala.com ("Michael Sinz")
+Subject: Re: A4000 ROM differences -> slowness
+Message-ID: <1994Apr16.131313.10561@scala.scala.com>
+Date: Sat, 16 Apr 1994 13:13:13 GMT
+References: <1994Apr15.145410.7255@ericsson.se>
+Organization: SCALA, Inc.
+Lines: 51
+Xref: dd.chalmers.se comp.sys.amiga.hardware:12316 comp.sys.amiga.programmer:9115 alt.sys.amiga.demos:1977 comp.sys.amiga.games:13299
+
+In article <1994Apr15.145410.7255@ericsson.se> etlanbh@etlxd20.ericsson.se writes:
+>I have been having compatibility problems with my A4000/030, with quite a few games
+>and demos, the symptom being "jerky" execution - the progam halts for half a second
+>runs for a split second, halts again for half a second etc. Even the mouse pointer
+>and sound freeze during the stops. Programs with this problem include Red Barron
+>(which does it about on about 50% of missions) the demo of skidmarks, which does
+>it while the text is scrolling on the title screen, and Powermonger.
+>
+>I had put this down to problems with the 030 processor as these all work fine on the 
+>A1200, however I found that they all work with skick, running V1.3, V2.04 or the
+>A1200 V3.0 kickstarts. Although the A1200 and A4000 kickstarts have the same ver. no.
+>they must be different(?) Also skick would not recognise an A4000 ROM snapshot as
+>going with the V3.0 relocation tables (but the A1200 one was O.K.) and booting from
+>the A1200 kickstart means you don't get the A4000 harddisk or fastram.
+
+The differences between the A1200 ROM and A4000 ROM are due to the different
+hardware (yes, hardware) and the need to support that hardware in the ROM.
+
+The real reason you are seeing what you are seeing is that on Zorro-III systems
+a bus access to an address space that is not decoded (invalid address in
+Zorro-III space) the system will end up waiting for a while for the address
+to respond (in case the card is a slow one) and then finally will cause a
+bus fault which on a 68030 can be handled and "ignored" such that the system
+does not crash.  On the 68040 systems, the OS makes an MMU table to map all
+invalid addresses to one location that is valid such that an invalid address
+read will not take the system down.
+
+Note that invalid address accesses are BUGS and really should cause the
+system to crash.  However, the reason I made 68040.library do what it does
+is because it needed to keep as many programs working (even with bugs) as
+it could.
+
+>Does anyone know what the differences are, why they haven't got different version numbers, why the A1200 ROM won't recognise the A4000 IDE port (though it recognises
+>the A1200 one O.K.) and most importantly is there a patch for the A4000 ROM that will
+>fix the "jerking" problem (as games such as Red Baron are slow and jerky for other
+>reasons with no harddisk or fastram!)
+
+The reason for the differences is that the A1200 and A4000 IDE are not the same.
+(They are both IDE but are implemented with different gate arrays/pals)
+Also, the A1200 has a 24-bit address-space CPU and it can not have A4000-like
+FAST RAM.  (But I did add for 3.1 (v40) of EXEC the ability to find CPU-Card
+FAST RAM if the CPU card follows the rules...  Too bad 3.1 is not out yet...)
+
+The only way to try to "patch" this may be to run Enforcer with the QUIET
+option.  This may not work since the 030 A4000 machines many times have EC parts
+which do not have fully working MMUs.
+
+-- 
+----
+Michael Sinz -- Director, US Research & Development, Scala Inc.
+mks@scala.com - Scala Computer Television
+
+
+Article 9291 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!newsxfer.itd.umich.edu!gumby!yale!yale.edu!nigel.msen.com!zib-berlin.de!fauern!lrz-muenchen.de!colin.muc.de!hwg!heinz
+Subject: Re: Some Semidocu. Exec Func.
+Newsgroups: comp.sys.amiga.programmer
+References: <2p1bsv$4aj@hpsystem1.informatik.tu-muenchen.de>
+Distribution: world
+X-Newsreader: TIN [version 1.2 PL0]
+From: heinz@hwg.muc.de (Heinz Wrobel)
+Message-ID: <heinz.0l2k@hwg.muc.de>
+Date: Wed, 20 Apr 94 19:43:30 GMT
+Organization: My Private Site
+Lines: 18
+
+Simon Frischeisen (frischei@Informatik.TU-Muenchen.DE) wrote:
+: These two parts of the book mention only that these functions have
+: something to do with task trees.
+
+: Now, can ANYONE tell me ANYTHING about these functions ??
+
+They were never implemented. I think it was Mike Sinz who planned to do
+something in this direction but he didn't get around to it. Think of these
+LVO's as dummies of no use to be reused by C= any time (which IMHO should
+be done for any function where there is no official documentation).
+
+: Simon Frischeisen          EMail: frischei@informatik.tu-muenchen.de
+
+--
+Heinz Wrobel        Edotronik GmbH: heinz@edohwg.adsp.sub.org
+                    Private Mail:   heinz@hwg.muc.de
+My private FAX: +49 89 850 51 25, I prefer email
+
+
+Article 9656 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!news.funet.fi!ousrvr.oulu.fi!tolsun!kilroy
+From: kilroy@tolsun.oulu.fi (Lauri Aalto)
+Subject: Re: Why does c.o clear BSS? It's not needed!!
+Message-ID: <1994Apr25.132448.26840@ousrvr.oulu.fi>
+Sender: news@ousrvr.oulu.fi
+Organization: University of Oulu, Finland
+References: <80012334@prox.stgt.sub.org> <1994Apr24.121656.9198@ousrvr.oulu.fi> <farrenCosBK0.JC1@netcom.com>
+Date: Mon, 25 Apr 1994 13:24:48 GMT
+Lines: 21
+
+In article <farrenCosBK0.JC1@netcom.com> farren@netcom.com (Mike Farren) writes:
+>kilroy@tolsun.oulu.fi (Lauri Aalto) writes:
+>
+>>Boris Folgmann <boris@prox.stgt.sub.org> writes:
+>>>Why does c.o clear BSS? In the AutoDoc for InternalLoadSeg() you find:
+>
+>>It's an undocumented feature (CLEAR bit on AllocMem()). Some programs rely on
+>>this, so it hasn't been dropped. 
+>
+>Pardon me?  MEMF_CLEAR is hardly "undocumented" - it's been there for a
+>long, long time.
+
+Sorry for any inconvience I may have caused... I meant that the bss hunk
+clearing with AllocMem()'s CLEAR bit set while allocating memory for the
+hunks is undocumented. That's why most of the C compilers clear the bss
+hunks in a loop before actually using them. 
+
+      (__)    Lauri Aalto
+    w \@@/    kilroy@tolsun.oulu.fi
+     `/v/-e   2:228/406.2@fidonet
+    _/  \_    ...Intel inside--idiot outside...
+
+
+Article 9650 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!MathWorks.Com!news.duke.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Why does c.o clear BSS? It's not needed!!
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CotF0I.HzJ@unx.sas.com>
+Date: Mon, 25 Apr 1994 12:36:18 GMT
+References:  <80012334@prox.stgt.sub.org>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 50
+
+
+In article <80012334@prox.stgt.sub.org>, "Boris Folgmann" <Boris@prox.stgt.sub.org> writes:
+|> Why does c.o clear BSS? In the AutoDoc for InternalLoadSeg() you find:
+|> [...]
+|> Clears unused portions of Code and Data hunks (as well as BSS hunks).
+|> (This also applies to LoadSeg() and NewLoadSeg()).
+|> [...]
+
+If you're talking about SAS/C's c.o, it clears memory because the OS didn't 
+do it until AmigaDOS 2.0.
+
+|> BTW: Why don't place everything in one CODE hunk?
+|> 
+|> Assembler Example:
+|> 
+|> Start:  move.l (ReturnCode,pc),d0
+|>         rts
+|> 
+|> ReturnCode: dc.l        10
+|> Storage:    dx.l        5
+
+For one thing, I don't see why it's an advantage to have everything in
+one CODE hunk.  However, that point aside, there are several reasons
+for having multiple hunks:
+
+   1. If you have a NEAR data hunk, you can use 16-bit offsets relative
+      to register A4 instead of full 32-bit relocations.  You could use
+      PC-relative offsets in the code hunk, but you'd be limited to
+      32k for your program PLUS your data.  With a seperate near section,
+      you get 64k of near data independant of code size.  The 16-bit
+      offsets are faster and allow compiler-implemented reentrancy (cres.o).
+
+   2. CHIP data obviously has to go into a seperate section.  You don't
+      want your code taking up CHIP memory.
+
+   3. Putting the stuff in seperate sections reduces the size of any
+      one section; this means that in fragmented systems, you have a 
+      better chance of being able to load the program.  If you have a 
+      program with 300k of code and 200k of data, but your system only
+      has two 400k chunks available, a single hunk won't load; two 
+      hunks would load.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 9850 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!pfm.PFM-Mainz.DE!babylon!rbabel
+From: rbabel@babylon.pfm-mainz.de (Ralph Babel)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Why does c.o clear BSS? It's not needed!!
+Message-ID: <18733@babylon.pfm-mainz.de>
+Date: 27 Apr 1994 20:17:55 +0200
+References: <80012334@prox.stgt.sub.org> <1994Apr24.121656.9198@ousrvr.oulu.fi> <farrenCosBK0.JC1@netcom.com> <1994Apr25.132448.26840@ousrvr.oulu.fi>
+Lines: 16
+
+Lauri Aalto wrote:
+
+> I meant that the bss hunk clearing with AllocMem()'s CLEAR
+> bit set while allocating memory for the hunks is
+> undocumented.
+
+The clearing of BSS hunks is documented on page 357 of the
+Bantam manual. Yes, this was already documented prior to
+2.0. No, it doesn't use MEMF_CLEAR. It never did.
+
+> That's why most of the C compilers clear the bss hunks in
+> a loop before actually using them.
+
+No. We were talking about BSS space "implied" at the end of
+a _data_ hunk the actual data block of which is shorter than
+indicated in the header block. (SLink's small-data model.)
+
+
+Article 9512 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!vixen.cso.uiuc.edu!sdd.hp.com!nigel.msen.com!zib-berlin.de!news.belwue.de!news.uni-ulm.de!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: amazing disappearing Write() s
+Message-ID: <1994Apr23.205258@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References:  <1994Apr22.172338.1@utxvms.cc.utexas.edu>
+Date: Sat, 23 Apr 1994 18:52:58 GMT
+Lines: 24
+
+In article <1994Apr22.172338.1@utxvms.cc.utexas.edu>, cbloom@utxvms.cc.utexas.edu writes:
+> 
+> I have been writing a file-io intensive program (Open/Read/Write/Close) and
+> find an erratic/random problem: sometime the changes made by Write don't stay
+> made after a Close.  The changes are in effect for subsequent reads in the
+> same run, but the changes suddenly disappear when the program compeletes!
+> Do I need to Flush() a file before closing it?  Does anyone have any ideas?
+
+Close() does a Flush() itself.  But you must Flush() if you change
+data transfer direction with buffered files (FRead/FWrite).
+
+> Also, there is an OpenFromLock() but no LockFromFH() - why not?  Does Open()
+
+It's called DupLockFromFH().  The file will not be closed, unlike
+OpenFromLock() where the lock is released.
+
+> automatically Lock a file and Close UnLock() ?  If so, is it always ACCESS_
+> WRITE ?  How do you control it iit is automatic?
+
+It should be ACCESS_READ for MODE_OLD and ACCESS_WRITE otherwise.
+Ralph? :)
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 9744 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!news.umbc.edu!haven.umd.edu!cville-srv.wam.umd.edu!walrus
+From: walrus@wam.umd.edu (Udo K Schuermann)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: GadTools problem
+Date: 26 Apr 1994 15:27:40 GMT
+Organization: University of Maryland, College Park
+Lines: 30
+Message-ID: <2pjbtc$dlr@cville-srv.wam.umd.edu>
+References: <tvGgeMD1A7aMz1@!dietmar.tomate.oche.de>
+NNTP-Posting-Host: rac4.wam.umd.edu
+
+In article <tvGgeMD1A7aMz1@!dietmar.tomate.oche.de>,
+Dietmar Eilert <DIETMAR@TOMATE.OCHE.DE> wrote:
+>I wonder wether it is possible to create two independant lists of
+>GENERIC_KIND GadTools gadgets in order to add one list in front of the
+>system gadgets (window's top border), the other list after the system
+>gadgets (bottom border), using AddGList() twice ?
+
+You'll need a context gagdet for each disjoint list of gadgets.  The
+context gadget only serves as a place holder, an anchor for a list of
+GadTools gadgets.
+
+>As far as I can see this requires two CreateContext() calls to get a root
+>for subsequent CreateGadget() calls, used to build two gadget lists:
+
+Correct.
+
+Just be careful about how MANY gadgets you end up removing from a window's
+gadget list!  Once CreateGadget() call can create more than one physical
+gadget: a listview, for example, consists of scrollbar, up/down arrows, and
+two more, I think, whose purpose I can guess at, but that wouldn't be wise.
+Make NO assumptions about the number of gadgets actually created by a call
+to CreateGadget().
+
+I always add GadTools gadget at the very end of a list, after the system
+gadgets, and after my non-GadTools gadgets (if any) so that I can get rid
+of a list of GadTools gadgets in one swell foop.  Things get tricky in all
+other cases, requiring you to count before removing gadgets.
+
+ ._.  Udo Schuermann
+ ( )  walrus@wam.umd.edu
+
+
+Article 22693 (635 more) in comp.sys.amiga.programmer:
+From: Michael Smith
+Subject: Re: Finding visible area of auto-scroll screen?
+Organization: U.Va. Internet Public Access Project
+Date: Tue, 23 Nov 1993 12:59:13 GMT
+Lines: 14
+
+In article <2courq$ivq@galaxy.ucr.edu>,
+joseph rumsey <jrumsey@ucrengr.ucr.edu> wrote:
+>I think what I'm actually asking is, how do I find out the overscan
+>settings for the current mode?  Is there a variable in the screen
+>or viewport structure, or do I need to look in preferences, or
+>somewhere else entirely?
+
+QueryOverScan() fills in a struct Rectangle for whichever overscan
+setting you want, given a viewport from the current screen (I think
+its the viewport, it may be the visualinfo -- I'm not at home to
+check the autodocs or the RKRM).
+-- 
+  //  Michael B. Smith
+\X/   mbs@Hopper.ACS.Virginia.EDU
+
+
+Article: 32844 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer,comp.sys.amiga.misc,comp.sys.amiga.advocacy
+Path: news.chalmers.se!sunic!pipex!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: ScrollerWindow source in alt.sources.amiga
+Message-ID: <1994May27.003146@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+Date: Thu, 26 May 1994 22:31:46 GMT
+Lines: 40
+Xref: news.chalmers.se comp.sys.amiga.programmer:32844 comp.sys.amiga.misc:34074 comp.sys.amiga.advocacy:66947
+
+There has been recently a discussion in csa.advocacy (and
+csa.misc) about the look of Intuitions window borders and
+gadgets.  People complained about the 'squished' look in
+interlaced modes (or other highres modes with 1:1 aspect).
+
+Indeed this is a problem that needs to be addressed in a
+future OS release.  There is, however, a hack on aminet,
+which hacks around with Intuition and makes the sizegadget
+and the horizontal WB scrollers look 'right' in those 1:1
+modes without requiring a new OS.
+
+Sadly enough, only a few programs work right with this
+hack, because it assumes that the programs do the 'right'
+thing, and ask the OS about the dimensions of the sizing
+and arrow images.  Instead, these programs insist on using
+hardcoded values (Workbench 2.0 itself is such a bad guy,
+but Workbench 3.0 and MultiView seem to work perfectly
+well with this hack).
+
+Creating a complete size adaptive layout is not as simple
+as using hardcoded values.  That is understood.  Because
+of this, I have released an example program in alt.sources
+.amiga, which performs this task (written in C).  It adds
+the four arrow gadgets and uses BOOPSI, too.
+
+It also should answer the very often asked question of how
+to create 'those Workbench 3d sliders', because it isn't
+possible e.g. with gadtools, and needs some knowledge about
+Intuitions gadget relativity flags.
+
+May this program help developers upgrading their programs
+to handle gadgetsize sensitive window layout.  I will also
+put it on Aminet, for those who can't access the alt groups
+(should show up in dev/src).
+
+Have fun,
+Christoph
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article: 32850 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!MathWorks.Com!news.duke.edu!godot.cc.duq.edu!newsfeed.pitt.edu!dsinc!scala!jesup
+From: jesup@scala.scala.com ("Randell Jesup")
+Subject: Re: Freeing system memory
+Message-ID: <1994May27.011200.9176@scala.scala.com>
+Date: Fri, 27 May 1994 01:12:00 GMT
+References: <zpb923a8Y8HbZ101@bamp.berlinet.in-berlin.de>
+Organization: SCALA, Inc.
+Lines: 22
+
+>DA> if I use AvailMem it reports the maximum size of free chip/fastmem. To gain more free memory I can Closeworkbench().
+>DA> Does anyone have an idea of furthermore temporary CloseDowns which does not void the system,
+
+>getmem(1000000000,...)
+>
+>If AmigaDos cannot find any memory-chunk of that size, it frees all
+>unused fonts and libraries in memory (normally they are not released
+>immediately after a "closelibrary"/"closefont"). Of course this getmem
+>will fail (return 0) but I'm sure AvailMem will show you more memory
+>as before.
+
+	Be careful: on a machine with VM software, you might actually GET
+the 100 MB of "memory".  I advise being paranoid, and if the allocation
+by some chance succeeds, free the memory.
+
+-- 
+Randell Jesup, Scala US R&D
+Randell.Jesup@scala.com
+Ex-Commodore-Amiga Engineer, class of '94
+#include <std/disclaimer>
+
+
+Article: 32916 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!convex!news.duke.edu!news-feed-1.peachnet.edu!gatech!newsfeed.pitt.edu!dsinc!scala!jesup
+From: jesup@scala.scala.com ("Randell Jesup")
+Subject: Re: Aux-Handler
+Message-ID: <1994May27.215432.11773@scala.scala.com>
+Date: Fri, 27 May 1994 21:54:32 GMT
+References: <50230265@bmagic.mayn.sub.de> <2rqp6s$brp@nemesis.jpl.nasa.gov>
+Organization: SCALA, Inc.
+Lines: 34
+
+jdickson@nemesis.jpl.nasa.gov (Jeff Dickson) wrote:
+>>What do I have to do to ensure that my aux-handler (based on sd-aux)
+>>after mounted is not mistakenly interpreted as having a filesystem by some
+>>system-monitor-tools? Maybe the mountlist entry is the problem?
+>>
+>>Handler = L:KMSAUX-Handler
+>>Startup = DEVICE:serial.device/UNIT:0/SPEED:19200
+>>StackSize = 4000
+>>Priority =  5
+>>GlobVec = -1
+>>
+>>Or what has to be done in the handler code to tell everybody the absence of a
+>>file system under it?
+
+>	When handlers are begun (at least the one's that I have written) the
+>OS requests a lock on what could be thought of as the root of the volume for
+>filesystems. For non filesystem type handlers I would disallow any locks from
+>being issued thereafter (ACTION_LOCATE_OBJECT). I still allowed that one lock
+>to be duplicated though (ACTION_COPY_DIR). Also I would answer false to the
+>ACTION_IS_FILE_SYSTEM dos packet.
+
+	Actually, the "standard" test (other than the direct query with
+ACTION_IS_FILE_SYSTEM) is to see if the handler supports ACTION_LOCATE_OBJECT.
+If you are a handler, and not a filesystem, you should not support
+ACTION_LOCATE_OBJECT at all.
+
+	Check out the port-handler example from the Atlanta(?) devcon disks.
+(You'll want to add support for ACTION_IS_FILESYSTEM - return FALSE.)
+
+-- 
+Randell Jesup, Scala US R&D
+Randell.Jesup@scala.com
+Ex-Commodore-Amiga Engineer, class of '94
+#include <std/disclaimer>
+
+
+From: dunham@gdl.msu.edu (Steve Dunham)
+Subject: Re: Tagcalls in a .library
+Date: 31 May 1994 19:02:04 GMT
+
+Ketil Hunn (ketil@brosme.dhmolde.no) wrote:
+: How do I create tagcalls in a .library since varargs cannot be put in registers?
+
+: ex:
+: funcA(struct TagItem *taglist)
+
+: func(Tag tag1,...)
+: (
+:  return funcA((struct TagItem *)&tag1);
+: )
+
+: In other words, how do I put function func in the library?
+
+You can't.  But SAS has a special #pragma statement that will
+automatically take care of everything. Just put funcA in your library
+and if the pragma statement for funcA looks like this:
+
+#pragma libcall funcA 1e 8
+
+Then you add the following line after it
+
+#pragma tagcall func 1e 8
+
+(this is all in the Library Reference manual)
+
+Later,
+Steve
+dunham@gdl.msu.edu
+
+
+Article: 33467 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!uunet!usc!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Fonts in BOOPSI gadgets
+Message-ID: <1994Jun6.154150@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <1994Jun1.184435.28974@ida.liu.se> <1994Jun6.053301.28694@ida.liu.se>
+Date: Mon, 6 Jun 1994 13:41:50 GMT
+Lines: 20
+
+In article <1994Jun6.053301.28694@ida.liu.se>, c92andst@odalix.ida.liu.se (Andreas Stenmark) writes:
+> >Can someone please explain where a BOOPSI gadget finds the
+> >default font to put in gpr_RPort? Or perhaps the question is
+> >*why*, because it seems that the gadget uses the Screen's
+> >font instead of the Window's or GfxBase->DefaultFont. Why?
+> 
+> >And...what's the best method for the class user to tell
+> >the gadget which font to use? Attributes? Sure, but neither
+> >C= BOOPSI classes nor gadtools seems to use this.
+
+The V42 gadgetclass.h include file that came with the
+GI1 (Gadget and Image collection #1) has a GA_TextAttr
+gadget attribute.  Of course only new gadgets that deal
+with text will support them (like the tabs.gadget).
+
+The archive is freely distributable, but I haven't
+checked wether it is on Aminet (I got it on IRC).
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article: 33702 of comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!uunet!europa.eng.gtefsd.com!newsxfer.itd.umich.edu!nntp.cs.ubc.ca!cs.ubc.ca!cs.ubc.ca!not-for-mail
+From: seiler@cs.ubc.ca (Oliver Seiler)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: BorderTop/BorderBottom etc..
+Date: 8 Jun 1994 23:54:59 -0700
+Organization: Computer Science, University of B.C., Vancouver, B.C., Canada
+Lines: 49
+Message-ID: <2t6ec3$26h@cascade.cs.ubc.ca>
+References: <1994Jun8.012806.583@hitech.po.my>
+NNTP-Posting-Host: cascade.cs.ubc.ca
+
+In article <1994Jun8.012806.583@hitech.po.my>,
+Terence Tan <terence@hitech.po.my> wrote:
+>Quick questions:
+>1. What is the best way to findout the inner width/height of a window
+>   (Currently I use [Where pWdw is a struct Window  pointer]
+>    pWdw->Width - pWdw->BorderLeft - pWdw->BorderRight or
+
+This is because these fields measure different things. Generally if
+you are subtracting and adding widths and border values you are going
+to have to add or subtract a bit (to get it right the first time
+try to figure out the offsets using an imaginary "small" window, with
+maybe a one pixel wide border, in which case win->BorderLeft is 1,
+a drawing area width of 0, etc... Then just scale up...)
+
+>    pWdw->Height - pWdw->BorderTop - pWdw->BorderBottom). It doesn't
+>    seem to do it properly cause I usually have to adjust it by 1 -2
+>    pixels.
+
+Use win->BorderTop, win->BorderLeft, etc. if you have the window's open. This
+gives you the position of the first location *not* in the border. Before
+opening, use the screen fields WBorLeft, WBorTop, etc (WBorTop doesn't
+include the title bar, so add scr->Font->ta_YSize+1.) WBorRight and WBorBottom
+may not be good to use if you aren't using the standard right and bottom
+border settings...
+
+To get the width and height of the non-border area of a window use
+win->GZZWidth and win->GZZHeight. (Yes this works for non-GZZ windows - 
+read the RKMs)
+
+>2. Does pWdw->BorderTop take into account the drag bar at the top?
+>   Is it font sensitive?
+
+Yes to both. I usually just use win->BorderTop+INTERHEIGHT for all my gadgets,
+etc..
+
+If the window isn't open, use scr->WBorTop+scr->Font->ta_YSize+1 to get the
+same value as win->BorderTop...
+
+>3. Best way to clear a window?[BltClear??]
+
+I'd avoid using the blitter for future compatibility reasons... Umm.
+SetRast() followed by RefreshWindowFrame() would probably be fast. Even
+better, avoid the RefreshWindowFrame() and use RectFill() on the window's
+rastport (being sure to set the proper background color - best way of
+getting this is using the DrawInfo pens array...)
+
+-Oliver
+
+
+Article: 33744 of comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!math.ohio-state.edu!jussieu.fr!sxpo.fdn.org!ramses.fdn.org!simon.gris
+From: simon.gris@ramses.fdn.org (Simon Gris)
+Message-ID: <EEB7F981@ramses.fdn.org>
+Newsgroups: comp.sys.amiga.programmer
+Distribution: world
+X-FTN-To: Terence Tan
+Subject: Re: BorderTop/BorderBottom etc..
+Date: 09 Jun 94 17:04:46 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+Organization: RAMSES BBS (France:1-6003-7015/7713/7716)
+X-GateSoftware: AmiGate 0.17 (7.6.94)
+Lines: 52
+
+In a message of 08 Jun 94 Terence Tan wrote to All:
+
+ TT> @MSGID: 2:320/104.1 EEAD8EE8
+ TT> @REPLYADDR terence@hitech.po.my
+ TT> @PID: AmiGate 0.17 (7.6.94)
+
+ TT> From: terence@hitech.po.my (Terence Tan)
+
+ TT> Quick questions:
+ TT> 1. What is the best way to findout the inner width/height of a window
+ TT>    (Currently I use [Where pWdw is a struct Window  pointer]
+ TT>     pWdw->Width - pWdw->BorderLeft - pWdw->BorderRight or
+ TT>     pWdw->Height - pWdw->BorderTop - pWdw->BorderBottom). It doesn't
+ TT>     seem to do it properly cause I usually have to adjust it by 1 -2
+ TT>     pixels.
+
+The best way is :
+InnerWidth = pWdw->GZZWidth;
+InnerHeight = pWdw->GZZHeight;
+
+/* And this work even if the window is not a GZZWindow type */
+
+ TT> 2. Does pWdw->BorderTop take into account the drag bar at the top?
+ TT>    Is it font sensitive?
+
+No ! You have to do the following :
+
+OffY = pWdw->BorderTop + pWdw->WScreen->Font->ta_YSize + 1;
+OffY = pWdw->BorderRight;
+
+ TT> 3. Best way to clear a window?[BltClear??]
+
+/* This fill yor entire Window's RastPort. In a normal window this destroy
+** the system imagery on it. Wis a GZZWindow this is great.
+*/
+SetRast( pWdw->RastPort );
+
+/* Or if it is not a GZZ : */
+EraseRect( pWdw->RastPort, OffX, OffY,
+           pWdw->GZZWidth + OffX - 1,
+           pWdw->GZZHeight + OffY - 1 );
+
+/* or */
+SetRast( pWdw->RastPort );   /* Followed by : */
+RefreshWindowFrame( pWdw );
+
+
+Simon Gris  FIDO 2:320/104.39  EMAIL: Simon.Gris@ramses.telesys-innov.fr
+                                      Simon.Gris@ramses.fdn.org
+
+... Contents may have settled during shipping.
+
+
+
+Article 10291 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!vixen.cso.uiuc.edu!sdd.hp.com!sgiblab!idiom.berkeley.ca.us!apollo.west.oic.com!apollo.west.oic.com!not-for-mail
+From: dillon@apollo.west.oic.com (Matthew Dillon)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Task Priority Question
+Date: 4 May 1994 21:40:23 -0700
+Organization: Obvious Implementations Corp
+Lines: 38
+Distribution: world
+Message-ID: <2q9tbn$hn4@apollo.west.oic.com>
+References: <Cp8H3x.86A@festival.ed.ac.uk> <1994May4.140305.25547@ousrvr.oulu.fi>
+NNTP-Posting-Host: apollo.west.oic.com
+
+In article <1994May4.140305.25547@ousrvr.oulu.fi> kilroy@tolsun.oulu.fi (Lauri Aalto) writes:
+:In article <Cp8H3x.86A@festival.ed.ac.uk> andrewb@castle.ed.ac.uk (Andrew Begg) writes:
+:>What functions allow me to change the priority of my C programs so that 
+:>the CPU gives more (or, perhaps, all) of its time to my code?  
+:
+:oldpri = SetTaskPri(FindTask(0L),newpri);
+:/* do your stuff here */
+:SetTaskPri(FindTask(0L),oldpri); /* reset priority */
+:
+:
+:
+:
+:      (__)    Lauri Aalto
+:    w \@@/    kilroy@tolsun.oulu.fi
+:     `/v/-e   2:228/406.2@fidonet
+:    _/  \_    ...Intel inside--idiot outside...
+
+    Be careful... the Amiga only round-robins processes running at the
+    same priority, if you set your priority higher your process can
+    take ALL the available cpu, locking out everything else.  Most
+    processes run at priority 0, setting yours to priority 1 is usually
+    sufficient if you need extra CPU, but even that will lock out (while
+    you are not blocked waiting for something) all other user processes.
+    It doesn't block out the filesystem code or input.device... you have
+    to up your priority to 20 or more to do that, but it blocks out enough
+    to make the machine unusable if your process gets into an infinite
+    loop at that priority.
+
+						-Matt
+
+-- 
+
+    Matthew Dillon		dillon@apollo.west.oic.com
+    1005 Apollo Way
+    Incline Village, NV. 89451	ham: KC6LVW (no mail drop)
+    USA 			Sandel-Avery Engineering (702)831-8000
+    [always include a portion of the original email in any response!]
+
+
+Article 10336 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nac.no!eunet.no!nuug!EU.net!howland.reston.ans.net!usc!elroy.jpl.nasa.gov!ames!olivea!charnel.ecst.csuchico.edu!yeshua.marcam.com!MathWorks.Com!news.duke.edu!eff!news.umbc.edu!haven.umd.edu!cville-srv.wam.umd.edu!walrus
+From: walrus@wam.umd.edu (Udo K Schuermann)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: How the hell does multitasking work?
+Date: 5 May 1994 21:00:40 GMT
+Organization: University of Maryland, College Park
+Lines: 43
+Message-ID: <2qbmpo$anm@cville-srv.wam.umd.edu>
+References: <cmanCpBKq0.Lw2@netcom.com>
+NNTP-Posting-Host: rac1.wam.umd.edu
+
+In article <cmanCpBKq0.Lw2@netcom.com>, Mike Austin <cman@netcom.com> wrote:
+> How does exec 'let' on execute it's instructuins for a while then 'let' the
+> other process have some time?  To execute an instruction don't you have to
+> jump to that location?  If you did that you would 'become' that processs
+> and not end until you're done...
+
+How Preemptive Multitasking Works:
+
+1. A part of the Operating System (Exec on the Amiga) maintains a list of
+   all tasks/processes that are waiting for a CPU.  This is the Ready
+   Queue.  It also has a list of all processes currently running, this is
+   the Run Queue.  One a single CPU system, there may be many processes in
+   the Ready, but only one in the Run Queue.
+
+2. Now, the OS (Exec) uses a timer on the Running Task (Run Queue) and when
+   the task's time is up, it saves the so-called CPU State (PC, SP, SR, all
+   the registers) in the TCB (Task Control Block), takes it out of the Run
+   Queue, and moves the next TCB out of the Ready into the Run Queue.
+      The PC, SP, SR, and registers are loaded from the new task's TCB and
+   processing continues where it left off the last time that this task was
+   suspended.
+      This is the task-swapping process and represents the sole overhead in
+   Exec (AFAIK.)  In fact, when a task's time is up (i.e. its quantum has
+   expired) it is necessary to task-swap ONLY IF ANOTHER TASK IS IN THE
+   WAIT QUEUE.  If the Wait Queue is empty, then the task is NOT swapped
+   and does NOT lose the CPU.  This is why a system with twenty running
+   programs, all waiting for an event, consume NO CPU time and can let
+   another task (even at lower priority) run at FULL SPEED.
+
+And there you have it.  Things get trickier when you deal with prioritized
+queues (i.e. multiple Ready Queues, one for each priority level) and when
+you use semaphores and suspended tasks (tasks waiting for signals and
+events (such as Wait()ing for a mouse click, keypress or disk insert) are
+stored in a Wait Queue unique to each possible event, semaphore, signal,
+etc.
+
+Complications abound, but that should give everyone an idea what's
+happening inside Exec and most other such setups.
+
+We now return you to the frightened ramblings of people without nerve.
+
+ ._.  Udo Schuermann                  Someone kick the "fat lady"
+ ( )  walrus@wam.umd.edu              before she starts to sing!
+
+
+Article 10351 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!swrinde!sgiblab!idiom.berkeley.ca.us!apollo.west.oic.com!apollo.west.oic.com!not-for-mail
+From: dillon@apollo.west.oic.com (Matthew Dillon)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: How the hell does multitasking work?
+Date: 5 May 1994 17:11:42 -0700
+Organization: Obvious Implementations Corp
+Lines: 151
+Distribution: world
+Message-ID: <2qc1vu$178@apollo.west.oic.com>
+References: <cmanCpBKq0.Lw2@netcom.com>
+NNTP-Posting-Host: apollo.west.oic.com
+
+In article <cmanCpBKq0.Lw2@netcom.com> cman@netcom.com (Mike Austin) writes:
+:I am writing down things that I would want in an operating system and 
+:actually making some data structures etc. when I really though about how 
+:pre-emptive multi-taking works.  Say you have two processes in a loop 
+:with equal priority.  How does exec 'let' on execute it's instructuins 
+:for a while then 'let' the other process have some time?  To execute an 
+:instruction don't you have to jump to that location?  If you did that you 
+:would 'become' that processs and not end until you're done...
+:
+:Maybe it's more like this (I am NO assembly expert)?
+:
+:...
+:-- 
+:                       cout << "cman@netcom.com" << endl;
+:
+:                  << I get more junk e-mail than junk mail! >>
+
+   Well, a lot of people have answered but I figure I'll have a go at it to
+   :-)
+
+   Basically, a hardware interrupt based on a timer interrupts the currently
+   running task after what is known as a time quantum.  For the sake of 
+   argument, lets say this quantum is 1 second.
+
+   The processor, when it takes the interrupt, pushes the program counter and
+   status register onto the stack and jumps to the interrupt handler.  The 
+   interrupt handler pushes all remaining registers: D0-D7,A0-A6, and saves
+   the user stack pointer (A7 before the interrupt occured) in a known 
+   location, usually in a structure which is part of a linked list of
+   tasks.
+
+   The interrupt handler then accesses the next running task in this linked
+   list and loads the stack pointer for the next task.  This stack pointer,
+   of course, points to the state information for the second task.  The
+   interrupt handler then pops off the registers and does a 
+   return-from-interrupt, which restores the status register and program
+   counter FOR THE NEXT TASK.  Poof, task #2 is now running.
+
+   The next time the interrupt occurs, the interrupt handler repeats the
+   work and and on return, Poof, task #1 is running again.  The task's
+   do not know or care that they are getting switched back and forth.
+
+   Now, back to the time quantum.  If you have two tasks both in an
+   infinite loop, with one printing "A" to the screen and the other printing
+   "B" to the screen, you would see something like this:
+
+   	AAAAAAAAAABBBBBBBBBBAAAAAAAAAABBBBBBBBBBAAAAAAAAAABBBBBBBBBB
+
+   (this isn't exactly what happens on the amiga since printing requires a
+   task switch, but it's a good example)
+
+   If you now reduce the time quantum down to, say, 1/10 of a second, you
+   would see:
+
+   	AAABBBAAABBBAAABBBAAABBBAAABBBAAABBBAAABBBAAABBBAAABBBAAABBB
+
+   If you now reduce the time quantum down to, say, 1/100 of a second,
+   you would see:
+
+        ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+
+   Now, this isn't quite to scale, but you get the idea... the smaller the
+   time quantum, the more it 'appears' from the user's perspective that the
+   two tasks are running simultaniously.  Of course, there are limits... if
+   you make the time quantum too small, the interrupt overhead really slows
+   things down.  But anything on the order of 1/30 second will not be 
+   noticable in terms of overhead.
+
+   --
+
+   Now, part #2:  Lets say you have 10 tasks.  You want a way of telling
+   the system that any given task is 'sleeping', so the system does not
+   switch it in.  If you have 9 sleeping tasks and 1 running task, then
+   that 1 running task gets all available CPU until one of the sleeping
+   tasks wakes up.
+
+   This sleeping/running thing can be implemented through two circular
+   queues.  One queue contains a linked list of structures representing
+   running tasks, and the other contains a linked list of structures
+   representing sleeping tasks.  (Again, not quite the way the Amiga works,
+   but good enough for argument).  When a task wants to go to sleep, it
+   makes a system call that transfers it's structure form the running queue
+   to the waiting queue.  When a task wants to wakeup another task (or
+   an interrupt -- say, a serial interrupt to wakeup the terminal program),
+   it makes a system call that places the other task back on the run queue.
+
+   In this manner, the operating system does not waste time running tasks
+   that have nothing to do at the moment.  The task switch interrupt handler
+   ONLY deals with the running-tasks-queue.  Most task's are 'waiting' on
+   devices.  Some random interrupt causes the device to register an event
+   that one or more tasks was waiting for, resulting in the device's
+   hardware interrupt routine moving the tasks in question from the wait
+   queue to the run queue.
+
+   --
+
+   part #3:  Priorities.  Lets say you have 10 tasks and they are
+   ALL running.  Each task gets about 1/10 of the CPU.  But lets say one
+   of those tasks is really important and needs to be able to take more
+   CPU.  By implementing a priority scheme you can give that task several
+   quantums instead of just one.  In the case of the Amiga, priorities are
+   fixed... the Amiga round-robins between all running tasks at the
+   highest priority level and any running tasks at a lower priority level
+   get no CPU at all.  This works because those higher priority tasks
+   do not generally run for very long at a time... they are sleeping most
+   of the time.
+
+   In something like UNIX, priorities are more dynamic... a higher priority
+   process will not completely lockout lower priority processes.
+
+   Priorities can be implemented any number of ways... you can adjust the
+   time quantum according to the priority, you can simply lock out lower
+   priority tasks, or you can use a combination of the two, or do other
+   things.
+
+   --
+
+   part #4:  Preventing screwups.  What happens when two tasks are trying
+   to, say, write to the screen?   Lets say you have a common global variable
+   which contains the current screen coordinates of the cursor:  x, and y.
+   Task #1 read's x and y, stores the character on the screen, increments x,
+   and if needs to increments y and scrolls the screen (and zero's x).
+
+   The problem is, of course, if two tasks are doing that and the system
+   switches between them, the two globals can get corrupted: task #1 reads x,
+   system interrupts it and runs task #2 which also reads x (i.e. both
+   tasks write to the same cursor position!), not to mention other problems.
+
+   To handle this problem, you need some way of 'locking out' the other task
+   for the duration of your little write-to-screen operation.  Most operating
+   systems provide this in some manner or other... for example, a flag that
+   prevents preemptive task switching.  Sophisticated operating systems
+   like EXEC and UNIX allow you to selectively lockout different subsystems.
+
+   For example, if task #1 is writing to the screen and task #2 is
+   writing to the serial port, there is no particular reason to lock them
+   out from each other since they both can co-exist without conflict.
+
+
+   Well, that's it!
+
+						-Matt
+
+-- 
+
+    Matthew Dillon		dillon@apollo.west.oic.com
+    1005 Apollo Way
+    Incline Village, NV. 89451	ham: KC6LVW (no mail drop)
+    USA 			Sandel-Avery Engineering (702)831-8000
+    [always include a portion of the original email in any response!]
+
+
+Article 10459 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: BOOPSI Class Names
+Message-ID: <1994May8.165619@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <2pu92s$mh7@lovelady.cs.utexas.edu> <CpFuCu.4qx@news.ci.ua.pt> <2qh5nu$mhs@priddy.cs.utexas.edu>
+Date: Sun, 8 May 1994 14:56:19 GMT
+Lines: 77
+
+In article <2qh5nu$mhs@priddy.cs.utexas.edu>, mthomas@cs.utexas.edu (Mark A. Thomas) writes:
+> >: Another possibility is to not worry about possible conflicts.  Is anyone
+> >
+> >Yes, don't worry. If you provide the class as linkable code (please do), you
+
+Please don't!
+
+> >should make it unnamed, I mean to use it the programmer only have to get the
+> >class pointer returned by MakeClass().
+
+> Well, my class is a library, not a linkable module.  The reason is that it
+> is more sensible when the gadget is used in multiple programs since only
+> one copy of the code is in memory, as opposed to one copy per program if
+> it was linkable.
+
+The solution is simple:  Make your library have _one_ LVO (let's
+call it GetClass() here).  It should return a pointer to the Class
+which has to be used to create new objects.  This pointer has
+to be valid as long as the library has an OpenCount != 0 or has
+subclasses or subobjects.
+
+There is actually no need bother about the names of the classes
+but it's the name of the library.  I'd suggest the way C= does it
+with datatypes and gadgets.  E.g., if you have an BOOPSI gadget
+class, put it in SYS:Classes/Gadgets/<name>.gadget, if you have
+a subclass of imageclass, the name would be SYS:Classes/Images/
+<name>.image etc.  If you have a _new_ class which is not subclass
+of an existing class (ie. a subclass of rootclass, icclass or model
+class :) create a new drawer in SYS:Classes/
+
+I have e.g. classes for 24 bit display and it looks like this:
+
+SYS:Classes/
+	Gadgets/
+		xxxx.gadget
+	DataTypes/
+		xxxx.datatype
+	displayclass	(subclass of icclass)
+	Displays/
+		amiga.display
+		picasso.display
+		(etc).
+
+As for the serialclass someone mentioned:  Don't ever call a class
+(or library) just serialclass.  I assume the class is needed for
+serial device I/O.  Well, why not have a (device-independed) inter-
+face to data streams, and then built device depended classes on
+top of it?  I have a class called 'streamclass' and then I built
+a few subclasses:
+
+SYS:Classes/
+	streamclass
+	Streams/
+		file.stream
+		memory.stream
+		device.stream
+		clipboard.stream
+			(this one is a subclass of device.stream)
+
+Now, a serial.stream (subclass of device.stream, no need to bother
+with Exec IO functions etc.) would make sense.  Additional attributes
+and methods would need to be defined, of course (e.g. setting baud
+rate or whatever).
+
+Think a bit object oriented when designing classes.  It is nearly
+always possible to make a 'super'class which actually doesn't do
+anything but sets the standard attributes and methods, so programs
+designed to use these attributes can also use any new subclass.
+Think about a parallel.stream.  It would be nearly the same code
+like in serial.stream.  Having a device.stream has two advantages:
+Space saving, and you benefit from any improvements made in the
+super classes.
+
+I think that's enough for now :)
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 10503 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: BOOPSI Class Names
+Message-ID: <1994May9.143931@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <2pu92s$mh7@lovelady.cs.utexas.edu> <CpFuCu.4qx@news.ci.ua.pt> <2qh5nu$mhs@priddy.cs.utexas.edu> <1994May8.165619@informatik.uni-kl.de> <2qjff0$r3m@priddy.cs.utexas.edu>
+Date: Mon, 9 May 1994 12:39:31 GMT
+Lines: 37
+
+In article <2qjff0$r3m@priddy.cs.utexas.edu>, mthomas@cs.utexas.edu (Mark A. Thomas) writes:
+> In article <1994May8.165619@informatik.uni-kl.de>,
+> Christoph Feck IRZ <feck@informatik.uni-kl.de> wrote:
+> >The solution is simple:  Make your library have _one_ LVO (let's
+> >call it GetClass() here).
+> 
+> Yes, this is a nice solution...  The only reason that I can come up
+> with for this not being the best solution is that it will take 3
+> steps to get a gadget (OpenClass(), GetClass(), and CreateObject()),
+> as opposed to 2 (OpenClass(), CreateObject()).  However it does have
+> the advantage of not having to wait for Commodore to approve of a
+> public class name.  I guess I'll use this now, and when I get
+> approval I'll let you do it either way.  Thanks.
+
+There is another reason:  Speed!  Say you want to create 100
+button objects in your window, the OS would search 100 times
+the public class list.  When more and more people add classes
+to this list, the startup time of your program increases
+proportional to O(n*m).  But if you already have a class pointer
+(_AND_ it is guarantueed to stay valid as long as the library
+is openend), you can just do a simple CoerceMethod call:
+
+  newobj = CoerceMethod(class, class, OM_NEW, attributes);
+
+This directly jumps into the class dispatcher.  The only
+reason the Intuition call NewObjectA exists, is because
+of locking the class to prevent it from unloading while
+the object is being created (semaphores et al.).
+
+> Yes, certainly.  My goal was to always follow the Commodore
+> standard, that's why I'm a bit hesitant about GetClass().
+
+Actually, datatype classes also have this LVO at offset -30.
+That's where I got the idea :)
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 10961 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: BOOPSI-Button with Key Support
+Message-ID: <1994May17.204200@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References:  <inf01.769175363@apollo23>
+Date: Tue, 17 May 1994 18:42:00 GMT
+Lines: 24
+
+In article <inf01.769175363@apollo23>, inf01@apollo23.uni-trier.de (Hans-Joerg Frieden) writes:
+> I just happened to be writing a program that needs some BOOSPI button
+> gadgets. I need them with the little underscore to mark a keyboard
+> shortcut, and they should be able to handle this by themselves.
+
+Regarding keyboard input:  Intuition can only send input
+to a gadget that is going to be activated (GM_ACTIVE),
+or that is active and currently procssing input (GM_HANDLE).
+In other words, your gadget will never know that the
+user pressed a key unless you activated it yourself.
+
+There are two solutions:  Have a master gadget, which
+you keep active (ActivateGadget() it whenever you get
+a IDCMP_GADGETUP or IDCMP_ACTIVEWINDOW) and which sends
+all keyboard events to all it's subgadgets (groupgclass
+will do this).
+
+The other solution is to use IDCMP_RAWKEY (so that you
+can recieve KEYUP events) and activate the gadget
+associated with a given character yourself (MUI will
+do this :)
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 10958 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Calling libraries from boopsi objects
+Message-ID: <1994May17.194729@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References:  <Cpwzx1.3A9@undergrad.math.uwaterloo.ca>
+Date: Tue, 17 May 1994 17:47:29 GMT
+Lines: 43
+
+In article <Cpwzx1.3A9@undergrad.math.uwaterloo.ca>, clgonsal@undergrad.math.uwaterloo.ca (Carl Laurence Gonsalves) writes:
+> I'm working on a simple boopsi gadget, and I'm stuck on one thing:
+> 
+> Where do I store library bases, and when should I get them?
+
+Put a pointer to your global (per-class) data in cl->cl_UserData.
+Open all the libraries before you are going to make your class
+handle available.
+
+> The reason I'm asking is this: the dispatcher is called from Intuition's
+> context, while the function that creates the class is called from the
+> application's context. Theoretically, and library bases I get from the
+> app's context might be invalid in Intuition's context, right? (this is the
+> "sharing library bases" issue)
+
+I'd say that exec, graphics, intuition, utility and layers
+are safe to share (Commodore does it, too).  If your gadget
+needs other libraries, well, open them in the dispatcher,
+BUT also open them in your class initialization just to make
+sure they are in memory (and stay there until the class is
+freed).  If OpenLibrary() would need to load, you could
+end up creating a deadlock, when ramlib puts a 'Please
+insert LIBS:' requester (which you can't disable because
+tasks like input.device don't have pr_WindowPtr...)
+
+> Since I'll probably always be using the libraries within the dispatcher's
+> context (ie: Intuition's) I guess I should open the lib's in the
+> dispatcher, say in the OM_NEW method.
+
+No!  The OM_NEW method will be called on the applications
+process, but the GM_HITTEST will be called from input.device.
+You will have to open them whenever you need them, not just
+once in the object creation (which means the library pointers
+are local variables in your dispatcher function, and not
+stored in either per-class or per-object data).
+
+If you have further questions, feel free to ask.
+
+Mr. BOOPSI :)
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article 10993 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!math.ohio-state.edu!jussieu.fr!centre.univ-orleans.fr!univ-lyon1.fr!swidir.switch.ch!scsing.switch.ch!news.dfn.de!rrz.uni-koeln.de!rrz.uni-koeln.de!teralon!dino.dinoco.de!yaps.dinoco.de!arno
+From: arno@yaps.dinoco.de (Arno Eigenwillig)
+Newsgroups: comp.sys.amiga.programmer
+Subject: cloning file handles (was: Re: SystemTagList() Problems)
+Message-ID: <7kaPu*CB1@yaps.dinoco.de>
+Date: Tue, 17 May 1994 15:34:31 +0100
+Reply-To: arno@yaps.dinoco.de
+References: <Cp2rEH.M4r@dcs.ed.ac.uk> <mwiMu*2v1@yaps.dinoco.de>
+ <2qodc4$d0j@hpsystem1.informatik.tu-muenchen.de>
+ <2qosqe$ftt@nemesis.jpl.nasa.gov> <2r0h9s$olb@lily.csv.warwick.ac.uk>
+Organization: Yet Another Private Site in Meckenheim, Germany
+X-Newsreader: Arn V 1.04
+Lines: 48
+
+Hi!
+
+In article <2r0h9s$olb@lily.csv.warwick.ac.uk>, Ralf writes:
+
+> BPTR DupFH(BPTR oldfh)		/* never pass an exclusive fh */
+> {
+> BPTR lock,fh;
+> 
+> if (lock=DupLockFromFH(oldfh))
+> 	{
+> 	if (fh=OpenFromLock(lock))	/* this does really only take 1 parm */
+> 		return fh;
+> 	UnLock(lock);
+> 	}
+> return 0;
+> }
+
+The above code should be perfect for usual file system files. However,
+as the original subject - SystemTagList() problems - brings back to
+mind, the original intention was to clone the current input and output
+file handles. And these are not guaranteed to be files from which a
+lock can be DupLockFromFH()'ed:
+- they may be non - file system "files" (such as a console or a pipe)
+- they may be files on a file system not supporting the underlying
+  ACTION_COPY_DIR_FH packet
+
+For interactive "files" there is the way Ralph Babel demonstrates in
+his Guru Book:
+
+	pr = (struct Process *)FindTask(0);
+	oldcontask = pr->pr_ConsoleTask;
+	pr->pr_ConsoleTask = <another handler's process ID>;
+	fh = Open("*", MODE_NEWFILE);
+	pr->pr_ConsoleTask = oldcontask;
+
+Similarities to Ralph's ConWindowC.c are admittedly not conincidential.
+
+However, I still hold up the statement I made in <-BhLu*7t1@yaps.dinoco.de>:
+
+> there is no general way to clone file handles
+
+Sad.
+
+-- __
+__/// Arno Eigenwillig <arno@yaps.dinoco.de>
+\XX/  MIME & PGP supported * V:+49-2225-5870 
+
+Every real programmer knows that 0x2b | ~0x2b == -1.
+
+
+Article: 19415 of comp.sys.amiga.applications
+Newsgroups: comp.sys.amiga.applications
+Path: news.chalmers.se!sunic!ugle.unit.no!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!cs.utexas.edu!convex!news.duke.edu!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: Fractint 2.1 is here!
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CrFwnI.GJw@unx.sas.com>
+Date: Wed, 15 Jun 1994 13:11:42 GMT
+References: <1994Jun14.120902.22351@news.uit.no> <CrE3EK.C6E@unx.sas.com> <bruceb.771610162@vnet.ibm.com> <1994Jun15.091244.28111@news.uit.no>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 61
+
+
+In article <1994Jun15.091244.28111@news.uit.no>, terjepe@stud.cs.uit.no (Terje Pedersen) writes:
+>In article <bruceb.771610162@vnet.ibm.com>, bruceb@vnet.ibm.com (Bruce Baltzer) writes:
+>|> jamie@cdevil.unx.sas.com (James Cooper) writes:
+>|> >In article <1994Jun14.120902.22351@news.uit.no>, terjepe@stud.cs.uit.no (Terje Pedersen) writes:
+>|> >>  The manual now has a lot of slightly incorrect information since the
+>|> >>  interface is changed to MUI. Some of the ...
+>|> >   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>|>
+>|> >Oh, well.  So much for that.  I was hoping to see a better version of
+>|> >Fractint, but now that you've made it rely on MUI, I'll just forget
+>|> >about it...
+>|>
+>|> >I know some folks really like MUI, and it does have a couple of nice
+>|> >features, but there's no way I'll use a program that requires it unless
+>|>
+>|> I agree... I personally don't like MUI.  Having a program require a certain
+>|> library is one thing, but requiring a complete set of programs and graphics and
+>|> such I really don't agree with.  MUI is slow, too...
+>|>
+>
+>You must be joking right? as for the size of the lib : arount 170k
+>if you have that little hard disk space left, well then thats not the
+>mui's fault. or if you've got a 68000 its not the mui's fault either.
+>The size is about the same as the post.library and it too is slow on a
+>plain 68000. Can't blame postscript for that, can you?
+
+No, no joke at all.  My machine at home is an A3000/25, and I currently
+have about 400Meg or so free (just added a new drive :-), so its not the
+space.
+
+I just don't care for the MUI setup.
+
+>The only thing you need is the muimaster.library! no other files
+>is required! If you installet the whole thing it might get big.
+
+Its not as useful or interesting without all the extra files.
+
+I also don't install anything that requires ixemul.library, and I'm
+about to start nuking anything that requires reqtools.library, when all
+that is used from reqtools is also available in the OS.  Yes, reqtools
+is really nice for 1.3 compatibility, to give a consistent interface,
+but when its used in a 2.1+ ONLY program...
+
+Just a personal "thing" here.
+
+>If enough people wanted a plain old text only interface I might
+>make one.
+
+No, I don't want a "plain old text only interface" on Fractint.  What I
+would prefer is for people to use what's in the OS itself...
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article: 33872 of comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!usenet.ins.cwru.edu!eff!news.umbc.edu!haven.umd.edu!cville-srv.wam.umd.edu!walrus
+From: walrus@wam.umd.edu (Udo K Schuermann)
+Newsgroups: comp.sys.amiga.programmer
+Subject: HOW TO: Creating a Resizable GUI
+Date: 12 Jun 1994 22:10:51 GMT
+Organization: University of Maryland, College Park
+Lines: 659
+Message-ID: <2tg15b$j3@cville-srv.wam.umd.edu>
+NNTP-Posting-Host: rac3.wam.umd.edu
+Summary: A Usenet Publication for Amiga Users
+Keywords: walrus,gui,layout,engine,resizable
+
+Due to a few requests on the topic, I took the time to create the following
+document to serve as a sort of tutorial  for what I  call "hand-crafting" a
+freely resizable GUI based on Intuition and GadTools.  It is not a ready to
+run layout engine like MUI, but a  methodology to achieve  the same core of
+flexibility without the overhead that less necessary features require.
+
+Consider this a gift.  If you don't agree with my opinions or  with  what I
+present here, then ignore it.   I am doing  this because I  believe that it
+may help create more flexible software.  I invite public discussion of this
+stuff, but do not know how much time I have to participate to any extent.
+
+Enjoy!
+
+ ._.  Udo Schuermann
+ ( )  walrus@wam.umd.edu
+
+
+--------------------------------(snip snip)--------------------------------
+
+			  The Walrus Layout Engine
+			  ~~~~~~~~~~~~~~~~~~~~~~~~
+		A presentation of methods for hand-crafting
+		     a resizable graphic user interface
+				    ***
+		     Copyright (c) 1994 Udo Schuermann
+			    All rights reserved
+
+...
+
+[Sorry, I can't reproduce the article here, as it isn't freely redistributable.
+ Ask Udo for a copy.  - JöG]
+
+
+Article: 33771 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb.informatik.uni-kl.de!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: drawing over the dragbar
+Message-ID: <1994Jun10.152051@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklira.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References:  <2t7hob$kgk@ysics.physics.sunysb.edu>
+Date: Fri, 10 Jun 1994 13:20:51 GMT
+Lines: 15
+
+In article <2t7hob$kgk@ysics.physics.sunysb.edu>, dtiberio@ic.sunysb.edu (David Tiberio) writes:
+> 
+> 	Is there a way to draw an image over the drag bar without the image 
+> being destroyed whenever the window is selected? Or maybe moving the dragbar
+> to the side of the window? I need to use the space where the top of the
+> window is, and have a dragbar.
+
+Add a gadget in the top window border.  You can have any gadget
+become the drag bar, just don't request WA_DragBar and set the
+GTYP_SYSTYPE to the correct value for the drag gadget.
+
+Hope that helps.
+
+3k// Christoph Feck, TowerSystems - BOOPSI Class Development
+\X/ Amiga - Intuition inside.
+
+
+Article: 38081 of comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!pipex!howland.reston.ans.net!EU.net!sun4nl!wtrlnd!grafix.wlink.nl!paul
+From: paul@grafix.wlink.nl (Paul Weterings)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Good programmers/sources   was: What's
+Message-ID: <paul.12mf@grafix.wlink.nl>
+Date: Tue, 06 Sep 94 01:27:41  GMT+1
+Distribution: world
+Organization: Grafix Attack BBS Holland
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+X-GateSoftware: XEchoGate 1.3
+Lines: 61
+
+In a message of 03 Sep 94 Arno Eigenwillig wrote to All:
+
+ >> Trouble
+ >> is, especially in C's case, I don't know how to go about it; I've seen
+ >> books that teach C, but all the *interesting* stuff (like Amiga graphics
+ >> and sound) are, naturally, not covered, being modules one must include.
+
+ AE> I am not convinced by those "learn C on the Amiga" books. From my
+ AE> personal experience in learning C, you are better of with learning plain
+ AE> ANSI C from a good tutorial like K&R2 [1], and then resort to the
+ AE> official OS documentation [2] from C= for Amiga-specific stuff.
+
+I agree completely, but just to add my 2 cents: _After_ you've done all the
+work on the 'standard' C and Amiga-specific code from the C= manuals, looking
+to sources of other people also enlighted me quite a lot.
+
+There are several people (some here on the net) that produce some _very_ good
+code that made me learn quite a lot of things that I would never have found in
+the books. Not so much the 'tips and tricks' or hardware-bashing as the way
+they program, the way the code is formeed, and documented.
+
+As a matter of speaking their freely distributable sources are sort of a
+'expert manual' Even better that some others I could mention, since examples
+are at hand any time ;-)
+
+To name some of the names that stand high on my list as 'good programmers', and
+of who's sources I have learned:
+
+( In no particular order )
+
+Olaf 'Olsen' Barthel - Term
+Christian Weber      - Iff.library
+Jan van den Baard    - GadToolsBox, BGUI
+Markus Aalto         - Popup gadget Class
+
+And ofcourse for the Amiga-specific-code beginners:
+
+Anders Bjerin        - C-manual
+
+(Only the ones who's sources I've been studying, ofcourse there are more good
+programmers, but we are talking about source code here)
+
+I can advise their source to anybody, please feel free to add some names to the
+list, ofcourse I have not seen everything there is.
+
+I often find myselve looking in their sources to see how they solved a certain
+problem. Especially Term is a great program to learn from. Ofcourse one's
+programmers solution doesn't have to be _the_ solution, so I prefferably
+double-check somebody else's source to find a other solution to the same
+problem. I very often find myselve using the program 'grep' of 'search' when
+programming ;-)
+
+
+Article: 39179 of comp.sys.amiga.programmer
+From: gael@gnlab027.grenoble.hp.com (Gael Marziou)
+Date: Tue, 27 Sep 1994 12:38:06 GMT
+Subject: Re: Faking a gadget depression.
+Message-ID: <GAEL.94Sep27133806@gnlab027.grenoble.hp.com>
+Organization: Hewlett Packard GND Lab.
+Path: news.chalmers.se!sunic!uunet!news.sprintlink.net!howland.reston.ans.net!math.ohio-state.edu!magnus.acs.ohio-state.edu!csn!col.hp.com!cello.hpl.hp.com!hplntx!hpbbn!hpgndlab!gael
+Newsgroups: comp.sys.amiga.programmer
+References: <1994Sep25.174454.14996@liberty.uc.wlu.edu>
+Sender: news@hpgndlab.grenoble.hp.com (News Admin (F.Pernoud))
+In-Reply-To: jspeton@liberty.uc.wlu.edu's message of Sun, 25 Sep 1994 17:44:54 GMT
+Nntp-Posting-Host: gnlab027.grenoble.hp.com
+Lines: 27
+
+
+Jean-Guy> I would simply like to know how I can simulate a boolean
+Jean-Guy> gadget being 'depressed' (clicked on) when the users presses
+Jean-Guy> the appropriate key.  For example in the ReqTools requesters
+Jean-Guy> boolean gadgets are depressed for a long as the user holds the
+Jean-Guy> key down.  How is this done?  Thanks.
+
+You can use Intuition or if you want to do it fast you can use gadtools
+with this unsupported hack which works on all 2.04+ systems.
+
+
+/* Toggle select gadget using gadtools */
+
+G = CreateGadget(BUTTON_KIND, G, &ng, GT_Underscore, '_', TAG_DONE);
+if (State & PSF_PAUSED)
+	G->Flags |= GFLG_SELECTED;
+G->Activation |= GACT_TOGGLESELECT;  /* this is not legal (but making it myself is much more hard!) */
+
+

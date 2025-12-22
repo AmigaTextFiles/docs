@@ -1,0 +1,481 @@
+
+           The PAR: Device Used As A VOLUME In READ Mode ONLY.
+           ---------------------------------------------------
+
+  Preface:-
+  ---------
+
+  Before we get into the project proper, humour me here. :)
+
+  I know that PAR: is a DEVICE and NOT a VOLUME but if you read this
+  simple explanation then you will see where I am coming from.
+
+  Imagine a normal AMIGA, say an A1200 probably with a HDD fitted.
+  Now the internal floppy disk drive is DF0: and this is the DEVICE.
+
+  This device can be manipulated by device drivers with offsets inside the
+  device driver(s), (e.g. trackdisk.device), to give limited control of the
+  HW, (note that at pure HW level full control can be achieved), this
+  does not require any serious knowledge of the workings of the disk drive
+  other than what the offset names mean.
+
+  OK, now suppose that you insert a floppy disk labelled DF0 and now the
+  DEVICE DF0: has a VOLUME also called DF0. This VOLUME can only be written
+  to or read from AND manipulation of the volume is done by the DEVICE.
+
+  This is exactly the way I am using PAR: as NO device offsets are being
+  used by the sofware ONLY a call to OPEN the DEVICE and from then on
+  just READING in this case, NOT WRITING although it is SO EASY to WRITE
+  to it from the CLI/Shell to print ASCII characters to a standard parallel
+  port printer. In EITHER case some sort of EXTERNAL HW modification will
+  be required to SEND or RECEIVE data to and from the parallel port.
+
+  THIS project is for RECEIVING 8 Bit binary data from the parallel port
+  WITHOUT the need to know anything about the internal workings of the
+  port at all.
+
+  I decided on ARexx as this is effectively ~FREE~ with OS2 to the A1 and
+  OS4. I have NO IDEA if this works on an A1 with OS4 or PPC gear with
+  MOS or any other derivative of an AMIGA WITH ARexx AND PAR: installed.
+
+  IF ANYONE is interested in experimenting with me and OWNS an A1 or PPC
+  MOS type AMIGAs the Email me at    wisecracker@tesco.net    as I would
+  love to make this project UNIVERSAL to the point of OS4 at least.
+
+  TIA... :)
+
+  Enjoy experimenting like I do with VERY simple solutions to sometimes
+  very difficult problems. See my ~Criteria~ for these projects and you'll
+  understand what I mean.
+
+============================================================================
+
+  General Overview:-
+  ------------------
+
+  This project is SO simple that I have split it into two parts.
+
+  The first part the ~-ACK_CLOCK~ is ALWAYS REQUIRED to use this method of
+  accessing the parallel port. This is a simple '555 timer IC running in
+  astable mode at somewhere around 1KHz and CONTINUOUSLY toggling the
+  ~-ACK~ line of the parallel port, Pin 10. I left it at that clock rate
+  because I was using ARexx which is slow in relation to other languages.
+  This can EASILY be built on the kitchen table by a young child without
+  ANY special construction techniques, (which is part of my criteria).
+  No special components are required and can be obtained from any ordinary
+  electronic components supplier.
+
+  The second part is an A-D Converter add-on which will be used to make
+  a VERY simple 0V to 5.10V Voltmeter. This is a DIRECT derivative of
+  of my Project6 of TestGear2.lha in the hard/hack drawer of AMINET.
+  Because this performs EXACTLY the same as the Project6 A-D Converter
+  then ALL of the HW projects that use Project6 will work on this project
+  BUT YOU will have to modify OR re-write the ARexx code for those projects
+  to work of course. This is the ~ADC~ project. This is NOT needed at all
+  if all you want to do is INPUT binary data to the parallel port, ONLY the
+  ~-ACK_CLOCK~ IS required for correct operation.
+
+============================================================================
+
+                   The -ACK_CLOCK For PAR: In Read Mode.
+                   -------------------------------------
+
+  Overview:-
+  ----------
+
+  For PAR: to work in READ mode WITHOUT using DEVICE offsets and using
+  ARexx then there are some limitations:-
+
+  1) The data lines are ALL set to READ and CANNOT be indivdually made
+     INPUT or OUTPUT. These are Pins 2 to 9 inclusive. The parallel.device
+     will ONLY set ALL data lines to READ OR WRITE as required AND the
+     device offsets will not ALLOW individual lines to be controlled.
+  2) Pin 1 of the parallel port, -STROBE, (-DRDY), is NOT required for
+     correct operation, it can be used IF needed but it is not necessary.
+  3) Pin 10, the -ACK line MUST be toggled for any data sitting on the
+     parallel port to be READ by any software.
+  4) All other Pins are NOT used, except for Pins 14 for the +5V and 20
+     for GND purely for a 5V supply for the -ACK_CLOCK HW and the optional
+     ADC HW.
+     Note that these two pins are different for an A1000 and are 23 for
+     the +5V and 20 for GND.
+  5) Read PAR_Device for more information about ALL of these pins or
+     further on in this Manual for a precis about it.
+  6) ARexx is SSLLOOWW, BUT it exists on standard OS installs from 2.0x
+     to 3.9x and this HW works on all GENUINE AMIGAs with these OSs and
+     with ARexx and PAR: installed. Also it is ~FREE~ and any code
+     written in ARexx is NOT subject to upload restrictions to sites
+     like AMINET.
+
+----------------------------------------------------------------------------
+
+  Construction:-
+  --------------
+
+  To make the -ACK_CLOCK project VERY CHEAP I decided to use
+  Veroboard/Stripboard as this is easy to obtain and NO special dangerous
+  etching methods are employed. All of the components, (and a case which is
+  NOT in the Parts List as it is optional), are readily available and
+  should be VERY cheap for such a versatile means of parallel port
+  access. It opens up the door for all kinds of add-ons such as:-
+
+  1) A-D Conversion. See further in the Manual.
+  2) Voltmeters, Ammeters, Data-Loggers, Power Meters, Slow Logic Probes.
+  3) With special adaptors, Thermometers, Anemometers and many more.
+  4) Also because the data lines are being READ then they could be
+     used to detect fault conditions of different aparatus connected to
+     it and WARN on screen of pending ~DOOM~... :)
+     For example a Water Depth Alarm.
+
+  The list is ~endless~ and opens up a new avenue for experimentation.
+
+  Last But Not Least it is SOOOO simple and NO special coding knowledge
+  is needed for the parallel port access and NO special construction
+  knowledge is required either. It is SO simple that there are no drawings
+  on how to build the item. A teenager with basic electronics skills could
+  easily build it from first principles.
+
+----------------------------------------------------------------------------
+
+  How Does It Work?:-
+  -------------------
+
+/* ----------------------------------------------- */
+/* PAR: used as a ~volume~ for binary data access. */
+/*            (C)2005, B.Walker, G0LCU.            */
+/* ----------------------------------------------- */
+/* Use ECHO for printing to the screen and SAY for */
+/*      printing any variables to the screen.      */
+/* ----------------------------------------------- */
+/*   IMPORTANT!!!, run ONLY from a SHELL or CLI.   */
+/* From the SHELL/CLI, type:-  RX PAR.rexx<RETURN> */
+/* ----------------------------------------------- */
+
+
+/* Show my version number and (C) for one line only. */
+/* (Note these two lines can be omitted.) */
+    ECHO 'c'x
+    ECHO '$VER: PAR.rexx_Version_0.94.00_(C)01-09-2005_B.Walker_G0LCU.'
+
+
+/* Set up any variables. */
+    ParaByte = ''
+    MyByte = ''
+
+
+/* Set the signal for breaking the script, ~Ctrl C~. */
+    SIGNAL ON BREAK_C
+
+
+/* ------------------------------------------------------------------- */
+/* This is the main working loop for accessing the parallel port. */
+    DO FOREVER
+
+/* Open up a channel for reading from the parallel port. */
+    OPEN(ParaByte, 'PAR:', 'R')
+
+/* Read a single binary character from the port. */
+    MyByte = READCH(ParaByte, 1)
+
+/* If MyByte is a NULL then this corresponds to the EOF, 0, so correct */
+/* it by making sure ALL NULLs are given the value of 0. */
+    IF MyByte = '' THEN MyByte = 0
+
+/* All major data access done, NOW IMMEDIATELY close the channel. */
+    CLOSE(ParaByte)
+
+/* Print the character onto the screen. */
+/* This binary character ~MyByte~ can now be manipulated by all */
+/* of the normal methods available under ARexx. */
+    SAY 'Byte at parallel port is decimal value '||C2D(MyByte)'.    '
+    END
+/* ------------------------------------------------------------------- */
+
+
+/* Cleanup and exit from the script. */
+Break_C:
+    EXIT
+
+  Refer to the above ludicrously simple ARexx script.
+
+  After setting up ~global~ variables the ARexx script goes into a loop
+  and ~Ctrl C~ is the only way to exit it. It WILL hang IF the -ACK_CLOCK
+  HW is NOT connected however and ~Ctrl C~ will NOT work.
+
+  It opens up PAR: in READ mode for binary data access except for ONE
+  binary value. This is 0 which is for all intents and purposes an EOF
+  character.
+
+  This single byte, binary data sits on the parallel port and hangs there
+  ad-infinitum until a ~clock pulse~ from HIGH to LOW and back again
+  appears on the -ACK line of the parallel port, Pin 10. This is what
+  this HW is for to give a continuous train of pulses to Pin 10.
+  If NOTHING as connected to the data lines then 255 will be read
+  from the port. That is, all data lines set to HIGH, logic 1.
+
+  If all the data lines are set to LOW, that is 0, then a NULL character
+  is generated and a simple correction line is required to give this
+  NULL character a value of 0.
+
+  After each character access the OPENED PAR: ~volume~ is then CLOSED.
+
+  The value is then printed to the screen.
+
+  There you have it, binary input without special AMIGA internals
+  knowledge. It gives 8 bit accuracy for most amateur hobbyists needs
+  and with the ~FREE~ AMIGA ARexx the means to code for it also.
+
+----------------------------------------------------------------------------
+
+  Testing The -ACK_CLOCK HW:-
+  ---------------------------
+
+  1) Check all construction work before continuing.
+  2) Re-check all construction work AGAIN.
+  3) Check for short and open circuit(s) AGAIN.
+  4) A final check against the ~-ACK_CLOCK.IFF~ drawing.
+  5) Switch OFF the AMIGA.
+  6) Connect the -ACK_CLOCK HW to the parallel port.
+  7) IF a separate 5 Volt power source is used for the home built HW then
+     switch this ON.
+  8) Power up and boot the AMIGA with RexxMast running and PAR: in the
+     device list.
+  9) Open up a Shell or CLI.
+ 10) Go to the drawer containing the PAR.rexx script.
+ 11) From the prompt type "RX PAR.rexx<RETURN>" without the quotes.
+ 12) "Byte at parallel port is decimal value 255." will be continuously
+     printed to the screen WITHOUT the quotes.
+ 13) If the system hangs then there is a problem. Go to Part 15)
+ 14) If all is well then press Ctrl C and the script will exit back
+     to the prompt.
+ 15) Switch OFF the AMIGA, (then switch OFF the home built HW).
+ 16) Disconnect the home built HW, if there is a fault go back to Part 1).
+
+============================================================================
+
+             The Optional Analogue To Didital Converter Project.
+             ---------------------------------------------------
+
+  Overview:-
+  ----------
+
+  This project will enable you to use the parallel port to input voltages
+  from 0 to +5 Volts positive and display this voltage in a test window.
+  When built it could easily be used with other projects to measure all
+  types of signals whether they be DC, AC, voltage, current, power etc...
+  using the correct type of ARexx script.
+
+----------------------------------------------------------------------------
+
+  Construction:-
+  --------------
+
+  (This is an optional extra and can be ignored if it is not wanted.)
+
+  There are no construction notes as this is another TestGear project and
+  you should by now be able to build the -ACK_CLOCK and the ADC without any
+  guidance. If you require some assistance then download TestGear2.lha from
+  AMINET and refer to Project6 the A-D Converter Project for help. This has
+  other sofware to calibrate and test the ADC part of this dual project.
+
+  D1 and D2 can be omitted from the construction if a separate 5V supply
+  is used. This is the recommended way as it divorces itself from the
+  computer completely. IF the AMIGA is known then a single wire link CAN be
+  connected from EITHER Pin 14 OR Pin 23 depending on the AMIGA in question
+  to the 5V rail of the home built HW.
+
+----------------------------------------------------------------------------
+
+  Calibrating The A-D Converter:-
+  -------------------------------
+
+  You WILL require a NEW 1.5 Volt dry cell type ~R6~. I used an ~EVEREADY~
+  RED body ~ULTRA PLUS~ type, although any ZINC/CHLORIDE type will probably
+  be alright.
+
+  1) Do "Testing The -ACK_CLOCK HW:-" Parts 1) to 3) inclusive first.
+  2) Switch OFF the AMIGA and connect the ADC/-ACK_CLOCK board to the
+     parallel port.
+  3) Boot up the AMIGA to a standard Workbench 2.0x or greater.
+  4) From a CLI/Shell go to the drawer with the PAR.rexx program in it.
+  5) Type RX PAR.rexx<RETURN>.
+  6) The line "Byte at parallel port is decimal value 0.", (or 1), will be
+     continuously printed to the screen.
+  7) Connect the 1.5 Volt cell across the RCA input of the A-D Converter
+     using a previously made test lead from the Stereo LF Audio Function
+     Generator project, (Project5), positive to probe tip.
+  8) Adjust RV1 to give a value of 84 + or - 1 on the screen.
+  9) If all is well then you now have a simple 0 to +5 Volt DC voltmeter.
+ 10) Use ~Ctrl C~ to Quit the ARexx script and Close the CLI/Shell window.
+ 11) Run the ~VM~ ARexx software to start using the A-D Converter proper.
+ 12) When finished, Quit the VM software, switch OFF the AMIGA and
+     disconnect the hardware.
+
+----------------------------------------------------------------------------
+
+  Voltmeter Specifications:-
+  --------------------------
+
+  Voltage Range..........................  0 to +5 Volts.
+  Resolution.............................  20 mV.
+  Accuracy...............................  + or - 5% of full scale.
+  Input resistance.......................  20 KilOhms.
+  Sensitivity............................  4 KilOhms/Volt.
+  Test lead(s)...........................  Use ~Project5~ test lead.
+
+  WARNING:-
+  ---------
+
+  1) DO NOT USE ON VOLTAGES GREATER THAN +12 VOLTS.
+  2) DO NOT TRY TO MEASURE NEGATIVE VOLTAGES AT ALL.
+  3) ANY ATTEMPT TO DO EITHER OF THE ABOVE MAY RESULT IN DAMAGE TO THE
+     BOARD AND/OR THE COMPUTER.
+  4) ANY VOLTAGES GREATER THAN +5.1 VOLTS WILL LIMIT TO +5.1 ON THE DISPLAY.
+
+============================================================================
+
+                 Some Information About The PAR: ~VOLUME~.
+                 -----------------------------------------
+
+This is from experimentation, see the ~PAR_Device~ file for more info'.
+(NOTE, these notes could be wrong!!!)
+
+A) In READ mode on the 25 way ~D~ type socket.
+(Note - means active low.)
+
+  1) Pin 1......................  -STROBE line, fixed OUTPUT.
+  2) Pin 2 to pin 9.............  Data lines INPUT ONLY, set to high.
+  3) Pin 10.....................  -ACK line, fixed INPUT.
+  4) Pin 11.....................  BUSY line, fixed OUTPUT, set to low.
+  5) Pin 12.....................  POUT line, fixed OUTPUT, set to low.
+  6) Pin 13.....................  (-)SEL line, fixed OUTPUT, set to high.
+  7) Pin 14.....................  NOT USED, (+5V on classic AMIGAs).
+  8) Pin 15.....................  NOT USED, (NC on classic AMIGAs).
+  9) Pin 16.....................  -RESET line, follows the standard reset.
+ 10) Pin 17.....................  NOT USED, (Ground on classic AMIGAs).
+ 11) Pin 20 to pin 25...........  Ground, (also pins 18 and 19).
+
+Information only. EVERY time the parallel port is accessed the -STROBE
+line is triggered for about 1.5uS. This is NOT required for PAR: in
+BINARY READ mode.
+
+The -ACK line MUST be toggled to get each ~byte~ of data into a user
+buffer. This line does NOT need to be sync'd to the -STROBE line to work,
+and can be a free running, external, clock pulse.
+
+Pins 11, 12 and 13 are NOT needed for BINARY input operation. ONLY pins
+2 to 10 inclusive are required, that is the eight data lines, pins 2 to
+9 inclusive, and the -ACK line pin 10.
+
+NONE of the individual pins can be altered on the fly from INPUT to OUTPUT
+and vice versa when using PAR: in VOLUME mode.
+
+----------------------------------------------------------------------------
+
+B) In WRITE mode on the 25 way ~D~ type socket.
+
+  1) Pin 1......................  -STROBE line, fixed OUTPUT.
+  2) Pin 2 to pin 9.............  Data lines OUTPUT ONLY, set to low.
+  3) Pin 10.....................  -ACK line, fixed INPUT.
+  4) Pin 11.....................  BUSY line, fixed INPUT, set to high.
+  5) Pin 12.....................  POUT line, fixed INPUT, set to high.
+  6) Pin 13.....................  (-)SEL line, fixed INPUT, set to high.
+  7) Pin 14.....................  NOT USED, (+5V on classic AMIGAs).
+  8) Pin 15.....................  NOT USED, (NC on classic AMIGAs).
+  9) Pin 16.....................  -RESET line, follows the standard reset.
+ 10) Pin 17.....................  NOT USED, (Ground on classic AMIGAs).
+ 11) Pin 20 to pin 25...........  Ground, (also pins 18 and 19).
+
+(Ensure a printer is attached to the parallel port.)
+To see PAR: being used as a ~volume~ in WRITE mode open up a CLI and
+type the following:-
+
+Echo > PAR: "This is a test line sending plain text to a PRINTER."<ENTER>
+
+This will send the text line to the parallel port and a random printer
+should print it as GENERIC text.
+
+----------------------------------------------------------------------------
+
+Although very minor, there is a flaw when using PAR: in VOLUME mode READ
+or WRITE format. I'll let you find out what it is... :)
+It does NOT affect the overall usage of PAR: as a VOLUME however, so I will
+not pursue it any further.
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Public Domain and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200 in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. All memory expansions were ~DISABLED~ using
+    the NoFastMem program from the System drawer. Also tested on two A600s
+    with various memory configurations, a 1MB A500+ and an old style A500
+    with a 0.5MB memory expansion at $C00000 using the A500+ emulator and
+    Workbench 2.04, and LBNL an A600 emulating KS3.0x and running
+    Workbench 3.0x. Also tested on an A4000 with various upgrades and
+    OS3.9x.
+
+    All test conditions were/are running STANDARD KS2.0x to 3.9x, and using
+    standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before disconnecting or connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU,
+   70 King George Road,
+   Loughborough,
+   Leicestershire,
+   LE11 2PA,
+   England.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~hard/hack~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

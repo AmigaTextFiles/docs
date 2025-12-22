@@ -1,0 +1,253 @@
+@DATABASE "ARB54"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 54 - A Transpose Function For ED"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 54 - A TRANSPOSE FUNCTION FOR ED
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" Problems With Example In AmigaDOS Manual " LINK "Problems"}
+@{" A Better TRANSPOSE Program For ED        " LINK "Better"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Problems" "Article 54 - A Transpose Function For ED - Problems With Program In Manual"
+
+@{B}@{U}@{JCENTER}A TRANSPOSE FUNCTION FOR ED - PROBLEMS WITH PROGRAM IN AMIGADOS MANUAL@{UB}@{UU}
+@{JLEFT}
+The AmigaDOS manuals for versions 2.04 and 2.1 have an example program
+that allows you to transpose two letters in the text. It is on this disk
+as @{"Example54-1.ed" LINK "ARB:Articles_51-60/Example54-1.ed/MAIN"}
+
+This program has three faults, two real faults and one that is a fault
+maybe just to my way of thinking.
+
+@{B}The first real problem@{UB} is that, if the cursor is on the very last line
+of the file, then the modified line is reinserted one line @{B}above@{UB} where
+it used to be! Of course, if the very last line is a blank line, then
+you would not be wanting to transpose characters on it anyway and so the
+problem probably would not arise. But a lot of text files have actual
+text in the very last line so it could be a problem.
+
+@{B}The second real problem@{UB} is that, if the line holding the characters being
+transposed contains the "/" character, then all the text from the first
+"/" onwards is @{B}lost!!@{UB} For example, a line such as:-
+
+  Assign Games: dh2:Programs/Games
+
+would become:-
+
+  Assign Games: dh2:Programs
+
+This is because the program uses the character "/" as an @{"ED string delimiter" LINK "ARB:Articles_51-60/52.ARexx_With_Ed_Pt-1/Delimiters"}.
+
+@{B}The third problem,@{UB} which may be to my way of thinking only, is that the
+program transposes the two characters to the @{B}left@{UB} of the cursor leaving
+the character @{B}under@{UB} the cursor unaltered. For example (cursor on "4" as
+indicated by the - character):-
+
+   Old line = 1234
+                 -
+   New Line = 1324
+
+I would prefer it to transpose the character @{B}under@{UB} the cursor with the
+one to its immediate left. For example: (cursor on "4" as indicated by
+the - character):-
+
+   Old line = 1234
+                 -
+   New Line = 1243
+
+These three problems are overcome in my @{"better transpose program" LINK "Better"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Better" "Article 54 - A Transpose Function For ED - A Better Transpose Program"
+
+@{B}@{U}@{JCENTER}A TRANSPOSE FUNCTION FOR ED - A BETTER TRANSPOSE PROGRAM@{UB}@{UU}
+@{JLEFT}
+I have rewritten the following transpose program for ED so as to overcome
+the @{"three problems" LINK "Problems"} with the transpose program in the manuals.
+
+My program is on this disk as Example54-2.ed. If you wish to read it in
+full then @{"click here" LINK "ARB:Articles_51-60/Example54-2.ed/MAIN"}.
+
+The "Ed" extended commands that I have used are:-
+
+  RV "stem"  - to @{"retrieve information" LINK "ARB:Articles_51-60/53.ARexx_With_Ed_Pt-2/RV"} in a stem array
+  N          - to move cursor down to the start of line below
+  P          - to move cursor up to start of line above
+  CR         - to move cursor one character to the right
+  D          - to delete the line the cursor is on
+  I "string" - to insert the string above the current line
+
+The following notes used to explain the program in sections are shown
+in plain with the program lines themselves in bold.
+
+@{B}/* Example54-2.ed */
+/* This program is an adaptation of Example54-1.ed which was taken */
+/* from the AmigaDOS manuals for Workbench2.04 and 2.1             */
+
+/* Transpose.Ed An example program to transpose two characters     */
+/* Given string '1234' if cursor is on 4, this macro converts      */
+/* string into '1243'                                              */@{UB}
+
+First we find the "Ed" host name being used. If the host is @{B}not@{UB} an "Ed"
+then we exit the program with an error message. If it @{B}is@{UB} an "Ed" then
+we address it:-
+
+@{B}Host = ADDRESS()
+IF LEFT(Host,2) ~= 'Ed' THEN DO
+  SAY 'a'x'This program can only be used when started from within
+ED.'
+  EXIT
+END
+
+ADDRESS VALUE Host@{UB}
+
+Now we define the Ed stem variable as "Curr" and recover these three bits
+of information:-
+
+@{B}'RV /Curr/'
+CurrPos = Curr.X          /* Position of cursor along current line */
+CurrLine = Curr.LINE      /* Current line number from top of file  */
+CurrText = Curr.CURRENT   /* Text of current line                  */@{UB}
+
+Now we check to see if the cursor is on the first character:-
+
+@{B}IF CurrPos = 1 THEN DO
+  CALL CLOSE('STDOUT')
+  CALL OPEN('STDOUT','CON:100/50/440/40/Ed Error Message Window')
+  SAY 'a'x' Cursor must NOT be on first character of the line!'
+  DO WHILE TIME('E') < 2 ; END
+  EXIT
+END@{UB}
+
+If so, we give an error message as we cannot exchange the first character
+with non existent one before it!! In the @{"original program" LINK "Problems"}, the "ED" extended
+command "SM" was used to display the message the ED window's status line.
+I have found that "SM" works when entered directly in an ED window but
+will not work when used in an ARexx program. (At least, it doesn't on
+my A500 and A1200.)
+
+In any case, messages in the status line are easily missed, so I have
+made the program open an error message window for the message. I give
+this window an internal logical file name of "STDOUT" so that the output
+from "SAY" will go to it. However, before opening this window I must CLOSE
+the existing default STDOUT @{"stream" LINK "ARB:Misc/Glossary/Streams"}. Otherwise I will not be able to open
+a new STDOUT.
+
+Next we need to check if the cursor is on the last line:-
+
+@{B}'N'
+IF RC > 0 THEN LastLine = 1
+ELSE 'P'@{UB}
+
+I have done this by using ED's "N" command to move down one line.
+
+If the cursor is already on the last line then "N" does nothing. It leaves
+the cursor where it is. However, it also sets the ARexx symbol @{"RC" LINK "ARB:Articles_31-40/33.Signalling/SIGLRC"} to a
+value of 6 (at least in my version it is 6 and not the expected 5! The
+command 'P' sets RC to 5 if the cursor is at the top line of the file).
+
+So, after using "N", I check RC and, if it is > 0 then I set the flag
+"LastLine" to 1 for use later on.
+
+If we are @{B}not@{UB} on the last line then the cursor @{B}will@{UB} have been moved down
+by the "N" command and we must move it back up to its original line with
+ED's "P" command.
+
+Next we need to swap the character at the current cursor position
+(represented by the value held by "CurrPos") with the character to its
+immediate left (represented by "CurrPos-1"). We use @{"SUBSTR" LINK "ARB:Articles_11-20/18.Functions-String/Substr()"} to read one
+character from the string, then @{"DELSTR" LINK "ARB:Articles_11-20/18.Functions-String/Delstr()"} to delete just that character
+from the string, then @{"INSERT" LINK "ARB:Articles_11-20/18.Functions-String/Insert()"} to place that character at the position
+"CurrPos-2" which is just to the left of the other character being
+swapped:-
+
+@{B}Character = SUBSTR(CurrText,CurrPos,1)
+CurrText = DELSTR(CurrText,CurrPos,1)
+CurrText = INSERT(Character,CurrText,CurrPos-2,1)@{UB}
+
+The original program had the above in a function. However, I can see no
+purpose in this as it is only called once. It is easier for us humans
+to follow the program flow if it is part of the main program.
+
+Now we use ED's "I" command which inserts the new string @{B}above@{UB} current
+line.
+
+Note that the @{"original program" LINK "Problems"} deleted the old line before inserting the
+new one. It was this that caused the problem when the cursor was on the
+last line. If you delete a line which is @{B}not@{UB} the last line then the cursor
+stays in the same position relative to the window which means that it
+sits on the line which used to be below the deleted line. Inserting a
+new line puts the new line above the line the cursor is on so the cursor
+will be on the newly inserted line. However, if the cursor is on the @{B}last@{UB}
+line, then deleting that line will make the cursor move up one line relative
+to the window and will be sitting on the line that was originally @{B}above@{UB}
+the deleted line. The new line inserted will then be above @{B}that@{UB} line and
+in the wrong place.
+
+Inserting @{B}before@{UB} deleting overcomes the problem.
+
+The ED command line that we need to send is:-
+
+  I !text of line!
+
+I have used the string delimiter character "!" instead of "/" to overcome
+the second problem mentioned above.
+
+If you have the character "!" in your texts then you will need a different
+string delimiter.
+
+Anyway, if we want to send:-
+
+  I !text of line!
+
+we need to enclose the whole thing in ARexx delimiters so it
+becomes:-
+
+  'I !text of line!'
+
+but when "text of line" is held as the value of the symbol "CurrText",
+then we need to use the following line which is that which appears in
+the program:-
+
+@{B}'I !'||CurrText||'!'@{UB}
+
+Now we need to delete the old line by moving the cursor down to it and
+deleting it.
+
+We then move back up @{B}only if the cursor was @{B}not@{UB} originally on the last
+line.@{UB} Remember that if it @{B}was@{UB} originally on the last line then deleting
+it will cause the cursor to move up one line anyway, so we don't want
+to move it up a line two times:-
+
+@{B}'N' /* move down to old line */
+'D' /* delete old line */
+IF LastLine ~= 1 THEN 'P' /* move back to new line if not last line */@{UB}
+
+Moving the cursor up or down a line with "P" or "N" will put the cursor
+on the @{B}first@{UB} character of the line it is moved to, so finally we move
+the cursor out along the line to its old position by using ED's "CR" command
+the required number of places:-
+
+@{B}DO Count = 1 to Currpos-1
+  'CR'
+END@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

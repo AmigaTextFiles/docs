@@ -1,0 +1,851 @@
+@DATABASE "ADB24"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 24 - The RESIDENT Command"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+@{B}@{U}PART 24 - THE RESIDENT COMMAND@{UU}
+@{JLEFT}
+@{B}Location@{UB}     - v1.3 - "C" directory
+               v2+ - Internal
+
+@{B}Purpose@{UB}       - To load a command from disk to the resident list in memory
+                or to display the commands in the resident list.
+
+@{B}Availability@{UB} - AmigaDOS Version 1.3 onwards
+@{JCENTER}
+
+@{" What RESIDENT Is All About                 " LINK "What"} AmigaDOS v1.3 Onwards
+@{" Note For Users WITHOUT a hard Drive        " LINK "NoHard"} AmigaDOS v1.3 Onwards
+@{" Only Use PURE Commands in Resident List    " LINK "Only"} AmigaDOS v1.3 Onwards
+
+@{" How to Use the RESIDENT Command            " LINK "How"} AmigaDOS v1.3 Onwards
+@{" Viewing the Resident List                  " LINK "View"} AmigaDOS v1.3 Onwards
+@{" The ADD Option - Putting Commands In List  " LINK "Add"} AmigaDOS v1.3 Onwards
+@{" The PURE or FORCE Option                   " LINK "Pure"} AmigaDOS v1.3 Onwards
+@{" The SYSTEM Option                          " LINK "System"} AmigaDOS v1.3 Onwards
+@{" The NAME Keyword - Rename Commands in List " LINK "Name"} AmigaDOS v1.3 Onwards
+@{" The REPLACE Option                         " LINK "Replace"} AmigaDOS v1.3 Onwards
+@{" The REMOVE Option                          " LINK "Remove"} AmigaDOS v1.3 Onwards
+
+@{" Special Note Re INTERNAL Commands          " LINK "Special"} Version 2.0 Onwards  
+@{" Special Requirements in version 1.3        " LINK "1.3"} AmigaDOS v1.3 Only   
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "What" "Part 24 - The RESIDENT Command - What its About"
+
+@{B}@{U}What RESIDENT Is All About@{UB}@{UU}
+
+RESIDENT is a command that loads another command into computer memory
+and stores it in the "Resident List". It then stays there until it is
+removed (with the RESIDENT command's @{"REMOVE" LINK "Remove"} option) or the computer is
+reset or turned off.
+
+When a command is called from the Shell prompt or from a @{"script" LINK "ADB:Misc/Glossary/Scripts"} file the
+system looks for commands in these places in the order shown from top
+to bottom:-
+
+    @{U}   V2 onwards    @{UU}    @{U}    V1.3        @{UU}     @{U}    V1.2         @{UU}
+
+    Resident List        Resident List
+    Internal Commands
+    Current Directory    Current directory    Current directory
+    Path directories     Path directories     Path directories
+
+(Path directories are those included in the path by the @{"PATH" LINK "ADB:Parts_11-20/18.Path/What"} command)
+
+Thus a command in residence is used BEFORE its equivalent in the current
+directory or the "C" directory.
+
+This makes things work a lot more quickly as the command does not have
+to be loaded from disk each time it is used. For example, the @{B}standard
+v2.1@{UB} Startup-Sequence has this sequence of assign commands:-
+
+  ASSIGN >NIL: ENV: RAM:ENV
+  ASSIGN >NIL: T: RAM:T
+  ASSIGN >NIL: CLIPS: RAM:Clipboards
+  ASSIGN >NIL: REXX: S:
+  ASSIGN >NIL: PRINTERS: DEVS:Printers
+  ASSIGN >NIL: KEYMAPS: DEVS:Keymaps
+  ASSIGN >NIL: LOCALE: SYS:Locale
+
+For every one of these command lines, the system has to load the Assign
+command from disk, use it for that one line, then discard. It does not
+know the next line needs it until it reads the next line.
+
+If ASSIGN is made resident before these lines, as in:-
+
+  RESIDENT >NIL: c:assign PURE ADD
+
+then the ASSIGN command can be used from memory (the resident list) instead
+of from disk. This makes the process work a lot quicker. It also saves
+wear and tear on the disk drive.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "NoHard" "Part 24 - The RESIDENT Command - Notes for Non HD Users"
+
+@{B}@{U}Note For Users WITHOUT A Hard Drive@{UB}@{UU}
+
+Apart from speed, another big advantage is that, if you do not have a
+hard drive, and you want to use your floppy drives for disks other than
+the boot disk, you can remove the boot disk and still use the commands
+from the resident list. When we come to look at script files I will be
+advising users who do not have a hard drive to make all the commands in
+a script resident if the script needs a disk other than the Workbench
+disk in df0:.
+
+If you have enough computer memory, you could make resident all the "C"
+commands that you regularly use and remove your Workbench disk completely.
+(In @{B}v1.3@{UB} you can even put the RESIDENT command itself into the resident
+list! - it is an @{B}internal@{UB} command in @{B}v2+@{UB} )
+
+Having resident commands with the Workbench disk removed from the drive
+will cut down dramatically on those VERY annoying messages:-
+
+         Please Insert Volume
+         Workbenchx.x
+         in any drive
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Only" "Part 24 - The RESIDENT Command - Use PURE Commands Only"
+
+@{B}@{U}Only Use PURE Commands in Resident List@{UB}@{UU}
+
+A lot of people have asked, over the years, "What is this `pure' business
+all about?" To be "pure" a command has to be both @{"Reentrant" LINK "Reentrant"} and
+@{"Reexecutable" LINK "Reexecutable"} @{B}after@{UB} it has been made resident.
+
+@{B}@{U}How to Tell if a Program is PURE?@{UB}@{UU}
+
+The "protection bits" shown by the "list" command are @{B}supposed@{UB} to tell
+you this. Enter in your shell window:-
+
+  > LIST c:ed
+
+You will see something like this:-
+
+   ed               25044 --p-rwed 06-Jul-94 12:39:08
+
+(Size, date and time will vary with different AmigaDOS versions.)
+
+The "p" in the protection bits display indicates that this command is
+pure or, more accurately, that the pure bit has been set. As we will see
+below, the pure bit can be set without the program being pure!
+
+If you list some of the tools on your Workbench or Extras disk that are
+@{B}not@{UB} in the "C" directory then you will probably find that most of them
+@{B}do not@{UB} have the pure bit set.
+
+As we saw in the last article, you can set the PURE protection bit of
+a file with:-
+
+  > PROTECT Filename +p
+
+This will add the "p" to the protection bit indicator. However, @{B}BE WARNED!@{UB}
+This does @{B}NOT@{UB} make the program pure! All it does is change the protection
+bit. @{B}DO NOT DO THIS@{UB} unless you are absolutely sure that the program is
+pure!
+
+If a program does not have the "p" bit set, then you can try it out by
+making it resident and running it twice but @{B}BE WARNED!@{UB} You could easily
+crash your system and invite a visit from the guru!! Best not to!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Reentrant" "Part 24 - The RESIDENT Command - Reentrant"
+
+@{B}@{U}REENTRANT@{UB}@{UU}
+
+@{B}REENTRANT@{UB} means that the command can be properly used by a second process
+while it is already being used by a first process. To illustrate this,
+make "ED" resident then use it with:-
+
+  > RESIDENT c:ED PURE ADD
+
+Now copy a couple of scripts into RAM: (so that we do not have any chance
+of altering the copies on your boot disk!) with:-
+
+  > COPY S:(Startup-Sequence|Shell-Startup) Ram:
+
+Now start up ED twice with:-
+
+  > RUN ED Ram:startup-sequence
+  > RUN ED Ram:Shell-startup
+
+The "RUN" command is used to leave the shell window free for the next
+command.
+
+Each "RUN" command creates a new process for "ED" and both processes use
+the "ED" command from the resident list independently of each other with
+all functions working properly. Things that you do in one ED window cannot
+affect anything in the other ED window. Therefore "ED" is truly
+"reentrant".
+
+(To get rid of the ED windows press CTRL which will give a "*" at the
+bottom left of the window then press "Q". If you get a message "Edits
+will be lost - Type Y to confirm" it means that you have altered the script
+in some way. Just press "Y")
+
+A @{B}"Non-reentrant"@{UB} program is one where, if the program is run two or more
+times simultaneously after being made resident, things done in one of
+the program's windows will affect the program running in its other window.
+This could be highly undesirable!!
+
+For example, some programs allow certain preferences to be changed and
+used for one session only but not saved to disk. If you run a non pure
+resident program twice simultaneously and change the preferences in one
+version you could find that the preferences have also been changed in
+the other version even though you have not done anything in the other
+version!
+
+There could be a lot of other undesirable effects from one process to
+the other.
+
+Note that, if you simultaneously run twice a non pure program that is
+@{B}not@{UB} in the resident list then each version should be truly independent
+of the other. Problems will only arise when non-reentrant programs are
+run from the resident list. (Not all programs will allow two versions
+of themselves to be run simultaneously.)
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Reexecutable" "Part 24 - The RESIDENT Command - Reexecutable"
+
+@{B}@{U}REEXECUTABLE@{UB}@{UU}
+
+@{B}REEXECUTABLE@{UB} means that the command can be used from the resident list,
+shut down, then used again without any problems.
+
+If ED is resident and you run it once, shut it down, then run it again,
+anything done the first time will not affect the second running.
+
+If a @{B}non reexecutable@{UB} resident program is run, then shut down, then run
+again, it can have things that were done in the first run still there
+in the second run @{B}even though it has been shut down@{UB} before the second
+run! For example, the preference settings that I mentioned @{"earlier" LINK  "Reentrant"38} may
+still be effective.
+
+These comments @{B}DO NOT@{UB} apply to programs run from disk, only to programs
+run from the resident list.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "How" "Part 24 - The RESIDENT Command - How to Use"
+
+@{B}@{U}HOW TO USE THE RESIDENT COMMAND@{UU} (All AmigaDOS Versions)@{UB}
+
+RESIDENT can be used in one of these forms:-
+
+  RESIDENT
+  RESIDENT Option
+  RESIDENT Path/Filename
+  RESIDENT Path/Filename Option
+  RESIDENT Name Path/Filename
+  RESIDENT Name Path/Filename Option
+
+where:-
+
+@{B}Option@{UB} can be one of the keywords:-
+
+  @{"ADD" LINK "Add"} @{"PURE" LINK "Pure"} @{"SYSTEM" LINK "System"} @{"REPLACE" LINK "Replace"} @{"REMOVE" LINK "Remove"}
+
+  FORCE can be used instead of PURE in @{B}v2+@{UB}
+
+If none of the options are used then REPLACE is used as the default option.
+
+@{B}Path/Filename@{UB} is the full path and file name of the command to be made
+resident
+
+@{B}Name@{UB} is a @{"name" LINK "Name"} that can be used in the resident list to replace the
+command's real name (this is rarely used!).
+
+If @{"used without arguments" LINK "View"} (first usage above) the contents of the resident
+list are displayed.
+
+As it is a bit complex, I have illustrated each of these usages in the
+examples given under the various headings.
+
+The RESIDENT command is normally used in these "S" directory files:-
+
+- Startup-Sequence (@{B} All versions@{UB} )
+- StartupII" (@{B} v1.3@{UB} )
+- User-Startup (@{B} v2+@{UB} )
+
+However, as we saw above, you can also use it in a Shell/CLI window.
+Or it can be used in any of your own scripts.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "View" "Part 24 - The RESIDENT Command - Viewing List"
+
+@{B}@{U}Viewing the Resident List@{UB}@{UU}
+
+To VIEW the resident list you enter "RESIDENT" on its own:-
+
+  > RESIDENT
+
+In @{B}all versions@{UB} this will give a listing showing all the commands that
+have been made resident plus a "UseCount" that tells how many processes
+are @{B}currently@{UB} using the command. The following list was obtained while
+another process was using the "ed" command so it shows that "ed" is in
+use by one process:-
+
+  @{B}@{U}Name    @{UB}@{UU}   @{B}@{U}UseCount@{UB}@{UU}
+
+  run          0
+  ed           1
+  dir          0
+  Execute      0
+
+In @{B}v2+ only@{UB} you get the above list followed by the list of "Internal"
+commands which are displayed like this:-
+
+  Alias     INTERNAL
+  Ask       INTERNAL
+  CD        INTERNAL
+  etc. etc.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Add" "Part 24 - The RESIDENT Command - The ADD Option"
+
+@{B}@{U}The ADD Option - Putting Commands Into The Resident List@{UB}@{UU}
+
+The ADD option is used to put commands into the resident list. It is usually
+used in conjunction with the @{"PURE" LINK "Pure"} option:-
+
+  RESIDENT Path/filename PURE ADD
+
+You @{B}must@{UB} use the full path name to the command. For example:-
+
+  RESIDENT c:Dir PURE ADD
+  RESIDENT Sys:System/Format PURE ADD
+
+Commands are normally made resident in the startup-sequence, although
+you can also do it in other script files or directly at a Shell prompt.
+
+The ADD option will add the command name to the resident list even if
+a command of the same name is already in the list. Thus you can have two
+identical names in the list but only the first in the list will be used.
+
+When used from the startup-sequence file it is highly unlikely that you
+would be adding the same name more than once!
+
+I will talk more about the ADD option under the heading
+@{"Renaming Commands That Are Made Resident" LINK "Name"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Pure" "Part 24 - The RESIDENT Command - The PURE/FORCE Option"
+
+@{U}@{B}The PURE or FORCE Option@{UU}@{UB}
+
+In @{B}v1.3@{UB} PURE is the only one of the two available
+
+In @{B}v2+@{UB} they are both available and are identical.
+
+If the pure bit @{B}is@{UB} set then the "PURE" or "FORCE" option in the
+command line can be used but is not necessary.
+
+If the pure bit is @{B}not@{UB} set then you @{B}must@{UB} use the "PURE" (all versions)
+or "FORCE" (v2+) option in the command line. Using "PURE" or "FORCE" will
+force RESIDENT to load a file into the resident list even if it does NOT
+have the pure bit set. In this situation, the result depends on your
+AmigaDOS version:-
+
+- @{B}v1.3@{UB} will add the command and will give you this warning message:-
+
+    pure bit not set
+
+- @{B}V2+@{UB} will add the command without any warning message.
+
+The standard startup-sequence uses the "PURE" option for files that have
+the pure bit set. This is advisable in case the "pure" bit has become
+unset accidently.
+
+If the pure bit is @{B}not@{UB} set and the "PURE" option is @{B}not@{UB} used then the
+command will @{B}not@{UB} be added to the resident list.
+
+With @{B}v1.3,@{UB} you will receive this message:-
+
+  Pure bit not set
+  Cannot load path/filename
+
+With @{B}v2+@{UB} the message will be:-
+
+  Object is not of required type
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "System" "Part 24 - The RESIDENT Command - The SYSTEM Option"
+
+@{B}@{U}The SYSTEM Option@{UB}@{UU}
+
+In all versions, if you enter:-
+
+  > RESIDENT SYSTEM
+
+You will see extra information something like:-
+
+  FileHandler  SYSTEM
+  Restart      SYSTEM
+  CLI          SYSTEM
+
+The items shown as "SYSTEM" will depend on your workbench version and
+your startup-sequence contents.
+
+This part of the resident list is not normally for your use. It is used
+by the operating system for its own purpose.
+
+In all the versions of AmigaDOS I can only find one usage of it in the
+"s" directory startup files. This is in this line from the the @{B}v1.3@{UB}
+startup-sequence file:-
+
+  RESIDENT CLI L:Shell-Seg SYSTEM PURE ADD
+
+A full explanation of this line is given under the heading
+@{"Special Requirements in v1.3." LINK "1.3"}
+
+You can put items into the RESIDENT SYSTEM list with this use of the SYSTEM
+option:-
+
+  > RESIDENT path/filename SYSTEM PURE ADD
+
+Items made resident in this way @{B}cannot@{UB} be removed from the resident list
+with the @{"REMOVE" LINK "Remove"} option. The only way to get rid of them is to reboot!
+
+WARNING! - Do @{B}NOT@{UB} use the "SYSTEM" option with normal "C" directory commands.
+The search for commands entered at the Shell/CLI prompt does @{B}not@{UB} include
+the SYSTEM part of the Resident list. This part is used for other items.
+
+Putting "C" directory commands into the SYSTEM area of the RESIDENT list
+will have these effects:-
+
+- @{B}v2+@{UB} - the command in the resident system list @{B}will not be used@{UB}
+  but the command in the "C" directory will be usable.
+
+- @{B}v1.3@{UB} - the commands will not be recognised. You will not be able
+  to use either the copy in the resident system list @{B}or the copy in "C"!!@{UB}
+  You will get the following message even though the command is still in
+  the "C" directory:-
+
+    unknown command name
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Name" "Part 24 - The RESIDENT Command - Renaming Commands"
+
+@{B}@{U}Renaming Commands that are made Resident@{UB}@{UU}
+
+"NAME" is a Command KEYWORD that lets you put a command into the resident
+list with a name other than its own name. It can be used like this:-
+
+  RESIDENT NAME residentname Path/Filename PURE ADD
+
+or the Keyword can be left out and you can use:-
+
+  RESIDENT residentname Path/Filename PURE ADD
+
+
+The command will then appear in the resident list with "residentname"
+instead of "filename" but otherwise will still be the same command.
+
+The NAME keyword can also be used with the @{"REPLACE" LINK "Replace"} option.
+
+As an example, if are making "DIR" and "LIST" resident, you could use:-
+
+  > RESIDENT d c:dir PURE ADD
+  > RESIDENT l c:list PURE ADD
+
+Now just type "d" instead of "dir" or "l" instead of "list" and save a
+lot of typing!
+
+The problem with this, though, is that if you forget and use DIR or LIST,
+or if a script calls on one of the commands by its proper name, it will
+not find it in residency and will load it from disk. It is probably better
+to make the command resident with its proper name then use @{"ALIAS" LINK "ADB:Parts_31-40/34.Alias/MAIN"} to give
+the command an abbreviated name.
+
+Renaming could also be handy if you want to use an alternate command that
+has the same name as a "C" directory command. Let's say that you have
+found a program called DIR that allows all sorts of extras to the "C"
+directory DIR. You want to put them both in the resident list. If the
+new DIR is in a directory called "DH0:Programs" then you could put them
+both into residency with:-
+
+  RESIDENT c:dir PURE ADD
+  RESIDENT ndir dh0:Programs/Dir PURE ADD
+
+Now you can enter "DIR" for the "C" directory command and "NDIR" for your
+new dir command.
+
+Or maybe you want to cause your friends all sorts of problems when they
+use your Amiga. Just enter these commands without them seeing and they
+will be totally confused!!:-
+
+  > RESIDENT dir c:list PURE ADD
+  > RESIDENT list c:dir PURE ADD
+
+and any other mixtures that you like.
+
+When your friends enter DIR they will get the LIST command and vice versa!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Replace" "Part 24 - The RESIDENT Command - Replacing Commands"
+
+@{B}@{U}Replacing Resident Commands@{UB}@{UU}
+
+The REPLACE option will replace a resident name if it already exists.
+It can be used with or without the @{"NAME" LINK "Name"} keyword as follows:-
+
+  RESIDENT NAME residentname Path/Filename PURE REPLACE
+  RESIDENT residentname Path/Filename PURE REPLACE
+
+(Note that the @{"PURE option is not essential" LINK "Pure"22} if the pure bit is set.)
+
+The "residentname" must be identical to that already in the resident
+list.
+
+If you had used the switch between LIST and DIR mentioned in @{"renaming" LINK "Name"45},
+you could get them back to normal with:-
+
+  > RESIDENT dir c:dir PURE REPLACE
+  > RESIDENT list c:list PURE REPLACE
+
+Now the old "dir" and "list" in residency will be replaced with "c:dir"
+and "c:list" respectively.
+
+Or if C:DIR was already resident and you did not want it there any more
+but you wanted your new "DH0:Programs/DIR command @{"mentioned earlier" LINK "Name" 32} in
+residency instead, you could use:-
+
+  > RESIDENT dir dh0:Programs/Dir PURE REPLACE
+
+Now the C:DIR will be gone from residency and your new DIR will be there
+with the name DIR instead of it.
+
+If none of the options ADD, REMOVE or REPLACE are used then REPLACE is
+used as a default.
+
+An example of the use of the REPLACE option is given @{"here" LINK "Special"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Remove" "Part 24 - The RESIDENT Command - Removing Commands"
+
+@{B}@{U}Removing a Command from the List@{UB}@{UU}
+
+To REMOVE an item from the resident list you use:-
+
+  > RESIDENT name REMOVE
+
+When removing a name from the resident list, you use the name as it appears
+in the resident list. This is important to remember if you have @{"renamed"  LINK "Name"} a
+command as it was being made resident. Thus if you made a command resident
+with:-
+
+  > RESIDENT ndir dh0:Programs/dir PURE ADD
+
+then you would remove it with:-
+
+  > RESIDENT ndir REMOVE
+
+You @{B}do not@{UB} use a path with the name being removed!!
+
+An example of the use of the REMOVE option is given @{"here" LINK "Special"}.
+
+The use of REMOVE on an internal command is possible and is @{"explained here" LINK "Special"}.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Special" "Part 24 - The RESIDENT Command - Special Note"
+
+@{U}@{B}Special Note Re INTERNAL Commands@{UU}@{UB}
+
+The @{"REMOVE" LINK "Remove"} and @{"REPLACE" LINK "Replace"} options have a special purpose when used on INTERNAL
+commands. If you use:-
+
+  RESIDENT name REMOVE
+
+where "name" is any of the internal commands, then that command is
+deactivated. Of course, being hard coded into ROM it cannot be removed!!
+
+To reactivate the internal command you use REPLACE as in:-
+
+  RESIDENT name REPLACE
+
+A deactivated internal command will still be shown when the resident
+commands are @{"listed" LINK "View"} but its name would have "DISABLED" beside it instead of
+"INTERNAL". For example:-
+
+  > RESIDENT ASK REMOVE
+
+  > RESIDENT
+  -->   Alias     INTERNAL
+        Ask       DISABLED
+        CD        INTERNAL
+        etc. etc.
+
+You could disable an internal command such as ASK if you had found a better
+but almost equivalent command. If this other program has the name ASK and
+is in a directory that is in the set @{"PATH" LINK "ADB:Parts_11-20/18.Path/What"} then just use:-
+
+  > RESIDENT ASK REMOVE
+
+and you new ASK command will be used instead.
+
+If you wanted to make the new ASK resident, then there is no need to
+disable the internal ASK. Just use:-
+
+  > RESIDENT directory/ASK ADD
+
+Now there would be TWO commands named ASK shown when viewing the resident
+list, your new one in the first part of the list and the AmigaDOS one in
+the in the internal part of the list:-
+
+  > RESIDENT
+  -->
+     Name   UseCount
+
+     Ask       0
+     Dir       0
+     etc. etc.
+
+     Alias     INTERNAL
+     Ask       INTERNAL
+     CD        INTERNAL
+     etc. etc.
+
+But as the system's @{"command search procedure" LINK "What"8} always uses commands from the
+resident list before the internal list there should be no problems.
+
+To remove the new ASK and revert to the AmigaDOS ASK, you would enter:-
+
+  > RESIDENT ASK REMOVE
+
+and, if you had deactivated the internal ASK, then you would also use:-
+
+  > RESIDENT ASK REPLACE
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "1.3" "Part 24 - The RESIDENT Command - 1.3 Notes"
+
+@{B}@{U}Special Requirements in v1.3@{UU}
+
+In @{B}v1.3@{UB} we have to make resident the file "L:shell-seg" before we can use
+other resident commands. Resident commands cannot be used in a @{B}"CLI only"@{UB}
+window (except with "run" - @{"see below" LINK "1.3"36}), and @{B}cannot@{UB} be used in any Shell
+created BEFORE L:shell-seg is made resident.
+
+If we examine the resident SYSTEM list before "L:shell-seg" is made resident
+we will see there an item named CLI.
+
+The standard startup-sequence file has this line:-
+
+  RESIDENT CLI L:Shell-Seg SYSTEM PURE ADD
+
+What this does is to load the file "L:Shell-Seg" into the resident's system
+list giving it the @{"name" LINK "Name"} "CLI".
+
+If we reexamine the resident list after this we will see CLI listed twice!
+The first CLI in the list is the "L:Shell-Seg" file renamed to CLI and
+the second is the original one. When CLI is called, the system first looks
+in the resident list and uses the first occurrence of CLI in the list,
+i.e. the one our startup-sequence put there with the above RESIDENT command
+line.
+
+When I was using @{B}wb1.3@{UB} I changed the startup-sequence of my disk to read:-
+
+  RESIDENT CLI L:Shell-Seg SYSTEM PURE REPLACE
+
+and only one CLI appeared in the resident list. It seemed to work O.K.
+I cannot explain why it is not done this way in the standard
+startup-sequence.
+
+Once L:Shell-Seg is made resident in this way, shell windows will be able
+to use commands from the resident list.
+
+In @{B}v1.3,@{UB} an ordinary CLI will NOT be able to use the command in the resident
+list unless the command is called with the RUN command. When RUN is used
+in CLI it looks in the resident list first for its commands, even if
+launched from CLI not SHELL. This brings me (at last!) to my final point.
+
+In the standard @{B}v1.3@{UB} startup-sequence there is a line that comes after
+"L:Shell-Seg" has been made resident:-
+
+  run execute StartupII
+
+When you boot up a system which uses @{B}v1.3@{UB} it must start off using a CLI
+as it cannot use a Shell until L:Shell-Seg is resident. Therefore a second
+script is set up with most of the startup commands. As this second script
+is called using RUN, it will use commands from the resident list and the
+whole startup process should proceed a lot faster.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+

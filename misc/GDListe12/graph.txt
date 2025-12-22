@@ -1,0 +1,490 @@
+Hi!
+
+1. Library systems - good or bad ?
+2. Coding of Amiga Graphics Boards - principles
+3. Graphics Board hardware
+4. Which Boards to support ?
+5. Some Notes about Power PC Amigas...
+6. Contact addresses...
+
+1. Library systems - good or bad ?
+
+Most "hardware hackers" consider libraries a bad (slow) thing, that is
+of no use for game programming. That is not 100% true. As to libraries
+to access Graphics Boards there are *TWO SORTS* of libraries, slow libraries
+and fast libraries.
+
+Slow libraries access the hardware using high-level interfaces, like the
+graphics.library of Amiga OS does. They have mostly no real low-level
+interface. There are calls like WritePixel and DrawLine in such a library.
+An example for a high-level library is the egs.library of EGS Graphics Boards
+(but with some tricks even this library MIGHT be useful for game programming,
+to use it UNMODIFIED is of no use, of course...)
+
+Fast library do not provide a "fat" library interface. It basically provides
+calls to open screens, close screens, get the base address of the video RAM
+and perfrom double Buffering. Writing to the screen is done by yourself (you
+use the processor to write to the Bitmap and such stuff, using your own Assembly
+code...). Sometimes fast libraries provide code for accessing the Graphics Board
+blitters too. An example for a fast library is rtgmaster.library.
+
+More about which libraries are slow and which are fast in chapter 3.
+
+NOTE: You will have to change your mind about libraries. With Graphics Board
+equipped Amigas, the only solution for fast games are fast libraries that provide
+a low level interface to the Board hardware. Custom Chips are not longer "in".
+
+2. Coding of Amiga Graphics Boards - principles
+
+I wrote down the principles of all available library systems known to me here...
+
+A. Picasso II
+
+This system is used by the Picasso II, and CyberGraphX can emulate it (Probably
+the Emulation will slow the thing down, but i tested it with a Texturemapping
+demo for Picasso II and AGA, and i got a speedup of AT LEAST 4 times using
+Picasso with the Cybergraphics emulation, compared to AGA (A4000/040 + Piccolo
+SD64).
+
+The vilintuisup.library supports both High Level and Lowlevel functions.
+
+There are low level functions for :
+
+- Opening a native Picasso Screen (not usable for Intuition...)
+- Getting the base address of the video RAM
+- Performing Double Buffering
+- Changing colors and all that stuff
+- Closing the Screen again
+
+Sad thing : Picasso Double Buffering is done using MoveScreen, it is no real
+double buffering. But it is said it should be very fast on that Board, the
+MoveScreen... you should test this before starting to code... there is no
+Triple Buffering available unless you code this yourself.
+
+Because it is very easy to use, runs on many Boards and is Low Level, the
+vilintui.library is interesting for game/demo coders, in my opinion.
+If somebody has problems with coding the thing, ask me (i know how...)
+
+Will be supported in the game Nemac 4.
+
+B. Rtgmaster.library
+
+Currently in Alpha stage of the developpement rtgmaster.library is a Low Level
+(=fast) library supporting :
+
+- Opening a native Screen on the Board
+- Getting the Base address of the Video RAM
+- Performing Double and Triple Buffering
+- Changing Colors and all that stuff
+- Getting information about the structure of the Video RAM of the Board
+- Closing the Screen again
+
+The initial release will support :
+
+- all EGS Boards (including A2410, G110 and the usual EGS Boards...)
+- Picasso II
+- all Boards with an installed CyberGraphX system
+- ECS and AGA
+
+It is *NOT* needed to deinstall your current WB-Emulation to install this library.
+For some things (direct video RAM access under EGS, DoubleBuffering under CyberGraphX
+this thing CHEATS...)
+
+This library is freeware.
+
+Will be supported in Textdemo and a handful of other games/demos.
+
+If someone is interested, contact me (i am one of the coders of the thing...)
+
+C. CyberGraphX/cybergraphics.library
+
+This library supports Low Level AND High level calls, but the low level ones
+(that is : Getting base address of VRAM) are a bit complicated to use. There
+is no Doublebuffering up to now (you can do the same way like with the Picasso II
+though...)
+
+There is a new version of CyberGraphics announced for 1996, that shall contain
+support for game programmers.
+
+If you want to get CyberGraphX you will have to deinstall other WB-Emulations (EGS...)
+CyberGraphX is much faster than EGS (there is no difference for low level calls of
+course, as they access the same VRAM :) )
+
+CyberGraphX is at about 40$, it comes for free with DraCo and with Cybervision (and
+will come for free with "Power UP" Power PC Board, with additional AGA support,
+and Power PC native code (and game programme support, 3D and multimedia functions
+and hopefully Low Level functions...)
+
+Probably the first games using CyberGraphX (the old one) will be GLOOM Deluxe and
+Alien Breed 3D Special Edition...
+
+If someone has problems with CyberGraphX Programming i could help... soon a
+documented demo source about this will be available...
+
+D. EGS
+
+EGS only supports High level functions. It is possible to get as near as possible to
+the graphics driver, though, and that way, it is quite okay. But it is not optimal,
+of course... EGS supports as many Double/Triple/... Buffers as you wish...
+
+You are NOT able to use IDCMP-Ports with EGS (instead eDCMP of EGS which is similar).
+
+If someone has problems, i could help (documentated demo source available...)
+
+NOTE: Rumour says it, that EGS will be soon dropped... i do not know if this is
+true... but CyberGraphX is available for nearly all EGS Boards anyways...
+
+E. HRG
+
+This is the system of the Merlin. It is an "exote", but after
+what i heard, it is quite good in the 2.0 release. According
+to someone of ProDev, they provide similar features as CyberGraphX,
+but only for the Merlin and not for a lot of Boards like CyberGraphX
+does, AND they even support Double Buffering what CyberGraphX
+currently does not...
+
+F. Graffiti
+
+You can order information from sysop@nostlgic.tng.oche.de
+No libraries, you hack in everything yourselves... :) But this
+stuff is a bit confusing...
+
+3. Graphics Board hardware
+
+NOTE:
+
+Zorro II is slowest (about 3 MB/sec.)
+Zorro II/III autosensing faster on Zorro III systems
+Zorro III only is even faster, as to rumours, as an autosensing system
+(about 15-30 MB/sec., i saw a lot of different values... probably more near 15 MB/sec.)
+DraCo Direct is fastest (but only available for DraCo)
+(30 MB/sec. at least, maybe even near 50 MB/sec.)
+
+Another Note :
+
+PCI is, after what i heard, between 50 and 150 MB/Sec. ... so hopefully Amiga Tech.
+will build PCI in future Amigas...
+
+A.
+
+Name: Picasso II
+Manufacturer: Villagetronic
+VRAM Size : 2 MB
+Chipset : Cirrus Logic 32 Bit
+Bus system : Zorro II
+Library : Vilintuisup.library or cybergraphics.library or rtgmaster.library
+Note : There will be a Picasso III in 1996. This Board will be available
+       for Zorro Systems, A1200, and Mac as far as i heard...
+
+B.
+
+Name: Piccolo
+Manufacturer: Ingenieurbuero Helfrich
+VRAM Size : 2 MB
+Chipset : Cirrus Logic 32 Bit
+Bus system: Zorro II/Zorro III autosensing
+Library : egs.library or cybergraphics.library or rtgmaster.library
+Note : Out of production...
+
+C.
+
+Name: Piccolo SD64
+Manufacturer: Ingenieurbuero Helfrich
+VRAM Size : 2 or 4 MB
+Chipset : Cirrus Logic 64 Bit
+Bus system: Zorro II/Zorro III autosensing
+Library: egs.library or cybergraphics.library or rtgmaster.library
+Note : Successor of Piccolo (Because of Piccolo SD64 Piccolo is no
+       longer in production). One of the 4 fastest Amiga Graphics Boards.
+
+D.
+
+Name: EGS Spectrum
+Manufacturer: GVP
+VRAM Size: 2 MB
+Chipset : Cirrus Logic 32 Bit
+Bus system: Not sure (but it runs on Zorro II in any case)
+Library: egs.library or cybergraphics.library or rtgmaster.library
+Note: No longer in Production, basically a Piccolo clone
+
+E.
+
+Name: Rainbow 3
+Manufacturer: Ingenieurbuero Helfrich
+VRAM Size: 4 MB
+Chipset: Don't know
+Bus system: Do not know
+Library: egs.library or rtgmaster.library
+Note: Don't know, if still in production
+
+F.
+
+Name: Graffity
+Manufacturer: bsc
+VRAM Size: 2 MB
+Chipset: Cirrus Logic 32 Bit
+Bus system: Do not know, but i think it is a ZII/ZIII autosensing Board...
+Library: egs.library
+Note: Do not know, if this got ever produced, may run with rtgmaster.library
+      too, not sure... In every case, not longer in production
+      Do not confuse with "Graffiti", that is something else...
+G.
+
+Name: A2410
+Manufacturer: Commodore
+VRAM Size: 1 MB, as far as i know...
+Chipset: ???
+Bus system: Zorro II
+Library: egs.library or cybergraphics.library or rtgmaster.library
+Note: Out of production.
+
+H.
+
+Name: Retina Z3
+Manufacturer: Macrosystems
+VRAM Size: 4 MB
+Chipset : Do not know
+Bus system: Zorro III only
+Library: Special Retina stuff (do not know...) or cybergraphics.library
+Note: One of the 4 fastest Amiga Graphics Boards
+
+I.
+
+Name: Altais
+Manufacturer: Macrosystems
+VRAM Size: 1 or 4 MB
+Chipset: Do not know, but it is a 64 Bit one...
+Bus system: DraCo Direct only
+Library: Special DraCo stuff (do not know...) or cybergraphics.library
+Note: Probably the fastest Amiga Graphics Board (but using that damned
+      fast DraCo Direct slots simply is not fair for speed comparisions :)))
+      This Board is only available for DraCo (4 MB in the 060 DraCo, 1 MB
+      in the 040 DraCo). But if you use cybergraphics.library your stuff
+      will run on it... the DraCo Direct slots have about the double speed
+      of Zorro III.
+
+
+J.
+
+Name: Merlin
+Manufacturer: XPert
+VRAM Size: 2 or 4 MB (rumours about 8 and 16 MB Boards, not sure if ever built,
+           probably no...)
+Chipset: Do not know
+Bus System: Zorro II/Zorro III autosensing (if upgrade install that autosensing works :) )
+Library: HRGSystem.library or cybergraphics.library (maybe rtgmaster.library somedays...)
+Note: Merlin is the famous ProDev Board, probably the first modern Amiga Graphics
+      Board at all. The problem with the Merlin: ProDev did something wrong with it,
+      and the first version did not run together with some other Zorro III Boards (for
+      example with the Fastlane controller). After XPert died, ProDev took over Merlin-Support
+      and updated Merlins, so that problem was solved. But some guys are waiting till this
+      day, 1 year after the upgrade offer, to get their modified Merlin back. Another
+      problem with the Board : To get a low price, XPert used SLOW RAM with the Board.
+      Most Amigans think, Merlin sucks... but i heard with the upgrade and the latest
+      version of HRGSystem.library it would be quite okay...
+
+K.
+
+Name: Cybervision
+Manufacturer: Phase 5
+VRAM Size: 2 or 4 MB
+Chipset: Trio S3 64 Bit
+Bus system: Zorro III only
+Library: cybergraphics.library or rtgmaster.library
+Note: Probably the second fastest Amiga Graphics Boards, the fastest one if the Amiga is
+      not a DraCo (although Piccolo SD64 is faster with WritePixel, if cybergraphics.library
+      is installed...). As far as i know, it can be directly connected to the Cyberstorm
+      Board, and there it MIGHT be that it even will be faster than the Altais... but i
+      do not know... Hopefully Phase 5 will produce a possibillity to connect the Board
+      directly to their "Power UP" Power PC Board...
+
+L.
+
+Name: Graffiti
+Manufacturer: sysop@nostlgic.tng.oche.de
+VRAM Size: Uses Amiga Chip Memory...
+Chipset: None (uses Blitter, Copper and Main Processor...)
+Bus system: Where you plug in the 1084 monitor
+Library: None (maybe someday rtgmaster.library)
+Note: This is no real Graphics Board, but some sort of HARDWARE HACK. It is slow.
+      On the other side it is cheap. It has a strange screen display that slows things
+      down (but will get the speed of an A1200 + Fastram on an unexpanded A1200
+      AT LEAST). If you do a good job optimizing (saving graphics in Graffiti format
+      for example) it will be much faster, maybe even like a Zorro II Graphics Board.
+      If you save graphics in Graffiti format and use only longword access you will get
+      about 72 fps for 320x256 Fullscreen. The Board has no Screenmodes and no
+      WB-Emulation available, only for games... (but it should not be that complicated
+      to port AGA stuff to Graffiti as you can still use Copper/Blitter, and Graffiti runs
+      on ECS systems too...) I do not know, if the Board is already available.
+
+Other things out there :
+
+- Domino : The thing XPert did before the Merlin. cybergraphics available for it, but
+           it is damned slow. It is based on a 30$ old PC graphics Board.
+- Visiona: I do not know much about this Board, but if i am right, another XPert work
+- Rainbow 2 : Old Ingenieurbuero Helfrich work, about that "great" like the Domino.
+              As far as i know, there is EGS for this Board. rtgmaster.library MIGHT
+              work with it or not...
+- G110 : Old but very fast GVP Board connected directly to the Bus of their turboboards
+         (that is faster than Zorro III, about 30-50 MB/sec., after what i heard). If
+         only GVP had lived longer... sigh... they could have done a Zorro III version.
+         As far as to what i know the Board is a BIT slower than Retina Z3, SD64 and
+         Cybervision. Only available for A2000. Out of production. Probably the fastest
+         available Board for A2000. Supports EGS and rtgmaster.library. Was not cheap,
+         as far as what i know.
+
+All not mentioned Boards are framebuffers or mega-old stuff, that nearly noone owns...
+
+4. What Boards to support
+
+I would :
+
+- support rtgmaster.library or cybergraphics.library at least
+- support Graffiti
+- Maybe Picasso II
+
+Other things only, if needed (it makes no sense supporting EGS if you already
+support rtgmaster.library, because EGS has no advance about it...)
+HRG is exotic...
+And if you already support cybergraphics.library or rtgmaster.library there
+is the question if you need anything of the others...
+
+CyberGraphics would be great as a standard, if it ONLY would support Double/Triple
+Buffering like rtgmaster.library... i hope, release 3 will do... and as long
+as it does not, i personally will use rtgmaster.library for my game...
+
+5. Some Notes about Power PC Amigas...
+
+In the game/demo developper list, someone replied :
+
+* How should the switch for AmigaDOS to PowerPC be in your opinion ?
+
+PowerPC's should be 100% AmigaDOS compatible but I know that's
+not realistic.
+
+
+This is probably the fear of many Amigans (Amiga DOS to be dropped), but i
+am able to calm you. Amiga DOS WILL NOT BE DROPPED !!!
+
+At the Computer 95 i asked the guys of Phase 5 who are doing the Power PC
+Amiga (wake up, guys, this is not Amiga Technologies doing Power PC Amiga,
+that will probably be licensed work of Phase 5) and they told me the
+following :
+
+"
+- We work in cooperation with Amiga Technologies.
+- Future Power PC products of Phase 5 and Amiga Tech. will be compatible.
+- PowerUP Power PC Boards will be out in June/July 1996.
+- As software we will use a PowerPC version of Amiga DOS.
+- The Amiga DOS port already started, but in June/July 1996 probably
+  the port is only partially done.
+- What is not ported, will be done with 680x0 emulation.
+- We will finish to port the Amiga DOS to Power PC as soon as possible.
+- Older (680x0) software will run using 680x0 Emulation on Power PC Amigas.
+- On a Power PC 604, the 680x0 Emulation will have the speed of at least
+  an 68040.
+- But of course the goal is to do everything in Power PC code, that is
+  much faster.
+- For the Graphics we will use CyberGraphX 3.0 Power PC Native.
+- An 680x0 version of CyberGraphX 3.0 will be too available.
+- CyberGraphX 3.0 will support AGA and Graphics Boards.
+- CyberGraphX 3.0 will include new 3D, multimedia, audio and video functions
+  that are especially interesting to game developpers.
+"
+
+They could not answer, if future Amigas from Amiga Technology will be
+compatible as to the GRAPHICS SYSTEM too, but they hope that this will
+be so (CyberGraphX 3.0 will be available more than a HALF YEAR before
+Amiga Technologies Power Amigas will show up...
+
+So Power PC Amigas will be 100% Amiga DOS compatible... at least as long
+that AmigaDOS stuff runs on an 68040, as this will be 68040 emulation...
+
+Power UP Boards will be available in January for developpers, the cheapest
+Board (using Power PC 603e) will be at 1000 german marks (that is about 1.3x
+the cost of a new A1200). It will be available for A1200, A3000 and A4000
+(maybe for A2000 later...).
+
+6. Contact Addresses :
+
+Picasso :
+
+VillageTronic Marketing GmbH
+Wellweg 95
+D-31157 Saarstedt
+Germany
+
+email : goehler@adsp.arkon.sub.org (is this stite still running ?) :
+        Software and hardware documentation
+        crest@adsp.arkon.sub.org : Hardware developement
+
+-------------------------------------------------------------------------
+
+Graffiti :
+
+sysop@nostlgic.tng.oche.de (Jens Schoenfeld, the manufacturer...)
+
+-------------------------------------------------------------------------
+
+EGS:
+
+uli@wombat.okapi.sub.org (One of the main programmers of EGS, but he
+does not do much more EGS stuff, as far as i know...)
+
+OR
+
+Includes from an older version are on Aminet
+
+OR
+
+Ingenieurbuero Helfrich
+Technologie-Zentrum Delmenhorst
+Am Wollelager 8
+D-27749 Delmenhorst
+Germany
+
+(Manufacturer of the Piccolo and the Piccolo SD64)
+
+OR
+
+ftp.orion.etsu.edu (or something similar...)
+
+OR
+
+ftp.uni-stuttgart.de (i am not sure, if the EGS directory still exists...)
+
+-------------------------------------------------------------------------
+
+CyberGraphX:
+
+fmariak@chaosengine.ping.de (Frank Mariak)
+marvin@sun.ph-cip.uni-koeln.de
+
+-------------------------------------------------------------------------
+
+Cybervision:
+
+phase 5 digital products
+In der Au 27
+D-61440 Oberursel
+Germany
+
+-------------------------------------------------------------------------
+
+Retina and Retina Z3 and DraCo Altais :
+
+MacroSystem GmbH
+Borgaecker 2-6
+D-58454 Witten
+Germany
+
+-------------------------------------------------------------------------
+
+rtgmaster.library :
+
+John.Hendrikx@grafix.xs4all.nl
+
+or myself...
+
+MagicSN
+haeuser@tick.informatik.uni-stuttgart.de

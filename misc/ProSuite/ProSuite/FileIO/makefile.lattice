@@ -1,0 +1,27 @@
+FILEIO=	alerts.o chipdata.o fileio.o filename.o filesupp.o globfio.o main.o \
+	opendata.o pointers.o reqsupp.o strings.o volname.o
+
+.c.o:
+	lc1 -iINCLUDE: $*
+	lc2 -v $*
+
+.asm.o:
+	assem $*.asm -o $*.o -i dh0:Amiga/Include
+
+fileio:	$(FILEIO)
+	blink FROM LIB:c.o $(FILEIO) to fileio LIB LIB:amiga.lib LIB:lc.lib 
+
+
+chipdata.o:
+	lc1 -iINCLUDE: $*
+	lc2 -v $*
+	atom $*.o $*.ozzz -cdb -pc
+	delete $*.o
+	rename $*.ozzz $*.o
+
+all:
+	delete #?.o
+	make
+
+o:	$(FILEIO)
+

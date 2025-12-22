@@ -1,0 +1,318 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 7.Teil...
+
+So, weiter mit den Bildern....Ausser Groesse farben, anzahl und
+laenge, muss der Amiga noch wissen wo er die Plane findet die er darstellen
+soll. Dazu dienen die sogenannten Bitplanepointer. Sie liegen fuer die
+erste Plane bei $dff0e0 und $dff0e2.
+
+In dem nun folgenden listing habe ich die ganzen einstellungen in die
+Copperliste gesteckt..Obwohl man groesse und anzahl der Planes auch einmal
+einstellen kann ist es besser es immer wieder in der Copperliste macht.
+Erstmal das listing, dann werde ich die neue sache erklaeren..
+
+
+start:
+execbase=       4
+openlibrary=    -408
+vhposr=         $dff006
+forbid=         -30-102
+permit=         -30-108
+dmacon=         $dff096
+intena=         $dff09a
+dmaconr=        $dff002
+cop1lc =        $dff080
+
+
+        move.w  #$0020,dmacon
+        move.w  #$4000,intena
+        move.l  execbase,a6
+        jsr     forbid(a6)
+
+        Lea $5fffc,a0
+        Lea $dff180,a1
+        Move.w #1,d0
+Colorloop:
+        Move.w (a0)+,(a1)+
+        dbf d0,colorloop
+
+        move.l  #copperliste,cop1lc
+
+wait:
+        btst    #6,$bfe001
+        bne     wait
+
+        move.l  execbase,a6
+        jsr     permit(a6)
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$c000,intena
+        move.l  38(a6),cop1lc
+        moveq   #0,d0
+        rts
+
+gfxname:        dc.b "graphics.library",0
+
+>Extern         "bild1.raw",$5fffc
+even
+
+copperliste:
+dc.w $00e0,$0006        ;Hi und Lo pointer der planeadresse im ram
+dc.w $00e2,$0000
+dc.w $0100,$1200        ;Bplcon0 1 Plane, Lores
+dc.w $008e,$3081        ;Diwstrt
+dc.w $0090,$30c1        ;Diwstop
+dc.w $0092,$0038        ;Ddfstrt
+dc.w $0094,$00d0        ;Ddfstop
+dc.l $-2
+
+
+So das ist es, ihr koenntet es euch rausschneiden..es ist einen etwas
+verbesserte Version des alten Copperliste programm. Geaendert wurden sachen
+die hinterher beim Ausbauen des Listing, stoeren wuerden...und vielleicht
+sogar Guru`s veranstalten.
+
+Wichtig ist das ihr nach dem Assemblieren `Y` drueckt und return bevor ihr
+das mit `J` startet, damit das Bild nachgeladen wird.
+
+So die erste aenderung die euch aufallen wird, sind zwei neue register,
+naemlich DMACON und INTENA.
+Das register INTENA heiát INterupts ENAble, was soviel bedeutet Erlaubte
+Interupts. Mit ihm schaltet man alle moeglichen interrupts des Amiga an
+oder aus...wir schalten sie aus....das gekoppelt mit Forbid, gibt uns die
+ganze zeit des Amigas, er macht jetzt nur noch das was wir wollen.
+
+Das zweite neue register ist DMACON. Es oeffnet die Tore fuer die einzelnen
+DMA kanaele. Was DMA (direct Memory Access) ist wisst ihr schon. Es gibt
+fuer alles, was der Amiga kann DmA kanaele, vom und zum Ram. Diese kanaele
+werden solange sie angeschaltet sind immer wieder auf inhalt ueberprueft,
+auch wenn man ueberhaupt nichts z.b mit sprites macht, wird dauernd
+ueberprueft. Das kostet natuerlich zeit, deshalb schalten wir direkt mal
+die Sprite DMA aus, da wir die im moment nicht brauchen.
+
+So, jetzt muss ich euch aber noch etwas ueber das DMACON und INTENA
+register erklaeren.
+
+In den 16 Bits der Register, sind 15 schalter der die DMA kanaele oder die
+Interrupts eingebaut. Der 16 schalter sagt wie der Zugriff ausssieht.
+
+Den Wert den ich in diese Register schreibe ist eigentlich garnicht der der
+hinterher drin steht. Den das 16 Bit sagt aus was gemacht wird. Ist es
+gesetzt, werden alle bits die im Wort was ich dort hinschreibe gesetzt sind
+auch im DMACON register gesetzt. Ist es geloescht, werden alle im Wert
+gesetzten Bits, im DMACON register geloescht. Mit dem Wort das ich am
+anfang in das DMACON register schreibe, schalte ich den Sprite Kanal aus.
+
+Der wert ist #$0020, in Bits 0000000000100000, das heisst das das Fuenfte
+Bit geloescht wird. Bit 5 ist fuer den SpriteKanal.
+Wenn ich wie jetzt vom Cli aus komme, sind Sprite, Bitplane und Blitter DMA
+angeschaltet. Die bitplane DMA muss ich an lassen, damit wir uberhaupt ein
+Bild sehen, die Blitter dma kann ich ruhig anlassen, weil es sich mit ihm
+etwas anders verhaelt, da dort ein Chip dahinter steht der den Kanal
+ueberprueft, und darum kostet es uns keine Zeit, deshalb lassen wir ihn
+einfach an.
+Allerdings werden sich einige jetzt fragen warum ich den Sprite kanal
+ausschalten, wir brauchen doch kaum Zeit, ein Voellig einfaches Programm,
+wieso muss man denn da schon Zeit sparen ? Ganz einfach...Die Sprites im
+Amiga haben eine Sehr schlechte angewohnheit. Sobald ihr Kanal angeschaltet
+wird sind sie auch da. Da sie aber kein Aussehen und keine Bildschirm
+Position zugewiesen bekommen haben, schnappen sie sich immer die werte die
+sie gerade auf dem datenBus finden. Deshalb sieht man nur Truemmer.
+Probierts es doch mal aus, loescht einfach die erste Zeile mit dem DMACON
+ganz, dann koennt ihr das sehen, wie das aussieht....
+
+So wenn ihr weiter guckt faellt euch die Colorcopy-routine auf, sie setzt
+die Farben aus der Colormap, die ja vor der Bitplane liegt (habt ihr
+eingestellt).
+Wenn ihr bald mit mehr farben arbeitet dann muesst ihr natuerlich auch
+diese Routine umstellen, wie das wisst ihr schon.
+
+Das Oeffnen der Graphics.Library habe ich jetzt nach unten verlegt, es kann
+schwierigkeiten geben wenn man wie ich das vorher gemacht habe. Erst die
+Graphics.library oeffnen, zeiger retten und dann am ende auslesen. Es kommt
+schon mal vor das man dort arbeitet wo dann die geoeffnete Library liegt.
+Und dann ueberschreibt man sie und kriegt nicht mehr den wert den man
+braucht. Das ist mir schon passiert, und dann wundert man sich... aber
+sowas wird euch bestimmt auch noch oft genug passieren.
+
+So, jetzt kommen wir zu einem Neue Seka befehl, de das Einbinden von
+Dateien erlaubt...bzw. er laedt dateien in den Amiga Speicher ein. Das
+koennen Bilder, Musiken oder alles moegliche sein. Seine Syntax lautet
+
+>Extern "Name",Ziel (label oder Adresse), Laenge (Label oder fester wert)
+
+also ein beispiel aufruf, der die ertsen 5000 Bytes vom Bild mit dem Namen
+Auto nach $40000 einlaedt saehe dann so aus - >Extern "Auto",$40000,5000
+
+Die option laenge braucht man eigentlich nie, deshalb lasse ich die immer
+weg.
+Aktiviert wird das ganze nach dem Assemblieren mit `Y`, dann schaut der
+Seka das Listing nochmal nach Externen Kommandos durch und fuehrt diese
+dann aus.
+
+Noch was...wenn ihr die Funktion Openlibrary benutzt, achtet darauf das der
+name der Library genauso geschrieben ist wie es im Buch oder in meinem Kurs
+steht...naemlich klein und mit punkt getrennt, sonst erkennt der Befehl
+diese nich und bricht ab...
+
+graphics.library  ist der absolut richtige name dafuer...also denkt dran.
+
+Was man machen muss um ein Bild mit 32 farben darzustellen ist ja wohl
+klar..aber ich erklaere es doch lieber mal.
+
+Also erstmal das Bild ueberhaupt malen. Konvertieren (denkt an die
+Colormap, sie sollte davor liegen).
+
+Dann muesst ihr das >Extern kommando um schreiben 1. Den neuen namen
+einsetzen 2. muesst ihr den Ladebeginn vorverlegen, da die Colormap jetzt
+ja groesser ist. Wieviel ihr das jetzt vorverlegen muesst rechnet man so
+aus....Farben*2 , bei 32 farben sind das 64 bytes...64 in Hexdezimal sin
+$40, jetzt muesst ihr nur noch Bildanfang -$40 rechnen. Bei $60000 weare
+das dann $5ffc0..also die adresse im Extern kommando muss also $5ffc0
+lauten. Genau diese Adresse muesst ihr dann natuerlich auch in der
+Farbenroutine einsetzen, und den Counter auf 32-1 setzen.
+
+Dann muesst ihr noch in der Copperliste das BPLCON0 register auf $5200
+setzen, da es 5 planes sind. Dann muesst ihr natuerlich noch die
+BitplanePointer fuer die weiteren planes setzen. Da die Planes im
+RAW-Format alle hintereinander liegen, koennen wir die weiteren Adresse
+einfach ausrechnen. Also, unser Bild hat die maáe 320*256, das sind 256 mal
+320 bits. Erstmal brauchen wir die Bytes..also 320/8 gleich 40. 40 mal 256
+gleich 10240...in Hex $2800. Also lauten die Bitplane Startadressen so
+
+1. $60000
+2. $62800
+3. $65000
+4. $67800
+5. $6a000
+
+Einsetzen duerfte kein Problem mehr sein oder...
+
+Falls das zu schwierig war muesst ihr leider die Letzten zwei Teile nochmal
+durchlesen, denn dann ist etwas Falsch gelaufen.
+
+Natuerlich waere es besser ihr wuerdet das jetzt mal selber versuchen, um
+zu sehen was man schon kann. Das fertige teil kommt natuerlich bei dem
+Naechsten Effekt als listing rueber, aber das ist ja nicht der Sinn der
+Sache, oder ?
+
+So jetzt koennt ihr erstmal einen Zeit mit dem Krempel rumspielen, und alle
+moeglichen Bilder Konvertieren. Ihr solltet auch mal versuchen mit
+Interlace, oder Hires zu arbeiten..wir werden das in diesem Kurs zwar nicht
+benutzen, aber vielleicht findet einer seine leidenschaft darin und
+arbeitet fortan nur dadrin. Es ist relativ einfach den Kurs auf Hires
+umzusetzen. Naja..ich persoenlich halte nicht soviel von dem Flackern was
+der Amiga uns da praesentiert. Die einzige schoene sache ist der HAM modus,
+er ist allerdings ziemlich speicherverbrauchend (heisst doch so, oder ?)
+
+Jetzt mal eine kleine erklaerung....Eine sache die ihr euch vielleicht auch
+schon mal gefragt habt.
+
+Ein Freund fragte mich letztens "Hoermal Sascha, warum arbeiten wir den im
+RAW-format wenn wir Bilder darstellen, und nicht im IFF format wie die
+ganzen Malprogramme es tun. Die werden doch sicher einen Grund haben das zu
+tun. Und wenn ich mir den Umstand angucke, vonwegen das mit dem
+Konvertieren und so, verstehe ich das nicht so recht"
+
+Is Klar was er meint.....Aber der Amiga kann halt nur im RAW formt
+arbeiten...das IFF-ILBM format, wie es fuer bilder heisst. Ist ein Pack
+verfahren. Die bilder werden auf eine ganze bestimmte art und weise
+Zusammen gepackt, gleichzeitig werden auch alle wichtigen daten des Bildes
+mit abgespeichtert, als da waeren ..Farben, Groesse...Anzahl der Planes,
+modus und so. Das IFF-Format gibt es auch fuer
+TextFiles..Samples..Musikstuecke. Es soll den Daten Transfer verschiedener
+Programm untereinander ermoeglichen...ne tolle Idee...aber wir muessen das
+dann erstmal Konvertieren...Es ist keine Atemberaubende Sache die Dateien
+zu entpacken, allerdings dauert es ein Parr sekunden, und das waere Extrem
+langweilig finde ich, und deshalb Konvertieren wir das Vorher, O.K ?
+
+So, nachdem wir auch mal Bilder dargestellt haben koennen wir schon
+anfangen etwas ansehnliches zu Bauen. Dazu muessen wir aber das Thema
+Bilder wieder kurz verlassen, um dann mit einem Sagenhaften effekt wieder
+zu kommen.
+
+Wer kennt nicht Stripes, dieses Schicke Cli farbspielerei, bei der es
+aussieht als wenn der Bildschirm von einem Dicken Rohr durchzogen wuerde,
+oder andere sachen, bei denen der ganze bildschirm von Rohren (die richtige
+bezeichnung ist Tubes (sprich : Tjubs) ueberzogen ist. Nette sache..habt
+ihr denn schon mal versucht eine selbstgemachte diashow mit einen der
+Zahlreichen IFF anzeige Routinen zu machen...Hah, das war wohl nichts, in
+dem meisten faellen jedenfalls. Warum ist klar, die eine Copperliste Stellt
+die andere ab. Deshalb werden wir diesen Effekt zusammen mit einem Bild.
+
+Erstmal die Beschriebung der Technik dieser `Tubes`.
+Jede Zeile wird von Copper abgewartet, und dann ein farbwert aus einer
+Tabelle reingschrieben. Die Tabelle ist so angelegt das die einzelnen
+Farbtoenne immer nur einige Nouancen unterscheiden. Wenn man diese Tabelle
+von Dunkel bis nach hell und dann wieder bis dunkel macht, und das auf
+einem Kleinen raum dann kommt eine Tubes zustande.
+
+Wenn wir allerdings den Ganzen bildschirm mit Tubes ueberziehen wollten.
+dann wir schon im NTSC bereich 256 zeilen. Auf die Art und weise wie wir
+das jetzt machen, vonwegen die Copperliste direkt im SourceCode ablegen,
+das hieáe, wir haetten 512 zeilen Text nur fuer die Copperliste. Das waere
+wohl doch ein Bisschen sehr viel arbeit, oder ?
+
+Deshalb arbeiten wir mit einer Routine von 10 bis 12 Zeilen die uns diese
+Copperliste erstellt.
+Das heisst wir legen die einzelnen Elemente die so eine Copperliste hat,
+wie z.b der move-befehl, oder die Farbadresse $180 in die Datenregister,
+dann legen wir eine Tabelle an fuer die Farben (das machen wir hinterher)
+und wir setzen das erste wort fuer den Wait befehl in ein Register.
+
+Dann durchlaufen wir eine Schleife, indem alle Bausteine die noetig sind
+immer wieder auf die Copperliste gesetzt werden, das ist wie ein Haus
+bauen.
+Ein durchlauf muesste dann so ausehen das erstmal die Position fuer den
+Waitbefehl geschrieben wird, dann der Wait befehl selber...dann kaeme das
+farbregisert was ich ansprechen will (in unserem fall waere das $0180 oder
+$0182) und dann der Farbwert der in das Register geschrieben werden soll.
+
+Dann muesste das Positions wort fuer den Wait befehl, so bearbeitet werden
+das es auf die naechste Zeile zeigt, und das wort fuer die Farbe muesst
+geaendert werden. Ob das durch auslesen einer Tabelle oder durch normales
+Addieren geschieht (was uebrigens auch schoene Effekte zustande bringt) ist
+erstmal gleich. Jetzt kommt erstmal so eine Routine, die eine Solche
+Copperliste erstellt. Wie man sie Einbaut das zeige ich dannach.
+
+        Lea $50000,a0           ; Adresse ab der die Copperliste liegen
+                                ; soll.
+        Move.w #$-2,d0          ; Wait-befehl ($fffe) nach d0
+        Move.w #$0180,d1        ; Farbregister wert nach d1
+        Move.w #$200f,d2        ; Erstes Positions wort fuer den Waitbefehl
+                                ; nach d2
+        Move.w #$0000,d3        ; Erstes farbwort nach d3
+        Move.w #$80,d4          ; Counter nach d4
+Copperloop:
+        Move.w d2,(a0)+         ; Durch die Postinkrementale adressierung
+                                ; koennen wir die Copperliste stueck fuer
+                                ; stueck zusammen bauen. Erstes Positions
+                                ; Wort schreiben.
+        Move.w d0,(a0)+         ; Wait-Befehl schreiben
+        Move.w d1,(a0)+         ; Erste farbregisterwort setzen
+        Move.w d3,(a0)+         ; Erstes Farbwort setzen
+
+                                ; Jetzt ist der erste Durchlauf geschafft.
+                                ; Wir beginnen mit dem Modifizeren der
+                                ; Ausgangswerte.
+        Add.w #$0100,d2         ; Waitpostionswort auf die naechste zeile
+                                ; setzen.
+        Add.w #$0003,d3         ; Farbwert addieren
+                                                                        /\
+        Dbf d4,copperloop       ; waren es schon $80 zeilen, wenn nicht _]
+                                ; Zueruck
+        Move.l #$01800000,(a0)+ ; Ganz unten wieder auf schwarz schalten
+
+        Move.l #$-2,(a0)+       ; $fffffffe als endemarkierung fuer die
+                                ; Copperliste.
+        Move.l #$50000,cop1lc   ; Erstellte Copperliste auch aktivieren
+Das prinzip duerfte klar sein, oder...
+
+In der Naechsten Folge bauen wir das ding ein...
+
+C.U.
+
+                Jeff Kandle

@@ -1,0 +1,368 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                23.Teil...
+
+Hmmm, PC-Relativ...komisches Wort, was ist das ?
+Tja, das ist eine weitere Art Adressen zu erhalten. Dabei nimmt man wie bei
+den Branch-befehle nicht die Adresse des Ziels selber sondern die Distanz
+vom Augenblicklichen PC.
+Der Sinn ist einfach - Man kann dadurch ein Programm schreiben das ueberall
+im Speicher laufen kann. Es ist egal wo es liegt, da die Adressen innerhalb
+des Programms eben alle vom PC aus gerechnet werden. Warum wir das so
+machen, ist auch klar. Der Amiga laedt den Bootblock nicht an eine feste
+Adresse sondern da wo er gerade Platz hat. Und auch waehrend der Amiga
+laeuft und ein Bootblock ist noch Aktiv, muss er ihn hinsetzen koennen wo
+er will. Deshalb diese Adressierung.
+Also beispiel mal einen Bootblock der eine klein Copperliste Aktiviert, und
+auf die Maustaste wartet, um dann die alte Copperliste zu initialisieren
+und den Bootvorgang weiterzufuehren.
+
+Org $40000
+Load $40000
+
+Kennung:   dc.b "DOS",0
+Chksum:    dc.l $00000000
+Rootblock: dc.l $00000370
+
+Bootprg:
+        Movem.l d0-d7/a0-a6,$70000
+        Lea     Copperliste(PC),a0      ; Adresse der Copperliste wird
+        Move.l  a0,$Dff080              ; PC-Relativ geholt
+Wait:   Btst    #6,$Bfe001
+        bne.s   Wait
+        Move.l  a1,a2
+        Lea     Gfxname(PC),a1
+        Move.l  #$00,d0
+        Jsr     -552(a6)
+        Move.l  d0,a4
+        Move.l  38(a4),$dff080
+        move.l  a2,a1
+        movem.l $70000,d0-d7/a0-a6
+Orgroutine:                             ; Jetzt kommt erst die Orginal
+                                        ; Bootroutine
+        Lea     Resname(PC),a1
+        Jsr     -96(a6)
+        Tst.l   d0
+        Beq.s   Error
+        Move.l  d0,a0
+        Move.l  22(a0),a0
+        Moveq   #$00,d0
+Ende:
+        Rts
+Error:
+        Move.l  #$ff,d0
+        Bra.s   Ende
+
+Resname:   dc.b "dos.library",0
+Gfxname:   dc.b "graphics.library",0
+
+even
+
+Copperliste:
+dc.l    $800ffffe                       ; Copperliste
+dc.l    $01800f00
+dc.l    $a00ffffe
+dc.l    $01800000
+dc.l    $-2
+
+
+Wenn ihr diesen Bootblock genauso behandelt wie den ersten, dann muesste er
+laufen. Ihr koennt an dem Listing sehr schoen sehen wie ich den Zeiger auf
+die Copperliste ermittle.
+Den `Movem` befehl benutze ich zum retten der Register, so koennt ihr den
+auch mal im einsatz sehen. Schaut euch bitte beide Befehle, also den zum
+Retten und den zum Zurueckholen gut an, falls ihr den etwas falsch macht
+stuerzt der ganze Krempel ab.
+Ihr muesst natuerlich nicht alle Register retten, sondern nur die die ihr
+braucht. Der Movem befehl wird dadurch aber nicht kuerzer, und genauso
+wenig weiss man welche Register man letztendlich benutzt, deshalb rette ich
+immer alles, und damit hat sich die sache.
+
+Mehr muesst ihr bei der Bootblock Programmierung nicht beachten.
+Also los...schreibt eure Intro`s.
+
+Ich geb ja zu des es viel Aufwand ist um so einen bloeden Bootblock zu
+kopieren. Deshalb hab ich hier ein Programm das alles alleine macht.
+
+Bootblock lesen
+Checksumme errechnen
+Neuen Bootblock schreiben
+
+Allerdings nur auf DF0:, da ich mich mit dem Trackdisk.device noch nicht so
+auskenne.
+Aber ich denke das werde ich noch nachreichen, ausserdem kann man sich auch
+sehr viel kaputt machen. Deshalb nur die Einfache Version.
+
+Dieses Programm ist vollgestopft mit Betriebssystem-Routinen, die ihr nicht
+in diesem Kurs lernen werdet. Ihr koennt euch aber in der Ueblichen
+Literatur darueber schlau machen.
+Die Stelle wo ihr euer Bootintro reinsetzen koennt hab ich angekreuzt.
+
+Execbase = 4
+Findtask = -294
+Addport  = -354
+Remport  = -360
+Openlib  = -408
+Closelib = -414
+Opendev  = -444
+Closedev = -450
+Doio     = -456
+
+Start:
+        Move.l  Execbase.w,a6           ; Vorbereitungen zum oeffnen des
+        Sub.l   a1,a1                   ; `trackdisk.device`
+        Jsr     Findtask(a6)            ; Eigenen Task suchen
+        Lea     Readreply(pc),a0
+        Move.l  d0,$10(a0)
+
+        Lea     Readreply(pc),a1        ; Port holen
+        Jsr     Addport(a6)
+
+        Lea     Diskio(pc),a1           ; IO_Struktur in a1
+        Move.l  #0,d0
+        Clr.l   d1
+        Lea     Trddevice(pc),a0        ; oeffne Trackdisk.device
+        Jsr     Opendev(a6)
+        Tst.l   d0
+        Bne     Error
+
+        Lea     Diskio(pc),a1
+        Lea     Readreply(pc),a0
+        Move.l  a0,14(a1)
+        Move.w  #2,28(a1)               ; Lese Orginal Boot-track
+        Move.l  #$40000,40(a1)
+        Move.l  #22*512,36(a1)
+        Move.l  #0*512,44(a1)
+        Move.l  Execbase.w,a6
+        Jsr     Doio(a6)
+
+        Bsr     Checksum                ; Routine zum errechnen der neuen
+                                        ; neuen Checksumme anspringen
+        Bsr     Copy                    ; Eigene Routine Kopieren
+
+        Lea     Ciskio,a1               ; Neuen Boot-track schreiben
+        Move.w  #3,28(a1)
+        Move.l  #$40000,40(a1)
+        Move.l  #22*512,36(a1)
+        Move.l  #0*512,44(a1)
+        Move.l  Execbase.w,a6
+        Jsr     Doio(a6)
+
+        Lea     Diskio,a1
+        Move.w  #9,28(a1)               ; Laufwerk Stoppen
+        Move.l  #0,36(a1)
+        Jsr     Doio(a6)
+
+        Lea     Readreply(pc),a1        ; Port loeschen
+        Jsr     Remport(a6)
+
+        Lea     Diskio(pc),a1
+        Jsr     Closedev(a6)            ; Trackdisk.device schliessen
+Error:
+        Rts                             ; Ende
+
+Trddevice:  dc.b 'trackdisk.device',0
+even
+Diskio:     blk.l 20,0
+Readreply:  blk.l  8,0
+
+Checksum:
+        Lea     BootBlockIntro+8(pc),a0 ; Adresse an der die neue Checksumme
+                                        ; liegen muss
+        Lea     $3f8(a0),a1             ; Ende des Bootblock (1 KB)
+        Clr.l   d0
+        Clr.l   d1
+        Move.w  #$444f,d0               ; Routine die die Checksumme errechnet
+        Move.w  #$5300,d1
+L1:     Add.w   (a0)+,d0
+        Bcs     M1
+W1:     Add.w   (a0)+,d1
+        Bcs     M2
+W2:     Cmp.l   a0,a1
+        Bne     L1
+        Not.w   d0
+        Not.w   d1
+        Swap    d0
+        Move.w  d1,d0
+        Move.l  d0,BootBlockIntro+4
+        Rts
+M1:     Add.w   #1,d1
+        Bra     W1
+M2:     Add.w   #1,d0
+        Bra     W2
+
+Copy:   Lea     BootBlockIntro(pc),a0   ; Vorbereitung zum Kopieren an eine
+        Lea     $40000,a1               ; Feste Adresse ($40000) um es vom
+                                        ; Trackdisk.Device auf Disk schreiben
+                                        ; zu lassen
+        Move.w  #$3ff,d0                ; Laenge 1024 byte
+Loopy:  Move.b  (a0)+,(a1)+
+        Dbf     d0,Loopy
+        Rts
+                                        ; Jetzt kommt das eigentlich Bootintro
+                                        ; Was auf Diskette geschrieben wird
+BootBlockIntro:
+
+Kennung:        dc.b "DOS",0            ; DOS-Kennung
+Chksum:         dc.l 0                  ; Platz fuer die Checksumme
+Rootblock:      dc.l $00000370          ; Adresse des Rootblocks
+
+        Movem.l d0-d7/a0-a6,-(a7)       ; Register Retten
+
+
+;   \/       Hier koennt ihr euer Intro reinpflanzen
+;   /\       Achtet nur auf die Laenge !
+
+
+        Movem.l (a7)+,d0-d7/a0-a6       ; Register holen
+        Lea     Dosname(pc),a1          ; Normale Bootroutine
+        Jsr     -$60(a6)
+        Move.l  d0,a0
+        Move.l  $16(a0),a0
+        Moveq   #00,d0
+        Rts                             ; Ende des Intros
+
+Dosname:dc.b "dos.library",0
+
+Achja, ich habe das Orginal-Boot-Programm noch etwas gekuerzt, somit habt
+ihr noch ein bisschen mehr platz, ihr werdet das sicher schon gemerkt
+haben.
+
+Um nach dem Assemblieren die laenge des Intro`s zu ermitteln setzt ihr
+einfach unter das Dosname noch ein Label, zum Beispiel mit dem Namen
+`EndeIntro`
+
+Dann lasst ihr es assemblieren, und schreibt danach bloss
+
+? EndeIntro-Bootblockintro
+
+Und schon gibt der Seka die Laenge in Bytes an.
+Da bei dieser ausrechnug schon der Header und das Orginalprogramm drin ist,
+kann der wert die vollen 1024 Bytes erreichen.
+
+So, jetzt will ich nochmal ein paar Worte ueber die PC-Relative
+Adressierung verlieren, denn es ist wichtige das man sie verteht.
+Denn man kann ein bisschen ins Schleudern damit kommen, wenn man einerseits
+im Listing diese Adressierung sieht, aber gleichzeitig eine Org/Load
+Kombination auf $40000 sieht.
+
+Vergleichen wir die PCR (Schreibe ich ab jetzt fuer PC-Relativ) mal mit der
+Normalen.
+In unseren Intro schreiben wir wenn wir die Adresse einer im Source
+abgelegten Copperliste zu ermitteln ungefaehr das..
+
+        Move.l  #Copperliste,a1
+oder    Lea     Copperliste,a1
+
+...
+...
+...
+
+Copperliste:
+
+blabla
+bla bla
+blablabla
+
+Der Assembler traegt dann direkt beim Assemblieren die Adresse der
+Copperliste hinter den Move.l oder Lea Befehlen ein.
+Wenn das Programm wie ein Intro immer an derselben Stelle laeuft ist das ja
+auch in ordnung. Aber wenn das Programm verschoben wird, muss es sich die
+Adresse Selber errechnen. Das macht es mit der PCR.
+Dabei wir hinter dem Move.l oder Lea Befehl nur noch der Wert geschrieben
+der vom Augenblichlichen PC abgezogen oder dazuaddiert werden muss, damit
+man die Adresse erhaelt.
+
+Wen also der Prozessor bei $40040 auf ein Move.l #$20(PC),a1 trifft dann
+schreibt er in A1 $40060. Is doch einfach, oder.
+
+Und da die Adressen in Programmen die verschoben werden immer
+unterschiedlich sind, die Distanzen der Befehle und Tabellen aber immer
+gleich, nimmt man sie.
+Ihr koennt die PCR aber auch in den Intros benutzen...kuerzer als die
+Absolute ist sie naehmlich auch, das sie normal fuer die Distanz immer nur
+ein Wort braucht, und der Absolute ja die Adresse in einem Langwort
+speichert.
+
+Nunja, euren Ideen sind da nur Grenzen durch die laenge gesetzt. Es gibt ne
+menge sinnvolles was man da machen kann. Aber auch unsinniges faellt mir da
+ein.
+
+Installiert doch mal den Bootblock hier.
+
+Org $40000
+Load $40000
+
+Kennung:   dc.b "DOS",0
+Chksum:    dc.l $00000000
+Rootblock: dc.l $00000370
+
+Bootprg:
+        Movem.l d0-d7/a0-a6,$70000
+
+Execbase        =4
+DisplayAlert    =-90
+OldOpenLib      =-408
+CloseLib        =-414
+
+Start:
+        Move.l Execbase.w,a6
+        Lea    Libname(PC),a1
+        Jsr    OldOpenLib(a6)
+        Move.l d0,a6                    ; IntuitionBase in A6
+        Moveq  #0,d0                    ; Alert_Number
+        Move.l #50,d1                   ; Alert_Height
+        Lea    Alert_text(PC),a0        ; Alert_String
+        Jsr    DisplayAlert(a6)
+        Move.l a6,a1
+        Move.l Execbase.w,a6
+        Jsr    CloseLib(a6)
+
+        Movem.l $70000,d0-d7/a0-a6
+        Lea     Resname(PC),a1
+        Jsr     -96(a6)
+        Tst.l   d0
+        Beq.s   Error
+        Move.l  d0,a0
+        Move.l  22(a0),a0
+        Moveq   #$00,d0
+Ende:
+        Rts
+Error:
+        Move.l  #$ff,d0
+        Bra.s   Ende
+
+
+Intuitionbase: dc.l 0
+
+Alert_text:
+Dc.w 48                                 ; X-Coord
+Dc.b 16                                 ; Y-Coord
+
+Dc.b "Software Failure - Press A,D,á,5,P,F,E,R,W,I,2 to Leave",0
+Dc.b 0
+
+Copperliste:
+dc.l    $800ffffe
+dc.l    $01800f00
+dc.l    $a00ffffe
+dc.l    $01800000
+dc.l    $-2
+
+Resname:   dc.b "dos.library",0
+Libname:   dc.b "intuition.library",0
+Gfxname:   dc.b "graphics.library",0
+
+
+Nett, ne...
+
+Das ist der Aufruf eines Alerts mit eigenem Text...Ihr koennt aber auch mit
+ganz bestimmten Fehlercodes in D0 einen der Standart Guru-Meditation Alerts
+aufrufen. Natuerlich ist das nur als Gag mit den vielen Tasten. Ihr koennt
+das Ding ganz leicht mit Maus verlassen. Falls ihr die Maus Routine sucht,
+die ist in der Display_Alert Funktion der Intuition.library schon
+eingebaut.
+
+Bis denne
+
+                Jeff Kandle

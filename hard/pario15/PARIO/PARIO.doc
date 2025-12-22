@@ -1,0 +1,500 @@
+                                  PARIO v1.5
+              Parallel Port Input/Output Routines for C Programs
+
+
+                                 Introduction
+
+   These routines provide a convenient, consistant, and `system friendly',
+assembly interface that allows C programs to manipulate the parallel port.
+They allow low-level access to the port without the overhead of device I/O.
+However, they have exclusive access to the port so while you use these
+routines, other programs can not access the port.  The concept is based on an
+article in AmigaMail, Jun 92, 4Play/read34.asm.
+
+   Tom Handley / 18 April 93
+   BIX     : thandley
+   Internet: thandley@bix.com or thandley@nesbbx.rain.com
+
+
+                                 Distribution
+
+   This software is placed in the public domain and is freely distributable.
+If you modify these routines and re-distribute them, please change the name of
+the file and add a note that states the modifications are yours, not mine...
+
+
+                                  Disclaimer
+
+   If you use these routines, you use them at your own risk!  I am not
+responsible for any damage that may occur as a result of using these routines!
+This archive should contain the file "Port.txt" which provides an overview of
+the parallel port as well as precautions when interfacing external hardware to
+the parallel port.  Please read this!
+ 
+
+                                Software Notes
+
+   These routines were assembled with CAPE v2.51 and should be compatible with
+other popular assemblers.  If your assembler does not support local labels
+($nnn), replace the labels with unique names.  You may also have to replace
+line 9:  "SECTION TEXT" with "csect text".
+
+   While these routines are intended to be called from C programs, and some
+routines simply move a Byte from the port to a register, you might find some of
+them useful in assembly programs.  For routines that take an input, you can
+push data on the stack and call the routine.  Any returned data is in D0.
+Other than D0, all other registers are preserved.
+
+
+                            C Function Definitions
+
+   The following functions are provided:
+
+      getport  -- Get   parallel port access
+      freeport -- Free  parallel port access
+      portdir  -- Set   parallel port data direction      (0/1 = Input/Output)
+      portddr  -- Set   parallel port data direction bits ($00-$FF)
+      rdport   -- Read  parallel port data                ($00-$FF)
+      wrport   -- Write parallel port data                ($00-$FF)
+      busydir  -- Set   BUSY control line data direction  (0/1 = Input/Output)
+      rdbusy   -- Read  BUSY control line state           (0/1 = Low/High)
+      setbusy  -- Set   BUSY control line state           (0/1 = Low/High)
+      poutdir  -- Set   POUT control line data direction  (0/1 = Input/Output)
+      rdpout   -- Read  POUT control line state           (0/1 = Low/High)
+      setpout  -- Set   POUT control line state           (0/1 = Low/High)
+      seldir   -- Set   SEL  control line data direction  (0/1 = Input/Output)
+      rdsel    -- Read  SEL  control line state           (0/1 = Low/High)
+      setsel   -- Set   SEL  control line state           (0/1 = Low/High)
+______________________________________________________________________________
+
+NAME
+   getport -- Get parallel port access
+
+SYNOPSIS
+   port_error = getport();
+   D0
+
+   LONG getport(void);
+
+FUNCTION
+   This function requests exclusive access to the parallel port in a system
+   friendly way and sets up the data port and control port BUSY, POUT, and SEL
+   lines to inputs.
+
+RESULT
+   port_error =  0 if port access successful
+                20 if unable to open misc.resource
+                30 if unable to allocate port
+                40 if unable to allocate control bits (BUSY, POUT, SEL)
+
+NOTE
+   This function affects all CIA-A port B data direction register (CIAA DDRB)
+   bits and CIA-B port A data direction register (CIAB DDRA) bits 0-2.
+
+EXAMPLE
+   extern LONG getport(void);
+   extern void freeport(void);
+   LONG   port_error;
+
+   if(port_error = getport())
+      /* Abort */
+
+   /* Do something with the port */
+
+   if(port_error == 0)
+      freeport();
+   exit(port_error);
+
+SEE ALSO
+   freeport()
+______________________________________________________________________________
+
+NAME
+   freeport -- Free parallel port access
+
+SYNOPSIS
+   void freeport(void);
+
+FUNCTION
+   This function releases exclusive access to the parallel port and control
+   lines.
+
+WARNING
+   Don't call this function if you got an error from getport() as some of the
+   resources might not have been opened, etc.
+
+EXAMPLE
+   extern LONG getport(void);
+   extern void freeport(void);
+   LONG   port_error;
+
+   if(port_error = getport())
+      /* Abort */
+
+   /* Do something with the port */
+
+   if(port_error == 0)
+      freeport();
+   exit(port_error);
+
+SEE ALSO
+   getport()
+______________________________________________________________________________
+
+NAME
+   portdir -- Set port data direction
+
+SYNOPSIS
+   portdir(direction);
+
+   void portdir(UBYTE);
+
+FUNCTION
+   This function sets the port data direction to input or output. All port
+   data lines are set to the same direction.
+
+INPUT
+   direction = 0 for input, 1 for output
+
+NOTE
+   This function affects all CIA-A port B data direction register (CIAA DDRB)
+   bits.
+
+EXAMPLE
+   extern void portdir(UBYTE);
+   UBYTE  direction;
+
+   direction = 0;
+   portdir(direction);  /* Set port data lines to input */
+
+SEE ALSO
+   portddr(), rdport(), wrport()
+______________________________________________________________________________
+
+NAME
+   portddr -- Set port data direction bits
+
+SYNOPSIS
+   portddr(bitmask);
+
+   void portddr(UBYTE);
+
+FUNCTION
+   This function sets the individual port data direction bits to input or
+   output.
+
+INPUT
+   bitmask = 0x00 to 0xFF. Bit = 0 for input, 1 for output
+
+NOTE
+   This function affects all CIA-A port B data direction register (CIAA DDRB)
+   bits.
+
+EXAMPLE
+   extern void portddr(UBYTE);
+   UBYTE  bitmask;
+
+   bitmask = 0xF0;
+   portddr(bitmask);  /* Set bits 0-3 as inputs and bits 4-7 as outputs */
+
+SEE ALSO
+   portdir(), rdport(), wrport()
+______________________________________________________________________________
+
+NAME
+   rdport -- Read port data
+
+SYNOPSIS
+   portdata = rdport();
+   D0
+
+   UBYTE rdport(void);
+
+FUNCTION
+   This function reads data from the parallel port.
+
+RESULT
+   portdata = port data
+
+EXAMPLE
+   extern UBYTE rdport(void);
+   UBYTE  portdata;
+
+   portdata = rdport();   /* Read port data */
+
+SEE ALSO
+   portdir(), portddr(), wrport()
+______________________________________________________________________________
+
+NAME
+   wrport -- Write port data
+
+SYNOPSIS
+   wrport(portdata);
+
+   void wrport(UBYTE);
+
+FUNCTION
+   This function writes data to the parallel port.
+
+INPUT
+   portdata = port data
+
+NOTE
+   This function affects all CIA-A port B data register (CIAA PRB) bits.
+
+EXAMPLE
+   extern void wrport(UBYTE);
+   UBYTE  portdata;
+
+   wrport(portdata);   /* Write port data */
+
+SEE ALSO
+   portdir(), portddr(), rdport()
+______________________________________________________________________________
+
+NAME
+   busydir -- Set BUSY control line data direction
+
+SYNOPSIS
+   busydir(direction);
+
+   void busydir(UBYTE);
+
+FUNCTION
+   This function sets the BUSY data direction to input or output.
+
+INPUT
+   direction = 0 for input, 1 for output
+
+NOTE
+   This function affects CIA-B port A data direction register (CIAB DDRA)
+   bit 0.
+
+EXAMPLE
+   extern void busydir(UBYTE);
+   UBYTE  direction;
+
+   direction = 0;
+   busydir(direction);  /* Set BUSY control line to input */
+
+SEE ALSO
+   rdbusy(), setbusy()
+______________________________________________________________________________
+
+NAME
+   rdbusy -- Read BUSY control line state
+
+SYNOPSIS
+   statedata = rdbusy();
+   D0
+
+   UBYTE rdbusy(void);
+
+FUNCTION
+   This function reads the state of the BUSY line.
+
+RESULT
+   statedata = 0 for low level, 1 for high level
+
+EXAMPLE
+   extern UBYTE rdbusy(void);
+   UBYTE  statedata;
+
+   statedata = rdbusy();  /* Read state of BUSY line */
+
+SEE ALSO
+   busydir(), setbusy()
+______________________________________________________________________________
+
+NAME
+   setbusy -- Set BUSY control line state
+
+SYNOPSIS
+   setbusy(statedata);
+
+   void setbusy(UBYTE);
+
+FUNCTION
+   This function sets the BUSY line to a low or high level.
+
+INPUT
+   statedata = 0 for low level, 1 for high level
+
+NOTE
+   This function affects CIA-B port A data register (CIAB PRA) bit 0.
+
+EXAMPLE
+   extern void setbusy(UBYTE);
+   UBYTE  statedata;
+
+   statedata = 0;
+   setbusy(statedata);  /* Set BUSY line to a low level */
+
+SEE ALSO
+   busydir(), rdbusy()
+______________________________________________________________________________
+
+NAME
+   poutdir -- Set POUT control line data direction
+
+SYNOPSIS
+   poutdir(direction);
+
+   void poutdir(UBYTE);
+
+FUNCTION
+   This function sets the POUT data direction to input or output.
+
+INPUT
+   direction = 0 for input, 1 for output
+
+NOTE
+   This function affects CIA-B port A data direction register (CIAB DDRA)
+   bit 1.
+
+EXAMPLE
+   extern void poutdir(UBYTE);
+   UBYTE  direction;
+
+   direction = 0;
+   poutdir(direction);  /* Set POUT control line to input */
+
+SEE ALSO
+   rdpout(), setpout()
+______________________________________________________________________________
+
+NAME
+   rdpout -- Read POUT control line state
+
+SYNOPSIS
+   statedata = rdpout();
+   D0
+
+   UBYTE rdpout(void);
+
+FUNCTION
+   This function reads the state of the POUT line.
+
+RESULT
+   statedata = 0 for low level, 1 for high level
+
+EXAMPLE
+   extern UBYTE rdpout(void);
+   UBYTE  statedata;
+
+   statedata = rdpout();  /* Read state of POUT line */
+
+SEE ALSO
+   poutdir(), setpout()
+______________________________________________________________________________
+
+NAME
+   setpout -- Set POUT control line state
+
+SYNOPSIS
+   setpout(statedata);
+
+   void setpout(UBYTE);
+
+FUNCTION
+   This function sets the POUT line to a low or high level.
+
+INPUT
+   statedata = 0 for low level, 1 for high level
+
+NOTE
+   This function affects CIA-B port A data register (CIAB PRA) bit 1.
+
+EXAMPLE
+   extern void setpout(UBYTE);
+   UBYTE  statedata;
+
+   statedata = 0;
+   setpout(statedata);  /* Set POUT line to a low level */
+
+SEE ALSO
+   poutdir(), rdpout()
+______________________________________________________________________________
+
+NAME
+   seldir -- Set SEL control line data direction
+
+SYNOPSIS
+   seldir(direction);
+
+   void seldir(UBYTE);
+
+FUNCTION
+   This function sets the SEL data direction to input or output.
+
+INPUT
+   direction = 0 for input, 1 for output
+
+NOTE
+   This function affects CIA-B port A data direction register (CIAB DDRA)
+   bit 2.
+
+EXAMPLE
+   extern void seldir(UBYTE);
+   UBYTE  direction;
+
+   direction = 0;
+   seldir(direction);  /* Set SEL control line to input */
+
+SEE ALSO
+   rdsel(), setsel()
+______________________________________________________________________________
+
+NAME
+   rdsel -- Read SEL control line state
+
+SYNOPSIS
+   statedata = rdsel();
+   D0
+
+   UBYTE rdsel(void);
+
+FUNCTION
+   This function reads the state of the SEL line.
+
+RESULT
+   statedata = 0 for low level, 1 for high level
+
+EXAMPLE
+   extern UBYTE rdsel(void);
+   UBYTE  statedata;
+
+   statedata = rdsel();  /* Read state of SEL line */
+
+SEE ALSO
+   seldir(), setsel()
+______________________________________________________________________________
+
+NAME
+   setsel -- Set SEL control line state
+
+SYNOPSIS
+   setsel(statedata);
+
+   void setsel(UBYTE);
+
+FUNCTION
+   This function sets the SEL line to a low or high level.
+
+INPUT
+   statedata = 0 for low level, 1 for high level
+
+NOTE
+   This function affects CIA-B port A data register (CIAB PRA) bit 2.
+
+EXAMPLE
+   extern void setsel(UBYTE);
+   UBYTE  statedata;
+
+   statedata = 0;
+   setsel(statedata);  /* Set SEL line to a low level */
+
+SEE ALSO
+   seldir(), rdsel()
+

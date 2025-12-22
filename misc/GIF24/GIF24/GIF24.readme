@@ -1,0 +1,152 @@
+Short: GIF 24 Bit (truecolor) extensions
+Type: docs/misc
+Uploader: info@ar-kleinert.de
+Author: info@ar-kleinert.de
+Version: 1.0
+Architecture: generic
+
+ The GIF fileformat does not support 24 bit truecolor
+ RGB data - however with a trick it is possible to
+ describe more than 256 colors within the same file,
+ using a "tiled" approach.
+
+ Using a second trick it can be achieved to store
+ real "truecolor" information within such a file.
+
+ The efficieny and compression is lousy and this
+ approach is entirely disrecommended.
+
+ However, such images can be found on the web
+ and in fact Wikipedia contains a link to such
+ a demo site.
+
+ The aim of this readme is to document the
+ writing strategy which SView5-Library uses
+ when writing such "truecolor" GIF files.
+
+
+ Writing Strategy:
+
+ 1.  The image is split into tiles of 16x16 pixels,
+     each of which becomes a GIF image block,
+     while the GIF screen width/height remains that
+     of the original image (e.g. 640x480 or 240x240).
+
+ 2.  If the width/height is not an even multiple of
+     16, the last tile in each row and all tiles
+     in the last row will have a different width
+     respectively height, e.g.
+
+         240x240 -> 15x15 tiles of 16x16
+         248x245 -> (15+1)x(15+1) tiles,
+                    +1 horizontal: 8x16
+                    +1 vertical:   16x5
+
+ 3.  Each 16x16 tile gets its own colormap.
+
+ 4.  The colormap depth is 8 (256 entries).
+
+ 5.  Now for each of the 16x16 = 256 pixels
+     there is exactly one colormap entry.
+
+ 6.  The 256 tile pixels are stored as linear
+     buffer in memory.
+
+ 7.  The colormap entries are filled exactly
+     in the same order as the linear tile
+     buffer in memory, i.e.
+
+
+        UBYTE colors[256][3];
+        UBYTE rgb_tile[768];
+        UBYTE tile[256];
+
+        // pixel is x=5, y=6
+        x   = 5; y = 6;
+        idx = y*16 + x;
+
+        colors[idx][0] = rgb_tile[idx*3+0];
+        colors[idx][1] = rgb_tile[idx*3+1];
+        colors[idx][2] = rgb_tile[idx*3+2];
+
+        tile[idx] = idx;
+
+ 8.  This means, each pixel in the 16x16 tile
+     is mapped exactly 1:1 to a colormap
+     entry - within a GIF image block there
+     always are as many colormap entries
+     as pixels.
+
+ 9.  For a 640x480 image this means that
+     40x30 tiles (of 16x16) are stored,
+     thus 1200 tiles plus 1200 colormaps
+     of 768 bytes size.
+
+ 10.  The global colormap is that of the
+     first tile.
+
+ 11. Any (optional) GIF89a graphic control
+     extension should be written for each
+     image control block or for none; if
+     so, the image disposal method should
+     be "1" (do not dispose) and the delay
+     should be "0" (zero).
+
+ This is the most straightforward approach.
+
+
+ Possible optimizations/improvements:
+
+  - support upto 1 transparent color per tile
+  - dynamically adjust local colormap sizes
+    to really required amount of different colors,
+    i.e. if everyhing is black, only 6 bytes
+    instead of 768 bytes
+  - merge two or more local colormaps into
+    the global one, if there is an overlap;
+    in this case write an image block without
+    local colormap (e.g. black areas)
+  - if tiles have the same content and/or
+    colormap, these might be merged as
+    well, i.e. a square of 16x16 tiles may
+    become one single 32x32
+  - now this is the "lossless" approach,
+    however it would also be possible to
+    design some "lossy" compression mode;
+    in this mode, the colormap(s) could
+    be further optimized so that "similar"
+    colors are merged; the effect might
+    be comparable to JPEG if done right
+  - in any case, the start for any further
+    optimization runs should be the defined
+    16x16 tile pattern
+
+ For a proof-of-concept export module however
+ such optimizations should not be vitally
+ necessary.
+
+
+ Final Remarks:
+
+ Note, that this works for GIF87a and GIF89a,
+ however many programs will not accept GIF87a
+ files with tiles - and with GIF89a they will
+ treat them as animations instead.
+
+ Unfortunately most programs will not correctly
+ treat the animation rendering information
+ provided within the graphic control extension.
+
+ As a consequence, image viewers capable of
+ rendering GIF animations likely will show such
+ graphics as endless animation.
+
+ Still, such an animation would really consist
+ of truecolor information.
+
+ --
+ (C)opyright 2007 by Andreas Kleinert.
+ All rights reserved.
+
+
+

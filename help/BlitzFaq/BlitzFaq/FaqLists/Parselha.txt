@@ -1,0 +1,45 @@
+  WBStartup
+  WbToScreen 0
+
+  MaxLen pa$=160
+  MaxLen fi$=160
+  MaxLen pt$=160
+
+  pa$="PROGDIR:"
+  pt$="#?.lha#?"
+  ti$="Select an Lha archive"
+
+  filename$=ASLFileRequest$(ti$,pa$,fi$,pt$)  ; Open fileselector
+  NPrint "Packed   Original    Length    FileName$"
+  If OpenFile(0,filename$)
+    FileInput 0
+    While pos < Lof(0)
+        FileSeek 0,pos
+            If Instr(Edit$(7),"-lh")                    ; If fileheader= "-lh"
+              FileSeek 0,pos+7
+              s1$=Inkey$(1): s2$=Inkey$(1):s1$=s2$+s1$  ; lengths are stored as
+                                                        ; 2 bytes but arse about
+              Packed=Cvi(s1$)                           ; Get Packed Filesize
+              FileSeek 0,pos+11                         ;
+              s1$=Inkey$(1): s2$=Inkey$(1):s1$=s2$+s1$
+              Original=Cvi(s1$)                         ; Get Original FileSize
+              FileSeek 0,pos+20
+              Length=Cvi(Inkey$(2))                    ; Get Length of Filename
+              FileName$=Edit$(Length)                  ; Get Filename
+              pos=Loc(0)
+              ;
+              ; Gotta figure out how to find the next filename in the archive.
+              ; I reckon once I get the Packed size I can just jump ahead in the
+              ; file by the packed amount starting from the end of the last filename
+              ; found?? Whaddaya reckon??????????
+              ;
+              NPrint Packed,"      ",Original,"      ",Length,"     ",FileName$
+            EndIf
+            pos=pos+Packed+2
+    Wend
+    CloseFile 0
+    DefaultInput
+  EndIf
+
+  MouseWait
+  End

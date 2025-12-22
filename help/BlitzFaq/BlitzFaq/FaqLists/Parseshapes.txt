@@ -1,0 +1,60 @@
+DEFTYPE .w
+
+NEWTYPE .shp
+  _pixwidth.w
+  _pixheight.w
+  _depth.w
+  _ebwidth.w
+  _bltsize.w
+  _xhandle.w
+  _yhandle.w
+  _data.l
+  _cookie.l
+  _onebpmem.w
+  _onebpmemx.w
+  _allbpmem.w
+  _allbpmemx.w
+  _pad.b[2]
+End NEWTYPE
+
+InitBank 0,32,0              ;Buffer to handle shapes'structures
+
+*shapenow.shp=Bank(0)
+
+USEPATH *shapenow
+Function .w ParseShapesFile{filename$}
+  SHARED *shapenow.shp
+  If ReadFile(0,filename$)
+
+    seekto.l=0
+    filelenght.l=Lof(0)
+    counting.w=0
+    forcexit=False
+
+    Repeat
+      FileSeek 0,seekto
+      ReadMem 0,Bank(0),32
+      counting+1
+      seekto+\_allbpmem+32
+      If \_pixwidth>640 OR \_pixwidth<0 OR \_pixheight>512 OR \_pixheight<0 OR \_depth>8 OR \_depth<0
+        forcexit=True
+        counting=-1
+      EndIf
+    Until seekto>filelenght OR forcexit
+    Function Return counting
+  Else
+    Function Return -2
+  EndIf
+End Function
+
+; Check it!
+NPrint ""
+nrofshapes=ParseShapesFile{"ram:aaaa"}
+Select nrofshapes
+Case -1
+  NPrint "Not a Blitz2 shapes file."
+Case -2
+  NPrint "Can't open file."
+Default
+  NPrint "Found ",nrofshapes," shapes."
+End Select

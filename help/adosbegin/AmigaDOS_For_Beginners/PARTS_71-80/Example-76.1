@@ -1,0 +1,97 @@
+. Example76.1
+
+. $VER: move 01.01 (16-Dec-93)
+. This script will move a file from one disk and/or directory to another
+
+.KEY from/a,to/a
+.BRA {
+.KET }
+
+FAILAT 21
+ECHO >env:move{$$} {from} FIRST 256
+IF $move{$$} EQ ":"
+   SKIP errorfrom
+ENDIF
+
+IF $move{$$} EQ "/"
+   SKIP errorfrom
+ENDIF
+
+ASSIGN Current: ""
+CD >Nil: {from}
+IF NOT FAIL
+   CD Current:
+   SKIP errorfrom
+ENDIF
+
+ECHO >env:move{$$} {to} FIRST 256
+IF $move{$$} EQ ":"
+   ASSIGN >nil: {to} EXISTS
+   IF NOT WARN
+      SKIP move
+   ELSE
+      SKIP nodest
+   ENDIF
+ENDIF
+
+IF $move{$$} EQ "/"
+   IF exists {to}
+      SKIP move
+   ELSE
+      SKIP nodest
+   ENDIF
+ENDIF
+
+SKIP errorto
+
+LAB move
+
+LIST >T:move1{$$} {from}
+IF FAIL
+   SKIP nofile
+ENDIF
+
+LIST >T:move2{$$} t:move1{$$}
+SEARCH >nil: T:move2{$$} empty
+
+IF NOT WARN
+   SKIP nofile
+ENDIF
+
+COPY >nil: {from} {to}
+
+IF WARN
+   SKIP errorcopy
+ENDIF
+
+ECHO "*nThe following files have been moved from {from} to {to}*n"
+LIST {from} QUICK NOHEAD
+ECHO ""
+DELETE >Nil: {from}
+SKIP end
+
+LAB errorfrom
+ECHO "{from} is a disk or directory name. Do not use these for FROM"
+SKIP end
+
+LAB errorto
+ECHO "You must end your TO argument in : or /"
+SKIP end
+
+LAB nofile
+ECHO "your FROM specification {from} was not found"
+SKIP end
+
+LAB nodest
+ECHO "Your TO specification {to} does not exist"
+SKIP end
+
+LAB errorcopy
+ECHO "Copy aborted - you have probably used same path for FROM and TO."
+ECHO "FROM = {from}  TO = {to}"
+SKIP end
+
+LAB end
+DELETE >nil: env:move#?{$$}
+DELETE >nil: t:move#?{$$}
+ASSIGN Current: Remove

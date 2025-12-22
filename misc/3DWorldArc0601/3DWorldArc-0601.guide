@@ -1,0 +1,979 @@
+@database mails
+@node main
+                          3D World Mailing List Archive
+
+                                    June 2001
+
+             Compiled by Paul Qureshi (paul.qureshi@btinternet.com)
+
+For more information on the 3D World Mailing List please read the FAQ. It is available at various sites:
+
+Aminet: docs/misc/3DWorldFAQ.lha
+http://mc68k.btinternet.com/faq/
+The 3D World ML, monthly post
+
+@{"Re: Some general questions.                            " link 08562.002} Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+@{"Some general questions.                                " link 08562.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Re: Some general questions.                        " link 08566.002} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: Some general questions.                            " link 08566.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Warp3D developer archive                               " link 08567.001} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: Generating V4 files.                               " link 08570.002} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Generating V4 files.                                   " link 08570.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"I'm stupid, call me names...                           " link 08571.001} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: Re: Some general questions.                        " link 08572.002} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: Some general questions.                            " link 08572.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Allegro Library ?                                      " link 08577.001} Andrew Barker <andrew.barker@sunderland.ac.uk>
+@{"Re: Warp 3d problem                                    " link 08580.004} "Antonello De Santis" <antonello.desantis@galactica.it>
+@{"how to get Warp3d to work on Prometheus + Voodoo3      " link 08580.003} Dennis Zweedijk <denzwe@wishmail.net>
+@{"Re: Warp 3d problem                                    " link 08580.002} Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+@{"Warp 3d problem                                        " link 08580.001} "Antonello De Santis" <antonello.desantis@galactica.it>
+@{"Re: how to get Warp3d to work on Prometheus + Voodoo3  " link 08581.006} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: how to get Warp3d to work on Prometheus + Voodoo3  " link 08581.005} Dennis Zweedijk <denzwe@wishmail.net>
+@{"Re: Re: Warp 3d problem                                " link 08581.004} "Antonello De Santis" <antonello.desantis@galactica.it>
+@{"Re: Warp 3d problem                                    " link 08581.003} Adam Carrano <adamca@wanadoo.fr>
+@{"Re: how to get Warp3d to work on Prometheus + Voodoo3  " link 08581.002} Thomas Frieden <ThomasF@hyperion-software.de>
+@{"Re: Warp 3d problem                                    " link 08581.001} Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+@endnode
+@node 08562.002
+Subject: Re: Some general questions.
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+Date: Mon, 11 Jun 2001 16:28:09 +0200
+
+Hi!
+
+On Monday 11 June 2001 15:33, Michal Wozniak wrote:
+
+> 1:
+>   I have read thet on modern 3dchips state changes are quite slow. Some
+> suggested  to draw all faces with same surface in one loop, change
+>  state and draw other faces.  Is it neccesary on Permedia? And will
+>   it cause a speed decrease on Voodoo?
+
+Rendering everything with the same texture at one go is the preferred method. 
+If you can manage, sort your polies by texture/surface and render them at one 
+go. The Voodoo will not slow down on this, quite the contrary - all chips 
+will benefit from that due to the fact that the texture uploads will be 
+minimized. 
+
+The problem with state changes is that there might be a lot of registers 
+affected that need their contents re-evaluated. This is a bit different from 
+the texture stuff. Warp3D however tries to miniize this by comparing new and 
+old state values and registers and only updating if they are really in need 
+of updating.
+
+>  2: If answer for 1 is: "Yes they are slow".
+>     Are context states remembered by W3D, so when setting it to the same
+> state  doesn't mean sending a message to the hardware? Or I have
+>  to check it for myself?
+
+No, usually you just use W3D_SetState, and the value is only changed if it is 
+different.
+
+>  3: If I would loke to draw transparent faces with z buffering, do I have
+> to draw them after all nontransparent faces? I think Yes, but maybe there
+> is another method.
+
+No, if you need transparency you will most likely want to disable Z buffer 
+update (you will need ZBuffer tests enabled), and draw the transparent faces 
+back-to-front, otherwise things will look wrong. The order in which you draw 
+transparent faces will determine the outcome.
+
+>  4: When drawing with W3D_SYNCHRON (or something like that) how much time
+> do I have for CPU while HW is doing it's job? I mean what can I do in this
+> time.
+
+Don't enable Synchron. If you enable this, Warp3D will wait for the hardware 
+to become idle after every drawing command, and that will waste any amount of 
+parallelism you have. Keep it disabled, and use W3D_WaitIdle after you have 
+drawn the entire frame, or want to do anything major.
+
+>  5: Does Permedia support stencil buffer? I mean ,can I set a stencil to
+>  for example 1 when a pixel of drawn face is visible?
+
+It does, but the driver doesn't. The Permedia2 stencil buffer is only one bit 
+deep, and hence practically unsusable. The Voodoo 3 doesn't support any 
+stencil buffer. You can use the Z buffer as a limited stencil buffer 
+replacement.
+
+Regards,
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-software.de
+
+@endnode
+@node 08562.001
+Subject: Some general questions.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Mon, 11 Jun 2001 15:33:01 +0200
+
+Hi all,
+
+    I'm new with HW accelerated graphics, and I have some questions about
+it.
+1:
+  I have read thet on modern 3dchips state changes are quite slow. Some
+suggested  to draw all faces with same surface in one loop, change
+ state and draw other faces.  Is it neccesary on Permedia? And will
+  it cause a speed decrease on Voodoo?
+
+ 2: If answer for 1 is: "Yes they are slow".
+    Are context states remembered by W3D, so when setting it to the same
+state  doesn't mean sending a message to the hardware? Or I have
+ to check it for myself?
+
+ 3: If I would loke to draw transparent faces with z buffering, do I have=
+ to
+draw them after all nontransparent faces? I think Yes, but maybe there
+ is another method.
+
+ 4: When drawing with W3D_SYNCHRON (or something like that) how much time=
+ do
+I have for CPU while HW is doing it's job? I mean what can I do in this
+time.
+
+ 5: Does Permedia support stencil buffer? I mean ,can I set a stencil to
+ for example 1 when a pixel of drawn face is visible?
+
+
+Regards.
+--=20
+
+// Micha=B3  "Kierownik" Wo=BCniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+Big Brother oczyma Piotra "Pici" Lato, uczestnika programu...
+http://relacje.interia.pl/id/relacja?cid=3D9276
+
+
+
+@endnode
+@node 08566.002
+Subject: Re: Re: Some general questions.
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Fri, 15 Jun 2001 14:15:53 +0200
+
+Hi,
+
+On Friday 15 June 2001 13:29, Michal Wozniak wrote:
+> > Rendering everything with the same texture at one go is the preferred
+> > method. If you can manage, sort your polies by texture/surface and render
+> > them at one go. The Voodoo will not slow down on this, quite the contrary
+> > - all chips will benefit from that due to the fact that the texture
+> > uploads will be minimized.
+>
+>     This can be done in proprocessing level i think, and wouldn't cost
+>  me anything. Proper sorting have to be done only for transparent faces.
+>  But I think that using for example 2/3 least important bits of texture
+>  (surface) ID could be a good idea. I'm using integer sorting so it will be
+>  easy.
+
+You don't need to depth sort the polygons, just put them into a list stored 
+with each texture (that's what's meant with "sorting by texture"). Something 
+like this:
+
+class Texture
+{
+public:
+	W3D_Texture *m_pTexture;
+	std::list<Polygon> m_PolyList;
+}
+
+And later add the polygons to be rendered with that texture to the 
+appropriate textures m_PolyList. When rendering, you'd first set the texture 
+on the appropriate triangle structure, and walk the list to render all of the 
+polygons in it.
+You can also have seperate lists for different states and texture 
+environments, like MODULATE and REPLACE, or depth buffering, this might safe 
+you some state changes...
+
+>  And here comes a new question. How should I set blending mode
+>  to simulate multitexturing. I have used:
+>    W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE_MINUS_SRC_ALPHA)
+>  and
+>   W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE)
+>
+>   But they seem to give equal results. And other thing. When Voodoo comes
+>   in, what blending mode should be used to get additive blending? Is it
+>   possible to set it on permedia and get normal blending and when voodoo
+>   driver will be available to get additive blending without changes in the
+> code?
+
+That combination isn't supported by the Permedia. You should get an error if 
+you check the return value.
+
+Additive blending is achieved by W3D_ONE, W3D_ONE.
+
+>   Qn:
+>     How can I prepare my engine to use vertex arrays (is this name
+> correct?) from V4. I don't want to redesign everything. And when devkit for
+> it will be
+>  available ?
+
+Damn it, I knew I would forget it again. It's ready for upload, I just forgot 
+it. I promise I'll upload it today...
+
+> BTW. Does FreeAllTexObj() work properly? I have used it right before
+>  DestroyContext() and it caused a crash. I haven't seen it in any demo
+>  program that comes with W3D. If I understanded the docs It should
+>  free all texture objects like doing FreeTexObj() in loop. Right?
+
+Yup. It should work...
+
+> BTW2. It seems that in 24bit mode texturemapping looks different than
+>  in 15/16bit. I think it's a bug in W3D because I can't find any relations
+>  between screendepth and texture coords in my code. If You want
+>  I can send You an example.
+
+That's a problem with the endianness of the 24 bit modes when used with some 
+texture format. I always wanted to have a look, but didn't come around to 
+doing it. I'll have a look at that after I finish the Voodoo driver...
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08566.001
+Subject: Re: Some general questions.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Fri, 15 Jun 2001 13:29:19 +0200
+
+
+On 11-Cze-01 Hans-Joerg Frieden wrote:
+
+> Hi!
+
+    Yellow!
+
+> Rendering everything with the same texture at one go is the preferred
+> method. If you can manage, sort your polies by texture/surface and rend=
+er
+> them at one go. The Voodoo will not slow down on this, quite the contra=
+ry
+> - all chips will benefit from that due to the fact that the texture
+> uploads will be minimized.
+
+    This can be done in proprocessing level i think, and wouldn't cost
+ me anything. Proper sorting have to be done only for transparent faces.
+ But I think that using for example 2/3 least important bits of texture
+ (surface) ID could be a good idea. I'm using integer sorting so it will =
+be
+ easy.
+
+> The problem with state changes is that there might be a lot of register=
+s
+> affected that need their contents re-evaluated. This is a bit different
+> from the texture stuff. Warp3D however tries to miniize this by compari=
+ng
+> new and old state values and registers and only updating if they are
+> really in need of updating.
+
+    That's ok for me.=20
+
+> No, if you need transparency you will most likely want to disable Z buf=
+fer
+> update (you will need ZBuffer tests enabled), and draw the transparent
+> faces back-to-front, otherwise things will look wrong. The order in whi=
+ch
+> you draw transparent faces will determine the outcome.
+
+    I have done it this way and it works very well. There were some probl=
+ems
+  with proper faces waights, but I have solved them.
+
+>> 4: When drawing with W3D_SYNCHRON (or something like that) how much ti=
+me
+>> do I have for CPU while HW is doing it's job? I mean what can I do in
+>> this time.
+
+> Don't enable Synchron. If you enable this, Warp3D will wait for the
+> hardware to become idle after every drawing command, and that will wast=
+e
+> any amount of parallelism you have. Keep it disabled, and use W3D_WaitI=
+dle
+> after you have drawn the entire frame, or want to do anything major.
+
+    Sorry, I meant disabling Synchron. But now I have reconstructed objec=
+t
+ processing loop, so more work is done while GPU is drawing a face
+ ( clipping is done).
+
+> It does, but the driver doesn't. The Permedia2 stencil buffer is only o=
+ne
+> bit deep, and hence practically unsusable. The Voodoo 3 doesn't support
+> any stencil buffer. You can use the Z buffer as a limited stencil buffe=
+r
+> replacement.
+
+    Well, bad luck. I read about using stencil buffer to draw shadows and
+was  wondering if permedia supports it. I thought that everything that is
+possible to set in Warp is possible on permedia, but it would be too good=
+;)
+
+ And here comes a new question. How should I set blending mode
+ to simulate multitexturing. I have used:
+   W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE_MINUS_SRC_ALPHA)
+ and=20
+  W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE)
+
+  But they seem to give equal results. And other thing. When Voodoo comes
+  in, what blending mode should be used to get additive blending? Is it
+  possible to set it on permedia and get normal blending and when voodoo
+  driver will be available to get additive blending without changes in th=
+e
+code?
+
+  Qn:
+    How can I prepare my engine to use vertex arrays (is this name correc=
+t?)
+ from V4. I don't want to redesign everything. And when devkit for it wil=
+l
+be
+ available ?=20
+=20
+ This is it for now. Thanks in advance.
+
+BTW. Does FreeAllTexObj() work properly? I have used it right before
+ DestroyContext() and it caused a crash. I haven't seen it in any demo
+ program that comes with W3D. If I understanded the docs It should=20
+ free all texture objects like doing FreeTexObj() in loop. Right?
+
+BTW2. It seems that in 24bit mode texturemapping looks different than
+ in 15/16bit. I think it's a bug in W3D because I can't find any relation=
+s
+ between screendepth and texture coords in my code. If You want
+ I can send You an example.
+
+Regards
+--=20
+
+// Micha=B3  "Kierownik" Wo=BCniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+--------------------------R--E--K--L--A--M--A---------------------------
+Nie wiesz, co Cie czeka? Nie wiesz jak postapic? Sprawdz swoj horoskop!
+http://rozrywka.interia.pl/id/otobie/horoskop/www/horoskop/horoskop_main
+
+
+@endnode
+@node 08567.001
+Subject: Warp3D developer archive
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Sat, 16 Jun 2001 12:30:24 +0200
+
+Hi,
+
+I've uploaded the Warp3D developer archive to Aminet, so it should pop up 
+there any time now.
+
+For the developers here, here's what's new in V4:
+The most prominent new feature are of course the vertex arrays. If you know 
+OpenGL's array functionality, you know what it's about. It's the possibility 
+to draw a huge amount of triangles in one go. Like in OpenGL, the arrays come 
+in two flavors:
+W3D_DrawArray draws the current array in the order the vertices appear in the 
+array, i.e. it always starts at the beginning, and draws a certain amount of 
+array elements. The type of pimitive is given with the call itself 
+(currently, seperate triangles, triangle strips, and fans are supported).
+W3D_DrawElements is the same as OpenGL's glDrawElements: The actual vertices 
+are indexed by another array.
+
+The current arrays have to be set before calling the drawing operations, by 
+calling W3D_VertexPointer (for x,y,z geometry), W3D_ColorPointer (for color), 
+and W3D_TexCoordPointer (for texture coordinates, including u,v, and w).
+The layout of the data is variable, and like in OpenGL, the stride (i.e. the 
+amount of space between consecutive array elements) can be given for each 
+individual array. 
+
+The array functions do not take a texture pointer directly. To use a texture 
+with these functions, it has to be bound. This introduces the concept of a 
+current texture, which will currently only be used for the arrays (the 
+single-primitive functions will still use the texture in the appropriate 
+structure, for backwards compatibility). 
+The function W3D_BindTexture is used for that. Note that W3D_BindTexture, as 
+well as W3D_TexCoordPointer, already include a parameter to choose the 
+texturing unit. Currently, everything else but 0 gives an error, but the next 
+release will allow more than one texturing unit for hardware that supports 
+multi texturing, adding a function to select the color operation between 
+texture stages.
+
+V4 also introduces hardware assisted backface culling. There's a new 
+function, W3D_SetFrontFace, which will tell Warp3D what's to be considered 
+front facing (W3D_CW for clockwise, W3D_CCW for counter clockwise). This is 
+enabled or disabled by W3D_SetState with W3D_CULL_FACE.
+
+Hopefully, this message can serve as a general guideline for V4. I didn't 
+have the time to update the developer documentation, the file 
+docs/Warp3D.guide contains the autodocs for all functions, though, including 
+the new one. 
+
+If you have question concerning the new (or old) functions, do not hesitate 
+to contact me.
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08570.002
+Subject: Re: Generating V4 files.
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Tue, 19 Jun 2001 18:56:38 +0200
+
+Hi,
+
+On Tuesday 19 June 2001 18:28, Michal Wozniak wrote:
+> Yellow,
+
+Red,
+
+>     I know that every programmer should know how to use fd2pragma,
+>  but if anyone could help me generating files needed for StormPPC
+>  I would be greatefull (or send them to me;). Thanks.
+
+Use the option to generate VBCC linker libraries (special 73)...
+
+Sorry for the inconvenience, but it's getting too tedious to have all of the 
+stuff prefabricated, and every compiler has the facility to build it's stuff 
+from the fd files..
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08570.001
+Subject: Generating V4 files.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Tue, 19 Jun 2001 18:28:45 +0200
+
+Yellow,
+
+    I know that every programmer should know how to use fd2pragma,
+ but if anyone could help me generating files needed for StormPPC
+ I would be greatefull (or send them to me;). Thanks.
+
+Regards.
+--=20
+
+// Michal  "Kierownik" Wozniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+-------------------------R--E--K--L--A--M--A-------------------------
+Tylko do niedzieli, 24 czerwca, w supermarkecie internetowym Hiperia
+pralki i lod=F3wki wiodacych marek o 30% taniej, niz w innych sklepach:
+http://hiperpromocja.interia.pl/
+
+@endnode
+@node 08571.001
+Subject: I'm stupid, call me names...
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Wed, 20 Jun 2001 20:40:26 +0200
+
+Hi,
+
+It was brought to my attention that the Warp3D developer archive I've 
+uploaded recently lacks one major part: The autodocs for V4. I've uploaded an 
+update archive (Warp3DDev-u.lha, sorry for the silly name, but Aminet insists 
+on maximal 18 characters).
+
+In the meantime, if somebody wants it badly, I'll send out free preview 
+copies of the autodocs if asked nicely :)
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08572.002
+Subject: Re: Re: Some general questions.
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Thu, 21 Jun 2001 20:05:31 +0200
+
+Hi,
+
+On Thursday 21 June 2001 15:33, Michal Wozniak wrote:
+> > You don't need to depth sort the polygons, just put them into a list
+> > stored with each texture (that's what's meant with "sorting by texture").
+>
+>     I meant sorting polygons which are transparent. They have to be sorted.
+
+Yes.
+
+>  My solid polygons are arranged in lists with the same surface, and drawn
+>  in one loop. This should give a similar result like below
+
+Yep, that's the same thing, basically..
+
+>     And which of state changes are the slowest ones? Or there is no
+>  difference?
+
+This depends on the chip, unfortunately. Most of the time, modifing a state 
+is just the change of a bit. Of course, most of the time this will result in 
+the chip registers  to be re-evaluated. Both the Permedia and the Voodoo 
+drivers have host-memory backups of the resister, and registers will only be 
+transfered to the chip when they've changed, to minimize bus traffic. 
+Frequent state changes will of course result in larger amount of bus traffic.
+
+> > Additive blending is achieved by W3D_ONE, W3D_ONE.
+>
+>     BTW. Is substractive blending possible?
+
+No. The blend function is always SrcColor * SrcFactor + DstColor * DstFactor. 
+You can't change the operation. I think some chips can do subtraction, but 
+it's not in Warp3D yet. If we get enough chips that support it, it will make 
+it's way into Warp3D....
+
+> > Damn it, I knew I would forget it again. It's ready for upload, I just
+> > forgot it. I promise I'll upload it today...
+>
+>     Just downloaded it. Now have to find some docs about opengl to
+>  learn how to use these vertex arrays.
+
+The OpenGL specs  (V 1.2) explain these...
+
+>     But as I said it causes crash in my engine. I had to create my own
+>  list of engine's textures and free them all by myself. I called this
+>  function (FreeAllTexObj) right before DestroyContext().
+
+I'll have a look.
+
+> Other thing. Why when using DrawTriangleV() asynchronous rendering isn't
+>  possible and with DrawTriangle() it is?
+
+What do you mean with that ? Asynchronous is the normal operation, and only 
+when you set a special state will synchronous rendering be used. 
+
+Or do you mean something else ?
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08572.001
+Subject: Re: Some general questions.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Thu, 21 Jun 2001 15:33:37 +0200
+
+
+> Hi,
+
+    Hello,
+
+> You don't need to depth sort the polygons, just put them into a list
+> stored with each texture (that's what's meant with "sorting by texture").
+
+    I meant sorting polygons which are transparent. They have to be sorted.
+ My solid polygons are arranged in lists with the same surface, and drawn
+ in one loop. This should give a similar result like below
+
+> Something like this:
+
+> class Texture
+> {
+> public:
+>     W3D_Texture *m_pTexture;
+>     std::list<Polygon> m_PolyList;
+> }
+
+    And which of state changes are the slowest ones? Or there is no 
+ difference?
+
+>>    W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE_MINUS_SRC_ALPHA)
+>>  and
+>>   W3D_SetBlendMode(context,W3D_SRC_ALPHA,W3D_ONE)
+
+> That combination isn't supported by the Permedia. You should get an error
+> if you check the return value.
+
+    Yes, I know it now. The only reason it worked is that blending is set
+ on context creation. Isn't it? But this way i can get additive blending
+ on Voodo and normal blending on Permedia.
+
+> Additive blending is achieved by W3D_ONE, W3D_ONE.
+
+    BTW. Is substractive blending possible?
+
+> Damn it, I knew I would forget it again. It's ready for upload, I just
+> forgot it. I promise I'll upload it today...
+
+    Just downloaded it. Now have to find some docs about opengl to 
+ learn how to use these vertex arrays.
+
+>> BTW. Does FreeAllTexObj() work properly? I have used it right before
+>>  DestroyContext() and it caused a crash. I haven't seen it in any demo
+>>  program that comes with W3D. If I understanded the docs It should
+>>  free all texture objects like doing FreeTexObj() in loop. Right?
+
+> Yup. It should work...
+
+    But as I said it causes crash in my engine. I had to create my own
+ list of engine's textures and free them all by myself. I called this
+ function (FreeAllTexObj) right before DestroyContext().
+
+Other thing. Why when using DrawTriangleV() asynchronous rendering isn't
+ possible and with DrawTriangle() it is?
+
+> Regards,
+Regards
+-- 
+
+// Michal  "Kierownik" Wozniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+---------------------------R--E--K--L--A--M--A---------------------------
+Super tapety na pulpit: http://reklama.interia.pl/promocja/promocja6.html
+
+@endnode
+@node 08577.001
+Subject: Allegro Library ?
+From: Andrew Barker <andrew.barker@sunderland.ac.uk>
+Date: Tue, 26 Jun 2001 13:26:23 +0100
+
+Hi,
+
+Anyone know if the Allegro Library has been ported to the Amiga ?
+Or if anyone is working on it ?
+
+The reason I ask, is becuase there's a Spectrum emulator available for
+DOS and will
+work on Linux via the Allegro Library.  The authors say they could make
+an Amiga
+port but depends on an Allegro Library for the Amiga.
+
+Regards
+
+Andy Barker
+
+@endnode
+@node 08580.004
+Subject: Re: Warp 3d problem
+From: "Antonello De Santis" <antonello.desantis@galactica.it>
+Date: Fri, 29 Jun 2001 23:20:27 +0200
+
+> This sounds like you didn't include the tooltype BITMAPCACHE=YES and
+> DRAGGING=NO in your BVision monitor settings. This is especially true if
+> WarpTest only shows a shaded rectangle with no texture on it. Add these
+> tooltypes to the monitor icon and reboot, this should fix it.
+
+Ok, I added both tooltypes to the icon of devs:monitors/cvisionppc, but it
+still fails to work...
+I also tried to create two environment variables in env:cybergraphx named
+BITMAPCACHE and DRAGGING containing 1 and 0 respectively, but I keep getting
+"No ZBuffer: memory shortage" and also a powerpc exception complaining of
+memory protection violation.
+
+Thanks for your help!
+
+Regards,
+
+  Antonello De Santis
+
+
+
+@endnode
+@node 08580.003
+Subject: how to get Warp3d to work on Prometheus + Voodoo3
+From: Dennis Zweedijk <denzwe@wishmail.net>
+Date: Fri, 29 Jun 2001 21:54:35 +0200
+
+Hello,
+
+Last weekend, during the Benelux Amiga Show, I bought a Prometheus
+PCI-bridge and a Voodoo3-2000. The 2d drivers work fine, but I
+can't get Warp3d to work on it. I can't even get the warptest demo
+or the gears demo to work, let alone Shogo or HereticII.
+All I get is a gray screen or window, and then the system hangs.
+
+My configuration is:
+
+Amiga 3000/040 tower
+CyberstormPPC 50MHz '060 + 233MHz 604e + 128MB
+Quantum Atlas 10kII harddrive (on PPC board SCSI)
+Ricoh CDRW drive (on PPC board SCSI)
+Microtec Scanmaker 330 flatbed scanner (on A3000 SCSI)
+56k6 Modem
+Epson Stylus Photo 750
+21" muti-sync monitor
+FrameMachine (zorroII board)
+Hypercom IO (zorroII board)
+Prometheus with:
+    Voodoo3 2000
+    10Mb ethernet board
+OS 3.9 + boingbag 1
+
+My CybervisionPPC is not installed at the moment. Warp3d worked
+fine on that.
+
+
+Can anyone help?
+
+Kind regards,
+
+Dennis Zweedijk
+
+@endnode
+@node 08580.002
+Subject: Re: Warp 3d problem
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+Date: Fri, 29 Jun 2001 14:38:02 +0200
+
+On Friday 29 June 2001 12:34, Antonello De Santis wrote:
+> Hi everybody!
+
+Hi!
+
+> I'm having some problems to get warp 3d working on my system.
+> Whenever I try to run a game or demo requiring warp 3d to be installed, I
+> get the following error message: "No ZBuffer: Memory shortage". This
+> happens with Shogo, Heretic 2 and Warp 3D Demos. Warptest works instead.
+> I have an A1200, Blizzard PPC, BVision, 128 mb of fast ram, OS 3.9 + Boing
+> Bag 1 and cybergraphx V 3 with cgxsystem.library V 41.22.
+> Can anybody help?
+
+This sounds like you didn't include the tooltype BITMAPCACHE=YES and 
+DRAGGING=NO in your BVision monitor settings. This is especially true if 
+WarpTest only shows a shaded rectangle with no texture on it. Add these 
+tooltypes to the monitor icon and reboot, this should fix it.
+
+Best regards,
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-software.de
+@endnode
+@node 08580.001
+Subject: Warp 3d problem
+From: "Antonello De Santis" <antonello.desantis@galactica.it>
+Date: Fri, 29 Jun 2001 12:34:16 +0200
+
+Hi everybody!
+
+I'm having some problems to get warp 3d working on my system.
+Whenever I try to run a game or demo requiring warp 3d to be installed, I
+get the following error message: "No ZBuffer: Memory shortage". This happens
+with Shogo, Heretic 2 and Warp 3D Demos. Warptest works instead.
+I have an A1200, Blizzard PPC, BVision, 128 mb of fast ram, OS 3.9 + Boing
+Bag 1 and cybergraphx V 3 with cgxsystem.library V 41.22.
+Can anybody help?
+
+Kind regards,
+
+  Antonello De Santis
+
+
+
+@endnode
+@node 08581.006
+Subject: Re: how to get Warp3d to work on Prometheus + Voodoo3
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Sat, 30 Jun 2001 23:13:56 +0200
+
+Hi,
+
+On Saturday 30 June 2001 16:12, Dennis Zweedijk wrote:
+> > I suggest that you download the newer version from the Matay web site,
+> > uninstall Warp3D, and reinstall it (to be sure you don't have old
+
+> O.K. I did that, but it makes no diference.
+>
+> What env variables and/or tooltypes need to be set for Warp3d to work with
+> the Voodoo3?
+
+None. 
+The only thing to remember is the PowerPC/gfxaddr address. This must be set 
+to the Voodoo's display memory (I guess I didn't mention that :/ )
+
+Use prmscan to find the Voodoo board, the second address is the display 
+memory: Use setenv PowerPC/gfxaddr $.......... to set it (insert the address 
+at the dotted line ;)
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08581.005
+Subject: Re: how to get Warp3d to work on Prometheus + Voodoo3
+From: Dennis Zweedijk <denzwe@wishmail.net>
+Date: Sat, 30 Jun 2001 16:12:53 +0200
+
+Hello Thomas
+
+On 30-jun-01, you wrote:
+
+> Hi,
+> 
+> On Friday 29 June 2001 21:54, Dennis Zweedijk wrote:
+>> Last weekend, during the Benelux Amiga Show, I bought a Prometheus
+>> PCI-bridge and a Voodoo3-2000. The 2d drivers work fine, but I
+>> can't get Warp3d to work on it. I can't even get the warptest demo
+>> or the gears demo to work, let alone Shogo or HereticII.
+>> All I get is a gray screen or window, and then the system hangs.
+> 
+> First of all, remember that there's no 68k version. WarpTest is 68k, so it
+
+> will not dinf any driver.
+
+That would explain why WarpTest appears to do nothing, but all other Warp3d
+programmes still produce a gray screen and then the whole system hangs.
+
+> If you've got the version from the CD, you probably got the one-library 
+> version (look for a Warp3D/hwdrivers/W3D_Avenger_PPC.library). This one's
+a 
+> very old one, and it's got problems on screens with big endian byte
+ordering 
+> (i.e. screens of format 16 BIT), and requires modes with 16 BIT PC. The
+newer 
+> version that can be downloaded form Matay's web site is a two-library
+version 
+> (W3D_AvengerBE_PPC.library and W3D_AvengerLE_PPC.library). This one's 
+> independant of the byte ordering.
+> 
+> I suggest that you download the newer version from the Matay web site, 
+> uninstall Warp3D, and reinstall it (to be sure you don't have old
+libraries 
+> around)...
+
+O.K. I did that, but it makes no diference.
+
+What env variables and/or tooltypes need to be set for Warp3d to work with
+the Voodoo3?
+
+Kind regards,
+
+Dennis Zweedijk
+
+@endnode
+@node 08581.004
+Subject: Re: Re: Warp 3d problem
+From: "Antonello De Santis" <antonello.desantis@galactica.it>
+Date: Sat, 30 Jun 2001 12:15:51 +0200
+
+> I suggest that you purchase Cybergfx V4.
+> It's faster, especially with the BVision and it's not expensive.
+
+I will surely purchase it... it's quite unexpensive and it'll surely be
+worth the money.
+
+Regards,
+
+  Antonello De Santis
+
+
+
+@endnode
+@node 08581.003
+Subject: Re: Warp 3d problem
+From: Adam Carrano <adamca@wanadoo.fr>
+Date: Sat, 30 Jun 2001 09:45:54 +0200
+
+Hello Antonello
+
+Le 29-juin-01, Antonello De Santis a =E9crit:
+
+>  BVision and  cybergraphx V 3 with cgxsystem.library
+
+I suggest that you purchase Cybergfx V4.
+It's faster, especially with the BVision and it's not expensive.
+
+
+Regards, Adam
+
+@endnode
+@node 08581.002
+Subject: Re: how to get Warp3d to work on Prometheus + Voodoo3
+From: Thomas Frieden <ThomasF@hyperion-software.de>
+Date: Sat, 30 Jun 2001 00:41:03 +0200
+
+Hi,
+
+On Friday 29 June 2001 21:54, Dennis Zweedijk wrote:
+> Last weekend, during the Benelux Amiga Show, I bought a Prometheus
+> PCI-bridge and a Voodoo3-2000. The 2d drivers work fine, but I
+> can't get Warp3d to work on it. I can't even get the warptest demo
+> or the gears demo to work, let alone Shogo or HereticII.
+> All I get is a gray screen or window, and then the system hangs.
+
+First of all, remember that there's no 68k version. WarpTest is 68k, so it 
+will not dinf any driver.
+
+If you've got the version from the CD, you probably got the one-library 
+version (look for a Warp3D/hwdrivers/W3D_Avenger_PPC.library). This one's a 
+very old one, and it's got problems on screens with big endian byte ordering 
+(i.e. screens of format 16 BIT), and requires modes with 16 BIT PC. The newer 
+version that can be downloaded form Matay's web site is a two-library version 
+(W3D_AvengerBE_PPC.library and W3D_AvengerLE_PPC.library). This one's 
+independant of the byte ordering.
+
+I suggest that you download the newer version from the Matay web site, 
+uninstall Warp3D, and reinstall it (to be sure you don't have old libraries 
+around)...
+
+> Amiga 3000/040 tower
+
+I never tested it on an A3000, although I can't think of a reason that it 
+will not work...
+
+Regards,
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-software.de
+ http://www.hyperion-software.com
+@endnode
+@node 08581.001
+Subject: Re: Warp 3d problem
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-software.de>
+Date: Sat, 30 Jun 2001 00:38:56 +0200
+
+On Friday 29 June 2001 23:20, Antonello De Santis wrote:
+
+> I also tried to create two environment variables in env:cybergraphx named
+> BITMAPCACHE and DRAGGING containing 1 and 0 respectively, but I keep
+
+I think you need to set them to YES and NO respectively. I am not sure if 1/0 
+would work.
+
+> getting "No ZBuffer: memory shortage" and also a powerpc exception
+> complaining of memory protection violation.
+
+You also need to have the CVisionPPC monitor version 2.7 beta 3, no earlier 
+version will do. Additionally, make sure to have your environment variables 
+set up correctly as per the "Problems" text file. Especially the gfxaddr is 
+critical. 
+
+Regards,
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-software.de
+@endnode

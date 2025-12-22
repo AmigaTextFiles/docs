@@ -1,0 +1,59 @@
+// 3f78  czyli 16248
+// wdt 0ff, lvd off, int clk no out on
+
+program AMI_ATX;
+var power, stat, czas : BYTE;
+begin
+  trisa := 12; // wejscia         INPUT
+  trisb := 0;  // wyjscia         OUTPUT
+  CMCON := 7;
+  portb := 6;  //RB binarno 0000 0110
+  delay_ms(1000);
+  portb := 2;  //RB bin  0000 0010    power=portb1 standby=portb2
+  power := 0;
+  repeat
+     begin
+      if (Button(porta, 2, 1, 0)) AND (power = 0) then //ako pin 2 na portu a=GND (SW)
+          begin // power on :)
+             power := 255;
+             portb := 20; // 0001 0100     standby led off, power on
+             delay_ms(5000);
+          end;
+      if (Button(porta, 2, 1, 0)) AND (power = 255) then
+          begin // power off :)
+            stat := 1;
+            czas :=true;
+            while stat < 9 do  //1000 ms kasnjenje  drzati
+              begin
+                delay_ms(100);
+                if Button(porta, 2, 1, 0) then stat:=stat+1
+                else
+                begin
+                  czas:=false;
+                  stat := 9;
+                end;
+              end;
+            if (stat = 9) and czas then
+               begin
+                 power := 0;
+                 portb := 2; //0000 0010   power led on, power off
+                 delay_ms(7000);
+               end;
+          end;
+      if (Button(porta, 3, 1, 0)) AND (power = 255) then  //mislim da je ovo sel2
+         begin // amiga power off :)
+         delay_ms(100);
+         if (Button(porta, 3, 1, 1))  then  //mislim da je ovo sel2
+             begin // amiga power off :)
+             delay_ms(100);
+             if (Button(porta, 3, 1, 0)) then  //mislim da je ovo sel2
+               begin // amiga power off :)
+                  power := 0;
+                  portb := 2;
+                  delay_ms(7000);
+               end;
+             end;
+          end;
+     end;
+  until 1=0;
+end.

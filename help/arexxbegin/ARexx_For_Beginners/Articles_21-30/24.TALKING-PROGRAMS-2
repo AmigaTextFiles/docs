@@ -1,0 +1,393 @@
+@DATABASE "ARB24"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 24 - Talk Other Programs - Part 2"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 24 - TALKING WITH OTHER PROGRAMS - PART 2
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{B}@{U}FUNCTIONS OF USE WITH THE ADDRESS INSTRUCTION@{UB}@{UU}
+@{JLEFT}
+There are two built in functions (listed below) that can be used in
+association with the instruction ADDRESS. I will also deal with "Launching
+An ARexx Program From Another Program".
+@{JCENTER}
+@{" The ADDRESS() Function               " LINK "Address()"}
+@{" Launching ARexx From Another Program " LINK "Launching"}
+@{" The SHOW() Function                  " LINK "Show()"}
+@{"     The SHOW() Port Option           " LINK "P"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Address()" "Article 24 - Talking With Other Programs - ADDRESS()"
+
+@{B}@{U}@{JCENTER}THE ADDRESS() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Do not confuse the @{B}instruction@{UB} @{"ADDRESS" LINK "ARB:Articles_21-30/23.Talking-Programs-1/Address"} with the @{B}function@{UB} ADDRESS(). They
+are two different things.
+
+This function does not take any arguments within the parentheses. Its
+syntax is simply:-
+
+  ADDRESS()
+
+It returns the current host address. For example:-
+
+  SAY ADDRESS()
+  --> REXX
+
+No other host has been ADDRESSed so it returns the ARexx port name.
+
+This assumes that the program was launched from CLI with RX!! As I mentioned
+in the last article, an ARexx program will adopt a default host address
+from the program from which it was launched. If we launched the program
+@{"from `ED'" LINK "ARB:Articles_51-60/52.Arexx_With_Ed_Pt-1/MAIN"} and used the above we would get:-
+
+  SAY ADDRESS()
+  --> Ed
+
+This can be demonstrated with the following example program:-
+
+  /* Example24-1 */
+
+1. CALL OPEN('Window','CON:20/100/600/50/A WINDOW TO TEST
+   ADDRESS()')
+2. CurrentHost = ADDRESS()
+3. CALL WRITELN('Window','Current host address is' CurrentHost)
+4. CALL WRITELN('Window','a'x'This window will close by itself in
+                             5 seconds')
+5. CALL TIME('R')
+6. DO WHILE TIME('E') < 5
+7. END
+8. CALL CLOSE('Window')
+
+A lot of the coding in this has not yet been covered. The important lines
+for this exercise, however, are:-
+
+- Line 2 where the name of the port for the current host is
+         assigned to the symbol "CurrentHost"
+- Line 3 where the value of that symbol is written to the window
+         that is opened by Line 1.
+
+If you launch this program from CLI using RX it will display:-
+
+  Current host address is REXX
+
+  This window will close by itself in 5 seconds
+
+However, if you open an "ED" window with, for example,:-
+
+  > Run ED Dummy
+
+and run Example24-1 @{"from `ED'" LINK "ARB:Articles_51-60/52.Arexx_With_Ed_Pt-1/MAIN"} then it will show:-
+
+  Current host address is Ed
+
+  This window will close by itself in 5 seconds
+
+Try out Example24-1 with any other programs that you have that are capable
+of running ARexx programs.
+
+If we have used ADDRESS to change the host address, then the name of that
+port will be returned. For example:-
+
+  ADDRESS 'COMMAND'
+  SAY ADDRESS()
+  --> COMMAND
+
+We can put this into Example24-1 by adding the four extra lines marked
+with * at their start:-
+
+  /* Example24-2 */
+
+1. CALL OPEN('Window','CON:20/100/600/50/A WINDOW TO TEST
+   ADDRESS()')
+2. CurrentHost = ADDRESS()
+3. CALL WRITELN('Window','Current host address is' CurrentHost)
+*  CALL WRITELN('Window','Changing host to "COMMAND"')
+*  ADDRESS 'COMMAND'
+*  CurrentHost = ADDRESS()
+*  CALL WRITELN('Window','Current host address is' CurrentHost)
+4. CALL WRITELN('Window','a'x'This window will close by itself in
+                              5 seconds')
+5. CALL TIME('R')
+6. DO WHILE TIME('E') < 5
+7. END
+8. CALL CLOSE('Window')
+
+Now the output will be:-
+
+  Current host address is Ed
+  Changing host to "COMMAND"
+  Current host address is COMMAND
+
+  This window will close by itself in 5 seconds
+
+So where do we use this function? In situations where we do not know the
+exact message port name of the program with which we are going to
+communicate. But isn't that in the program's manual?? Well, yes and no!
+
+To explain this properly, let's consider the ED program that comes with
+Workbench2.0 and higher as it has ARexx capabilities.
+
+(Sorry all you Workbench1.3 and earlier users, but this does not apply
+to you. However, the @{B}principles@{UB} that I will now discuss @{B}will@{UB} apply to
+any other program that you have that can have multiple copies running
+in memory at the same time, each with a slightly different port
+name.)
+
+ED can be run more than once at the same time so that you can be editing
+more than one text file at the same time. Because of this, each ED that
+is running must have its own ARexx port name. These are:-
+
+  First  ED  - Port Name  =  Ed
+  Second ED  - Port Name  =  Ed_1
+  Third  ED  - Port Name  =  Ed_2
+
+  .... and so on
+
+So, if we have some ARexx scripts that we use with ED, and have occasions
+when we run more than one ED at the same time, then we @{B}must@{UB} know which
+ED port to address.
+
+We do this with this sort of programming:-
+
+  HostName = ADDRESS()
+  ADDRESS VALUE HostName
+
+Now it does not matter which running copy of ED we use because the symbol
+"HostName" will be given the value of the port name of the ED from which
+the ARexx script was launched.
+
+For example, if we are working in the second ED, then:-
+
+  HostName = ADDRESS() results in HostName = 'Ed_1'
+
+and:-
+
+  ADDRESS VALUE HostName results in ADDRESS 'Ed_1'
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Launching" "Article 24 - Talking With Other Programs - Launching From Other Programs"
+
+@{B}@{U}@{JCENTER}LAUNCHING AREXX SCRIPTS FROM WITHIN ANOTHER PROGRAM@{UB}@{UU}
+@{JLEFT}
+At this stage, it would be opportune to say that many programs that have
+ARexx support also have menu items for the launching of ARexx
+Scripts.
+
+When you launch an ARexx Script from the menu of such a program, or by
+some other means as specified by the program's manual, then that program's
+port name becomes the default host address and its @{B}exact@{UB} name can
+be determined by using this line @{B}at the start of the program@{UB} :-
+
+  HostName = ADDRESS()
+
+If you do @{B}not@{UB} use it at the start, and just happen to use some ADDRESS
+instructions in the script before you get around to using the above line,
+then you may @{B}not@{UB} be able to find the correct host address for the program
+from which you launched!!
+
+Let's say that you launch an AREXX script from ED and in that script you
+also want to address 'dopus_rexx' and 'COMMAND'. If you use the following
+lines @{B}before@{UB} you use "HostName = ADDRESS()" then this happens:-
+
+  /* Start of Program   */
+  /* Ed is current host */
+
+  ADDRESS 'COMMAND'     /* AmigDOS now current host,
+                           Ed is previous host */
+  ... programming code
+
+  ADDRESS 'dopus_rexx'  /* dopus_rexx now current,
+                           AmigaDOS previous,
+                           Ed lost */
+  ..... programming code
+
+As we did not record the Ed port name in a symbol, we have lost it for
+good and cannot now know which Ed port name to use!!
+
+We @{B}should@{UB} have used this:-
+
+  /* Start of Program   */
+  /* Ed is current host */
+
+  HostName = ADDRESS()  /* Record host name even if not using it now */
+
+  ADDRESS 'COMMAND'     /* AmigaDOS now current host,
+                           Ed is previous host */
+  ... programming code
+
+  ADDRESS 'dopus_rexx'  /* dopus_rexx now current,
+                           AmigaDOS previous,
+                           Ed lost */
+  ..... programming code
+
+  ADDRESS HostName      /* Ready to talk to Ed which now current host*/
+
+Now we can address ED by its correct port name at any point in the program
+that we like even after addressing other ports before we address ED. Its
+port name has been preserved in the symbol "Hostname".
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Show()" "Article 24 - Talking With Other Programs - SHOW()"
+
+@{B}@{U}@{JCENTER}THE SHOW() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This one's full syntax is:-
+
+  SHOW(Option,[Name],[Pad])
+
+The square brackets [] indicate that these parts are optional, or not
+needed.
+
+Thus you can use it in one of these formats:-
+
+  SHOW(Option)
+  SHOW(Option,Name)
+  SHOW(Options,Name,Pad)
+
+If "Pad" is not used, then a default pad character, the space, is used.
+
+The simplest format is:-
+
+  SHOW(Option)
+
+where "Option" is one of:-
+
+  CLIP      or C    to show the names in the clip list
+  FILES     or F    to show names of currently open logical files
+  LIBRARIES or L    to show names in ARexx's Library List
+  PORTS     or P    to show names of ports available
+
+I will deal further with:-
+
+- the @{" CLIP      " LINK "ARB:Articles_31-40/37.Using_Clips/Show()"} option when looking at clips,
+- the @{" FILES     " LINK "ARB:Articles_21-30/28.File_Handling/Show()"} option when looking at handling disk files
+- the @{" LIBRARIES " LINK "ARB:Articles_31-40/38.Functions-More/Show()"} option when looking at adding libraries
+- the @{" PORTS     " LINK "P"} option in the following notes.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "P" "Article 24 - Talking With Other Programs - SHOW() Port Option"
+
+@{B}@{U}@{JCENTER}THE SHOW() PORT OPTION@{UB}@{UU}
+@{JLEFT}
+
+As with other options, you can use the full option name or the first letter
+only. Just remember to include the option name, or its initial letter,
+in quotes.
+
+As an example, if you use:-
+
+  SAY SHOW('P')
+
+you will be given a list of all the ports available separated by the default
+"Pad" character which is a space. For example, it might give this
+list:-
+
+  REXX DIRWORK_1 Ed Virus_Checker
+
+This indicates that ports are available for ARexx, DirWork_1, Ed and
+Virus_Checker. The names are separated by the default space character.
+
+(Note - if you try this, you will no doubt have other names shown some
+of which are associated with AmigaDOS itself and others with programs
+that you are running.)
+
+When SHOW() is used with [Name] as in this format:-
+
+  SHOW(Option,Name)
+
+it will return the @{"Boolean" LINK "ARB:Misc/Glossary/Boolean"} values of:-
+
+  "0" if the port is not available, or
+  "1" if it is available.
+
+For example:-
+
+  SAY SHOW('P','Ed')
+  --> 1
+
+The returned value of 1 would indicate that the port "Ed" is
+available.
+
+Thus we can test to see if a port is available before trying to use it.
+This is illustrated at the start of the @{"Example25-1" LINK "ARB:Articles_21-30/Example25-1.rexx/MAIN"} in the next article.
+
+@{B}Warning@{UB} - you @{B}must@{UB} use the @{B}exact spelling and case@{UB} of the port name. For
+example, in this:-
+
+  SAY SHOW('P','ED')
+  --> 0
+
+the return of 0 will appear even if "Ed" is available because the correct
+spelling is "Ed" not "ED".
+
+When SHOW() is used with [Pad] as in:-
+
+  SHOW(Option,,'Pad')
+
+the list of ports or libraries (or whatever option is used) will be
+separated by the pad character instead of with a space. For example:-
+
+  SAY SHOW(P,,';')
+
+would result in something like this:-
+
+REXX;DIRWORK_1;Ed;Virus_Checker
+
+Note that, when [Pad] is used, we do not use [Name]. However, the @{B}position@{UB}
+for [Name] MUST be there represented by two commas with nothing between
+them. This is because, if we tried to use a "Pad" without a "Name", as
+in:-
+
+  SAY SHOW('P',';')
+
+we would get a return of 0 (zero) as ARexx would think that the ';' was
+the name of a port that we were looking for and it would not find it in
+the list of ports (unless some program writer was stupid enough to give
+his program's port the name of ";" !!!)
+
+If you do not know the name of a port that you want to use, and cannot
+find it in the program's manual, then enter at a CLI/Shell prompt:-
+
+  > RX "SAY SHOW('P')
+
+and look through the list given for something that resembles the program
+name. For example, if you are using Directory Opus then you would find
+"dopus_rexx" in the list of names.
+
+If you find that the listing all on one line is confusing then you could
+use the ASCII code for a line feed as the "Pad" as in:-
+
+  > RX "SAY SHOW('P',,'a'x)
+
+and all the port names will be on their own line!
+
+When we come to look at how to handle disk files, compound symbols,
+templates and parsing we will see how to send this listing to a disk file
+and how to assign the various port names in the list as symbol values.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

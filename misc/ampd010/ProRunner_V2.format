@@ -1,0 +1,107 @@
+ProRunner v2 format
+Created by Cosmos / Sanity (1992)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           4          ID "SNT!"
+  4           4          pointer to the sample data (thx gryzor :)
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 8 bytes description for 1 smp  *
+******************************************************
+                                                     *
+ 8             2         Sample Size / 2             *
+ Ah            1         Finetune (0 -> F)           *
+ Bh            1         Volume (0 - 40h)            *
+ Ch            2         Loop Start / 2              *
+ Eh            2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+100h           1         Number of pattern to play
+101h           1         NoiseTracker restart byte
+102h          80h        Pattern order table
+182h          100h       ?? are those used in fact ?!?
+                         might be used when playing ...
+282h          80h        pointer table
+
+ pointer table contains 64 pointers ( one word each )
+pointing at the first pattern data. It starts at 0000h
+and goes on adding pattern sizes. As an exemple, if
+pattern 0 is 1024 bytes long and pattern 1 is 1000
+bytes long, first pointer table will be 0000, second
+will be 0400. the rest is filled with 0000h.
+ seems unusable to me ...
+
+302h           ?         pattern data
+
+ we get something like
+
+ pattern 0 :
+ row 0 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 1 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 2 ...
+ row 63| voice 1 | voice 2 | voice 3 | voice 4 |
+ pattern 1 :
+ ...
+
+ the size of each pattern is variable and is between
+100h and 300h bytes. One voice can be 1 or 3 bytes long.
+it depends if bit 7 of first byte is set to 1. If so,
+the size of this voice is 1 byte. It means there's
+nothing at this line. If this bit is set to 0, the size
+of this voice is 3 bytes. so we get :
+
+ 1000 0000
+ |
+ if this bit is set, nothing follows and this is an
+empty note. it meens for PTK four bytes set to 00h.
+ 1100 0000
+  |
+ if both first bits are set to 1, it meens that
+previous note IN THIS ROW will be re-used ... .
+
+if first bit is set to 0, follows the description
+
+  0000 0000  0000 0000  0000 0000
+  ||     ||     | |  |  |       |
+ -| \   /  \   /   \/    \     /
+| relative sample effect  effect
+|   note   number         value
+|  number
+|------------description bit set to 0
+
+sample number :
+  hard to get by this way of coding :( ... anyway, let's try
+ tro explain it ...
+  first, we agree it's coded on 5 bits.
+   0 0 0 0 0   ( in the order of saving )
+  I name these bit 0, bit 1, bit 2, bit 3 and bit 4 in the
+ same order of saving.
+  in fact, all we got to do, is to rol the whole five bits
+ by one on the left.
+  exemples :
+   10000 will become 00001   (sample 1)
+   01010 will become 10100   (sample 20)
+   00010 will become 00100   (sample 4)
+   etc...
+
+relative note number: (ProTracker)
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes : (ProRunner v2)
+
+C-1 to B-1 : 01,03,05,07,09,0b,0d,0f,11,13,15,17
+C-2 to B-2 : 19,1b,1d,1f,21,23,25,27,29,2b,2d,2f
+C-3 to B-3 : 31,33,35,37,39,3b,3d,3f,41,43,45,47
+
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..

@@ -1,0 +1,176 @@
+-------------------------------------------------------------------------------------
+               HOW TO INSTALL AND RUN AMIGAOS 3.9 WORKBENCH ON PEGASOS
+-------------------------------------------------------------------------------------
+
+INTRODUCTION
+------------
+
+I wrote this short tutorial mainly because more and more people are asking me how the
+evil can I use Workbench 3.9 on my beloved Pegasos under MorphOS emulation.
+
+Firstly I MUST precisate that I have ABSOLUTELY NOTHING against Ambient or its
+author, David Gerber, who is a nice person and great developer.
+
+The truth is, many people (including Me) think Ambient is still poor and lacks too
+many features if compared with other modern desktops like Dopus Magellan or the same
+Workbench 3.9 powered with very useful commodities like RAWBInfo and DefIcons.
+
+Perhaps some day I remove this document definitely as long as Amiga Workbench
+from my Pegasos, when Ambient will be a bit more powerful. And I will be very happy
+when I can do that :-)
+
+Also, Ambient is open source now, so we all hope to see many improvements as times go
+(morphosambient.sourceforge.net)
+
+And don't forget Scalos people who are now working for a MorphOS porting !
+(scalos.noname.fr)
+
+
+
+
+OK, AND THEN ?
+--------------
+
+Surely it's not a "polish" task trying to install and use AmigaOS parts like
+Workbench under Pegasos MorphOS. Mainly because Amiga Workbench is a 68K program
+and would be emulated (but MorphOS JIT emulator REALLY ROCKS!). Then because it,
+as an old program, is not really well coded and still contains very bad programming
+techniques which makes actually very hard the job of installing and having it
+running painlessly under Pegasos MorphOS (with older MorphOS versions, however,
+like the old 0.4 for AmigaPPC, most problems didn't occur yet).
+
+Please also keep in mind that running AmigaOS components on MorphOS may be not legal
+and I free myself from any responsibility explaining you how to do that. You're
+advised.
+
+Running Amiga Workbench under Pegasos MorphOS wouldn't be hard at all if it didn't
+show two nasty bugs:
+
+ 1) Window refresh problem. Perhaps Amiga Workbench relies on some very bad
+    technique to refresh its windows and to handle Intuition refresh messages,
+    thus resulting in disappearing window frames when resizing. The only easy
+    solution here is forcing it to open its windows in SMARTREFRESH mode.
+
+ 2) Program launching / file copying / Information requester launching.
+    When launching programs by Workbench or when copying files and/or dragging
+    an icon to the desktop, or even when launching the Information requester,
+    system freezes may occur.
+    That seems due by a bad task launching method (concerning the first problem)
+    and by a too high priority for subtasks used to copy files, both not well
+    compatible with newer MorphOS releases.
+    Only solution here seems to be changing the priority for those subtasks to
+    a some more reasonable value (eg. -1 )
+
+Please don't ask me HOW could I discover all that: it just was a CRAZY work that
+only a CRAZY person like me could do :-b
+
+Another little annoyance that you may find is that sometimes WB may fail to
+properly close and reopen (eg. when prefs are changed, etc.)
+
+
+
+THE STEPS
+---------
+
+Well, now you will have to go exactly thru the following steps in order to
+install and run AmigaOS 3.9 Workbench on your Pegasos.
+This tutorial assumes you have MorphOS (when writing is 1.4.x) for Pegasos with
+JIT emulator enabled, and AmigaOS 3.9 files available somewhere, better if updated
+to the latest released BoingBags (even if not strictly needed).
+If you own a different configuration I can't help you !!
+    
+- Get workbench.library 45.127 (Feb 21 2001, 200856 bytes long)
+
+- Using a binary editor, you must change the following bytes at the following
+  addresses:
+
+  At 87889 (0x15751), 107115 (0x1A26B) and 189653 (0x2E4D5) change the byte
+   value from 0x7F to 0x3F
+  (this forces every WB window to open in SmartRefresh mode)
+
+  At 66049 (0x10201) change the byte value from 0x19 to 0xFF
+  (this fixes a subtask launching issue due to a too high priority causing
+   freezes when copying files or dragging icons to the desktop)
+
+  At 10177 (0x27C1) and 176813 (0x2B2AD) change the byte value from 0x05 to 0xFF
+  (this fixes crashes when launching programs)
+
+  At 131391 (0x2013F) change the byte value from 0x05 ot 0xFF and
+  At 159869 (0x2707D) and at 186083 (0x2D6E3) change the byte value from 0x02 to 0xFF
+  (these fix freezes when launching the Information requester task)
+
+- The so modified workbench.library is now ready to be used.
+  Rename MorphOS' workbench.library to workbench.library_MOS and copy the "new"
+  workbench.library to LIBS:
+
+- Get LoadWB command from AmigaOS 3.9. You may rename your original Ambient LoadWB
+  as LoadWB_MOS and copy AmigaOS' LoadWB to C:. You may add the option SIMPLEGELS
+  to LoadWB to avoid the ugly dithering effect when dragging icons (the same is
+  true on plain Amigas ;)
+
+- Copy AmigaOS 3.9 icon.library to LIBS: renaming the old one as (for example)
+  icon.library_MOS
+
+- Copy all the ReAction classes from AmigaOS 3.9 to SYS:Classes and also copy
+  resource.library to LIBS:. They're not strictly needed but will allow many WB-related
+  utilities and prefs editors to work.
+
+At this point everything should be ready to run Amiga Workbench on your Pegasos.
+You may want to install to your MorphOS partition the following additional AmigaOS3.9
+software (I really suggest to)
+
+ - WB Prefs Editor and WB Pattern Editor and/or other WB related prefs editors
+ - RAWBInfo
+ - DefIcons with DefIcons Prefs Editor and your DefIcons prefs file
+
+
+Reset your system and cross your fingers.
+Almost everything should run fine now (if you didn't forget anything...) even if
+unfortunately some known issues still remain and I've no easy solution for those :(
+These are:
+
+ - You should only use a full size background image as WB background: using smaller
+   pictures which will be tiled may freeze the system (window patterns seem working
+   ok indeed)
+
+ - WB Icon text prefs editor won't work without freezing the system, so to edit
+   your icon font and color best way is using your old prefs file from your old Amiga
+   or to edit it on your old Amiga
+
+ - Texteditor.class freezes under MorphOS (with or without JIT enabled), so you'll
+   have troubles editing icon's tooltypes with RAWBInfo (or with other text editors
+   using this RA class)
+
+
+You are now able to use other programs too like AmiDock, WBClock,...
+ ...and finally PowerICONS PPC :-)))
+
+
+
+WHAT ABOUT THE NEW ENCLOSED PATCH "PATCHOPENCLOSEWB" ?
+------------------------------------------------------
+If you happen to have problems with WB not closing/reopening properly when you change
+some preferences (or under similar circumstances) simply copy the enclosed patch
+to WBStartup. Don't forget to copy its icon too ! It's a very innocuous and transparent
+native patch that should help avoid this problem in most cases. (Btw, I'd suggest you
+to copy it anyway.)
+
+
+!!!IMPORTANT!!!
+---------------
+If you plan to run Amidock and/or WBClock you MUST remove any dopus5.library
+possibly present in your LIBS: search patch, otherwise weird things may happen!
+Please check if that library is present in your system: one never knows...
+
+
+
+FINALE NOTES
+------------
+You're not legally allowed to redistribute a modified workbench.library!
+Please tell your friends to use this tutorial if they would like to try installing
+Amiga Workbench on their Pegasos.
+
+Please let me know if you encounter any problems or have further questions !!
+
+Author: Elena Novaretti (http://www.elena-fractals.it email: elena@elena-fractals.it)
+

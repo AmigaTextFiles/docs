@@ -1,0 +1,252 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 3.Teil...
+
+So, nachdem wir mal etwas sinnvolles gemacht haben, geht es mit neuem
+schwung weiter..
+Wollen wir mal bei periodisch ablaufenden vorgaengen weitermachen, und zwar
+wollen wir mal die Powerled blinken lassen, solange bis die Maustaste
+gedrueckt wird.
+Wie man die Maustaste abfragt wissen wir ja schon, an und aus der Lampe
+kennen wir ja schon...also
+
+Ich zeige euch noch zwei sachen die man bei allen SourceCodes benutzen
+sollte...
+
+
+CIAapra = $BFE001               ; So kann man Labels auch benutzen
+                                ; Ueberall wo dieses CIAapra auftaucht
+                                ; setzt der Seka $BFE001 ein
+
+
+Start:                          ; Label bei Start des programms, erklaere
+                                ; ich gleich !
+        Bchg #1,CIAapra         ; Bit umdrehen
+        Btst #6,CIAapra         ; Bit testen
+        Bne.s Start             ; Nicht gedrueckt ? Von Vorn
+        Rts                     ; Raus ->
+
+So die Funktion muesste eigentlich klar sein, nur das mit den Labels
+vielleicht nicht.
+Ein Definiertes Label hat immer ein Wert in sich, es kommt aber auf die
+Definitionsart an. Die erste Defi... , dieses CIAapra = $BFE001 gibt dem
+label CIAapra den Wert $BFE001, ueberall wo dieses Wort auftaucht setzt der
+Assembler den Wert ein. Die andere Art und weise ist die mit dem
+Doppelpunkt mitten im Listing. Dabei nimmt das label den Wert des PC an.
+Dies ist sehr sinnvoll, 1.Weil wir uns die Woerter leichter merken koennen,
+und zweitens weil wir nicht wissen wo der Seka das programm hinschreibt,
+also koennten wir nie sagen wie die Adresse heisst, 3.Muessten wir jedesmal
+die Differenz fuer den Bne befehl neu ausrechnen wenn wir noch etwas dazu
+programmieren.
+Also leute, benutzt Label wo es nur geht, bei dem einem wert kommt es noch
+nicht sinnvoll vor, aber wartet mal bis wir anfangen Bilder anzuschalten
+und so, da geht es ab mit Adressen, und da ist es besser man hat ein Wort
+das man einprogrammieren lkann, was sich so anhoert wie das was wir machen
+wollen.
+
+Habt ihr das Programm eigentlich schon abgetippt und gestartet...nehh, dann
+macht das mal.
+Es gibt jetzt zwei moeglichkeiten, entweder seht ihr die lampe einwenig
+oder noch weniger Flackern, ihr muesst aber genau hingucken, dann seht ihr
+es.
+Woran liegt das, das man das nicht sieht, hmmmmh. Erinnern wir uns mal
+daran wie schnell der MC 68000 ist, und jetzt gucken wir uns mal das
+listing an, und gehen es mal in gedanken durch ...lampe aus, maustest,
+lampe an, maustest, lampe aus....
+Tja, das ist alles, und das macht er natuerlich sehr schnell, also muessen
+wir den Amiga bremsen..wie koennte man das machen. Wir Menschen benutzen
+diese methode auch, wenn wir Musizieren, naehmlich die Takte, wenn wir zb.
+im 1/4 takt spielen machen wir es so, Trommelschlag 2  3  4
+Trommelschlag 2  3  4
+Genau so machen wir es jetzt mit dem Amiga, wir lassen ihn zwischendurch
+etwas Zaehlen.
+Wie koennten wir das realisieren, nun den Move befehl kennen wir um einen
+wert zu schreiben, wir koennten diesen wert einfach bis auf Null
+runterzaehlen, und mit Bne das ende abfragen, ganz einfach machen wir das
+doch....
+
+CIAapra = $BFE001
+Counter = $ffff
+
+Start:      Bchg   #1,CIAapra
+
+            Move.l Counter,d0
+Schleife:   Sub.l  #1,d0
+            Bne.s  Schleife
+
+            Btst   #6,CIAapra
+            Bne.s  Start
+            Rts
+
+So, das mit dem Zaehlen duerfte kein problemm sein, ihr kent ja alle
+befehle, die benutzt werden.
+Damit ihr nicht durch`s ganze listing fahren muesst, habe ich den Zaehl
+wert im Label Counter unterbracht.
+So, wenn ihr das jetzt startet koennt ihr mal ein Bisschen sehen wie
+schnell der kleine kasten vor euch ist, er macht die lampe aus, zaehlt bis
+65535 und macht sie dann wieder an, zaehlt bis 65535....
+
+Schnell is er ja, ihr koennt jetzt ein bisschen mit dem Werten
+rumprobieren, allerdings $ffffffff wuerde ich nicht eingeben, den es dauert
+sehr lange...
+
+Hmmmmh, warteschleifen kennt ihr jetzt...so, dann werde ich mit euch jetzt
+etwas machen, was nicht so funktionieren wird wie man sich es denkt, und
+dann werden wir uns dem 1.Special Chip im Amiga widmen. Ich weiss, es
+scheint was zu frueh, aber glaubt mir, es lohnt sich das Teil von Anfang an
+zu beherrschen, denn ohne den Copper ! geht nicht viel im Amiga, was mit
+grafik und so zu tun hat....
+
+Also wollen wir mal versuchen, die Bildschirm Farbe zu aendern..
+Die Leute die das Intern-Buch I haben, haben es gut sie koennen jetzt die
+seite mit den Registern aufschlagen, und nach Color00 suchen, die Leute die
+das nicht haben, muessen mir Glauben das es bei $DFF180 liegt.
+
+Um die Bildschirm farbe zu aendern, muessten wir Theoretisch nur einen
+anderen wert als wie den der jetzt da drin steht.
+
+Also....
+
+Color00 = $DFF180
+
+Start:  Move.w #$0fb0,Color00    ;$0fb0 = farb wert fuer Gold
+        Rts
+
+muesste dann eigentlich reichen.
+Naja starten wir es doch mal....hmmmh, blitzt nur kurz auf der bildschirm..
+Komisch was koennte das sein, muesen wir halt ein Endlos programm mit
+Maustest schreiben...
+
+Color00 = $DFF180
+CIAapra = $BFE001
+
+Start:  Move.w #$0fb0,Color00
+        Btst #6,CIAapra
+        Bne.s Start
+        Rts
+
+Tja, das Flackert immer noch, komisch...naja, um das zu erklaeren muss ich
+etwas mehr ausholen, also
+
+5. Der Coprozessor Copper
+
+So, der Copper...nun wie soll ich anfangen..
+Zuerst einmal ist es der Wichtigtse Chip im Amiga...ach Quatsch alle sind
+wichtig, am besten ich sage was er macht.
+Nun er setzt farben zum richtigen zeitpunkt, verwaltet die Bildschirme,
+gibt Sprites ihr Positions, kurz er kann fast alles machen, was mit grafik
+uns so zutun. Dass heisst er kann alle Register des Amigas benutzen, also
+beschreiben, und da hat er einen Ganze menge moeglichkeiten, und dazu noch
+zu ganz bestimmten festlegbaren zeiten.
+Er kann zum beispiel ganz einfach, in der mitte des bildschirm eine andere
+farbe darstellen, und zwei zeilen spaeter wieder auf die alte farben
+umstellen, er kann unter gewissen umstaenden jeden Pixel auf dem
+Bildschirm abfragen. Nun, wie er das macht, dazu geht es in die Struktur
+des Amiga.
+Die tollen Moeglichkeiten des Amigas ruehren daher das er nicht alles was
+er macht, alleine machen muss, er kann viele Sachen von den SpecialChips um
+ihn herum erledigen lassen, er muss ihnen nur noch sagen wo, und wann.
+Dazu ist es aber noetig das sich die Chip der sogenannten DMA technik
+bedienen, das heisst um effektiv arbeiten zu wollen muessen die einzelnen
+Chips zugriff auf den Ramspeicher haben, dieses geht aber nur in gewissen
+grenzen, naemlich im Chipram, dem Festeingebauten speicher den man von
+anfang an hat. Das ist zwar eine einschraenkung, stoert uns aber weiter
+nicht.
+Beim Copper sieht es so aus, das er wenn der Bildschirm aufgebaut wird ein
+ganz bestimmtes programm durch geht, in dem Steht was er wann zu machen
+hat, wann der bildschirm schwarz wird, wann ein neuer bildschirm kommt.
+zb. Das rauf und runterziehen der AmigaScreens waere ohne den copper nicht
+moeglich, denn er ist sauschnell, das ruehrt daher das er nicht auf andere
+warten muss, und das er nur drei befehle hat, von denen uns aber erstmal
+nur zwei interressieren. Naemlich Move und Wait
+
+Der Move befehl des Coppers ist verwandt mit dem des MC 68000, es gibt ihn
+aber nur in einer Version, der Direkten.
+Mit dem Wait befehl, kann man auf jede beliebige position auf dem
+Bildschirm warten, um dann eine ganz bestimmte sache durchzufuehren.
+
+Um dem Copper also fuer unsere zwecke arbeiten zu lassen, muessen wir im
+ein solches programm schreiben, man nennt es Copperliste, und es im dann
+nur noch uebergeben, dann wird er es abarbeiten. Wenn wir das programm
+verlassen muessen wir ihm allerdings die alte copperliste die er benutzt
+wenn er im CLI oder wo auch immer ist, zurueckgeben, da er sonst unsere
+alte weiter abarbeitet, und wir wuerden nichts sehen.
+
+Desweiteren muessen wir auch noch einen schritt gehen den die meisten
+profisionellen Programmierer nur in absoluten Notfaellen gehen.
+Naemlich, dem Amiga die Kontrolle entziehen, das heisst Multitasking
+abschalten, und alle interrupts verbieten. das hat folgenden Sinn, der
+Amiga Pfuscht uns jetzt nicht mehr rein, egal was wir jetzt machen, aber
+auch diesen Zustand muessen wir bei verlassen wieder in den Ausgangs-
+Zustand bringen.
+
+Bei der Copperprogrammierung muessen wir aber auch auf Funktionen
+Zurueckgreifen, die nur der Amiga selbst kann, das heisst, ein programm zu
+schreiben das das Multitasking abschaltet wuerde unheimlich lange dauern,
+und wuerde nur aufhalten, also warum das Rad neu erfinden, wenn der Amiga
+schon eine Solche Routine schon da ist. Genauso verhaelt es sich mit der
+Adresse 1.Copperliste, die der Amiga fuers CLI errechnet hat, die register
+wo das drin steht koennen wir nicht auslesen, aber zum Glueck kann der
+Amiga sich die auslesen, und merkt sich die an einer ganz bestimmten
+stelle.
+
+Das geheimnis sind die Library`s des Amiga. Jeder von euch hat bestimmt
+schon mal davon gehoert, aber weis nicht ganz genau was es damit auf sich
+hat.
+
+Nun....
+
+6.Oeffnen und benutzen von Library`s
+
+Library`s sind zu deutsch Bibliotheken, und zwar voll von kleinen oder
+groesseren programmen die der Amiga, so im Taeglichen alltag braucht.
+Durch die offene Struktur des Amigas koennen wir diese tolle sachen
+mitbenutzen. Tja, mit den tollen sachen, ist das aber eine sache, es gibt
+fuer alles irgendwelchen routinen, aber sie sind alle in C der sprache des
+Amigas programmiert, ich persoenlich habe nichts gegen C, aber es ist
+einfach zu langsam, nicht fuer alles, aber sobald es um grafik und alles
+was mit echtzeit zu tun hat da muss man es schnell vergessen.
+Natuerlich funktionen die man nur einmal in Situation aufruft in denen es
+nicht so auf zeit ankommt kann man die library`s ruhig benutzen.
+
+Uns interressieren jetzt erstmal nur 2 library`s naemlich die Exec und die
+Graphics library.
+
+Um Libraryfunktionen zu benutzen muess man erstmal die library oeffen, dazu
+dient eine Funktion der Exec-Library, naemlich Openlibrary, sie oeffnet die
+Library die man will.
+Moment, wie soll ich den daran kommen, wenn ich die Library`s erst oeffnen
+muss, und der Oeffne -befehl in einer Library ist.
+Das habe sich die Programmieren wohl auch ueberlegt, und deshalb ist die
+Exec-library auch immer offen, deshalb ist der zugriif auf funktionen
+daraus ziemlich einfach. Man muss nur wissen, wo die Position der funktion
+in der library ist, und man muss wissen wo die Library liegt.
+Also bei der Execbase ist es so das die Adresse in der Speicher stelle
+$00000004 liegt. Zu dieser adresse muss man dann nur noch den `Offset` der
+gewuenschten Funktion zaehlen, und schon kann man sie aufrufen. Ich
+schreibe mal ein programm was Multitasking abschaltet, und dann wieder
+anschaltet, die beiden Funktionen heissen Forbid und Permit
+
+CIAapra = $BFE001
+Forbid  = -132          ;Offsets der funktionen
+Permit  = -138
+Execbase = 4            ;in 4 liegt die Basis der Execlibrary
+
+
+Start:  Move.l Execbase,a6
+        Jsr Forbid(a6)
+Wait:   Btst #6,CIAapra
+        Bne.s Wait
+        Jsr Permit(a6)
+        Rts
+
+So, dieses Programm schaltet erstmal das Multitasking aus, wartet auf die
+maus, und schaltet es dann wieder an. Ihr braucht es nicht abzutippen, denn
+man sieht sowieso nichts.
+Natuerlich muss man manchen sachen auch noch etwas auf den Weg geben, damit
+die funktion weiss was sie machen muss, zum beispiel die Openlibrary
+funktion, sie muss ja wissen welche Library sie denn oeffnen soll...
+
+Aber dazu im 4.Teil mehr
+
+                Jeff Kandle

@@ -1,0 +1,119 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQ.texinfo on 26 September 1995 -->
+
+<TITLE>Amiga-FAQ - Chunky vs. Planar</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQ_19.html">Graphics</A>
+&gt;&gt; <A HREF="AmigaFAQ_21.html">Doublebuffering</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX28"></A>
+<A NAME="IDX29"></A>
+<H2><A NAME="SEC20" HREF="AmigaFAQ_toc.html#SEC20">What are chunky and planar displays?</A></H2>
+Simply put, the terms <CODE>chunky</CODE> and <CODE>planar</CODE> (short for
+<CODE>bitplanar</CODE>) refer to different ways of storing graphics information in
+a computer's memory. They are rather easy to understand, as far as things go,
+but incredibly difficult to explain:
+<P>
+Computer images are arranged as a grid of pixels, each of which can be
+thought of as a number representing the color number of the pixel, sort
+of like a paint-by-numbers scheme.  For example, here's a simplified
+example image, in four colors:
+<P>
+<PRE>
+   00302132
+</PRE>
+<P>
+The Amiga stores this image in a <CODE>bitplane</CODE> mode. That is, it is
+represented by several planes of bits (binary digits, 1s or 0s). This
+is a four-color image, so each color number could be represented by two
+bits.  Therefore there are two bitplanes:
+<P>
+<PRE>
+   00100110    Here's bitplane 0
+   00101011    And here's bitplane 1
+   --------    Now, let's add them up, binary style:
+   00302132
+</PRE>
+<P>
+Which is the final image. If the image was in two dimensions, it would
+truly be composed of bit planes. However, I'd need three dimensions to
+show multiple bitplanes overlayed, and therefore for simplicity we're
+working in one dimension (which is all we need).
+<P>
+Now, there's another way of storing this image.  How about if we
+localize the bit data in little chunks?
+<P>
+<PRE>
+   00 00 11 00 01 10 11 01 = 00302132
+</PRE>
+<P>
+This is the principle of the <CODE>chunky</CODE> pixel mode.
+<P>
+Both methods of image storage are perfectly logical, and no one can say
+that one is better than the other. However, there are certain
+technical aspects which cause certain advantages and disadvantages.
+<P>
+First, if you've seen colored text scroll on your Amiga, you know there
+is a bit of "flicker" that arises. Specifically, what happens is that
+while the text is scrolling, its color temporarily changes to something
+completely different. What's happening is that the computer's moving
+several bitplanes of data while the raster (monitor electron gun) is
+sweeping across the screen. What that means is that, if the raster
+catches the data while it's being moved, you can end up with some
+bitplanes being moved and some not. What if we filled bitplane 1 in the
+example above with 0s? Instantly all the 3s become 1s, and the 2s
+become 0s! This is what causes "flicker" when certain colors are
+scrolled. By contrast, if a chunky pixel display is caught while
+scrolling, all we see is a partially-scrolled image; the colors are
+preserved (since their units are the small ones).
+<P>
+That's a disadvantage to planar pixels, but what about chunky pixels?
+Well, recall that a computer organizes information in terms of 8 bit
+bytes. These groups are static; you cannot decide to all of a sudden
+organize data in terms of three bytes or something! Therefore, when
+using chunky pixels, things get complicated if we decide to use a
+nonconvenient number of bits per pixel. In practice, the 8-bit
+(256-color) mode, and 24-bit (16 million color) modes are the most
+common candidates for chunky pixel displays.
+<P>
+Finally, certain effects can be accomplished with the different systems.
+Bitplanar mode is particularly useful for things like shadows (where
+an extra bitplane is set with 1s instead of 0s), and chunky mode is
+great for perspective and "mapping" (since the data for each pixel is
+localized in a single "chunk"). The latter advantage makes chunky
+pixel mode really great for games, and is what made Wolfenstein 3-D
+possible.
+<P>
+We all know that Amigas use the bitplane system for storing images.
+However, the Macintosh and PC(VGA) both use chunky pixel modes. While
+we can optimize our RAM usage with "bizarre" modes like 8- and
+128-color, they gain the advantages of non-flicker scrolling, and
+the programming simplicity of just writing a byte where you want the
+pixel to go.
+<P>
+The difference between the two modes becomes problematic in things like
+emulation. EMPLANT has a "chunky to planar" routine which it uses to
+convert a Macintosh display into an Amiga one. "Chunky to planar"
+routines are also useful for getting chunky-inclined things to run on
+Amigas (see TMAPDemo, rotdemo). On a side note, there was some
+confusion as to what EMPLANT used the MMU for with regard to chunky to
+planar. The MMU itself is incapable of performing the algorithm
+for the conversion; rather, it is used to detect what portions of
+the display memory are updated from the Mac side, and therefore the
+processor is saved from having to perform the chunky to planar
+conversion for the entire display.
+<P>
+I sincerely hope that helped clear up most of the mystery concerning
+the terms "Chunky" and "Planar"!
+<P>
+(Joseph Luk, jluc@eis.calstate.edu)
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQ_19.html">Graphics</A>
+&gt;&gt; <A HREF="AmigaFAQ_21.html">Doublebuffering</A>
+</I></PRE>

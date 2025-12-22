@@ -1,0 +1,435 @@
+<html>
+<head>
+<title>Amiga C Kurs f&uuml;r Einsteiger</title>
+<META NAME="description" CONTENT="Amiga C Kurs f&uuml;r Einsteiger">
+<META NAME="keywords"    CONTENT="C, Amiga, Programmierung, Kurs, Einsteiger, StormC">
+<META NAME="author"      CONTENT="Norman Walter">
+
+<script language="JavaScript" src="JavaScript/C-Kurs_Kapitel.js" type="text/javascript">
+</script>
+
+</head>
+<body bgcolor="black" link="#DDDDDD" vlink="#BBBBBB">
+<center>
+<TABLE>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="140">
+<CENTER>
+<A HREF="index.html" NAME="Home"><IMG SRC="Home.png" ALT="Home" BORDER="0"></A><BR>
+<A HREF="download.html" NAME="Downloads"><IMG SRC="Download.png" ALT="Downloads" BORDER="0"></A><BR>
+<A HREF="Links.html" NAME="Links"><IMG SRC="Links.png" ALT="Links" BORDER="0"></A><BR>
+<a href="cgi-bin/GB_SHOW.cgi" method="POST"><img SRC="guestbook.png" BORDER=0 alt="Guestbook"></a>
+<p>
+<A HREF="http://www.norman-interactive.com/email_feedback.html">
+<IMG SRC="@.png" Border="0" Alt="e-mail"><BR><small>e-mail</small></A><BR>
+<p>
+
+<img src="C-Kurs/C-Kurs_sm.png" alt="Amiga C Kurs f&uuml;r Einsteiger" vspace="20"><BR>
+
+<NOSCRIPT>
+<font color="red">
+Diese Seite ben&ouml;tigt JavaScript.
+Entweder Ihr Browser unterst&uuml;tzt kein JavaScript, oder Sie haben es deaktiviert.
+</font>
+</NOSCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+
+  erzeuge_Kapitel(8);
+
+//-->
+</SCRIPT>
+
+<p>
+</CENTER>
+</TD>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="400" HEIGHT="600">
+<center>
+<p>
+<BR>
+<font color="white">
+
+<img src="C-Kurs/C-Kurs.png" alt="Amiga C Kurs f&uuml;r Einsteiger"><BR>
+</center>
+<p>
+<font color="gray"><H2>Mit dem Blitter arbeiten</H2></font><BR>
+<p>
+Als der erste Amiga vor 20 Jahren erschien, beeindruckte er vor allem durch seine im Gegensatz
+zu anderen Computern dieser Zeit ph&auml;nomenalen Grafikf&auml;higkeiten. Diese konnten damals nur durch
+spezielle Chips - die sogenannten <i>Custom Chips</i> realisiert werden. Einer dieser Chips ist
+der Blitter. Er erm&ouml;glich unabh&auml;ngig von der CPU ganze Speicherbereiche in einem Rutsch
+zu kopieren - und das blitzschnell.
+<p>
+So kann man mit dem Blitter zum Beispiel blitzschnell einen Ausschnitt des Bildschirms an eine
+andere Stelle kopieren, ohne da&szlig; die CPU dabei in die Knie geht.
+<p>
+Die <TT>graphics.library</TT> stellt dazu diverse Funktionen zur Verf&uuml;gung.
+In dieser Lektion wollen wir die Funktion <TT>ClipBlit</TT> betrachten.
+Diese wird dazu verwendet, um einen Ausschnitt eines Fensters zu kopieren.
+<p>
+<center>
+<TABLE border=1 cellpadding=5 bgcolor="white">
+<TR>
+<TD>
+<B><TT>ClipBlit</TT></B><BR>
+<p>
+Syntax:
+<pre>
+  ClipBlit(<i>Src</i>, <i>SrcX</i>, <i>SrcX</i>, <i>Dest</i>, <i>DestX</i>, <i>DestY</i>, <i>XSize</i>, <i>YSize</i>, <i>Minterm</i>);
+</pre>
+<BR>
+Kopiert einen rechteckigen Bereich eines RastPorts.
+<p>
+Eingabeparameter:<BR>
+<p>
+<i>Src</i> : Zeiger auf den RastPort der Quelle<BR>
+<i>SrcX, SrcY</i> : Koordinaten des linken, oberen Eckpunkts des Quellbereichs<BR>
+<i>Dest</i> : Zeiger auf den RastPort des Ziels<BR>
+<i>DestX, DestY</i> : Koordinaten des linken, oberen Eckpunkts des Zielbereichs<BR>
+<i>XSize,YSize</i> : H&ouml;he und Breite des zu kopierenden Ausschnitts. Mu&szlig; mindestens 1 sein.<BR>
+<i>Minterm</i> : Legt fest, wie die Kopie erfolgen soll. <TT>0C0</TT> bedeutet 1:1.<BR>
+</TD>
+</TR>
+<TR>
+<TD>
+<center>
+<img src="C-Kurs/Blitt.png"></TD>
+</center>
+</TD>
+</TR>
+</TABLE>
+<BR>
+</center>
+<p>
+Die Funktion <TT>ClipBlit</TT> hat folgende Besonderheit: Sie macht Clipping.
+Das bedeutet, da&szlig; Teile der Grafik, die nicht in den Ziel RastPort passen einfach
+abgeschnitten werden.
+<p>
+Mittlerweile haben auch moderne Grafikkarten mit dem Amiga Blitter vergleichbare Schaltungen.
+Den Blitter-Funktionen der <TT>graphics.library</TT> ist es egal welche Grafikhardware Sie verwenden.
+Ob OCS, ECS, AGA oder eine Grafikkarte - das Amiga Betriebssystem entscheidet selbst&auml;ndig,
+welche Hardware zum Blitten verwendet wird.
+<p>
+Listing 8.9.1 demonstriert die Verwendung der Funktion <TT>ClipBlit</TT>:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Listing&nbsp;8.9.1<br>
+&nbsp;*&nbsp;&nbsp;Mit&nbsp;dem&nbsp;Blitter&nbsp;arbeiten<br>
+&nbsp;*<br>
+&nbsp;*&nbsp;&nbsp;Dieses&nbsp;Beispielprogramm&nbsp;zeichnet&nbsp;zun&auml;chst&nbsp;eine&nbsp;kleine&nbsp;Fraktalgrafik<br>
+&nbsp;*&nbsp;&nbsp;im&nbsp;linken,&nbsp;oberen&nbsp;Eck&nbsp;des&nbsp;Bildschirms.&nbsp;Anschlie&szlig;end&nbsp;wird&nbsp;der&nbsp;Ausschnitt<br>
+&nbsp;*&nbsp;&nbsp;mit&nbsp;Hilfe&nbsp;des&nbsp;Blitters&nbsp;auf&nbsp;den&nbsp;ganzen&nbsp;Bildschirm&nbsp;kopiert.<br>
+&nbsp;*<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+#include&nbsp;&lt;intuition/intuition.h&gt;<br>
+#include&nbsp;&lt;graphics/gfx.h&gt;<br>
+<br>
+#include&nbsp;&lt;proto/intuition.h&gt;<br>
+#include&nbsp;&lt;proto/graphics.h&gt;<br>
+#include&nbsp;&lt;proto/dos.h&gt;<br>
+#include&nbsp;&lt;proto/exec.h&gt;<br>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;&nbsp;*<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;NULL;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*<font color="#45FF65">GfxBase</font>&nbsp;=&nbsp;NULL;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Screen</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Bildschirm&nbsp;=&nbsp;NULL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Screen&nbsp;Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Window</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Fenster&nbsp;=&nbsp;NULL;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*rp;<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;Funktionsprototypen&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;SetzeFarben(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">ViewPort</font>&nbsp;*vp);<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeichneFraktal(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;xc,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;yc,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;xw,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;yh,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;z,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;t);<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;FuelleBildschirm(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,<font color="#AA00FF"><b>int</b></font>&nbsp;w,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;h,<font color="#AA00FF"><b>int</b></font>&nbsp;g,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;z,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;t);<br>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;width,height;<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">ViewPort</font>&nbsp;*vp;<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;&Ouml;ffne&nbsp;Intuition&nbsp;Library<br></b></font>
+&nbsp;&nbsp;&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"intuition.library"</font>,&nbsp;37L);<br>
+&nbsp;&nbsp;&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"graphics.library"</font>,&nbsp;37L);<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;{<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&Ouml;ffne&nbsp;neuen&nbsp;Screen&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bildschirm&nbsp;=&nbsp;<font color="#FFFFAA">OpenScreenTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SA_LikeWorkbench,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Soll&nbsp;wie&nbsp;WB&nbsp;Screen&nbsp;sein<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Bildschirm&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Wir&nbsp;&ouml;ffnen&nbsp;ein&nbsp;rahmenloses&nbsp;Fenster,&nbsp;welches&nbsp;den&nbsp;gesammten<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;Screen&nbsp;ausf&uuml;llt<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;H&ouml;he&nbsp;und&nbsp;Breite&nbsp;vom&nbsp;Screen&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;width&nbsp;=&nbsp;Bildschirm->Width;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;height&nbsp;=&nbsp;Bildschirm->Height;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fenster&nbsp;=&nbsp;<font color="#FFFFAA">OpenWindowTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Width,&nbsp;width,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Height,&nbsp;height,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Borderless,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Rahmenlos<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_CustomScreen,&nbsp;Bildschirm,&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Auf&nbsp;welchen&nbsp;Screen?<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_RMBTrap,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Rechten&nbsp;Maus&nbsp;Knopf&nbsp;abfangen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Activate,&nbsp;TRUE,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vp&nbsp;=&nbsp;<font color="#FFFFAA">ViewPortAddress</font>(Fenster);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetzeFarben(vp);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rp&nbsp;=&nbsp;Fenster->RPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Grafik&nbsp;zeichnen&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,64,398,2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,16,5,6);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,212,5);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,11,5);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,100,4);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,16,17,6);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,1111,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,124,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,8,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,64,641,1);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,64,6,2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,9,2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,32,24,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FuelleBildschirm(rp,width,height,128,5094,3);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Delay</font>(150);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Warte&nbsp;3&nbsp;Sekunden<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseWindow</font>(Fenster);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Bildschirm&nbsp;!=&nbsp;NULL)&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Falls&nbsp;der&nbsp;Screen&nbsp;ge&ouml;ffnet&nbsp;werden&nbsp;konnte...<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseScreen</font>(Bildschirm);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schlie&szlig;e&nbsp;Screen<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)&nbsp;<font color="#45FF65">GfxBase</font>);<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)&nbsp;<font color="#45FF65">IntuitionBase</font>);<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+}<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;SetzeFarben<br>
+&nbsp;*<br>
+&nbsp;*&nbsp;&nbsp;Setzt&nbsp;die&nbsp;Farbwerte&nbsp;f&uuml;r&nbsp;die&nbsp;ersten&nbsp;32&nbsp;Farben&nbsp;(0-31)&nbsp;eines&nbsp;ViewPorts<br>
+&nbsp;*<br>
+&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;SetzeFarben(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">ViewPort</font>&nbsp;*vp)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,c;<br>
+&nbsp;&nbsp;&nbsp;SHORT&nbsp;color;<br>
+&nbsp;&nbsp;&nbsp;<font color="#45FF65">UBYTE</font>&nbsp;r,g,b;<br>
+<br>
+&nbsp;&nbsp;&nbsp;color=0;<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=0;x&lt;=15;x++)<br>
+&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color&nbsp;=&nbsp;(SHORT)(x*256+x*16+x*0.8);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r=color&nbsp;>>&nbsp;8&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;g=color&nbsp;>>&nbsp;4&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b=color&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetRGB4</font>(vp,x,r,g,b);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=16;x&lt;=31;x++)<br>
+&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;=&nbsp;31-x;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;color&nbsp;=&nbsp;(SHORT)(c*256+c*16+c*0.8);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r=color&nbsp;>>&nbsp;8&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;g=color&nbsp;>>&nbsp;4&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b=color&nbsp;&&nbsp;0xF;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetRGB4</font>(vp,x,r,g,b);<br>
+&nbsp;&nbsp;&nbsp;}<br>
+<br>
+}<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;ZeichneFraktal<br>
+&nbsp;*<br>
+&nbsp;*&nbsp;&nbsp;Eingabeparameter:<br>
+&nbsp;*<br>
+&nbsp;*&nbsp;&nbsp;struct&nbsp;RastPort&nbsp;*rp&nbsp;:&nbsp;Der&nbsp;RastPort,&nbsp;in&nbsp;den&nbsp;gezeichnet&nbsp;werden&nbsp;soll<br>
+&nbsp;*&nbsp;&nbsp;int&nbsp;xc,&nbsp;yc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;Koordinaten&nbsp;des&nbsp;Zentrums<br>
+&nbsp;*&nbsp;&nbsp;int&nbsp;xw,&nbsp;yh&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;Breite&nbsp;und&nbsp;H&ouml;he&nbsp;des&nbsp;Fraktals<br>
+&nbsp;*&nbsp;&nbsp;int&nbsp;z&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;Zoomfaktor<br>
+&nbsp;*&nbsp;&nbsp;int&nbsp;t&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;Typ&nbsp;des&nbsp;Fraktals<br>
+&nbsp;*<br>
+&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeichneFraktal(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;xc,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;yc,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;xw,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;yh,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;z,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;t)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,y,xx,yy;<br>
+&nbsp;&nbsp;xx&nbsp;=&nbsp;0;<br>
+&nbsp;&nbsp;yy&nbsp;=&nbsp;0;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>&nbsp;(t)&nbsp;<font color="#008822"><b>//&nbsp;Welcher&nbsp;Fraktaltyp?<br></b></font>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;1:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((x*x+y*y)*z/100)&31);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;2:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((x*x-y*y)*z/100)&31);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;3:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;xx=xx+x-(<font color="#AA00FF"><b>int</b></font>)(x/10)*10;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((xx+yy)*z/100)&31);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;yy=yy+y-(<font color="#AA00FF"><b>int</b></font>)(y/10)*10;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;4:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((x*x*y+x*y*y)*z/1000)&31);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;5:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((x*x*y*y)/z)&31);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;6:<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=-yh;y&lt;=yh;y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=-xw;x&lt;=xw;x++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,((x*y*z)&31));<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WritePixel</font>(rp,xc+x,yc+y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;switch&nbsp;Verzweigung<br></b></font>
+<br>
+}<br>
+<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;FuelleBildschirm(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,<font color="#AA00FF"><b>int</b></font>&nbsp;w,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;h,<font color="#AA00FF"><b>int</b></font>&nbsp;g,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;z,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;t)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,y,gz;<br>
+<br>
+&nbsp;&nbsp;<font color="#FFFFAA">SetRast</font>(rp,0L);<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Zun&auml;chst&nbsp;wird&nbsp;eine&nbsp;"Kachel"&nbsp;erzeugt...&nbsp;*/<br></font>
+&nbsp;&nbsp;ZeichneFraktal(rp,g,g,g,g,z,t);<br>
+&nbsp;&nbsp;gz=g*2-1;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;F&uuml;lle&nbsp;den&nbsp;gesamten&nbsp;Bildschirm&nbsp;mit&nbsp;Hilfe&nbsp;des&nbsp;Blitters&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(x=0;x&lt;=w/(g*2);x++)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>for</b></font>&nbsp;(y=0;y&lt;=h/(g*2);y++)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">ClipBlit</font>(rp,0,0,rp,x*gz,y*gz,gz,gz,0x0c0);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Die Funktion <TT>FuelleBildschirm</TT> f&uuml;llt den gesamten Bildschirm mit Grafik.
+Dazu wird zun&auml;chst in der linken, oberen Ecke mit Hilfe der Funktion <TT>ZeichneFraktal</TT>
+eine kleine Fraktalgrafik gezeichnet.
+<p>
+<center>
+<img src="C-Kurs/Tile.png" alt="Tile"><BR>
+</center>
+<p>
+In einer <a href="C-Kurs_1_7.html"><TT>for</TT>-Schleife</a>
+wird diese dann mit <TT>ClipBilit</TT> auf den gesamten Bildschirm kopiert.
+Stellen Sie sich die kleine Fraktalgrafik einfach wie eine Kachel (englische Bezeichnung: <i>Tile</i>) vor.
+Das gesamte Bild entsteht sozusagen durch nahtloses Aneinanderf&uuml;gen solcher Kacheln.
+Diese Technik wird auch h&auml;ufig in Spielen verwendet, wenn man aus immer wiederkehrenden
+Elementen eine koplexe Grafik erzeugen will. Man spricht dann auch von <i>Tile-Grafik</i>.
+<p>
+</font>
+</center>
+</TD>
+
+</TABLE>
+
+</body>
+</html>

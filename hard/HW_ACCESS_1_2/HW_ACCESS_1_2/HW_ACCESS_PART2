@@ -1,0 +1,217 @@
+
+        Hardware Access Using The AmigaBASIC And ARexx Interpreters.
+        ------------------------------------------------------------
+
+                                   Part 2.
+                                   -------
+
+  In this article will be turning the Audio Filter ON/OFF and the power
+  light also. This can be used to make any simple samples sound ~BETTER~.
+
+  Again it will be in AmigaBASIC first then ARexx. Have fun and ENJOY
+  simple solutions to often difficult problems... :)
+
+  Enjoy... :)
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+    Set = Logic 0.
+  Reset = Logic 1.
+
+----------------------------------------------------------------------------
+
+  The Audio Filter:-
+  ------------------
+
+  The AMIGAs audio filter is the next simplest of the low level ~register~
+  accesses. This register sets/resets a bit to turn on/off the power light
+  AND the audio filter at the same time. This is a little more tricky as
+  more than one address/register has to be altered and you need to know
+  which ones, and why. CAUTION is required from now on and in future
+  issues of the magazine.
+
+  Although the 'ddra' register is 'changed' in the AmigaBASIC version I
+  have ignored the same register in the ARexx version as it is set
+  correctly during bootup. Therefore there is no reason to access it at
+  all for these demos'.
+
+  Notes For This Article:-
+  ------------------------
+
+  CIA[A/B] == Complex Interface Adaptor [A or B].
+  CIAADDRA == CIAA 'data direction register "a"'.
+  CIAAPRA == CIAA 'programmable register "a"'.
+  ddra == 'data direction register "a"'.
+  pra == 'programmable register "a"'.
+
+  AmigaBASIC Code:-
+  -----------------
+
+10 REM This is a simple keyboard switch to turn the audio filter ON/OFF.
+20 REM Each line/part has a comment above it as to what it does.
+30 REM Use the AmigaBASIC interpreter's window for DEMO purposes.
+40 REM Public Domain, 2006, from B.Walker, G0LCU.
+50 REM Registers CIAA ~ddra~ and CIAA ~pra~ will be accessed for this task.
+60 REM Register CIAA ~ddra~ is the data direction register, 1 = OUTPUT.
+70 REM Register CIAA ~pra~ is the programmable register we use for the filter.
+80 REM Register CIAA ~ddra~ is 12575233 decimal, (0xBFE201 hexadecimal).
+90 REM Register CIAA ~pra~ is 12574721 deciaml, (0xBFE001 hexadecimal).
+100 REM Register CIAA ~ddra~ has to be set to write to CIAA ~pra~ Bit 1, the LED.
+
+110 REM Save register values.
+120 LET ddra=12575233
+130 LET pra=12574721
+140 LET valddra=PEEK(ddra)
+150 LET valpra=PEEK(pra)
+
+160 REM Set CIAA ~ddra~ to write on bits 0 and 1, the bootup default.
+170 POKE ddra,3
+
+180 REM Clear the running window.
+190 CLS
+
+200 REM Create a simple menu.
+210 PRINT
+220 PRINT " Filter switching demo, press:-"
+230 PRINT
+240 PRINT " ~l~ to turn on audio filter and power light."
+250 PRINT " ~L~ to turn off audio filter and power light."
+260 PRINT
+270 PRINT " ~Q~ or ~q~ to Quit."
+
+280 REM This is the main loop.
+290 LET a$=INKEY$
+300 IF a$="l" THEN POKE pra,252
+310 IF a$="L" THEN POKE pra,254
+320 IF a$="Q" OR a$="q" THEN GOTO 350
+330 GOTO 290
+
+340 REM Cleanup and Quit.
+350 POKE pra,valpra
+360 POKE ddra,valddra
+370 SYSTEM
+
+----------------------------------------------------------------------------
+
+  ARexx Code:-
+  ------------
+
+/* Direct HW programming using ARexx; the audio filter switch. */
+/* Run from a Shell or CLI only, type 'RX Audio-Filter.rexx[RETURN/ENTER]' */
+/* without the quotes. Bit 1 of register 0xBFE001 is set to 1 to turn the */
+/* filter OFF and set to 0 to turn the filter ON. The 'ddra' register for */
+/* this facility is set up correctly during bootup so no need to alter it */
+/* at this point; this 'ddra' register is 0xBFE201 and is set to 0x03. */
+
+/* Set up any constants or variables. */
+  copyright='9'x'$VER: Audio-Filter.rexx_Version_1.00.00_20-09-2006_(C)G0LCU.'
+
+/* Use ECHO for ordinary printing to the screen and SAY for printing results. */
+  DO FOREVER
+    ECHO 'c'x
+    SAY copyright
+    ECHO 'a'x'd'x'9'x'9'x'1) Audio filter and power light bright or on.'
+    ECHO '9'x'9'x'2) Audio filter and power light dim or off.'
+    ECHO 'a'x'd'x'9'x'9'x'3) Quit this program.'
+    ECHO 'a'x'd'x'9'x'9'x'Type in a number and then press ENTER/RETURN:-'
+    PULL number
+    IF number='1' THEN CALL lighton
+    IF number='2' THEN CALL lightoff
+    IF number='3' THEN CALL getout
+  END
+
+/* Turn the audio filter and power light on or up. */
+lighton:
+  EXPORT('00BFE001'x,'FC'x,1)
+  RETURN
+
+/* Turn the audio filter and power light off or down. */
+lightoff:
+  EXPORT('00BFE001'x,'FE'x,1)
+  RETURN
+
+/* Exit the program safely. */
+getout:
+  EXPORT('00BFE001'x,'FC'x,1)
+  EXIT(0)
+
+----------------------------------------------------------------------------
+
+There we have it, direct hardware, 'banging the metal', access in two
+different languages issued FREE with the OSs of the day.
+
+The next thing we will access is the classic AMIGA Games/Joystick Port
+coupled with simple projects that can be built from ages 10 to OLD(E)... :)
+
+Reading pin 6 of this port will described first along with a simple project.
+
+This will be in the next issue of the magazine as 'HW_ACCESS_PART3'.
+
+I will NOT be including the Mouse Port as this is usually in USE at all
+times and for all intents and purposes is 'out of bounds'.
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Freeware and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200(HD) in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. Also tested on an A600(HD) in 2MB and 6MB
+    modes. All test conditions were/are running STANDARD KS2.0x to 3.1x,
+    and using standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~docs/hard~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

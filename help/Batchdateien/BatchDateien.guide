@@ -1,0 +1,409 @@
+@DATABASE "Batchdateien"
+
+@NODE MAIN "Batchdateien"
+@rem Batchdateien erstellen
+@rem aus A500 Handbuch und anderen Quellen
+
+	Erstellen von Batchdateien
+	~~~~~~~~~~~~~~~~~~~~~~~~~~
+	In dieser Datei sammle ich alle Informationen, die ich über die
+ Programmierung von Batchdateien finden kann. Dnn so einfach ist das
+ offensichlich nicht, funktionierende Batchdateien zu erstellen. Es kommt
+ immer mal wieder zu seltsamen Fehlermeldungen, für die ich noch keine
+ Erklärung finden konnte. Wer dazu mehr weiß, soll mir das bitte schreiben.
+ 
+ r.schmiers@abo.freiepresse.de
+
+
+@{" Table Of Contents " Link Table_Of_Contents}
+
+@{" Begriffserklärung: " Link 0.}
+@{" Batchdateien " Link 1.}
+@{" OS-Batchdateien " Link 99.}
+@ENDNODE
+
+@NODE Table_Of_Contents " Table Of Contents "
+MAIN@{" Batchdateien " Link MAIN}
+  0.@{" Begriffserklärung: " Link 0.}
+  1.@{" Batchdateien " Link 1.}
+    1.1.@{" Batchdateien erstellen " Link 1.1.}
+    1.2.@{" Batchdatei ausführen " Link 1.2.}
+    1.3.@{" Befehle zur Batchverarbeitung " Link 1.3.}
+      1.3.1.@{" Bedingungen " Link 1.3.1.}
+      1.3.2.@{" Warten mittels WAIT " Link 1.3.2.}
+      1.3.3.@{" Verzweigen mit ASK " Link 1.3.3.}
+      1.3.4.@{" Parameterübergabe " Link 1.3.4.}
+      1.3.5.@{" Bedingungskennzeichen " Link 1.3.5.}
+      1.3.6.@{" Umgebungsvariablen " Link 1.3.6.}
+    1.4.@{" Fehlermeldungen " Link 1.4.}
+  99.@{" OS-Batchdateien " Link 99.}
+    99.1.@{" PCD " Link 99.1.}
+    99.2.@{" SPAT " Link 99.2.}
+    99.3.@{" DPAT " Link 99.3.}
+    99.4.@{" CLI " Link 99.4.}
+    99.5.@{" Platz für weiteres an Erklärungen. " Link 99.5.}
+@ENDNODE
+
+@NODE 0. "Begriffserklärung:"
+
+ Eine "Batchdatei" ist ein Text, der nur Befehle des @{"CLI" Link 99.4.} enthält.
+ Durch den Aufruf einer >Batchdatei werden dann alle Befehle hintereinander
+ ausgeführt. In der Regel befinden sie sich im Verzeichnis @{"S:" Link S:}
+ Die deutsche Bedeutung des Begriffs ist "Stabelverarbeitungsdatei", weil
+ die Befehle wie vom Stapel genommen und abgearbeitet werden.
+ In der Regel muß sich ein Anwender diese Dateien selbst nach seinen Erforder
+ -nissen erstellen.
+
+ Einige werden mit dem Betriebssystem mitgeliefert. So z.B. die Dateien
+ @{"S:Startup-Sequence" Link S:Startup-Sequence} und die @{"S:User-Startup" Link S:User-Startup}, welche die Anwendungs spezifischen
+ Einträge enthält; bzw. vom Benutzer mit weiteren Einträgen wie @{"ASSIGNS" Link ASSIGNS}
+ und weiteren Programmaufrufen ergänzt werden kann. weiterhin werden die Dateien
+ @{"PCD" Link 99.1.}, @{"SPAT" Link 99.2.} & @{"DPAT" Link 99.3.} zum OS geliefert, die jedoch kaum jemand nutzt.
+
+
+@ENDNODE
+
+@NODE 1. "Batchdateien"
+
+	In Batchdateien lassen sich wiederkehrende und/oder komplizierte
+ Befehlsabläufe automatisieren. Dabei werden @{"Bedingungskennzeichen" Link 1.3.5.} zurück
+ gegeben, die Aufschluß über Erfolg oder Mißerfolg der Ausführung geben.
+ 
+@{" Batchdateien erstellen " Link 1.1.}
+@{" Batchdatei ausführen " Link 1.2.}
+@{" Befehle zur Batchverarbeitung " Link 1.3.}
+@{" Fehlermeldungen " Link 1.4.}
+@ENDNODE
+
+@NODE 1.1. "Batchdateien erstellen"
+
+	Zum Erstellen von Batchdateien braucht man einen Texteditor. Dazu reicht
+ auch der einfache Befehl @{"C:ed" Link C:ed} dem man aber einen dateinamen übergeben muß!
+ Existiert dieser noch nicht, dann wird er angelegt.
+
+ Ab WB2.0 kann man aus dem Workbench-Menü den Punkt "Befehl ausführen..."
+ anwählen und im erscheinenden Fenster den Befehl eingeben. Besser ist es
+ aber ein Shellfenster zu öffnen, da dieses mehr Comfort bietet, wie z.B.
+ Befehlswiederholung durch drücken der Cursor Hoch und Runter Tasten.
+ 
+ Im aufgerufenen Editor kann man nun die Batchdatei bearbeiten. d.h. in eine
+ neue Datei eine Reihe von Befehlen eingeben. Jeden in einer eigenen Zeile
+ mit seinen Parametern. Kommentare können durch Voranstellen eines Semikolons
+ eingefügt werden.
+
+ Das folgende Beispiel "MakeRamC" soll dies verdeutlichen. es ist eigentlich
+ nur für reine Diskettensysteme interessant, da damit der Diskettenwechsel
+ wegen häufig benutzter befehle verringert wird.
+ Öffne also eine Shell durch Doppelklick auf ihr Icon in SYS:System/Shell :
+ 
+ [Shell]========================================================[][]
+ |sys:1.> run ed s:MakeRamC                                        |
+ |sys:1.>                                                          |
+ |_________________________________________________________________|
+ 
+ Im erscheinenden Editor gibt man dann ein:
+ 
+ copy c:Dir RAM:c
+ copy c:Type RAM:c
+ copy c:List RAM:c
+ copy c:CD RAM:c				;dieser ist seit KS2.0 im ROM!
+ assign c: RAM:c add
+ 
+ Dann wird diese Datei gespeichert. Im Fall vom WB-Ed mit den Tasten
+ [Esc]+[x]+[RETURN]
+ und das Ed-fenster wird geschossen.
+ Danach kann man diese neue @{"Batchdatei ausführen" Link 1.2.} mit dem befehl Execute.
+  
+ 
+@ENDNODE
+
+@NODE 1.2. "Batchdatei ausführen"
+
+  
+ Um eine Batchdatei auszuführen benötigt man den Befehl "execute"
+ 
+ [Shell]========================================================[][]
+ |sys:1.> execute s:MakeRamC                                       |
+ |sys:1.>                                                          |
+ |_________________________________________________________________|
+ 
+ Man kann auf diesen befehl auch verzichten, wenn man das Flag "s" der neuen
+ Datei hinzufügt mit
+ 1.> protect s:MakeRamC +s
+ danach reicht der einfache Aufruf von
+ 1.> makeramc
+ und die Datei wird ausgeführt, jedoch muß man beachten, daß der ED dieses
+ Flag jedesmal löscht, wenn eine datei mit ihm bearbeitet wurde!
+ 
+ Ob und welche flags gesetzt sind kann man mit dem befehl List anschauen:
+ 1.> list s:
+ Directory "s:2 on thursday
+ MakeRamC 			166 -s--rwed Today 13:28:25
+ 
+ weiterhin gibt es @{"Befehle zur Batchverarbeitung" Link 1.3.}.
+ 
+@ENDNODE
+
+@NODE 1.3. "Befehle zur Batchverarbeitung"
+
+@{" Bedingungen " Link 1.3.1.}
+@{" Warten mittels WAIT " Link 1.3.2.}
+@{" Verzweigen mit ASK " Link 1.3.3.}
+@{" Parameterübergabe " Link 1.3.4.}
+@{" Bedingungskennzeichen " Link 1.3.5.}
+@{" Umgebungsvariablen " Link 1.3.6.}
+@ENDNODE
+
+@NODE 1.3.1. "Bedingungen"
+
+ In Batchdateien kann man Bedingungen abfragen und nach diesen verzweigen.
+ Die Befehle dazu sind IF ELSE und ENDIF. Wenn Du sagen wolltest:
+ "Wenn es regnet, bleibe ich zu Hause, ansonsten gehe ich spazieren." sähe
+ das als Batchdatei so aus:
+  
+  Beispiel;-)
+ 
+ IF es regnet
+   bleibe zu hause
+ ELSE
+   gehe spazieren
+ ENDIF
+ 
+ IF stellt also eine Bedingung, die erfüllt werden soll um den ersten Befehl
+ auszuführen. Stimmt diese nicht, wird die ELSE-Anweisung ausgeführt. Man
+ kann damit z.B. das Existieren von Dateien abfragen. Dazu gibt es
+ Bedingungswörter EXISTS, WARN, ERROR & FAIL. Diese geben dann bestimmte
+ Fehlermeldungen in Form von Zahlen zurück als RETURN CODE.
+ Weitere Befehle sind SKIP LAB & END. SKIP springt zu einer mit LAB
+ definierten Sprungmarke, mit SKIP BACK auch rückwärz, oder zu END. Hinzu
+ kommt noch die Umkehrungsbediengung NOT.
+ 
+ IF NOT EXISTS Datei
+   SKIP fehler
+ Else
+  echo " alles OK,   führe befehle aus"
+ ENDIF
+ ; komentar
+ LAB Fehler
+  echo "es ist ein Fehler aufgetreten!. Datei existiert nicht."
+ END
+ 
+ oder
+ 
+ ASSIGN XYZ: EXISTS
+ IF WARN
+   ASSIGN XYZ: ÄÖÜ:
+ ELSE
+   ECHO "Assign ist vorhanden"
+ ENDIF
+ 
+ Tip:
+ Mit SKIP >NIL: ?
+ läßt sich der Name der Sprungmarke vom Benutzer abfragen. D.h. er muß diese
+ als Text eingeben.
+ 
+@ENDNODE
+
+@NODE 1.3.2. "Warten mittels WAIT"
+
+ Ein AmigaDOS-Befehl der nur mit Batchdateien sinnvoll scheint ist WAIT.
+ Damit läßt sich die Abarbeitung verzögern. Dies können Sekunden, Minuten
+ oder eine Zielzeit sein.
+ 
+ WAIT 2	wartet zwei Sekunden 
+ WAIT 2 min	wartet zwei Minuten 
+ WAIT UNTIL 12:30 wartet bis zur angegebenen Zeit, um dann fortzufahren.
+ 
+ Damit läßt sich z.B. ein "Wecker" programmieren, wenn dann eine SoundDatei
+ aufgerufen und abgespielt würde.
+ 
+@ENDNODE
+
+@NODE 1.3.3. "Verzweigen mit ASK"
+
+ Mit dem befehl ASK können Batchdateien auch interaktiv werden. Als mögliche
+ Antworten werden nur die Tasten [y]=Ja & [n]=Nein bzw. RETURN akzeptiert.
+ Wobei RETURN immer als NEIN gewertet wird. Der Fragetext muß in
+ Anführungszeichen stehen.
+ 
+ Beispiel:
+ 
+ 
+ ASK "Drücke <y> für Shell oder <n> für Workbench:"
+ IF WARN
+   NewShell
+ ELSE
+   loadWB
+ ENDIF
+ 
+@ENDNODE
+
+@NODE 1.3.4. "Parameterübergabe"
+
+ So wie man CLI-Befehlen Parameter übergeben kann, ist dies auch mit
+ Batchdateien möglich. Dafür gibt es ein paar Direktiven (so kann man die
+ Anweisungen nennen). Die erste lautet ".key" die nächste ".def". Die
+ weiteren ".bra" und ".ket" dienen dazu die Klammerzeichen zu ändern.
+ 
+ Möchte man also einer Batchdatei Parameter übergeben benötigt man ".key" und
+ eine Variable, die dahinter angegeben werden muß. Werden mehrere Variablen
+ verwendet, dürfen die nur von einem komma, aber nicht von einem leerzeichen
+ getrennt sein!
+ 
+ Beispiel: S:Output
+ 
+ .key DATEI,KANAL
+ copy <DATEI> <KANAL>
+ 
+ Dieser Datei "Output" können nun zwei Parameter übergeben werden
+ 
+ 1.>execute s:output S:Startup-sequence PRT:
+ 
+ Dieser Befehl hätte zur Folge, das die Datei S:Startup-sequence auf dem
+ "kanal" Drucker ausgegeben wird.
+ 
+ Mit ".def" kann man eine Vorgabe bestimmen, die verwendet wird, wenn der
+ Parameter nicht mit angegeben wurde.
+ 
+ Beispiel: S:Output
+ 
+ .key DATEI,KANAL
+ .def KANAL prt:
+ copy <DATEI> <KANAL>
+ 
+ Mit ".bra" und ".ket" kann man die spitzen Klammern durch andere ersetzen,
+ wenn man die spitzen Klammern für andere Zwecke braucht, wie z.B. die
+ Ausgabe eines Befehles nich ins Fenster, sondern in eine Datei schreiben zu
+ lassen.
+ 
+ .key DIR,KANAL
+ .def KANAL >list.txt
+ .bra {
+ .ket }
+ list {DIR} >{KANAL}
+ 
+ 
+@ENDNODE
+
+@NODE 1.3.5. "Bedingungskennzeichen"
+
+ 	Jeder Befehl legt ein bestimmtes Bedingungskennzeichen fest, d.h. eine
+ Bedingung, die Auskunft gibt, ob der Befehl fehlgeschlagen ist. Ein
+ Rückgabewert gibt an, ob der Befehl erfolgreich oder -los ausgeführt wurde.
+ Hier nun die standardmäßigen Rückgabewerte:
+ 
+ 0	Erfolgreiche Ausführung
+ 5	Eine warnung, daß ein Fehler gefunden wurde, der nicht so schwerwiegend
+ 	war, daß der Befehl abgebrochen werden müßte. Zahlreiche Befehle
+ 	arbeiten mit diesem WARN.
+ 10	Ein Fehler. Dieser Rückgabewert führt zum Abbruch, falls nicht mit
+ 	FAILAT ein höherer Wert bestimmt wurde.
+ 20	Mißerfolg
+ 
+ Bei einigen anderen Programmen gilt:
+ 
+ 0-4		Kein Fehler
+ 5-9		Warnung (IF WARN)
+ 10-19	Fehler (IF ERROR)
+ 20 & mehr	Mißerfolg (IF FAIL)
+ 
+@ENDNODE
+
+@NODE 1.3.6. "Umgebungsvariablen"
+
+	Auch Umgebungsvariablen lassen sich für und in Batchdateien nutzen. Man
+ kann sie abfragen, setzen und verwerten.
+ 
+ In einer Shell lassen sich globale wie auch lokale Variablen setzen und
+ benutzen. Die lokalen Variablen einer Shell sind:
+ 
+ ECHO		bestimmt ob ein Befehl vor der Abarbeitung angezeigt werden
+ 			soll.
+ 			
+ PROCESS		Die Processnummer
+ RC			Rückgabewert des letzten Befehles
+ RESULT2		der sekundäre Rückgabewert gibt den Grund an, warum ein Befehl
+ 			nicht ausgeführt wurde. Mit dem FAULT Befehl erhällt man eine
+ Erklärung zur Fehlernummer, auch innerhalb von Befehlsdateien.
+
+@ENDNODE
+
+@NODE 1.4. "Fehlermeldungen"
+
+	Fehlermeldungen die bei dem Aufruf von Batchdateien auftreten können:
+	
+      Es kommt immer mal wieder zu seltsamen Fehlermeldungen, für die ich
+ noch keine Erklärung finden konnte. Wer dazu mehr weiß, soll mir das bitte
+ schreiben.
+ 
+ r.schmiers@abo.freiepresse.de
+ 
+ 
+	@{"Falsche Anzahl an Argumenten" Link Falsche Anzahl an Argumenten} tritt auf, wenn man nicht genau weiß,
+	was das Script von einem für Eingaben erwartet.
+	
+	Fehlerbehebung:	??? Ausprobieren von anderen Argumenten?
+	
+	
+	Nächste unklare:
+	
+	EXECUTE: Key too long
+
+     Fehler -1
+
+	tritt auf wenn nach ".ket DIR" <execute batch dirname> eingegeben wurde.
+	Weiß jemand was darüber?
+	
+	
+	
+	
+@ENDNODE
+
+@NODE 99. "OS-Batchdateien"
+
+@{" PCD " Link 99.1.}
+@{" SPAT " Link 99.2.}
+@{" DPAT " Link 99.3.}
+@{" CLI " Link 99.4.}
+@{" Platz für weiteres an Erklärungen. " Link 99.5.}
+@ENDNODE
+
+@NODE 99.1. "PCD"
+
+	Befindet sich in @{"S:PCD" Link S:PCD}
+	dient dazu bei einem Verzeichniswechsel mit dem Befehl @{"CD" Link CD}
+	sich das letzte Verzeichnis zu merken, um wieder einfach durch eingabe von
+	1.> PCD [RETURN]
+	in das vorherige verzeichnis zurückzu kehren.
+
+@ENDNODE
+
+@NODE 99.2. "SPAT"
+
+	Befindet sich in @{"S:SPAT" Link S:SPAT}
+	Aufgabe: ?
+
+@ENDNODE
+
+@NODE 99.3. "DPAT"
+
+	Befindet sich in @{"S:DPAT" Link S:DPAT}
+	Aufgabe: ?
+
+
+@ENDNODE
+
+@NODE 99.4. "CLI"
+
+	Das CLI ist der "Command Line Interpreter". Häufiger benutzt man aber
+	dessen "Aufsatz" Shell. Die Voreinstellungsdatei dafür kann man auch
+	an eigene Bedürfnisse anpassen und heißt: @{"S:Shell-Startup" Link S:Shell-Startup}.
+
+
+@ENDNODE
+
+@NODE 99.5. "Platz für weiteres an Erklärungen."
+
+ 
+@ENDNODE
+

@@ -1,0 +1,156 @@
+From dvsg0223@uxa.cso.uiuc.edu Wed Nov 18 22:45:39 1992
+Received: from uxa.cso.uiuc.edu by toadflax.cs.ucdavis.edu (4.1/UCD.CS.2.0)
+	id AA22335; Wed, 18 Nov 92 22:45:37 PST
+Received: by uxa.cso.uiuc.edu id AA11005
+  (5.67a/IDA-1.5 for announce@cs.ucdavis.edu); Thu, 19 Nov 1992 00:45:32 -0600
+From: David Salamon <dvsg0223@uxa.cso.uiuc.edu>
+Message-Id: <199211190645.AA11005@uxa.cso.uiuc.edu>
+Subject: GoldenGateII Amiga <-> PC bus Interface
+To: announce@cs.ucdavis.edu
+Date: Thu, 19 Nov 92 0:45:30 CST
+X-Mailer: ELM [version 2.3 PL11]
+Status: RO
+
+            Specifications for the GoldenGate II Bridgecard
+
+SUMMARY
+-------
+  The GoldenGate II bridgecard lets you lets you use AT-compatible IBM plug-
+  in cards in your Amiga PC slots as Amiga devices, controlled by Amiga 
+  software.  Software support currently includes drivers for PC serial and 
+  printer ports, with more exotic cards supported through the software emulator
+  CrossPC (available with CrossDOS 5.0 from Consultron).
+
+
+PC HARDWARE SUPPORT
+-------------------
+  The GoldenGate II bridgecard will support almost all non-DMA PC plug in
+  boards which are "AT-compatible", i.e. can support 8 MHz bus accesses.  
+  This includes such popular items as internal modems, multi-IO
+  boards, non-DMA ethernet boards, VGA boards, A/D boards, etc.  Access
+  to the PC cards is at full Amiga Zorro II bus speed unless wait state
+  support is turned on.
+
+  The following IBM AT bus signals are supported:
+
+    IO address space from  hex $0000 to $7FFF (first 32K)
+    Memory address space from  hex $90000 to $FFFFF  (448K)
+    16 bit data bus
+    All AT bus interrupts
+    Wait states (IOCHRDY signal) for both IO and memory access
+    14.31818 MHz clock (OSC signal) from on-board crystal oscillator
+    7.2 MHz processor clock (CLK signal)
+    BALE signal
+
+
+AMIGA HARDWARE DETAILS
+----------------------
+   The GoldenGate II bridgecard AUTOCONFIGs as a Zorro II card, and it
+   can be "shut up" off the bus.  The autoconfig size is 1 Meg to correctly
+   map all of the PC memory locations.  All address and data lines to the 
+   PC bus are buffered to avoid loading.
+
+
+ON-BOARD REGISTERS
+------------------
+   The GoldenGate II bridgecard includes 3 software accessable registers.
+
+   Register 1 is read-only, and reports the status of all the interrupt
+   lines, the master interrupt enable, and the wait-state control.  This is
+   a 16 bit register.
+
+   Register 2 is read/write; when read, disables the master interrupt 
+   enable and returns the same 16 bit value as register 1.  When register 
+   2 is written to, it sets the master interrupt enable.
+
+   Register 3 is read/write, and it toggles the support for wait states.
+   When wait-states are enabled, a default of one wait state (one Amiga
+   clock cycle) is inserted into each bus read or write to maintain IBM
+   bus cycle wait state compatibility.
+
+
+SOFTWARE DRIVER SUPPORT
+-----------------------
+   Due to a lack of standards in the IBM community, there is simply no way
+   to provide Amiga software support for all possible plug-in cards.
+
+   A small number of standards DO exist, however, and we will provide drivers
+   for some of these, with more coming out whenever possible.  The basic 
+   software package (compatible with the previous GoldenGate board) is for
+   serial and parallel ports:
+
+     ibmser.device     a replacement serial device for internal modems and
+                       multi-IO cards.  Includes automatic use of the 16550
+                       FIFO buffer when available.  Support for up to 4
+                       serial ports at once, equivalent of COM1-4.
+
+     SerPrefs          set and save the intial settings of the IBM serial
+                       ports.
+
+     ShowSerial        prints out what serial chip is hooked to each IBM port 
+
+     ibmprint.device   a new parallel output-only driver for printing through
+                       IBM LPT compatible parallel ports on multi-IO cards.
+                       Support for up to 3 printers at once, equivalent of
+                       LPT1-3.
+
+     IOWedge           a wedge program that allows redirection of serial and
+                       parallel port information to the IBM ports even from
+                       programs that do not alternate alternate device drivers.
+
+     NewPortHandler    this handler lets you use the new IBM ports directly
+                       from the CLI, by creating a mountlist entry.  For
+                       example, you can mount IBMPRT: and then issue a 
+                       CLI command to copy a file to the IBMPRT: device.
+
+     Wait              this is a small program to toggle wait state support
+                       on and off.
+
+   All programs require AmigaDOS 2.0, and were written by Dan Babcock (thanks
+   Dan!!).
+
+   Details for accessing IBM IO and memory space through the GoldenGate II
+   will be in the documentation.  Most boards that do not try to emulate
+   system functions (like ports) will not need device drivers;  they can
+   be accessed directly from your programs in C or any other high level
+   language.  
+
+   For more exotic applications, the GoldenGate bridgecard is compatible with
+   the software IBM emulator "CrossPC" sold by Consultron with CrossDOS 5.0.
+   CrossPC will automatically find the GoldenGate bridgecard if it is 
+   installed, and map any IO location calls to the GoldenGate card.
+   This allows you to use your IBM driver software directly.  Thanks to 
+   CrossPC and IBeM author Mark Tomlinson for this!  
+
+   Author Chris Hames of PC-Task has also expressed an interest in 
+   putting similar GoldenGate compatibility into his emulator, and 
+   this should be available in the future.
+
+
+GOLDENGATE II SYSTEM REQUIREMENTS
+------------------------------
+   The GoldenGate II bridgecard occupies one Zorro II slot aligned with
+   an IBM AT slot in an Amiga 2000, 2500, 3000, or 4000.  It has essentially
+   the same form factor as an XT bridgeboard.  You will need at least one
+   additional open PC-AT slot for your plug-in PC card.
+
+   The GoldenGate II requires 1 Meg of autoconfig memory space to be 
+   available.
+
+
+AVAILABILITY AND PRICE
+----------------------
+   I am selling the GoldenGate II bridgecard in two ways:
+
+      (a) As a kit with all parts and assembly instructions, for US$95
+          (You should have some soldering experience 
+           to assemble this)
+
+      (b) Fully assembled. for US$115
+
+   Shipping charges will be US$3 within the US, US$5 to Canada, and US$10 
+   to anywhere else.
+
+   If you are interested, please send me email at  d-salamon@uiuc.edu
+
+

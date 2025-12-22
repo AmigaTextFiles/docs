@@ -1,0 +1,328 @@
+============================================================================
+
+                             Initial Testing.
+                             ----------------
+
+(Apologies for any typos, 20-05-2008. :)
+
+Preliminary Test:-
+------------------
+
+(A STANDARD A1200(HD) IS ASSUMED TO BE THE COMPUTER TESTBED.)
+
+  1) Read the WARNING section at the end of this text file.
+  2) Do a final check of your wiring and construction!!! IF you are happy
+     then continue to 3) otherwise STOP at this point.
+  3) REMOVE all jumpers from LK1 to LK13 inclusive. They are shown fitted
+     to one pin of each pair in the photos' so as not to lose them.
+  4) Ensure the AMIGA is switched OFF, (powered down).
+  5) Connect the PAR_Dev_Board to the parallel port.
+  6) Fit the VERY SIMPLE hardware from the PAR_READ_Simple drawer in.......
+
+               <http://main.aminet.net/docs/hard/PAR_READ.lha>
+
+     ......This is only needed for this section of the project, the next
+     upload will be the master clock so this will then NOT be needed.
+  7) Power up the AMIGA and boot into a standard Workbench of your choice.
+  8) Connect a wire from OUTPUT terminal 11 to OUTPUT terminal 18.
+     These are the ~BUSY~ and ~GND~ lines respectively.
+  9) Connect a wire, one end to OUTPUT terminal 10 of the board and the
+     other to the Blue Wire Terminal Block of the above archive. This is the
+     temporary EXTERNAL master clock to clock the ~-ACK~ line. The board is
+     now ready for 8 bit data to be written to the 8 data lines.
+ 10) Open up a Shell/CLI and type......
+
+     Echo > PAR: "Some text of your choice..."<RETURN/ENTER>
+
+ 11) IF ALL IS WELL then the sytem will return to the Shell prompt almost
+     immediately without an error report. :)
+     Now go to number 13).
+ 12) IF THE SYSTEM HANGS THEN SWITCH OFF THE AMIGA, REMOVE THE BOARD AND
+     RECHECK ALL OF YOUR WORK!!!
+ 13) Retry the above command to ensure consistent working.
+ 14) You are now writing 8 bit data to the board, although it is ASCII text
+     at present.
+ 15) You are now going to test the board in read mode.
+ 16) Remove the wire connected from OUTPUT terminal 11 ONLY.
+ 17) Now connect this wire to OUTPUT terminal 9. NOTE, GND is already
+     connected.
+ 18) Ensure the ARexx interpreter is running and double click the icon
+     ~PAR.rexx~ inside the PAR_Read_Simple drawer of the above archive.
+     The sentence......
+
+     Byte at parallel port is decimal value 127.
+
+     ......will be continuously written to a simple window.
+     Press Ctrl-C to quit the program.
+ 19) IF ALL IS WELL then you can try with wire links from OUTPUT terminals
+     2 to 18 TO 9 to 18 also and see this number change.
+ 20) IF ALL IS NOT WELL THEN SWITCH OFF THE AMIGA, REMOVE THE BOARD AND
+     RECHECK ALL OF YOUR WORK!!!
+ 21) Switch off the AMIGA and remove all of the wire links including the
+     temporary EXTERNAL master clock from both ends.
+ 22) You are now ready to test the board in Single Byte Access Only mode
+     using the two compiled C sources in the ~Test-SW~ drawer.
+
+----------------------------------------------------------------------------
+
+Single Byte I/O Usage:-
+-----------------------
+
+Writing A Byte To The PAR: Volume:-
+-----------------------------------
+
+  1) Connect a wire to OUTPUT terminal 11 only. Ensure the other bared end
+     is NOT touching anything at all at this point.
+  2) Switch on the AMIGA, boot up and open up a Shell/CLI prompt.
+  3) Go to the ~Test-SW~ drawer of this project.
+  4) Type in either of these executables......
+
+     PAR_Write_Single.dcc<RETURN/ENTER>
+
+     ......OR......
+
+     PAR_Write_Single.vbcc<RETURN/ENTER>
+
+  5) The system WILL hang, SO DO NOT PANIC... :)
+     A data byte of decimal 170 is sitting on the parallel port awaiting
+     to be cleared. This could be any 8 bit binary value but for this test
+     I used just decimal value 170 in the source code.
+     ALSO, this line will be printed on to the screen......
+
+     Value of character written is:- 170.
+
+  6) Now touch the free bared end of the above wire to the OUTPUT terminal
+     18, GND, and VOILA back to the command prompt.
+  7) Retry this a few times just to prove a point.
+  8) Read the source code below for more information.
+  9) Switch off the AMIGA and remove the wire from OUTPUT terminal 11.
+
+What Is Happening:-
+-------------------
+
+Before any access to the parallel port ALL 8 data lines default to high,
+decimal value 255, (0xFF).
+
+Whenever the parallel port is accessed at all the ~-STROBE~ line is
+clocked once by the system. In PAR: VOLUME mode this line is NOT used at
+the moment.
+
+The single byte data is then placed onto the 8 parallel port data lines
+and sit there ad-infinitum until......
+......the ~BUSY~ line is set to 0, the GND line. This sends a signal to
+the system that the parallel port is ready for the next byte but as there
+are NO more bytes to send the software exits normally and the 8 data lines
+are all reset back to decimal 255.
+
+IMPORTANT!!!
+------------
+
+There is a flaw in using PAR: as a VOLUME in WRITE mode.
+This is NOT a bug.
+If you don't know what it is then, I will let you know right at the end
+of this construction series...
+But before I do see if you can find it... ;-)
+
+The Childishly Simple C Source:-
+--------------------------------
+
+(Note, this is already in this archive.)
+
+Par_Write_Single.c
+------------------
+
+/* -------------------------------------------------------------------------- */
+/* Using PAR: as a ~VOLUME~ in write mode to send 8 bit binary data, from a   */
+/* ~user buffer~, to the parallel port without needing any knowledge of the   */
+/* parallel port direct access of the hardware or device offsets at all.      */
+/* Original copyright goes to (C)2006, B.Walker, G0LCU, (now Public Domain).  */
+/* Compiled under Dice-C V3.16, from the CLI/Shell prompt.                    */
+/* Use "dcc -o PAR_Write_Single PAR_Write_Single.c" without the quotes inside */
+/* the Shell. This requires NO special compiler directives.                   */
+/* There are NO prototype(s), define(s) or struct(ures) in this code at all.  */
+/* -------------------------------------------------------------------------- */
+/* Now tested with the vbccm68k V0.810 C compiler, from the CLI/Shell prompt. */
+/* Use "vc PAR_Write_Single.c" without the quotes inside the Shell to give a  */
+/* running file ~a.out~.                                                      */
+/* -------------------------------------------------------------------------- */
+/* This extremely simple source sends a single 8 bit byte to the parallel     */
+/* port and holds it there until the ~BUSY~ line pin 11 is grounded, (pulled  */
+/* to the 0 Volt rail). The ~-ACK~ line is NOT used for a single byte send so */
+/* it can be ignored. Decimal value 170 is used as a test, binary 10101010.   */
+/* -------------------------------------------------------------------------- */
+
+/* Standard includes. */
+#include <stdio.h>
+
+/* Main program start. */
+main()
+{
+	/* Variable list. */
+	void *par_in_write_mode;
+	/* Set the binary byte to 10101010, decimal 170. */
+	unsigned char byteval = 170;
+
+	/* Print the value to the screen. */
+	printf("Value of character written is:- %u.\n", byteval);
+
+	/* Open the parallel port in PAR: ~volume~, write mode. */
+	par_in_write_mode = fopen("PAR:", "wb");
+
+	/* Write the byte to the ~port~. */
+	fwrite(&byteval, 1, 1, par_in_write_mode);
+
+	/* Immediately close the opened PAR: ~volume~ WHEN pin 11 */
+	/* of the parallel port is grounded. */
+	fclose(par_in_write_mode);
+
+	/* Ensure a successful return code of 0. */
+	return(0);
+}
+/* Can it be any simpler I wonder?... */
+
+----------------------------------------------------------------------------
+
+Reading A Byte From The PAR: Volume:-
+-------------------------------------
+
+  1) Connect a wire, one end to the OUTPUT terminal 10 of the board and the
+     other end to the Blue Wire Terminal Block of the above archive.
+  2) Switch on the AMIGA, boot up and open up a Shell/CLI command prompt.
+  3) Go to the ~Test-SW~ drawer of this project.
+  4) Type in either of these executables......
+
+     PAR_Read_Single.dcc<RETURN/ENTER>
+
+     ......OR......
+
+     PAR_Read_Single.vbcc<RETURN/ENTER>
+
+  5) The line below will be printed to the screen......
+
+     Value of character written is:- 255.
+
+  6) Depending on which of the 8 data lines are connected to GND will
+     decide the number to be displayed, but with nothing connected then
+     these data lines default high, decimal 255.
+  7) Retry this a few times just to prove a point.
+  8) Switch OFF the AMIGA and remove this link wire.
+
+What Is Happening:-
+-------------------
+
+Before any access to the parallel port ALL 8 data lines default to high,
+decimal value 255, (0xFF).
+
+Whenever the parallel port is accessed at all the ~-STROBE~ line is
+clocked once by the system. In PAR: VOLUME mode this line is NOT used at
+the moment.
+
+The EXTERNAL master clock sends the system a signal via OUTPUT terminal
+10, the ~-ACK~ line, to receive the next data byte. But after this single
+byte has been accessed the program exits normally with a value printed
+to the screen.
+
+IMPORTANT!!!
+------------
+
+There is a flaw in using PAR: as a VOLUME in READ mode.
+This is NOT a bug.
+If you don't know what it is then, I will let you know right at the end
+of this construction series...
+But before I do see if you can find it... ;-)
+
+The Childishly Simple C Source:-
+--------------------------------
+
+(Note, this is already in this archive.)
+
+Par_Read_Single.c
+------------------
+
+/* -------------------------------------------------------------------------- */
+/* Using PAR: as a ~VOLUME~ in read mode to input 8 bit binary data into      */
+/* a ~user buffer~ for manipulation by any C(++) means available.             */
+/* Original copyright goes to (C)B.Walker, G0LCU, (now Public Domain).        */
+/* Compiled under Dice-C V3.16, from the CLI/Shell prompt.                    */
+/* Use "dcc -o PAR_Read_Single PAR_Read_Single.c" without the quotes inside   */
+/* the Shell/CLI.                                                             */
+/* This requires NO special compiler directives. There is a small flaw in     */
+/* this code however but for this DEMO it is not a problem NOR is it a bug.   */
+/* There are NO prototype(s), define(s) or struct(ures) in this code at all.  */
+/* -------------------------------------------------------------------------- */
+/* The compiled code REQUIRES the ~PAR_READ.lha~ archive in the hard/hack     */
+/* drawer of AMINET. Without the special hardware attached to the parallel    */
+/* port the program will hang, so beware!!!                                   */
+/* SEE THE ~PAR_READ.lha~ FOR FULL INSTRUCTIONS ON THE HARDWARE REQUIRED.     */
+/* -------------------------------------------------------------------------- */
+/* Now tested with the vbccm68k V0.810 C compiler, using                      */
+/* "vc PAR_Read_Single.c" without the quotes inside the Shell/CLI to give a   */
+/* running file ~a.out~.                                                      */
+/* -------------------------------------------------------------------------- */
+
+/* Standard includes. */
+#include <stdio.h>
+
+/* Main program start. */
+main()
+{
+	/* variable list. */
+	void *par_in_read_mode;
+	unsigned char mybyte;
+
+	/* Open the parallel port in PAR: ~volume~, read mode. */
+	par_in_read_mode = fopen("PAR:", "rb");
+
+	/* Read a byte from the ~port~. Note, the ~-ACK~ line */
+	/*  must be clocked for this to work. */
+	fread(&mybyte, 1, 1, par_in_read_mode);
+
+	/* Immediately close the opened PAR: ~volume~. */
+	fclose(par_in_read_mode);
+
+	/* Print the value to the screen. */
+	printf("Value of character read is:- %u.\n", mybyte);
+
+	/* Ensure a successful return code of 0. */
+	return(0);
+}
+/* Can it be any simpler I wonder?... */
+
+============================================================================
+
+And finally, the next part will be the built-in External Master Clock.
+
+Enjoy finding simple solutions to often very difficult problems.
+
+============================================================================
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+    Mr Barry Walker,
+    70 King George Road,
+    Loughborough,
+    Leicestershire,
+    LE11 2PA,
+    England.
+
+    Email to:-
+
+    wisecracker@tesco.net
+
+    BYE.....
+
+============================================================================

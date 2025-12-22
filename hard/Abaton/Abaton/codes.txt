@@ -1,0 +1,224 @@
+*------------------------------------*
+* Abaton SCAN 300/FB (Ricoh IS30-M2) *
+* scanner command sequence codes.    *
+*------------------------------------*
+* March 5, 1999                      *
+*------------------------------------*
+
+NOTES:
+(1) The purpose of some commands are not yet known.
+(2) It appears that the scanner can have a Normal and Alternative mode.
+    The Alternative mode, entered with an IS20 command, modifies
+    the behavior of some commands.  The purpose of this mode is not
+    yet known.
+(3) <ESC> = $1B, <CR> = $0D
+
+------------------------
+Command sequence example
+------------------------
+
+ASCII:       <ESC>!OB<CR>
+Hexadecimal: $1B $21 $4F $42 $0D
+
+-----------------
+Command sequences
+-----------------
+
+<ESC>!MT<State><CR>
+  Unknown.  If <State> = S, image is slightly fuzzier than normal, and the
+  number of stray dots increases.
+  
+  <State> can be:
+    S  Enables mode.
+    R  Disables mode.
+
+<ESC>!RF<State><CR>
+  Reflect the image about the Y-axis.
+
+  <State> can be:
+    S  Reflected image.
+    R  Normal image.
+
+<ESC>!IV<State><CR>
+  Normal or Inverted image.
+  
+  <State> can be:
+    S  A '1' in the image data is a light area.
+    R  A '1' in the image data is a dark area.
+
+<ESC>!TO<Length><CR>
+  TimeOut handshaking delay for data transmission.  Selection occurs
+  for scanner to host transmission.  Not known if used in the other
+  direction as well.
+  
+  <Length> can be:
+    S  Short timeout delay.
+    R  Long timeout delay.
+
+<ESC>!DN<Density><CR>
+  Set scan density.  This command must be issued before any page-size
+  commands, since the scanner uses the density to calculate the scan
+  area.
+  
+  In Normal mode, <Density> can be:
+    300  300 dots per inch.
+    240  240 dots per inch.
+    200  200 dots per inch.
+    180  180 dots per inch.
+  
+  In Alternative mode, <Density> can be:
+    8  RD command value is 0.0270" per unit.
+    6  RD command value is 0.0313" per unit.
+    4  RD command value is 0.0388" per unit.
+  
+<ESC>!LV<Level><CR>
+  Sensitivity (or threshold) level affects scanner's response to image
+  variations.
+
+  <Level> can be:
+    H                High preset level (From 11 to 15).
+    M                Normal preset level (From 8 to 10).
+    L                Low preset level (From 0 to 7).
+    0 to 9, A to F   0 to 15 level (0 is the lowest).
+
+<ESC>!RD<Size><CR>
+  Set page size dimension, and begin scanning area.
+  
+  (1) Change scan bar position.
+  (2) Turns on the lamp.
+  (3) Returns control to the host, but remain busy.
+  
+  <Size> can be the following:
+    A4 - 210mm x 297mm
+    A5 - 210mm x 150mm
+    B5 - 176mm x 250mm
+    B6 - 176mm x 125mm
+    LT - 8.5" x 11.0" (Letter)
+    14 - 8.5" x 14.0" (Legal)
+    AT - 8.1" x 14.0"
+    CD - 3.5" x 2.0"  (Business Card)
+
+  <Size> can also be a numerical expression (BX+BW,PY+PH)
+    BX  Horizontal byte (8 pixels per byte) offset from origin.
+    BW  Number of bytes per row (8 pixels per byte). Must be >= 5.
+    PY  Vertical pixel offset from origin.  Scanner bar position will
+        change to (Y / DPI) inches.
+    PH  Number of pixel rows.  Must be >= 1 in Normal mode, but >= 5
+        in Alternative mode.
+
+  Returned sequence will be:
+    $01 $00 $01        - First section header.
+    <Dots per inch>    - Three ASCII digits (eg. '300' for 300 dots per inch).
+    <Bytes per row>    - Four ASCII digits (eg. '0025' for 25x8 pixels).
+    <Total rows>       - Five ASCII digits (eg. '03260' for 3260 rows).
+    $00 $00 $02        - Second section header.
+    <Scan data>        - One byte = 8 pixels.
+    $62 $62 $79 $D9    - Terminator ($62 $62 $79 $D8 also possible).
+
+  If the host does not begin reading data within 15 seconds, the scanner
+  will abort the command, and become ready.
+
+<ESC>!DA<Size><CR>
+  Set page size dimension, but don't start scanning. <Size> is the same
+  as RD command.
+
+<ESC>!RA<CR>
+  Begin scanning the currently set area, such as from a previous DA command.
+
+  (1) Move to beginning of scan area.
+  (2) Turn on light.
+  (3) Return control to host.
+  (4) Wait for 15 seconds for the host to read the data.
+  (5) Turn off light.
+  (6) Home scanner bar.
+
+<ESC>!IT<CR>
+  (1) Turn on light.
+  (2) Home scanner bar.
+  (3) Move to position zero.
+  (4) Turn off light.
+
+<ESC>!HP<CR>
+   Move the scanner bar to its Home Position (outside optical boundary).
+  
+<ESC>!OB<CR>
+   Move the scan bar to scan line zero (Optical Boundary).
+
+<ESC>!DS<CR>
+  Stepper motor Driver Switch off.  Power is removed from the motor
+  (via an relay), perhaps for power savings.  Any commands that requires
+  the motor wil turn the power back on.
+
+<ESC>!FL<State><CR>
+  Flourescent Lamp control.  Lamp will turn off automatically in about
+  15 seconds.
+  
+  <State> can be:
+    H  Turn lamp on.
+    L  Turn lamp off.
+
+<ESC>!IS20<CR>
+  Resets scanner (similar to when first powered up), and enters the
+  Alternative mode.
+
+<ESC>!RS<CR>
+  Similar to IS20 command, but can only be issued while in Alternative
+  mode.
+
+<ESC>!VR<CR>
+  Returns the scanner's version number (eg. '54997203D').
+   
+<ESC>!MR<CR>
+  Unknown.  Returns one value.
+  
+<ESC>!SR<CR>
+  Unknown.  Returns one value.
+  
+<ESC>!PR<CR>
+  Unknown.  Returns five values.
+
+<ESC>!RI<Expression><CR>
+  Unknown.
+
+  <Expression> has the form (W,X:Y,Z), where the letters represent
+  numbers.  Number Y can have 5 digits.  In Alternative mode, a
+  semicolon must be used in place of the colon.
+  
+<ESC>!OR<CR>
+  Unknown.
+  
+<ESC>!TS<CR>
+  Identical to the 'OR' command.
+
+<ESC>!DE<CR>
+  Unknown.
+  
+  (1) Switch off power to the stepper motor.
+  (2) Return control to the host.
+  (3) Remains busy forever.
+
+<ESC>!DM<Type><CR>
+  Unknown.
+    
+  <Type> can be:
+    A
+    B
+
+<ESC>!BS<CR>
+  Unknown
+    
+<ESC>!BK<CR>
+  Unknown
+  
+<ESC>!ST<CR>
+  Unknown
+
+<ESC>!MV<CR>
+  Unknown
+  
+<ESC>!BN<CR>
+  Unknown
+  
+<ESC>!HF<CR>
+  Unknown
+

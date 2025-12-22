@@ -1,0 +1,27 @@
+NEWTYPE .MsgPort
+  mp_Node.l;
+  mp_Flags.b;
+  mp_SigBit.b;   /* signal bit number */
+  mp_SigTask.l;  /* object to be signalled */
+  mp_MsgList.l;  /* message linked list */
+End NEWTYPE
+
+#SIGBREAKF_CTRL_C=1 ASL 12
+; Wait for Break example
+*myport.MsgPort = CreateMsgPort("Test_Port")
+If *myport
+  mysig.l = 1 LSL *myport\mp_SigBit
+  NPrint "waiting for Break (Ctrl_C)"
+  bigsig.l = Wait_(mysig OR #SIGBREAKF_CTRL_C)
+  If bigsig & #SIGBREAKF_CTRL_C
+    NPrint "Received Break" : Goto cleanexit
+  EndIf
+  If bigsig & mysig
+    NPrint "Port signal Received" : Goto cleanexit
+  EndIf
+Else
+  Request "","Error creating MsgPort","OK"
+EndIf
+cleanexit
+If *myport Then DeleteMsgPort *myport
+End

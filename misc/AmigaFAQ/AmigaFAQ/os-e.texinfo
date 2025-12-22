@@ -1,0 +1,98 @@
+@node Operating System
+@chapter The Operating System
+This chapter handles questions concerning the operating system, Kickstart
+as well as the Workbench.
+
+@menu
+* Softkickers:: Can I use another Kickstart than the builtin?
+* Workbench:: The Graphical User Interface
+* Dot-Replacement:: What is the Amiga equivalent of . (Current directory)?
+* Pipe:: The PIPE: queue-handler
+* ARexx:: The program control language
+@end menu
+
+@node Softkickers
+@section Can I use another Kickstart than the builtin?
+First let's drop some words on the Kickstart's Copyright: This belongs to
+Commodore, you @strong{must not} use Kickstarts, without the right to do it!
+Especially it isn't allowed to make an image of anyone else's Kickstart and
+run this on your own Amiga. (I even doubt that it is allowed to do this on
+your own Amigas, if you have more than one.)
+
+But of course it is possible and allowed for some people, developers for
+example.
+There are two different ways, a hardware solution and a software solution.
+The former is to buy a card which can hold two or more Kickstart ROMS and
+allows to select between when the System is booting.
+
+The software solution needs a program (softkicker) and an image of the
+ROM. The softkicker allocates RAM, loads the ROM image into the allocated
+memory and reboots. Of course you have less RAM after the Reboot: 256Kb when
+running Kickstart 1.2 or 1.3 and 512Kb for Kickstart 2.0 or higher.
+
+There are different Softkickers, some of them needing a MMU (@pxref{68EC0xx,
+MMU,MMU}). I recommend SKick 3.43 (Aminet,
+directory @file{util/boot}) because it doesn't need a MMU and supports many
+different Kickstarts. It is rather easy to create the ROM image using the
+following program:
+
+@example
+    #include <stdio.h>
+
+    #define kickorig 0xf80000   /*  0xfc0000 for Kick 1.2 und 1.3   */
+    #define kicklen  0x080000   /*  0x040000 for Kick 1.2 und 1.3   */
+
+    void main(int argc, char*argv[])
+    @{
+        FILE *fh;
+
+        if ((fh = fopen("kickstart.file", "w"))  !=  NULL) @{
+            result = fwrite(kickorig, kicklen, 1, fh);
+        @}
+        fclose(fh);
+    @}
+@end example
+
+
+@include os-gui-e.texinfo
+
+
+@node Dot-Replacement
+@section What is the Amiga equivalent of . (Current directory)?
+@cindex Current directory
+@cindex . (replacement)
+The AmigaDOS equivalent for the . representing the current directory
+on Unix and certain non-reentrant interrupt handlers is the empty
+string, which is written as "".
+
+Example:
+@example
+    COPY S:Startup-Sequence ""
+@end example
+@noindent
+copies your Startup-Sequence to the current directory.
+
+There is some FD software available to patch a Unix-like
+interpretation of . and .. into the AmigaDOS, including,
+but not limited to, Martin Scott's UnixDirs. (Aminet,
+@file{os20/util/UnixDirsII.lha} or Fish-disk 837)
+
+Arno Eigenwillig (arno@@yaps.dinoco.de)
+
+
+@include os-pipe-e.texinfo
+
+
+@node ARexx
+@section ARexx, the program control language
+@cindex ARexx
+@table @strong
+@item Q:
+I want to send an ARexx command through CLI or through a shell script,
+but that (rx ADDRESS PORTNAME;COMMAND) doesnt work.
+@item A:
+You have to put quotation marks. (rx "ADDRESS PORTNAME;COMMAND").
+It also prevents upcasing the portname when it should be lowercase.
+@end table
+
+

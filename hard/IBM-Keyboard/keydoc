@@ -1,0 +1,338 @@
+*****************************************************************************
+*									    *
+*    All files included in disk Jocose Haven vol 1. Check directory IBMK!   *
+*									    *
+*****************************************************************************
+
+
+IBM Keyboard Interfact Project, by ERic Rudolph, 1991.
+No Copyright Whatsoever, but I would like credit where it's due.
+
+This is documentation for the circuit I built which converts the information
+put out by an XT or AT keyboard to that which can be recognized by an Amiga.
+
+The circuit itself is a simple 8051 with an address latch and an Eprom.
+It is inserted between the keyboard and the Amiga and sends data in both
+directions to the Keyboard and the Amiga. 
+
+Parts count could be reduced by using an 8751 which contains a 4k internal
+Eprom. Seeing as how I don't know how to program them yet, I will stick to
+the above design, but I am sure it's not hard to do. :-\
+
+Full Parts List:
+================
+1) Intel 8031/8051, preferrably low power
+2) 74373 address latch
+3) 2732 Eprom
+4) 11.059 MHZ crystal
+5) 2 30pf caps
+6) 1 10k resistor, 1/4 watt
+7) 1 10uF electolytic cap
+8) 2 momentary pushbutton switches. Neither is really needed.
+10) connectors to the Amiga and the IBM
+
+The total cost for these parts come to about $18.00 minus box and breadboard.
+It certainly would be cheaper to use some used components. 
+
+Wiring List:
+============
+INTEL 8031/8051:
+Port1, pins 1-8 can be connected in any manner whatsoever,
+so long as you change the source code. You can relocate
+the lines to the Keyboard and the Amiga wherever suitable.
+If you understand the 8051 or read the 8051 manual, it will make more
+sense.
+	pin	to
+	===	==
+	1(p1.0)	Keyboard Clock. Female 5-pin, pin #1
+	2	Keyboard Data, Female 5-pin, pin #2
+	3 	
+	4	Amiga Clock
+	5	Amiga Data
+	6	Amiga Reset
+	7
+	8(p1.7)	XT/AT pin. Tie low to always convert an XT keyboard.
+		For Auto detect, leave pin unconnected.
+	9(reset) to - side of 10uF cap & 10k resistor & pushbutton switch
+		only if you want a manual CIRCUIT reset switch.
+	10(p3.0)
+	11
+	12(int0)  pushbutton switch2
+	13-16
+	17(p3.7)
+	18	clock crystal & 30pf cap1
+	19	clock crystal(other pin) & 30pf cap2
+	20 	Ground
+	21(a8)	Eprom Addr8, 2732 pin#23
+	22 	Eprom Addr9, 2732 pin#22
+	23 	Eprom Addr10, 2732 pin#19
+	24(a11)	Eprom Addr11, 2732 pin#21
+	25-28
+	29	Eprom Read, 2732 pin#20
+	30	373 Gate, pin# 11
+	31 	Ground
+	32(ad7)	373 D7, pin#13 & Eprom Data7, pin#17
+	33	373 D6, pin#14 & Eprom Data6, pin#16
+	34	373 D5, pin#8 & Eprom Data5, pin#15
+	35	373 D4, pin#7 & Eprom Data4, pin#14
+	36	373 D3, pin#4 & Eprom Data3, pin#13
+	37	373 D2, pin#3 & Eprom Data2, pin#11
+	38	373 D1, pin#17 & Eprom Data1, pin#10
+	39(ad0)	373 D0, pin#18 & Eprom Data0, pin#9
+	40	+5 Volts
+74373:
+	1	Ground
+	2	Eprom Addr2, pin#6
+	3	done
+	4	done
+	5	Eprom Addr3, pin#5
+	6	Eprom Addr4, pin#4	
+	7	done
+	8	done
+	9	Eprom Addr5, pin#3	
+	10	Ground
+	11	done
+	12	Eprom Addr7, pin#1
+	13	done
+	14	done
+	15	Eprom Addr6, pin#2
+	16	Eprom Addr1, pin#7
+	17	done
+	18	done
+	19	Eprom Addr0, pin#8
+	20	+5 volts
+2732 Prom:
+	1-11	done
+	12	Ground
+	13-17	done
+	18	Ground (chip enable. Doesn't save power very much)
+	19-23	done
+	24	+5 volts
+crystal:
+	connected between 8051 pins 18 and 19
+30pf cap1:
+	connected between a lead of cystal and ground
+30pf cap2:
+	connected between other lead of crystal and ground
+10uF Electrolytic Cap:
+	minus end to 8051 pin9, + end to +5 volts.
+10k resistor:
+	tied between ground and 8051 pin 9
+VVV reset pushbutton switch. This is not absolutely necessary.
+Pushbutton Switch1:
+	tied between 8051 pin9 and +5 volts
+VVV only use if you want a one-button hard reset.
+Pushbutton Switch2: (amiga reset switch)
+	tied between 8051 pin12 (int0) and ground
+5-pin Female IBM connector:
+	Connect plus voltage pin to +5 volts
+	Connect ground pin to ground
+	connect clock and data as in above
+(pin1=clock, pin2=data, pin3=NC, pin4=ground, pin5=+5v)
+(as you face the back of the 5-pin female din, with the notch pointing up,
+the pin order from left to right is 1,4,2,5,3)
+
+Amiga Connector: each of the amiga connectors for the 500/1000/2000 will 
+	be different.
+On the Amiga 1000, the keyboard connects by means of a telephone
+	HANDSET connector with a regular phone handset cord. The pins
+	from left to right on the back of the Amiga 1000 are +5,clock,data,GND.
+	If you make this circuit yourself, I suggest purchasing a little jack
+	from the local telephone repairman. They are fairly standard jacks
+	I believe. Connect red on the jack to +5,white to clock,greeen to
+	data, black to ground. (On the circuit board, that is...)
+	Clock and Data are wherever you locate them in the source code.
+	As it stands, Amiga Clock is on pin 3 of the 8051, and Data is
+	on pin 4.
+
+For the Amiga 500, there is a 8 pin straight line on the mother board.
+These pins from left to right are
+1. Data
+2. Clock
+3. Reset
+4.+5
+5 Not connected. (Key)
+6.Ground
+7. Status (not used)
+8. Disk Light (not used)
+
+Make yourself a special adaptor that connects your amiga to the circuit.
+You WILL need to connect the reset line if you want to soft reset from
+the keyboard. The A500 only resets by having the Reset line driven low.
+
+It says in my hardware manual here that The connector TO the keyboard
+goes as follows:
+1: Clock
+2: Data
+3: Not connected.
+4: Ground
+5: +5 volts.
+I imagine it's just like the AT connector, but it's a shame they don't use
+the same data signals!
+
+
+
+VERY IMPORTANT:!!!! The cord from the Amiga to the Converter must be
+very very short and have very low resistance for this circuit to run on it's
+own power. Do NOT use a long handset cord, it will load down the power lines.
+IT's made of ribbon copper wound around some white stuff and it conducts poorly
+on purpose. I used a hackup phone handset cord that is only about 3 inches
+long. That works fine. You may need to get a phone repairman to make the
+little cord special. He can do it, I know. It's a common thing. It shouldn't
+be expensive. The one he made for me cost 1$.
+ 
+That's it!
+====================================================================
+A little background on the IBM AT keyboard:
+The keyboard I used for this circuit was a BTC 5339sx. It costs about $40
+Lucky Computers, 1-800-348-5825. I have also tested the circuit on a 
+standard PC keyboard, and an HP Vectra AT keyboard.
+
+The AT keyboard DIN connector has 5 pins. Pin 3 is called Reset, but it's
+reserved, so we can't use it. Forget it exists on the AT keyboard. They just
+charge you money for it. (joke) Open collectors drive the clock and data pins,
+so when they are not driven low, they float at 5 volts.
+
+The keyboard transmits data by bits, each synchonous somehow with the clock
+line. They keyboard when clocking in or out data, always runs the clock.
+The controller can drive the clock line, but not with reference to data.
+	When the Keyboard sends data, it first sets the data, then drives
+clock low, then high, and then changes the data to the next value.
+	The AT uses 11 bits for a transmission, 1 start bit (0), 8 data
+bits, 1 parity bit-set if the number of 1's in the data bits is even, and
+a stop bit (1). When the keyboard sends it's last bit, the stop bit, the
+controller must drive clock line low as a handshake and to tell the 
+keyboard not to send until clock goes high again.
+	Theoretically, the controller could interrupt the sending of the
+bits, but I consider this unnecessary, and don't bother with it.
+When the computer needs to send a command to the keyboard, it sets clock
+line high and the data line low. When the keyboard sees this, it will
+start clocking pulsed on the data line. 
+Then, the controller must look for the clock line going low, set the data
+bit, wait for the clock to go high, then wait for the clock to go low
+again, and then change the bit. Thus, it changes the data in the middle
+of the clock low pulse. When the keyboard has received it's 10th bit,
+it will drive the data line low while at the same time clocking out
+an extra clock low pulse. Then, it expects a handshake of the clock line
+low from the controller.
+                    0       1       2   |   7       P     stop    extra
+Clock:------------\___/---\___/---\___/---\___/---\___/---\___/---\___/end
+
+Data:-------\_______00000001111111122222|6677777777PPPPPPPP1111xxxxxxxx_____
+
+Notice there is NO start bit when the controller sends data to the Keyboard.
+
+Special Commands the Keyboard can Send to the Controller:
+-----------------------------------------------------------
+00 	Keyboard buffer overflowed
+AA 	Selftest passed
+FA	The command sent was received correctly
+FE	The command sent was received poorly. Please resend.
+
+Special Commands the Controller can Send to the Keyboard:
+-----------------------------------------------------------
+ED	Set the LEDs according to next byte I send
+	bit 0=Scroll lock 1=on
+	bit 1=Num lock
+	bit 2=Caps lock
+	bits 3-7 must be 0
+F4	clear the key buffer and start scanning
+F6	restore default values
+FE	retransmit last character, please
+FF	Reset, you stupid keyboard!
+
+Whew! That about raps it up for the AT keybard! Enough said, right?
+
+
+XT keyboards transmit much the same way except they only use 10 bits.
+Two start bits (both high) and 8 data bits, transmitted in order 0-1-2...-7
+The last bit is a make/break bit which is 1 to signify a break.
+
+The XT can have no commands sent to it. The way to reset it is to drive
+the Clock line low for some longish period of time. The keyboard will not
+send data (it will hold off) if the data line is being held low by an
+external source (the controller)
+
+AMIGA SIDE=========================================
+
+Now I bet you are all wondering which keys are mapped to which keys.
+I am using the 101 AT keyboard.
+
+AT			Amiga
+==			=====
+
+Left Ctrl		Left Amiga
+Right Ctrl		Right Amiga
+F11			Numeric Keypad (
+F12			Numeric Keypad ) (doesn't work on A1000's)
+Capslock		Control (IF used in conjunction with another key)
+Delete			Delete
+Page Down		Help
+PrintScreen		Left Amiga
+ScrollLock		Right Amiga
+NumLock			Control
+(the above three keys mapped for easy one-hand reset)
+Insert			Amiga+Left Cursor
+Home			Amiga+Up Cursor
+End			Amiga+Down Cursor
+PageUp			Amiga+Right Cursor
+(the above keys mapped for easy mouse pointer control in workbench.)
+
+The BTC keyboard I used also included a Macro key (conveniently) that
+is mapped as a control key.
+
+
+All other keys are mapped exactly the same.
+
+Since the Control Keys on the AT are mapped to the Amiga keys,
+I made a little routine that defines the Capslock Key to work as
+Control if you hold it down first, then type the other key.
+Just use it as you would an ordinary Control key.
+This only works for the AT, not the XT since I can't control the lights
+on the XT.
+
+The explanation for how the Amiga Keyboard works is provided in the
+Hardware Reference Manual. I will not repeat this info here, for fear of
+copyright infringements and because the manual is cheap and a valuable
+must for anyone who indulges in this kind of thing.
+
+
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+SOFTWARE:
+
+I have included the source and the machine code for the software that
+runs this circuit. The timing loops are pretty stringent so if you want to
+change things, better have a logic analyzer on hand!
+
+I am also going to include a simple 8051 code assembler for those who don't
+like to hand-code. If you keep your programs neatly written, it should 
+assemble fine.
+
+Documentation is within the program listing. It's not too hard to follow if
+you know what you are doing.
+
+Feel free to change anything you want, but before you redistribute it,
+please tell me of the changes. Make it known within the program that you
+have made changes.
+
+The circuit, once built, should never have to be removed once plugged into
+your computer. It should Auto Detect which style keyboard is hooked up
+if the XT/AT pin (now coded as Port 1.7 (pin 8)) is not tied low.
+IF for some reason the circuit does not start up fine, you may need
+a reset CIRCUIT switch. This is different than the reset Computer
+switch. This switch SHOULD restart the circuit and make it sync
+up to the computer and the keyboard.
+
+I will sell anybody any number of the parts needed, from circuit board
+to telephone connectors to the whole thing.
+
+Circuit board alone: 5$
+Telephone connector: 1.50$
+Whole thing minus case:25$ plus shipping.
+Full documentation: 1$ plus postage.
+
+Any questions? Be glad to answer em!
+Email address: rudolpe@jacobs.cs.orst.edu
+Phone # 503-745-7466 (Oregon)
+

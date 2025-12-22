@@ -1,0 +1,566 @@
+@DATABASE "ARB22"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 22 - Built In Functions To Manipulate Bits"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 22 - BUILT IN FUNCTIONS TO MANIPULATING BITS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Comments       " LINK "General"}
+@{" The BITTST()  Function " LINK "Bittst()"}
+@{" The BITCHG()  Function " LINK "Bitchg()"}
+@{" The BITCLR()  Function " LINK "Bitclr()"}
+@{" The BITSET()  Function " LINK "Bitset()"}
+@{" The BITCOMP() Function " LINK "Bitcomp()"}
+@{" The BITAND()  Function " LINK "Bitand()"}
+@{" The BITOR()   Function " LINK "Bitor()"}
+@{" The BITXOR()  Function " LINK "Bitxor()"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 22 - Built In Functions To Manipulate Bits - General Comments"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - GENERAL COMMENTS@{UB}@{UU}
+@{JLEFT}
+In the last 6 articles I have covered quite a few "Built In Functions"
+and this will be the last article that deals specifically with functions.
+However, there are a lot more that I have not yet covered. Most of these
+will be discussed in future articles as it is more appropriate to talk
+about them in connections with a particular topic. Look them up in the
+index under "Index Part 2 - Commands Alphabetically".
+
+In this article I will talk about those functions that can manipulate
+the bits of a byte. A lot of programmers, beginners and experienced alike,
+would never use these functions and I will warn you now that explaining
+them does get a bit complex. So skip this article if you like and only
+come back to it if you have a need to use them.
+
+
+There are 8 Built In functions that let us play around with the bits of
+a byte. They are:-
+
+      @{"BITAND()" LINK "Bitand()"}    @{"BITCHG()" LINK "Bitchg()"}     @{"BITCLR()" LINK "Bitclr()"}     @{"BITCOMP()" LINK "Bitcomp()"}
+      @{"BITOR() " LINK "Bitor()"}    @{"BITSET()" LINK "Bitset()"}     @{"BITTST()" LINK "Bittst()"}     @{"BITXOR() " LINK "Bitxor()"}
+
+Before starting on these functions, however, we need to talk about the
+way bytes are constructed.
+
+If you are unsure of how the binary system works then @{"click here"  LINK "ARB:Misc/Glossary/Binary"}.
+
+In talking about this topic, you should keep in mind that every byte consists
+of 8 bits. These bits can hold only two values - 0 or 1 :-
+
+- when the bit is @{B}clear@{UB} or @{B}turned off@{UB} - value held = 0
+- when the bit is @{B}set@{UB}   or @{B}turned on@{UB}  - value held = 1
+
+Also, the bits are numbered from the @{B}right@{UB} starting at zero. Thus, in
+this representation of a byte:-
+
+  Bit number:-  7  6  5  4  3  2  1  0
+
+  Value held:-  1  0  0  1  0  0  0  1
+
+  Bits 0, 4 and 7 are @{B}ON@{UB} or @{B}SET@{UB}
+
+  All other bits are @{B}OFF@{UB} or @{B}CLEAR@{UB}
+
+The printable/viewable characters such as the alpha-numeric characters
+(0-9, a-z and A-Z) are the most easily understood, I will use the @{"ASCII Code" LINK "ARB:Appendices/App-C_ASCII_Codes/Printable"}
+values of these characters in the explanations. These characters range
+in ASCII code values from decimal 32 (space) to 126 (~). The binary values
+of these codes are:-
+
+  00100000 (= decimal 32)
+  01111110 (= decimal 126)
+
+Note that the 7th bit (the leftmost one) is @{B}not@{UB} used.
+
+Have a look at the range of ASCII codes in binary for upper and lower
+case alpha characters:-
+
+  A = 01000001   Z = 01011010
+  a = 01100001   z = 01111010
+
+Note that the upper and lower case are identical for all except the 5th
+bit which is @{B}set@{UB} for lower case and @{B}clear@{UB} for upper case. This makes it
+easy to convert from one case to the other simply by switching the value
+of the 5th bit.
+
+The eight functions that we will deal with in this articles allow us to
+do the following things with individual bits within a byte:-
+
+- Examine the state of individual bits
+- Change the state of individual bits
+- Compare individual bits in different strings
+
+The functions work on strings rather than individual bytes.
+
+If the string contains more than one character, then the numbering of
+bits:-
+
+- starts at 0 which is the rightmost bit of the rightmost character
+
+- ends at the highest numbered bit which is
+  the leftmost bit of the leftmost character.
+
+For example, if we had this string:-
+
+  This is a string
+
+then it would contain 16 bytes, or 128 bits numbered from 0 to 127. Each
+of the bytes in the string would have 8 bits numbered as follows:-
+
+  @{U}Character@{UU}  @{U} Bit numbers in string@{UU}
+
+     T           120 - 127
+     h           112 - 119
+     i           104 - 111
+     s            96 - 103
+                  88 - 95
+     i            80 - 87
+     s            72 - 79
+                  64 - 71
+     a            56 - 63
+                  48 - 55
+     s            40 - 47
+     t            32 - 39
+     r            24 - 31
+     i            16 - 23
+     n             8 - 15
+     g             0 - 7
+
+So to work on the 5th bit of the character "a" you would need to work
+on the 61st bit of the whole string. (Remember that, for each byte, the
+first bit is bit number 0.)
+
+I will be using this string:-
+
+  This is a string
+
+in discussing some of the functions in this article.
+
+In the functions descriptions, the following terms are used.
+
+@{B}String@{UB} means the string on which the particular operation is to be performed.
+In some cases two strings are used for comparison purposes.
+
+@{B}Pad@{UB} means the character with which a shorter string will be padded if
+one is shorter than the other. If no pad is used, then the default pad
+character "Space" is used. It is important to note that, as comparisons
+are made from Bit 0, i.e. the @{B}right@{UB} most bit, then the pad character is
+added to the @{B}left@{UB} end of the shorter string.
+
+@{B}BitNumber@{UB} means the number of the bit within the given string starting
+at Bit 0, i.e. the @{B}right most@{UB} bit of the @{B}right most@{UB} character.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bittst()" "Article 22 - Built In Functions To Manipulate Bits - The BITTST() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITTST() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+This function allows you to TEST (BITTeST) the state of an individual
+bit within a string. Its syntax is:-
+
+  BITTST(@{"String,bitnumber" LINK "General"121})
+
+It returns 0 if the bit is clear or 1 if the bit is set. For
+example:-
+
+  SAY BITTST('a',5)
+  --> 1
+
+As 'a' is lower case, @{"the 5th bit is set" LINK "General"56}.
+
+  SAY BITTST('A',5)
+  --> 0
+
+As 'A' upper case, @{"the 5th bit is clear" LINK "General"56}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitchg()" "Article 22 - Built In Functions To Manipulate Bits - The BITCHG() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITCHG() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+This function allows you to change (BITCHanGe) the state of a bit. If
+the bit is set then it is cleared and if it is clear it is set. The syntax
+is:-
+
+  BITCHG(@{"String,bitnumber" LINK "General"121})
+
+It returns a new string that has had the particular bit changed.
+
+For example:-
+
+  SAY BITCHG('a',5)
+  --> A
+
+  SAY BITCHG('A',5)
+  --> a
+
+This change is made because the 5th bit determines whether a character
+is @{"upper or lower case" LINK "General"56}.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitclr()" "Article 22 - Built In Functions To Manipulate Bits - The BITCLR() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITCLR() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+This functions clears (BITCLeaR) the bit no matter what its previous state.
+Its syntax is:-
+
+  BITCLR(@{"String,bitnumber" LINK "General"121})
+
+If the bit is set, it becomes clear. If it is clear, it stays
+clear.
+
+For example:-
+
+  SAY BITCLR('a',5)
+  --> A
+
+  SAY BITCLR('A',5)
+  --> A
+
+The first example changes 'a' to 'A' because @{"clearing the 5th bit" LINK "General"56} converts
+to upper case.
+
+The second example gives no change as the "A" already has its 5th bit
+clear.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitset()" "Article 22 - Built In Functions To Manipulate Bits - The BITSET() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITSET() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+This function sets the bit no matter what its previous state. Its syntax
+is:-
+
+  BITSET(@{"String,bitnumber" LINK "General"121})
+
+If the bit is set, it stays set. If the bit is clear, it becomes
+set.
+
+For example:-
+
+  SAY BITSET('a',5)
+  --> a
+
+  SAY BITSET('A',5)
+  --> a
+
+The second example changes 'A' to 'a' because @{"setting the 5th bit" LINK "General"56} converts
+to lower case.
+
+The first example gives no change as the "a" already has its 5th bit
+set.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitcomp()" "Article 22 - Built In Functions To Manipulate Bits - The BITCOMP() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITCOMP() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+This functions compares (BITCOMPare) two strings on a bit by bit basis
+starting at bit 0 (i.e. the right most bit of the strings). Its syntax
+is:-
+
+  BITCOMP(@{"String-1,String-2 [,Pad])" LINK "General"121}
+
+If the strings are identical, it returns a value of -1
+
+If the strings are different, it returns the number of the @{B}first BIT@{UB} in
+which a difference is found.
+
+It can only find the @{B}first@{UB} bit that is different. There is @{B}no@{UB} indication
+of differences in @{B}subsequent@{UB} bits.
+
+For example:-
+
+  SAY BITCOMP('This is a string','This is a string')
+  --> -1
+
+The strings are identical so -1 is returned.
+
+If we use:-
+
+  SAY BITCOMP('This is a string',' This is a string')
+  --> -1
+
+The strings are of different length so a default pad character of " "
+(Space) is added to the left end of the shorter string, i.e. the first
+string. This makes the two strings identical:-
+
+  First String  - ' This is a string'
+  Second String - ' This is a string'
+
+and so a return of -1 is given.
+
+Now let's try the same line using a pad character:-
+
+  SAY BITCOMP('This is a string',' This is a string','*')
+  --> 129
+
+The first string, which is shorter, is padded out with "*" and the two
+strings now become:-
+
+  First String  - '*This is a string'
+  Second String - ' This is a string'
+
+and the function indicates that the first difference is at bit number
+129 which the second bit (bit number 1) of the left most characters of
+each string which are:-
+
+  First String  "*" which has binary code 00101010
+  Second String " " which has binary code 00100000
+
+Now if we put the extra space character at the @{B}right@{UB} end of the string
+instead of the left end, we would have:-
+
+  SAY BITCOMP('This is a string','This is a string ')
+  --> 0
+
+The strings are of different length so a default pad character of " "
+(Space) is added to the left end of the first string. This makes the two
+strings become:-
+
+  First String  - ' This is a string'
+  Second String - 'This is a string '
+
+A difference has been found in bit number 0 of the strings. Note that
+this is in bit 0 of the right most characters of the strings which
+are:-
+
+  First String  "g" which has binary code 01100111
+  Second String " " which has binary code 00100000
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitand()" "Article 22 - Built In Functions To Manipulate Bits - The BITAND() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITAND() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+The syntax for this function is:-
+
+  BITAND(@{"String-1,String-2 [,Pad])" LINK "General"121})
+
+It performs a @{B}logical AND@{UB} operation on the two strings and creates a new
+string which is the result of the AND.
+
+The @{"logical AND" LINK "ARB:Articles_11-20/13.Logical_Operators/How"15} discussed earlier applies the logic to the values of two
+symbols (variables or strings) and produces only one "true" or "false"
+result.
+
+BITAND() applies the same sort of logic to each individual bit position
+in two strings and produces as many results as there are bits in the
+strings.
+
+In other words, it compares the equivalent bits of each string and produces
+a result in the equivalent bit of the new string that is:-
+
+  1 if @{B}both@{UB} the bits in String-1 and String-2 are 1
+
+  0 if @{B}either or both@{UB} the bits in String-1 and String-2 is 0
+
+What it is saying is that:-
+
+  "@{B} If@{UB} a bit in String-1 is 1 @{B}AND@{UB} its equivalent bit in String-2 is 1
+   @{B}then@{UB} the equivalent bit in the resultant string will be 1
+   @{B}otherwise@{UB} the equivalent bit in the resultant string will be 0."
+
+The result of BITAND() can be SAYed or applied as a value to a symbol.
+For example:-
+
+  SAY BITAND('1','e')
+  --> !
+
+  New = BITAND('1','e')
+  SAY New
+  --> !
+
+So why is the new string "!" ????
+
+This is illustrated by comparing the binary codes for the two characters
+"1" and "e" that we used in the above example:-
+
+   String-1 = Character "1"   = 0 0 1 1 0 0 0 1
+
+   String-2 = Character "e"   = 0 1 1 0 0 1 0 1
+
+                 AND Result   = 0 0 1 0 0 0 0 1
+
+   New String = Character "!" = 0 0 1 0 0 0 0 1
+
+Note that the new string only has the bits set (=1) when @{B}both@{UB} String-1
+and String-2 have the bits set. All other bits in the new string have
+been set to 0.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitor()" "Article 22 - Built In Functions To Manipulate Bits - The BITOR() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITOR() FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+The syntax for this function is:-
+
+  BITOR(@{"String-1,String-2 [,Pad])" LINK "General"121})
+
+It performs a @{B}logical OR@{UB} operation on the two strings and creates a new
+string which is the result of the OR.
+
+The @{"logical OR" LINK "ARB:Articles_11-20/13.Logical_Operators/How"15} discussed earlier applies the logic to the values of two
+symbols (variables or strings) and produces only one "true" or "false"
+result.
+
+BITOR() applies the same sort of logic to each individual bit position
+in two strings and produces as many results as there are bits in the
+strings.
+
+In other words, it compares the equivalent bits of each string and produces
+a result in the equivalent bit of the new string that is:-
+
+  1 if @{B}either@{UB} or @{B}both@{UB} the bits in String-1 and String-2 are 1
+
+  0 if @{B}both@{UB} the bits in String-1 and String-2 is 0
+
+What it is saying is that:-
+
+  "@{B} If@{UB} the bit in String-1 is 1 @{B}OR@{UB} its equivalent bit in String-2 is 1
+   @{B}then@{UB} the equivalent bit in the resultant string will be 1
+   @{B}otherwise@{UB} the equivalent bit in the resultant string will be 0."
+
+The result of BITOR() can be SAYed or applied as a value to a symbol.
+For example:-
+
+  SAY BITOR('1','e')
+  --> u
+
+  New = BITOR('1','e')
+  SAY New
+  --> u
+
+So why is the new string "u" ????
+
+This is illustrated by comparing the binary codes for the two characters
+"1" and "e" that we used in the above example:-
+
+   String-1 = Character "1"   = 0 0 1 1 0 0 0 1
+
+   String-2 = Character "e"   = 0 1 1 0 0 1 0 1
+
+                    OR Result = 0 1 1 1 0 1 0 1
+
+   New String = Character "u" = 0 1 1 1 0 1 0 1
+
+Note that the new string has its bits set (=1) when @{B}either@{UB} String-1 @{B}or@{UB}
+String-2 has the equivalent bits set. Bits in the new string are only
+clear (=0) when @{B}both@{UB} equivalent bits in String-1 and String-2 are
+0.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Bitxor()" "Article 22 - Built In Functions To Manipulate Bits - The BITXOR() Function"
+
+@{B}@{U}@{JCENTER}BUILT IN FUNCTIONS TO MANIPULATE BITS - THE BITXOR FUNCTION@{UB}@{UU}
+@{JLEFT}
+
+The syntax for this function is:-
+
+  BITXOR(@{"String-1,String-2 [,Pad])" LINK "General"121})
+
+It performs a @{B}logical EXCLUSIVE OR@{UB} (XOR) operation on the two strings
+and creates a new string which is the result of the XOR.
+
+The @{"logical XOR" LINK "ARB:Articles_11-20/13.Logical_Operators/How"15} discussed earlier applies the logic to the values of two
+symbols (variables or strings) and produces only one "true" or "false"
+result.
+
+BITXOR() applies the same sort of logic to each individual bit position
+in two strings and produces as many results as there are bits in the
+strings.
+
+In other words, it compares the equivalent bits of each string and produces
+a result in the equivalent bit of the new string that is:-
+
+  1 if the bits in String-1 and String-2 are @{B}different@{UB}
+
+  0 if the bits in the two strings are @{B}the same@{UB}
+
+What it is saying is that:-
+
+  "@{B} If@{UB} the bit in String-1 is @{B}different@{UB} to the equivalent bit in String-2
+   @{B}then@{UB} the equivalent bit in the resultant string will be 1
+   @{B}otherwise@{UB} the resultant equivalent bit will be 0."
+
+The result of BITXOR() can be SAYed or applied as a value to a symbol.
+For example:-
+
+  SAY BITXOR('1','e')
+  --> T
+
+  New = BITXOR('1','e')
+  SAY New
+  --> T
+
+So why is the new string "T" ????
+
+This is illustrated by comparing the binary codes for the two characters
+"1" and "e" that we used in the above example:-
+
+   String-1 = Character "1"   = 0 0 1 1 0 0 0 1
+
+   String-2 = Character "e"   = 0 1 1 0 0 1 0 1
+
+                   XOR Result = 0 1 0 1 0 1 0 0
+
+   New String = Character "T" = 0 1 0 1 0 1 0 0
+
+Note that the new string has its bits set (=1) when the equivalent bits
+in String-1 and String-2 are @{B}different@{UB} . When equivalent bits are the
+same the resultant bits are 0.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

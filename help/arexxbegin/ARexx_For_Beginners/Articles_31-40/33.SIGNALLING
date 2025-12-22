@@ -1,0 +1,784 @@
+@DATABASE "ARB33"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 33 - Signalling & Interrupts"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 33 - SIGNALLING & INTERRUPTS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Discussion          " LINK "General"}
+@{" The SIGNAL Instruction      " LINK "Signal"}
+@{"   SIGNAL [VALUE] Expression " LINK "Expression"}
+@{"   SIGNAL [ON|OFF] Condition " LINK "Condition"}
+@{"       The BREAK_? Condition " LINK "Break"}
+@{"       The ERROR   Condition " LINK "Error"}
+@{"       The HALT    Condition " LINK "Halt"}
+@{"       The IOERR   Condition " LINK "Ioerr"}
+@{"       The NOVALUE Condition " LINK "Novalue"}
+@{"       The SYNTAX  Condition " LINK "Syntax"}
+@{" The SIGL And RC Variables   " LINK "SiglRC"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 33 - Signalling & Interrupts - General Discussion"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - GENERAL DISCUSSION@{UB}@{UU}
+@{JLEFT}
+There are certain events that occur during the execution of an ARexx program
+that can cause the program to cease execution. Most of these are @{B}error
+situations.@{UB} Each of these events have a @{B}Interrupt Flag@{UB} associated with
+it. If the flag is set to @{B}OFF@{UB} then the interrupt event will cause the
+program to stop execution. If the flag is set to @{B}ON@{UB} then the interrupt
+can be diverted to another part of the program and appropriate action
+taken.
+
+To better understand @{B}flags@{UB} let's go back to @{"Example30-1" LINK "ARB:Articles_21-30/30.Example_Program/MAIN"} which was our
+data base program. You will recall that when we selected the @{"QUIT option" LINK "ARB:Articles_21-30/30.Example_Program/Quit"},
+the program let us know if the data base had been changed and needed
+saving.
+
+At the end of the @{"NewPeople:" LINK "ARB:Articles_21-30/30.Example_Program/NewPeople"114} function we set a @{B}flag@{UB} (in our case the symbol
+"SaveFile") with:-
+
+  SaveFile = 1
+
+At the end of the @{"SaveFile" LINK "ARB:Articles_21-30/30.Example_Program/Save"43} function, we reset the value with:-
+
+  SaveFile = 0
+
+Thus our @{B}flag@{UB} had:-
+
+- a value of 1 when a save @{B}was@{UB} needed
+- a value of 0 when a save was @{B}not@{UB} needed
+
+Then, in the @{"Quit" LINK "ARB:Articles_21-30/30.Example_Program/Quit"} function, we had:-
+
+  Quit:
+
+  IF SaveFile = 1 THEN DO
+     .... ask user if he/she wants to save and if so then call SaveFile
+  END
+
+  .... rest of "Quit:" function can now be entered
+
+This is @{B}not@{UB} an exact analogy to the interrupt flags because:-
+
+- the "SaveFile" symbol was one in which the programmer set the values
+  and checked the flag to see if an action was required. If so, program
+  diversion was made by the program.
+
+- the interrupt flags, although they can be turned on and off by the
+  programmer, are checked by the ARexx system, not by the program and
+  the   program flow is diverted by ARexx, not the program.
+
+Nevertheless, they work in a similar way.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Signal" "Article 33 - Signalling & Interrupts - The SIGNAL Instruction"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - THE SIGNAL INSTRUCTION@{UB}@{UU}
+@{JLEFT}
+
+SIGNAL is a means of interrupting program flow and jumping straight to
+a @{"label" LINK "ARB:Articles_11-20/16.Functions-Internal/Labels"}.
+
+The format for SIGNAL is one of:-
+
+  @{" SIGNAL [VALUE] Expression " LINK "Expression"}
+
+  @{" SIGNAL [ON|OFF] Condition " LINK "Condition"}
+
+This means that the SIGNAL instruction can be used in two different
+ways.
+
+The @{B}Expression@{UB} or @{B}Condition@{UB} must relate to a label in the program. If
+the program does @{B}not@{UB} have an appropriately named label, then the program
+will stop with a "Label not found" error message.
+
+For those of you who have had experience with BASIC programming, SIGNAL
+could be likened to Basic's GOTO command.
+
+@{B}The First Way - SIGNAL [VALUE] Expression@{UB}
+
+The VALUE keyword is optional, so either of these can be used:-
+
+  SIGNAL VALUE Expression or
+  SIGNAL Expression
+
+This allows for an @{B}immediate interrupt@{UB} to normal program flow and a jump
+to the part of the program that starts with the~ label "Expression". The
+name of the label held by "Expression" can be at the programmer's
+discretion.
+
+@{B}The Second Way - SIGNAL [ON|OFF] Condition@{UB}
+
+The [ON|OFF] means that either ON @{B}or@{UB} OFF is used:-
+
+  SIGNAL ON Condition
+  SIGNAL OFF Condition
+
+This will turn on or off a certain @{"Condition Flags" LINK "Condition"} but does @{B}NOT@{UB} cause
+an immediate interrupt. The interrupt will only occur if the "Condition"
+returns a non zero code indicating an error or interrupt situation. Only
+then will program flow be transferred to the label that has the same name
+as the "Condition". The @{B}label name@{UB} of the "Condition" can only be one
+of the nine laid down in the above reference to "Condition Flags".
+
+@{B}Differences In The Two Ways@{UB}
+
+In the first method, the interrupt can @{B}only@{UB} occur at the @{B}line in the program
+that holds the SIGNAL instruction.@{UB}
+
+In the second method, the interrupt can occur @{B}anywhere@{UB} in the program
+@{B}after@{UB} SIGNAL has been used to turn ON the condition. This will not normally
+be at the line at which SIGNAL was used.
+
+I hope that this will all become clearer as you read on and look at the
+examples provided.
+
+@{B}Effect Of Interrupts On DO, IF, SELECT, INTERPRET, TRACE@{UB}
+
+If an interrupt caused by either of the above two methods occurs within
+one of a:-
+
+- DO...END
+- IF...THEN...ELSE
+- SELECT...WHEN...END
+- INTERPRET string
+- TRACE in interactive mode
+
+then the program will jump out of the loop, block, or whatever, straight
+to the label and the DO...END loop, or the IF...THEN...ELSE condition,
+or the INTERPRET sequence, or the SELECT...WHEN block, will immediately
+be dismantled so that there are no hangups with leaving them.
+
+@{B}Comparing SIGNAL To CALL@{UB}
+
+To help us understand SIGNAL a bit better, let's compare it to the CALL
+instruction which passes control to a function but, after doing its job,
+the function RETURNs control back to the original point of the program
+at which CALL was used.
+
+SIGNAL is different in that control does @{B}not@{UB} return to the original point
+at which the interrupt occurred. Instead, the program continues on from
+the label to which it was sent and, if it is to go back, some means of
+getting it back (e.g. another SIGNAL) must be used.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Expression" "Article 33 - Signalling & Interrupts - SIGNAL VALUE Expression"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL VALUE EXPRESSION@{UB}@{UU}
+@{JLEFT}
+
+In the format:-
+
+  SIGNAL [VALUE] Expression
+
+the VALUE is an optional keyword. For example, both of these can be used,
+although there are certain restrictions on the first one:-
+
+  SIGNAL Expression
+  SIGNAL VALUE Expression
+
+VALUE is optional if "Expression" is a string holding the actual label
+name. For example, you can use either of:-
+
+  SIGNAL 'MyLabel'
+  SIGNAL VALUE 'MyLabel'
+
+In these cases, the "Expression" must be in quotes.
+
+However, if "Expression" is @{B}not@{UB} the actual label name but is a symbol
+holding the label name, or some other expression needing to be evaluated
+as the label name, then the keyword VALUE is essential. For
+example:-
+
+  MySymbol = 'MyLabel'
+  SIGNAL VALUE MySymbol
+
+  SIGNAL VALUE 'My'||'Label'
+
+Both the above @{B}must@{UB} use VALUE although I cannot see any reason to use
+the second! I include it merely to show that "Expression" can be an
+evaluation.
+
+  /* Example33-1 */
+
+  SAY 'c'x'Testing SIGNAL'
+  SIGNAL First
+
+  SAY 'This line will never be reached!!'
+
+  Third:
+    SAY 'I am the line in the "Third:" Label'
+    SIGNAL Fourth
+
+  Second:
+
+    SAY 'I am the line in the "Second:" Label'
+    SIGNAL Third
+
+  Fourth:
+    SAY 'I am the line in the "Fourth:" Label'
+    EXIT
+
+  First:
+    SAY 'I am the line in the "First:" Label'
+    SIGNAL Second
+
+This program will give this display:-
+
+  Testing SIGNAL
+  I am the line in the "First:" Label
+  I am the line in the "Second:" Label
+  I am the line in the "Third:" Label
+  I am the line in the "Fourth:" Label
+
+This demonstrates that program control has been shifted around all over
+the place but that the line:-
+
+  SAY 'This line will never be reached!!'
+
+is, indeed, never reached!
+
+@{B}@{U}Warning - DON'T Use "Spaghetti" Coding!!@{UB}@{UU}
+
+Using SIGNAL in the way demonstrated in the above example can lead to
+@{B}Spaghetti Code@{UB} so called because the program wanders all over the place
+and is all tangled up like a bowl of spaghetti.
+
+There are times when it can be quite legitimate to use "SIGNAL Expression"
+but, for the most part, it should be avoided. It makes the program a lot
+harder for the human to follow it when reading the program and can be
+very prone to error. So avoid the temptation to shove in a
+"SIGNAL Expression" whenever it looks like the easiest way to overcome a
+bit of bad programming. It would be much better to rewrite the segment of
+bad coding without using SIGNAL than to make it even worse with spaghetti!
+
+However, as you will see in @{"Example33-2" LINK "Break"41} and other examples below, we can
+legitimately use it when returning from a "SIGNAL ON Condition" instead
+of exiting from the program.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Condition" "Article 33 - Signalling & Interrupts - SIGNAL Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL ON|OFF CONDITION@{UB}@{UU}
+@{JLEFT}
+In the format:-
+
+  SIGNAL ON|OFF Condition
+
+the character "|" indicates @{B}either@{UB} ON @{B}or@{UB} OFF can be used, as in one
+of:-
+
+  SIGNAL ON  Condition
+  SIGNAL OFF Condition
+
+The @{B}condition@{UB} can be one of the following. Each of them refer to a particular
+condition that can occur either outside the program that is signalled
+to the program, or within the program. They are:-
+
+  @{U}Condition@{UU}   @{U}    Cause of Condition                          @{UU}
+
+  @{" BREAK_C " LINK "Break"}    CTRL-C break was detected
+  @{" BREAK_D " LINK "Break"}    CTRL-D break was detected
+  @{" BREAK_E " LINK "Break"}    CTRL-E break was detected
+  @{" BREAK_F " LINK "Break"}    CTRL-F break was detected
+  @{" ERROR   " LINK "Error"}    A host command returned a non-zero code
+  @{" HALT    " LINK "Halt"}    An external HALT was detected
+  @{" IOERR   " LINK "Ioerr"}    An error was detected by the Input Output system
+  @{" NOVALUE " LINK "Novalue"}    An unitialised symbol was detected
+  @{" SYNTAX  " LINK "Syntax"}    A syntax or execution error was found
+
+The @{B}default condition@{UB} for all these is @{B}OFF@{UB}.
+
+To turn the condition ON you use :-
+
+  SIGNAL ON Condition
+
+For example:-
+
+  SIGNAL ON BREAK_C
+
+  SIGNAL ON IOERR
+
+To turn it off again, you use:-
+
+  SIGNAL OFF Condition
+
+For example:-
+
+  SIGNAL OFF BREAK_F
+
+  SIGNAL OFF SYNTAX
+
+However, @{B}note that@{UB} the condition flag is @{B}automatically turned OFF@{UB} whenever
+the condition is detected, just as if you had used:-
+
+  SIGNAL OFF Condition
+
+This is illustrated in @{"Example33-2" LINK "Break"41} and discussed @{"further on" LINK "Break"83} in that
+section.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Break" "Article 33 - Signalling & Interrupts - SIGNAL BREAK Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL BREAK CONDITION@{UB}@{UU}
+@{JLEFT}
+The following notes have been written about the condition:-
+
+  BREAK_C
+
+as it is the most common. However, the other three conditions, i.e.:-
+
+  BREAK_D
+  BREAK_E
+  BREAK_F
+
+work in exactly the same way except that using them while the condition
+is @{B}OFF@{UB} will @{B}not@{UB} stop the program as does BREAK_C.
+
+The BREAK signals can be sent to the program by going to the program's
+@{"STDIN" LINK "ARB:Misc/Glossary/Streams"} window (if it has one!) and @{B}holding down@{UB} the CTRL key then pressing
+one of @{B}C D E F@{UB} keys. This is commonly represented in test by:-
+
+    CRTL-C   CTRL-D    CTRL-E    CTRL-F
+
+When the condition is @{B}OFF@{UB}, the CTRL-C is the only one that ARexx reacts
+to. It does this by causing @{"the program to stop" LINK "ARB:Articles_01-10/03.Command_Utilities/Stopping"} with a message such as:-
+
+  +++ Error 2 in line 10: Execution halted
+  Command returned 10/2: Execution halted
+
+With the condition turned ON, when the program detects that the user has
+pressed CTRL-C then, instead of the program stopping, as it normally would
+do, the program is diverted to a @{"label" LINK "ARB:Articles_11-20/16.Functions-Internal/Labels"} called "Break_C:". Similarly, the
+program will divert to similar labels when CTRL-D, CTRL-E or CTRL-F are
+pressed.
+
+To turn it off again (if it is not @{"automatically turned off" LINK "Break"82}), you use:-
+
+  SIGNAL OFF BREAK_C
+
+"SIGNAL ON|OFF Condition" can be illustrated by:-
+
+  /* Example33-2 */
+
+  x = 0
+
+  SIGNAL ON BREAK_C
+
+  Start:
+    DO FOREVER
+      x = x + 1
+      SAY 'X =' x
+    END
+
+  Break_C:
+    SAY 'a'x'Do you really want to quit? (Y/N)'
+    PULL YesNo
+    IF YesNo = 'Y' THEN EXIT
+    ELSE SIGNAL Start
+
+RX this program and it will display:-
+
+  X = 1
+  X = 2
+  X = 3
+  etc.
+
+Now press CTRL-C and the program will jump to "Break_C:" and you will see:-
+
+  Do you really want to quit? (Y/N)
+
+Enter "Y" and the program will EXIT.
+
+Enter any other key and the program will "SIGNAL Start" and control will
+go back to the "Start:" label and reenter the "DO FOREVER" loop with the
+previous "X" value so that the display will be:-
+
+  X = 10
+  X = 11
+  etc.
+
+Now press CTRL-C again and the program @{B}will stop@{UB} with the usual "Execution
+halted" message that you get with CTRL-C.
+
+So why didn't it work the second time???
+
+Because the condition flag is @{B}automatically turned OFF@{UB} whenever the
+condition is detected, just as if you had used:-
+
+  SIGNAL OFF BREAK_C
+
+We can overcome the problem by shifting the "SIGNAL ON Break_C:" line
+to @{B}after@{UB} the "Start:" label so that the line is operated @{B}every time@{UB} the
+program is sent back to "Start:". This is demonstrated in:-
+
+  /* Example33-3 */
+
+  x = 0
+
+  Start:
+    SIGNAL ON BREAK_C
+    DO FOREVER
+      x = x + 1
+      SAY 'X =' x
+    END
+
+  Break_C:
+    SAY 'a'x'Do you really want to quit? (Y/N)'
+    PULL YesNo
+    IF YesNo = 'Y' THEN EXIT
+    ELSE SIGNAL Start
+
+Now, every time the last line sends the program back to "Start:" the BREAK_C
+condition is reset to ON.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Error" "Article 33 - Signalling & Interrupts - SIGNAL ERROR Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL ERROR CONDITION@{UB}@{UU}
+@{JLEFT}
+@{B}The ERROR Condition@{UB} can be illustrated with this example:-
+
+  /* Example33-4 */
+
+  SIGNAL ON ERROR
+
+  ADDRESS 'COMMAND'
+  'COPY >nil: Ram:What_a_lot_of_garbage Sys:'
+  SAY 'This line will not be reached!!'
+  EXIT
+
+  Error:
+    SAY 'There is no such file in Ram:'
+
+If you had a program such as this @{B}without@{UB} the SIGNAL ON ERROR line, then
+you could not trap the error returned from the host and the output would
+be:-
+
+  COPY failed returncode 20
+    6 *-* 'COPY >nil: Ram:What_a_lot_of_garbage Sys:';
+  +++ Command returned 20
+  This line will not be reached!!
+
+The program proceeds beyond the AmigaDOS COPY command without you being
+able to correct the error situation.
+
+@{B}BUT@{UB} if you RX Example33-4, then the program output should be:-
+
+  COPY failed returncode 20
+  there is no such file in Ram:
+
+Because the AmigaDOS COPY command could not find the file that it was
+asked to copy, it gives a return code of 20. As the ERROR condition has
+been turned ON, the non zero code returned from the host "COMMAND" (which
+is AmigaDOS) has caused the program to skip to the "Error:" label.
+
+Of course, in a proper program, you would have program coding to correct
+the error situation and return to the main part of the program!
+
+If you @{B}do@{UB} just happen to have a file called "What_a_lot_of_garbage" in
+your Ram: disk then it will be copied to Sys: and the program will
+SAY:-
+
+  This line will not be reached!!
+
+However, I will bet my rusty old Commodore 64 that you @{B}haven't@{UB} got a file
+with that name (unless you just created one!!).
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Ioerr" "Article 33 - Signalling & Interrupts - SIGNAL IOERR Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL IOERR CONDITION@{UB}@{UU}
+@{JLEFT}
+@{B}The IOERR Condition@{UB} works in the same way as the @{"ERROR" LINK "Error"} condition except
+that it checks for error messages from Input/Output.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Novalue" "Article 33 - Signalling & Interrupts - SIGNAL NOVALUE Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL NOVALUE CONDITION@{UB}@{UU}
+@{JLEFT}
+@{B}The NOVALUE Condition@{UB} will come into effect when a symbol is used that
+has not been assigned a value.
+
+We have previously discussed the fact that if you use:-
+
+  SAY Testing
+
+you will get:-
+
+  TESTING
+
+because ARexx assumes that "Testing" is a symbol because it is not in
+quotes. As it has no value it is given its own name, converted to upper
+case, as a value. Now try out this program:-
+
+/* Example33-5 */
+
+ 1. Start:
+ 2. SAY Testing
+ 3. SIGNAL ON NOVALUE
+ 4. SAY Testing
+ 5. SAY 'This line will never be reached!! (or will it?)'
+ 6. EXIT
+
+ 7. NoValue:
+ 8. SAY 'Symbol has no value'
+ 9. Testing = 'Testing has a value'
+10. SAY 'Going back to Start'
+11. SIGNAL Start
+
+This will display:-
+
+  TESTING
+  Symbol has no value
+  Going back to Start
+  Testing has a value
+  Testing has a value
+  This line will never be reached!! (or will it?)
+
+The program flow that produces this output is as follows:-
+
+Line 2 gives us "TESTING" because, as discussed above, The NOVALUE condition
+is, by default, OFF and so there is no diversion of program flow.
+
+Line 3 turns the NOVALUE condition ON.
+
+Line 4 is reached but is not acted upon as as the program is diverted
+to the "NoValue:" label at Line 7. Line 5 is @{B}not@{UB} reached (this time!).
+
+Line 8 tells you that a symbol with no value has been found.
+
+Line 9 now gives the symbol a value and Line 11 sends the program back
+to "Start:" to try again.
+
+Line 2 now gives us "Testing has a value"
+
+Line 3 turns the NOVALUE condition ON again. It was turned off the first
+time the program reached Line 4 and jumped to Line 7.
+
+Line 4 now does not cause the NOVALUE condition to be met so it operates
+and gives us "Testing has a value"
+
+Line 5 is now reached and gives it message before the program EXITs at
+Line 6
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Syntax" "Article 33 - Signalling & Interrupts - SIGNAL SYNTAX Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL SYNTAX CONDITION@{UB}@{UU}
+@{JLEFT}
+@{B}The SYNTAX Condition@{UB} will act in a similar way to @{"NOVALUE" LINK  "Novalue"} condition as
+demonstrated by this program:-
+
+  /* Example33-6 */
+
+  SIGNAL ON SYNTAX
+
+  DO FOR X = 1 TO 10
+    SAY 'X =' x
+  END
+
+  Syntax:
+    SAY 'You have a syntax error!'
+
+This, of course, will give you:-
+
+  You have a syntax error!
+
+because the DO syntax is wrong. I will leave you to follow through this
+one yourself as it should be quite obvious what happens.
+
+(See also @{"Example33-8" LINK "SiglRc"20} which is almost identical to this program except
+that it also displays the error number and the line number in which it
+occurred.)
+
+@{B}Note@{UB} that not all errors can be detected by this keyword option as some
+errors are trapped @{B}before@{UB} the program is actually executed. This will
+be discussed in @{"Article 46" LINK "ARB:Articles_41-50/46.Error_Tracing-1/Point"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Halt" "Article 33 - Signalling & Interrupts - SIGNAL HALT Condition"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGNAL HALT CONDITION@{UB}@{UU}
+@{JLEFT}
+@{B}The HALT Condition@{UB} comes into effect when ARexx receives an external HALT.
+This can be sent to all running ARexx programs with the @{"HI" LINK "ARB:Articles_01-10/03.Command_Utilities/Hi"} Command
+Utility.
+
+When "HI" is run, it sets the "Global HALT Flag". "Global" means that
+it applies to @{B}all@{UB} ARexx programs that are currently running. All those
+with the HALT condition set to OFF (the default condition) will immediately
+stop running while those with the HALT condition set to ON will be
+redirected to the "Halt:" label.
+
+To demonstrate the HALT condition, open up @{B}two@{UB} CLI windows and RX this
+program:-
+
+  /* Example33-7 */
+
+  x = 0
+
+  Start:
+  SIGNAL ON HALT
+
+    DO FOREVER
+      x = x + 1
+      SAY 'X =' x
+    END
+
+  Halt:
+    SAY 'a'x'Do you really want to quit? (Y/N)'
+    PULL YesNo
+    IF YesNo = 'Y' THEN EXIT
+    ELSE SIGNAL Start
+
+This program is identical to Example33-3 except that HALT has replaced
+BREAK_C.
+
+Before you go to the next step, make sure that you do @{B}not@{UB} have any other
+ARexx programs running that you cannot afford to have @{B}shut down!!@{UB} as you
+are about to send a HALT instruction to @{B}ALL@{UB} running ARexx
+programs!!
+
+While it is running in one CLI window enter in the other CLI
+window:-
+
+  > HI
+
+The program may run on for a few more displays of "X = ..." before it
+stops with this message:-
+
+  Do you really want to quit? (Y/N)
+
+Pressing anything except "Y" will send the program back to "Start:" and
+the DO...END loop will be reentered.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "SiglRC" "Article 33 - Signalling & Interrupts - SIGL & RC Variables"
+
+@{B}@{U}@{JCENTER}SIGNALLING & INTERRUPTS - SIGL & RC SPECIAL VARIABLES@{UB}@{UU}
+@{JLEFT}
+ARexx maintains two special variables which can be used in conjunction
+with the SIGNAL instruction. These are:-
+
+  SIGL - which holds the number of the line within the program at which
+         program transfer occurs. For example, if a syntax error occurred
+         in Line 10 and SIGNAL ON SYNTAX was operating, then the variable
+         SIGL would hold the value "10".
+
+  RC   - which holds the value of the error number if an error condition
+         exists. Error Numbers will be discussed in @{"Article 46" LINK "ARB:Articles_41-50/46.Error_Tracing-1/Numbers"} and are
+         listed in @{"Appendix A" LINK "ARB:Appendices/App-A_Error_Table/MAIN"14}
+
+       - or which holds the return code sent back to ARexx by an external
+         host after a command has been sent to the host. (See @{"Example33-9" LINK "SiglRC"43}
+         below).
+
+The use of these in signalling can be demonstrated by this variation of
+@{"Example33-6" LINK "Syntax"}:-
+
+
+  /* Example33-8 */
+
+  SIGNAL ON SYNTAX
+
+  DO FOR X = 1 TO 10
+    SAY 'X =' x
+  END
+
+  Syntax:
+    SAY 'You have a syntax error!'
+    SAY 'It is Error Number' RC 'in line number' SIGL
+
+When you RX this program you should be given the message:-
+
+    You have a syntax error!
+    It is Error Number 28 in line number 5
+
+If you look up @{"Error 28" LINK "ARB:Appendices/App-A_Error_Table/28"} in the list of errors you will see that it
+represents "Invalid DO Syntax".
+
+Example 33-9 demonstrates the RC variable after a command returns from an
+external host:-
+
+  /* Example 33-9 */
+
+  OPTIONS FAILAT 21
+
+  ADDRESS 'COMMAND'
+
+  'This is not an AmigaDOS Command'
+
+  SAY 'Return Code =' RC
+
+The @{"OPTIONS FAIL AT" LINK "ARB:Articles_21-30/25.Options/FailAt"} will prevent ARexx @{"error tracing" LINK "ARB:Articles_41-50/46.Error_Tracing-1/Errors"} type messages.
+
+The program will send the command line "This is not an AmigaDOS Command"
+to AmigaDOS which will find that "This" is not a legitimate command and
+will send back a return code of 10 which is picked up by the RC variable.
+
+The output when this program will be run will be:-
+
+  This: Unknown command
+  This failed returncode 10
+  Return Code = 10
+
+The last line is the one that shows that the variable RC has been given
+a value.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

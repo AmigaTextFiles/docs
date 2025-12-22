@@ -1,0 +1,36 @@
+;
+; Script for logging in and grabbing new messages from MBBS systems.
+; This script must be executed from the phonebook, or a 'DIAL'
+; command line must be inserted as well as your password.
+;
+        ;Insert your name here
+        set $name = "firstname lastname"
+
+	when "--more--" send " "
+
+	converse "" "^K"
+	converse "FIRST name"  $name"\n"
+	converse "(dots will echo):"  "\p\n^K"
+
+	;Change character set to ISO
+	converse "Main Command"  "U S\n"
+	converse "IBN"  "\b\b\bISO\n"
+
+	;Get the messages...
+	converse "Utility Command"  "GRAB\n"
+
+	;Restore character set
+	converse "Command" "U S\n"
+	converse "ISO" "\b\b\bIBN\n"
+
+	;Scan for new files
+	converse "Command" "F N\n"
+	converse ":" "\n"
+	capture "RAM:files" ;Save in file
+	wait     "Command"
+	capture off
+
+	;Log off!
+	send "G Y\n"
+	wait "NO CARRIER"
+	message "\nEnd of script.\n"

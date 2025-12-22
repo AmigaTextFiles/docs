@@ -1,0 +1,754 @@
+@database Mix+Tick.guide
+@author "Michael Schulz"
+@$VER: Mix-Tick (15/03/97)
+@node Main "Info"
+
+
+            Audio-Mix V1.0 (02 Mar 1997)
+            ----------------------------
+
+            @{"Deutsche Anleitung" LINK "mix-d"}
+            @{"English documentation" LINK "mix-e"}
+
+
+            Tick-Generator V1.0 (02 Mar 1997)
+            ---------------------------------
+
+            @{"Deutsche Anleitung" LINK "tick-d"}
+            @{"English documentation" LINK "tick-e"}
+
+
+
+            @{" " LINK "info-d"} Kontakt zum Author
+            @{" " LINK "info-e"} Contact the author
+
+            @{" " LINK "credits"} Credits 
+
+   _________________________________________________________
+   "Sorry for my English, but that's not my native language"
+   _________________________________________________________
+
+@ENDNODE
+
+@NODE tick-d "Tickgenerator - deutsche Anleitung"
+
+ Problem
+ -------
+
+    Aus Kostengruenden, oder einfach weil das Originalnetzteil nicht
+    mehr zu bekommen ist, moechte man u.U. in seinem Amiga 2/3000 ein
+    externes Standard-PC-Netzteil verwenden. Das einzige Problem, das
+    dabei auftaucht, ist, dass diese Netzteile kein TICK-Signal herausgeben.
+    (Das Tick-Signal ist einfach ein netzsynchrones TTL-Signal.)
+
+    (Der A1200/4000 benoetigt kein Tick-Signal mehr und deshalb wird diese
+     Schaltung bei diesen Modellen nicht noetig sein.)
+
+ Loesung
+ -------
+
+    Ich habe mich fuer einen Quarzoszillator mit nachgeschaltetem 16stufigen
+    Frequenzteiler entschieden. Vorteil zu anderen Loesungen: Man muss nicht                             ^
+    an der Netzspannung hantieren.
+
+ Blockschaltbild
+ ---------------
+
+
+                 +-----------+
+          +UB o--|           |
+                 |           |
+                 |           |
+                 |   meine   |--- Ausgang 50/60 Hz -->
+                 |           |
+                 | Schaltung |
+                 |           |
+                 |           |
+              +--|           |
+              |  +-----------+
+             -+-
+
+
+ Schaltbild
+ ----------
+
+                       o+5V               o+5V
+                       +--------+         |
+                       |       _|_        |
+                       |       ---        |
+                       |16      |100n     |14,2,3,4,6,7,10
+     +---------------------+   -+-   +----------------------+
+     |                     |3       1|                      |9
+     |    74HCT4060        |---------|        74HCT73       |----> 50/60Hz Out
+     |                     |         |                      |
+     +---------------------+         +----------------------+
+      |10         |11  |8,12              |11   |12      |5
+      | ____      |    |                  |     |        |
+      +-____------+   -+-                -+-    +--------+
+      |   10M     |
+      |          | |
+      |          | |100k
+      |           |
+      +----|O|----+
+      |       X1  |
+     _|_         _|_
+     ---6.8p     ---6.8p
+      |           |
+     -+-         -+-
+
+ Stueckliste
+ -----------
+
+ 1* 74HCT4060     (Oszillator mit 14stufigen Binaerteiler)
+ 1* 74HCT73       (Zwei JK-Master-Slave FlipFlops)
+ 2* 6.8pF         (Kondensator)
+ 1* 100nF         (Kondensator)
+ 1* 10MOhm        (Metallfilmwiderstand)
+ 1* 100kOHM       (Metallfilmwiderstand)
+ 1* X1            (Quarz 3.2768  Mhz fuer 50Hz Ausgang oder
+                   Quarz 3.93216 Mhz fuer 60Hz Ausgang)
+
+
+ Pinbelegung 74HCT4060
+ ---------------------
+
+ Bezeichnung   Pin  Erklaerung
+ -------------------------------------------------
+     Q12        1   Ausgang 12te Binaerteilerstufe
+     Q13        2           13te
+     Q14        3           14te
+     Q6         4           6te
+     Q5         5           5te
+     Q7         6           7te
+     Q4         7           4te
+     GND        8   Betriebsspannungsmasse
+     T0         9   Eingang Binaerteiler
+     T0 INV    10   Qszillator Ausgang
+     T1        11   Oszillator Eingang
+     R         12   Reset (High-Aktiv)
+     Q9        13   Ausgang 9te Binaerteilerstufe
+     Q8        14           8te
+     Q10       15          10te
+     Us        16   Betriebsspannung
+
+
+ Gehaeuse (Typ DIL16) des 74HCT4060 von oben gesehen
+ ---------------------------------------------------
+
+         +---o---+
+      1--|       |--16
+      2--|       |--15
+      3--|  74   |--14
+      4--|  HCT  |--13
+      5--|  4060 |--12
+      6--|       |--11
+      7--|       |--10
+      8--|       |--9
+         +-------+
+
+
+ Pinbelegung 74HCT73
+ -------------------
+
+ Bezeichnung   Pin  Erklaerung
+ -----------------------------------------------
+   1Clock       1   Takteingang,erstes FF
+   1Reset       2   Reseteingang
+   1Q           12  nicht invertierender Ausgang
+   1Q Nicht     13  invertierender Ausgang
+   1J           14  J-Vorstelleingang
+   1K           3   K-Vorstelleingang
+
+
+   2Clock       5   Takteingang,zweites FF
+   2Reset       6   Reseteingang
+   2Q Nicht     8   nicht invertierender Ausgang
+   2Q           9   invertierender Ausgang
+   2J           7   J-Voreinstelleingang
+   2K           10  K-Voreinstelleingang
+
+   Us           4   positiver Betriebsspannungseingang
+   GND          11  Betriebsspannungsmasse
+
+
+ Gehaeuse (Typ DIL14) des 74HCT73 von oben gesehen
+ -------------------------------------------------
+
+         +---o---+
+      1--|       |--14
+      2--|  74   |--13
+      3--|  HCT  |--12
+      4--|  73   |--11
+      5--|       |--10
+      6--|       |--9
+      7--|       |--8
+         +-------+
+
+
+ Kurze Funktionsbeschreibung
+ ---------------------------
+
+ Die Schaltung besteht aus einem Quarzgenerator und einem nachge-
+ schaltetem 16 stufigen Binaerteiler. 14 Stufen sind im 74HCT4060
+ enthalten waehrend die letzten zwei Stufen durch das 74HCT73
+ bereitgestellt werden. Es wurden IC's der Typenreihge 74HCT gewaehlt,
+ da normale CMOS Bausteine der 40er Baureihe nicht die geforderte
+ Betriebsfrequenz verarbeiten koennten. HCT ist eine Abkuerzung fuer
+ "Highspeed CMOS TTL." Die Stromaufnahme der gesamten Schaltung
+ betraegt 4mA.
+
+
+ Hinweis
+ -------
+
+ Quarze befinden sich zumeist in einem Metallgehaeuse. Es ist angesagt,
+ dass man dieses Gehaeuse mit Masse verbindet. (Einfach Silberdraht
+ an das Gehaeuse anloeten.) Noetig fuer die Funktion der Schaltung
+ ist diese Massnahme aber nicht.
+
+
+@ENDNODE
+
+
+@NODE tick-e "Tickgenerator - english documentation"
+
+ Problem
+ -------
+
+    If you want to buy a normal PC power source and connect it at your
+    amiga 2000/3000 you have the problem that these sources don't
+    supply a tick-signal, which is needed to drive one of the 8520-CIA's.         x
+
+    (The  A1200/4000 do not need a tick-signal at all, so you won`t be
+    in need of this circuit)
+
+ Solution
+ --------
+
+     This is a chrystal oszillator which follows a 16 stage binary
+     divider. Advantage facing other solutions: You don't have to
+     work directly with the 110/220VAC currency.
+
+ Overview
+ --------
+
+
+                 +-----------+
+          +UB o--|           |
+                 |           |
+                 |           |
+                 |    my     |--- Output 50/60 Hz -->
+                 |           |
+                 |  Circuit  |
+                 |           |
+                 |           |
+              +--|           |
+              |  +-----------+
+             -+-
+
+
+ Circuit Diagram
+ ---------------
+
+                       o+5V               o+5V
+                       +--------+         |
+                       |       _|_        |
+                       |       ---        |
+                       |16      |100n     |14,2,3,4,6,7,10
+     +---------------------+   -+-   +----------------------+
+     |                     |3       1|                      |9
+     |    74HCT4060        |---------|        74HCT73       |----> 50/60Hz Out
+     |                     |         |                      |
+     +---------------------+         +----------------------+
+      |10         |11  |8,12              |11   |12      |5
+      | ____      |    |                  |     |        |
+      +-____------+   -+-                -+-    +--------+
+      |   10M     |
+      |          | |
+      |          | |100k
+      |           |
+      +----|O|----+
+      |       X1  |
+     _|_         _|_
+     ---6.8p     ---6.8p
+      |           |
+     -+-         -+-
+
+
+ Parts list
+ -----------
+
+ 1* 74HCT4060     (Oszillator with 14-stage divider)
+ 1* 74HCT73       (Two JK-Master-Slave FlipFlops)
+ 2* 6.8pF         (Capicator)
+ 1* 100nF         (Capicator)
+ 1* 10MOhm        (Resistor)
+ 1* 100kOHM       (Resistor)
+ 1* X1            (Quarz 3.2768  Mhz for 50Hz output or
+                   Quarz 3.93216 Mhz for 60Hz output)
+
+
+ Pinbelegung 74HCT4060
+ ---------------------
+
+    Name       Pin  Info
+ -------------------------------------------------
+     Q12        1   Output  12th counterstage
+     Q13        2           13th
+     Q14        3           14th
+     Q6         4           6th
+     Q5         5           5th
+     Q7         6           7th
+     Q4         7           4th
+     GND        8   GND
+     T0         9   Input counter
+     T0 INV    10   Qszillator output
+     T1        11   Oszillator input
+     R         12   Reset (H-Aktive)
+     Q9        13   Output 9th counterstage
+     Q8        14          8th
+     Q10       15         10th
+     Us        16   positive powerinput
+
+
+ Package (Type DIL16) of the 74HCT4060 viewed from top
+ -----------------------------------------------------
+
+         +---o---+
+      1--|       |--16
+      2--|       |--15
+      3--|  74   |--14
+      4--|  HCT  |--13
+      5--|  4060 |--12
+      6--|       |--11
+      7--|       |--10
+      8--|       |--9
+         +-------+
+
+
+ Pinbelegung 74HCT73
+ -------------------
+
+   Name        Pin  Info
+ -----------------------------------------------
+   1Clock       1   Clockinput,first FF
+   1Reset       2   Resetinput
+   1Q           12  not inverting Output
+   1Q NOT       13  invering Output
+   1J           14  J-Preset-Input
+   1K           3   K-Preset-Input
+
+   1Clock       1   Clockinput,second FF
+   1Reset       2   Resetinput
+   1Q           12  not inverting Output
+   1Q NOT       13  invering Output
+   1J           14  J-Preset-Input
+   1K           3   K-Preset-Input
+
+   Us           4   positive powersource-input
+   GND          11  Ground
+
+
+ Package (Type DIL14) of the 74HCT73 viewed from top
+ ---------------------------------------------------
+
+         +---o---+
+      1--|       |--14
+      2--|  74   |--13
+      3--|  HCT  |--12
+      4--|  73   |--11
+      5--|       |--10
+      6--|       |--9
+      7--|       |--8
+         +-------+
+
+
+ Funktion-overview
+ -----------------
+
+ That's easy. Only a Chrystaloszillator with a 16stage devider.
+ You have to use IC's from the 74HCT standard because normal CMOS
+ IC's don't work with that high frequency. (HCT stand for Highspeed-
+ CMOS-TTL)
+
+ That's also the reason why this circuit needs only 4mA to work.
+
+
+ Hint
+ ----
+
+ Please connect the package of the Chrystal to ground if possible.
+
+@ENDNODE
+
+@NODE mix-e "Audio-Mixer - English documentation"
+
+
+ Problem
+ -------
+
+    If you have added a CDROM to your Amiga you maybe want to play some
+    audio-cd's with your new hardware. But you don't want to add another
+    pair of speakers and amplifiers, so you have to mix the cdrom-audio
+    with that of your amiga, to use the same external speakers.
+
+
+ Solution
+ --------
+
+    I use two standard operational amplifiers to mix these signals.
+
+
+ Circuit overview
+ ----------------
+
+
+  +-------------+           +-----------+
+  |             |-- Left ---|           |
+  | Amiga Audio |           |           |
+  |             |-- right --|           |
+  +-------------+           |    my     |--- left output -->
+                            |           |
+  +-------------+           |  circuit  |--- right output ->
+  |             |-- left ---|           |
+  | CDROM Audio |           |           |
+  |             |-- right --|           |
+  +-------------+           +-----------+
+
+ (+-12V power and GND are not mentioned here.)
+
+
+
+ Circuit diagram
+ ---------------
+
+              +| |   ____                  ____
+ CDROM left   -+ +---____----+    +--------____------+
+               | |    4.7k   |    |    |\\    10k     |
+                1uF         | |   |   2| \\           |
+                            | |<--+----|- \\          |
+                            | |10k     |   \\_6_______+_____ Output left
+              +| |   ____    |        3|   /
+ Amiga right  -+ +---____----+   +-----|+ /
+               | |    4.7k       |     | /
+                1uF              |     |/
+                                 |
+                                -+-
+
+              +| |   ____                  ____
+ CDROM right  -+ +---____----+    +--------____------+
+               | |    4.7k   |    |    |\\    10k     |
+                1uF         | |   |   2| \\           |
+                            | |<--+----|- \\          |
+                            | |10k     |   \\_6_______+_____ Output right
+              +| |   ____    |        3|   /
+ Amiga left   -+ +---____----+   +-----|+ /
+               | |    4.7k       |     | /
+                1uF              |     |/
+                                 |
+                                -+-
+
+ parts list
+ ----------
+
+ 2* LM741    (Operationalamplifier within 8pin DIL package)
+ 4* 4.7kOHM  (Resistor)
+ 2* 10kOHM   (Resistor)
+ 4* 1uF      (Capicator)
+ 2* 10kOHM   (Trimmer)
+
+
+ Pinconnection for the LM741
+ ---------------------------
+
+ Name         Pin   Info
+
+ OP-           2    Negative Input of the OP.
+ OP+           3    Positive Input of the OP.
+ OP Out        6    Output (short-circuit dos'nt harm)
+ UB-           4    Negative Powersupply-input
+ UB+           7    Positive Powersupply-input.
+
+
+ Package (Typ DIL8) of the LM741 viewed from above
+ -------------------------------------------------
+
+         +---o---+
+      1--|       |--8
+      2--|  741  |--7
+      3--|       |--6
+      4--|       |--5
+         +-------+
+
+
+ A few words about OP's
+ ----------------------
+
+ The used IC is a standard type. You can get it everywhere. The 741`s
+ are produced by a wide range of manufacturers - like, e.g.:
+
+ LM 741  (NEC)
+ uA 741  (Fairchild)  = OP Type 741
+ MC 1741 (Motorola)
+
+ If you want a special piece of hardware you may want to use the OP
+ TL071. This one is faster and also have an very low distortion value.
+ This OP shows the same pin connection as the 741.
+
+
+ Usage and Test
+ --------------
+
+ The two trimmers will work as a balance-adjust between the cdrom and
+ the amiga channel.
+
+ If you have problems to got this thing to work. At pin 2/3 you have to
+ measure zero volts. The same at pin 6 (the output).
+
+
+ Hint
+ -------
+
+ Don't try to connect a speaker at the output of the 741. This isn't a power-
+ amplifier - it`s only an audio mixer. (The 741 will only do a maximum of 20mA
+ output-current.)
+
+
+ The power supply
+ ----------------
+
+ UB+ (Pin 7) must be connected to the +12V power.
+
+ UB- (Pin 4) must be connected to the -12V power.
+
+ (The power supply range is variable between +-5 V and +-18V. But it
+ has to be a symmetric source.)
+
+ Maybe you want to connect two 100nF capicators as near as possible
+ from the OP's Power to ground. That's not necessary but it's a good
+ idea to do so.
+
+ Another hint: All ground connections must be done to one point.
+
+@ENDNODE
+
+@NODE mix-d "Audio-Mixer - deutsche Anleitung"
+
+ Problem
+ -------
+
+    Nach dem Einbau eines CDROM-Laufwerkes moechte man bestimmt auch
+    normale AudioCD's abspielen. Damit man dazu jetzt nicht noch einen
+    weiteren Verstaerker benoetigt ist es angebracht, dass man die
+    Amiga-Audiosignale mit dem CDROM-Audioausgang mischt.
+
+ Loesung
+ -------
+
+    Man beschaltet zwei Operationsverstaerker (OP's) als Addierer und
+    mischt so beide Audiosignale.
+
+
+ Blockschaltbild
+ ---------------
+
+
+  +-------------+            +-----------+
+  |             |-- Links ---|           |
+  | Amiga Audio |            |           |
+  |             |-- Rechts --|           |
+  +-------------+            |   meine   |--- Ausgang Links -->
+                             |           |
+  +-------------+            | Schaltung |--- Ausgang Rechts ->
+  |             |-- Links ---|           |
+  | CDROM Audio |            |           |
+  |             |-- Rechts --|           |
+  +-------------+            +-----------+
+
+ ( +- 12V Betriebsspannungsversorgung nicht mitgezeichnet.)
+
+
+ Schaltbild
+ ----------
+
+              +| |   ____                  ____
+ CDROM Links  -+ +---____----+    +--------____------+
+               | |    4.7k   |    |    |\\    10k     |
+                1uF         | |   |   2| \\           |
+                            | |<--+----|- \\          |
+                            | |10k     |   \\_6_______+_____ Ausgang Links
+              +| |   ____    |        3|   /
+ Amiga Links  -+ +---____----+   +-----|+ /
+               | |    4.7k       |     | /
+                1uF              |     |/
+                                 |
+                                -+-
+
+              +| |   ____                  ____
+ CDROM Rechts -+ +---____----+    +--------____------+
+               | |    4.7k   |    |    |\\    10k     |
+                1uF         | |   |   2| \\           |
+                            | |<--+----|- \\          |
+                            | |10k     |   \\_6_______+_____ Ausgang Rechts
+              +| |   ____    |        3|   /
+ Amiga Rechts -+ +---____----+   +-----|+ /
+               | |    4.7k       |     | /
+                1uF              |     |/
+                                 |
+                                -+-
+
+ Stueckliste
+ -----------
+
+ 2* LM741    (Operationsverstaerker im 8poligen DIL Gehaeuse)
+ 4* 4.7kOHM  (Widerstand)
+ 2* 10kOHM   (Widerstand)
+ 4* 1uF      (Kondensator)
+ 2* 10kOHM   (Trimmer)
+
+ Pinbelegung LM741
+ -----------------
+
+ Bezeichnung   Pin  Erklaerung
+
+ OP-           2    Negativer Eingang des Operationsverstaerkers.
+ OP+           3    Positiver Eingang des Operationsverstaerkers.
+ OP Out        6    Ausgang (Kurzschlussfest)
+ UB-           4    Eingang fuer die negative Betriebsspannung.
+ UB+           7    Eingang fuer die positive Betriebsspannung.
+
+
+ Gehaeuse (Typ DIL8) des LM741 von oben gesehen
+ ----------------------------------------------
+
+         +---o---+
+      1--|       |--8
+      2--|  741  |--7
+      3--|       |--6
+      4--|       |--5
+         +-------+
+
+ Ein paar Worte zu OP's
+ ----------------------
+
+ Das hier verwendete IC ist ein Standardtyp, den man ueberall bekommen
+ sollte. Der 741er wird von verschiedenen Herstellern fabriziert. Erkennen
+ kann man diesen an den vorangestellten Buchstabenbezeichnung. Von den
+ elektrischen Werten wie auch der Anschlussbelegung sind alle Typen
+ gleichwertig.
+
+ LM 741  (NEC)
+ uA 741  (Fairchild)  = OP von Typ 741
+ MC 1741 (Motorola)
+
+ Anstatt einem 741 (Preislage ca 1DM/Stueck) kann man auch einen TL071
+ nehmen. (ca. 2DM/Stueck) Dieser OP ist besonders rauschfrei und ausserdem
+ schneller als der 741. Die Pinbelegung ist die gleiche. Fuer diese Anwendung
+ ist er zwar ueberdimensioniert aber vielleicht mag irgendwer das Gefuehl,
+ etwas Besonderes zu haben. :)
+
+
+ Der Betrieb und Test
+ --------------------
+
+ Da es sich bei einem CDROM Laufwerk nicht um ein Studiogeraet handelt kann
+ man nicht sagen wie hoch der Ausgangspegel ist. Um Unterschiede zwischen dem
+ Amiga Audiopegel und ebendiesem CDROM Audioausgang zu kompensieren, ist der
+ Trimmer in die Schaltung eingebaut worden. Diesen sollten man jetzt so
+ justieren, dass das Amigasignal den gleichen Pegel wie das CDROM-Signal
+ besitzt.
+
+ (Diesen kann man aber auch so einstellen, dass die Amiga-Signale das
+ CD-Audiosignal uebertoent. Je nachdem was einem besser gefaellt.)
+
+ Falls es Probleme bei dem Betrieb auftreten: Am Pin 2/3 (positiver und
+ negativer Eingang des OP) muss annaehernd null Volt Gleichspannung
+ anliegen. Genauso an Pin 6 (dem Ausgang). Falls das nicht der Fall
+ ist, dann wurde der OP fehlerhaft beschaltet oder der OP ist defekt.
+
+
+ Hinweis
+ -------
+
+ Obwohl der Ausgangswiderstand des OP's sehr gering ist, kann und sollte man
+ dort NICHT direkt einen Lautsprecher anschliessen ! Das 741 liefert nämlich
+ maximal "nur" 20mA, wodurch man kaum die benötigte Ausgangsleistung für einen
+ Lautsprecher erreichen würde.
+
+
+ Stromversorgung
+ ---------------
+
+ UB+ (Pin 7 des OP) wird beim Amiga an die +12V Versorgungsspannung
+ des Amigas angeschlossen.
+
+ UB- (Pin 4 des OP) dann eben an -12V.
+
+ (Der Betriebsspannungsbereich liegt zwischen +-5 V und +-18V)
+
+ Es muss aber unbedingt eine symmetrische Betriebsspanungsversorgung
+ vorhanden sein. Falls man sonst nichts zu tun hat, kann man auch ein
+ paar kleinere Abblockkondensatoren moeglichst nahe am OP anbringen.
+ (100nF Kondensator von Betriebsspannung an Masse).
+
+ Ausserdem sollten Brummschleifen vermieden werden. Also die Masse
+ fuer die Schaltung NICHT von mehreren Punkten heranfuehren. (Falls
+ abgeschirmte Kabel benutzt werden, dann nur auf eine Seite die
+ Abschirmung anschliessen.)
+
+@ENDNODE
+
+
+@NODE info-d "Kontakt zum Author"
+
+ Diese Entwicklung ist Mailware.
+ -------------------------------
+
+ Wer diese Schaltung erfolgreich nachgebaut hat, der möge mir doch
+ bitte eine E-Mail schicken.Und zwar an:
+
+ M.Schulz@Freeway.shnet.org oder Orbital@t.online.de
+
+ Mit den Hinweis wo diese Schaltung eingebaut wurde. Danke auch.
+
+ Unter Umständen lasse ich auch mich auch überreden und baue für Leute,
+ die sich dieses nicht zutrauen, diese Schaltung auf Lochraster nach.
+ Weiteres per E-Mail an die o.g. Adresse.
+
+ (Ausserdem kann mir natürlich auch jeder schreiben der sonst Fragen oder
+ Vorschläge hat.)
+
+@endnode
+
+@NODE info-e "Contact the author"
+
+ This "hack" is mailware!
+ ------------------------
+
+ If anyone tries to build it and succeeds, please send an E-mail to:
+
+ M.Schulz@Freeway.shnet.org oder Orbital@t.online.de
+
+ Please tell me where you use the circuit. Thank you.
+
+ If you after all don't succeed, I may (no guarantee) build it for you,
+ please contact me at the adress above. Of course, anyone with questions
+ or comments can write to me, too.
+
+@ENDNODE
+
+@Node "Credits"
+
+  @{b}Thank you so much@{ub} goes to :
+
+  Stefan Schulz    ...   for helping me on this guide
+
+  Magnus Holmgren (for Visage),Petri Nordlund (for Executive),
+  Stefan Stuntz (for MUI),Ralph Seichter (for Zodiacs Point),
+  Olaf Barthel (for Term) ...
+
+  and all the people who did something for this great machine
+
+  Only Amiga makes it dreamable !
+
+@EndNode

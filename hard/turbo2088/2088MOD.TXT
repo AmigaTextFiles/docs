@@ -1,0 +1,206 @@
+                 SPEEDING UP THE A2088 BRIDGEBOARD
+                            by Eddy Olk
+                           January 1992
+
+
+ABSTRACT
+The A2088 bridgeboard is IBM XT compatible, especially with respect to speed
+unfortunately. So any speedup is welcome. Those with unlimited supply of
+money will go for a turbo AT bridgeboard of course. But for us cheapies with
+a plain A2088 there is some hope! This text describes how the A2088 bridgeboard
+can be (easily) run at 7.15 MHz or even 9.54 MHz with minor modifications.
+However, you must have a bridgeboard with the Faraday FE2010A (watch the A!)
+chip. If I'm not mistaken the newer A2088s are equipped with this chip.
+
+
+DISCLAIMER
+Of course: I can't guarantee the proper working of any of the modifications
+described in this file nor can I be held responsible for any related damage.
+I've done my best to describe the necessary speedup modifications (for a
+rev 3 board) as detailed and understandable as possible.
+I do advise however you only apply the modifications when you know what you're
+doing and have some experience with electronics. Don't risk ruining your
+bridgeboard, 4.77 MHz is still better than 0 MHz :-).
+
+
+TECHNICAL INFO
+The FE2010(A) is a multi-function chip in a 68-pin PLCC package and is almost a
+complete PC on a single chip. Among other things, it incorporates the 8237 (DMA
+controller), 8253 (timer/counter), 8254 (clock oscillator), 8255 (PIO) and 8259
+(PIC) ICs used in the IBM XT.
+The FE2010 chip (without the A) can only run a 8088 at 4.77 MHz. However, the
+FE2010A, a pin-compatible enhanced version of the FE2010, allows either a V20
+or 8088 to run at clock speeds of 4.77 and 7.15 MHz when using a 14.31818 MHz
+crystal/oscillator or at 4.77, 7.15 and 9.54 MHz when using a 28.63636 MHz
+crystal/oscillator. This input frequency is indicated by pin 16 (not used on
+FE2010). This pin must be pulled up with a 4.7K resistor to +5V when supplying
+14.31818 MHz and must be tied to 0V when using a frequency of 28.63636 MHz.
+
+The FE2010A has an extended configuration control register to allow switching
+between CPU clock speeds. This (write only) register is located at I/O address
+063H. The functions of the data bits of this register are summarized in Table 1.
+
+          data bit | function
+          ---------+----------
+              0    | disable parity
+              1    | 8087 present (enable 8087 NMI)
+              2    | 256K RAM (1 bank)
+              3    | lock register (bits 0-4)
+              4    | 512K RAM size (2 banks)
+              5    | fast mode (0=semi-fast, 1=fast)
+              6    | 7.15 MHz clock
+              7    | 9.54 MHz clock
+
+     Table 1: Function of data bits of configuration register.
+
+
+SOFTWARE
+Since the FE2010A always clocks the CPU at 4.77 MHz after a reset and the BIOS
+doesn't support the faster execution modes of the FE2010A, we have to fiddle
+with the configuration register (see technical info) ourselves to run at the
+higher speeds. I've written two programs: BIOSEXT.COM and CPUCLK.COM
+BIOSEXT.COM is stay-resident and extends the BIOS and allows you switching the
+clock speed from the keyboard by pressing the following keys simultaneously:
+
+          <ctrl>-<alt>-S for 4.77 MHz
+          <ctrl>-<alt>-M for 7.15 MHz
+          <ctrl>-<alt>-F for 9.54 MHz
+
+With CPUCLK.COM you can change the cpu clock speed under program control, most
+likely in a batch file.
+You must give a digit as argument: 0 for 4.77, 1 for 7.15 or 2 for 9.54 MHz.
+Put both programs in your AUTOEXEC.BAT, e.g.:
+
+        biosext
+        rem install bios extension
+        cpuclk 2
+        rem switch to 9.54 MHz
+
+I've included both sources and executables of the programs.
+
+
+YOU HAVE A FE2010 NOT A FE2010A
+If you've sadly discovered you have the old FE2010 and not the enhanced FE2010A
+(BTW the chip is near the CPU, see the photographs in the introduction section
+and Appendix F of your A2088 user's guide) you have three options:
+
+1. do nothing: least trouble, least satisfaction :-).
+2. not replace the FE2010 but still get a speedup by replacing the 14.31818 MHz
+   crystal with a faster one, e.g. 22 or 24 MHz. This is essentially what the
+   German firm X-Pert offers (even for bridgeboards with a FE2010A!). This
+   has some drawbacks, e.g. the faster running timers (SI still reports
+   index of 1.0!). Also when using the floppy drive, you must switch back
+   to 4.77 MHz since the floppy interface will not work reliable at the higher
+   speed. So what you need here is two oscillators, 14.31818 and 22-24 MHz,
+   and a multiplexer controlled by a switch and/or the MOTORON signal of the
+   floppy. If you want to build this, you will find instructions and a
+   schematic in the German AMIGA (Markt & Technik) sonderheft 13, entitled
+   "Tips & Tools". I can't help you further here, but there is a last option!
+3. replace the FE2010 with a FE2010A and go for the (easy) 7.15 MHz or
+   (slightly harder) 9.54 MHz modification. You can also use a V20 now.
+   The main problem here will be to obtain the FE2010A. Unfortunately, I can't
+   help you much here. Try a store specialized in electronic components for
+   PCs. If it helps: the chip is manufactured by Faraday.
+   When you have somehow acquired a FE2010A, you have to make some
+   modifications to your A2088 before replacing the FE2010. The FE2010A is pin
+   compatible with the FE2010 but some internal pull-up resistors present in
+   the FE2010 were left out in the FE2010A. This affects pins 12,13 and 16.
+   Pin 12 and 13 are connected to J1, the default display jumper. For proper
+   operation you have to pull-up pins 1 and 2 of J1 (see Appendix H of the
+   A2088 user's guide) with a 4K7 (4.7 KOhm) resistor to +5V. However, I didn't
+   encounter problems using the FE2010A without the pull-up resistors.
+   Pin 16 indicates the input frequency of the FE2010A: 14.31818 (pull-up with
+   4K7 to +5V) or 28.63636 MHz (tie to 0V).
+
+
+RUNNING A2088 AT 7.15 MHZ
+This is simple! You must:
+1. Replace the 5MHz 8088 with a 8MHz 8088 or V20. You may even want to try
+   running the original 8088 at 7.15 MHz. Although I haven't tried this myself,
+   I know several people who are succesfully running their original 8088 at
+   7.15MHz.
+2. Run the CPUCLK.COM program on your bridgeboard with option 1 to set the cpu
+   clock to 7.15 MHz.
+
+
+MODIFY A2088 TO RUN AT 9.54 MHZ
+Here's where a soldering-iron comes in handy! The following steps are needed:
+1. desolder the 14.31818 MHz crystal near the bracket.
+2. replace it with a 28.63636 MHz crystal (not sure this will work) or use a
+   28.63636 MHz oscillator. Connect pins 1 and 7 of the oscillator with 0V,
+   pin 14 with +5V and pin 8 to the lower contact hole (the one nearest to the
+   edge connector) of the (now desoldered) 14.31818 MHz crystal.
+   Also put a 100nF (nano Farad) decoupling capacitor between pins 7 and 14.
+3. tie pin 16 of FE2010A to 0V.
+   Figure 1 shows the contacts              (top)
+   of the FE2010A socket seen            ooooooooooo
+   from the back of the                 ooooooooooooo
+   bridgeboard. Pin 16 is               oo         oo
+   marked with an asterisk (*).         oo         oo
+   Check with an ohmmeter if            oo         oo
+   you're not sure!                     oo         oo
+                                        oo         oo
+                                        oo         oo
+   Figure 1: FE2010A socket seen        oo         oo
+             from backside, pin 16      oo         oo
+             marked with *.             oo         oo
+                                        ooooooooooooo
+                                         oooooooo*oo
+                                           (bottom)
+
+4. replace the original 8088 with a 10 MHz 8088 or (better) V20, a 8 MHz V20
+   will work too (and may be cheaper). Before inserting the new 8088/V20 you
+   must bend pin 19 (clock input) a little bit outwards so it will not stick
+   in the socket. Do the same with the 8087, if you have one.
+5. connect pin 19 of the 8088/V20 (and pin 19 of the 8087, if present) to
+   pin 15 of U8 (74LS244). This pin carries the unbuffered cpu clock signal
+   from the FE2010A (also pin 19) and must be used instead of the buffered
+   clock signal connected originally to let it all work at 9.54 MHz.
+   U8 is the lower-right one of the four 20-pin ICs below the 8088/V20.
+6. run the CPUCLK.COM program with options 0,1,2 to run the bridgeboard at
+   4.77, 7.15 and 9.54 MHz respectively.
+
+
+PROBLEMS
+The only serious problem I've run into is that the floppy interface only
+works reliable at 4.77 MHz. Most of the time it works at other speeds but it
+occasionally fails. However, DOS doesn't report this but ZOO, for instance,
+sometimes gives CRC errors when unZOOing from floppy. I don't know whether
+this is a hardware or a software problem. I do remember some (earlier) turbo
+PC clones having this problem too. Be sure to switch to 4.77 MHz when using
+the floppy!
+
+Furthermore, I'm not sure a 8 or 10 MHz 8087 will work in the faster
+bridgeboard. I don't expect problems however, but perhaps someone could verify
+this! BTW make sure the 8087 clock (pin 19) is provided with the unbuffered
+clock signal, i.e. connect it to pin 19 of 8088/V20.
+
+Another problem you may experience (I didn't) is that after switching to
+another speed for the first time with CPUCLK or BIOSEXT, you get a (BIOS)
+message which says a NMI interrupt was detected and asks whether to shut it
+off or not. If this message annoys you, use the CPUCLK-.COM and BIOSEXT-.COM
+programs. They explicitly disable the NMI interrupt in the extended
+configuration register so you will not get the message.
+
+CONCLUSION
+Well, I think the modifications described in this file are pretty neat.
+A 50% speedup is possible by just running the software while a 100% speedup
+requires only minor modifications to the hardware.
+I have my fully equipped A2088 (VGA card, hardcard, multi I/O card,
+512K 150ns RAM, 128K 120ns dual-port RAM and 8 MHz V20) running at 9.54 MHz
+since January 1991 and besides the problem with the floppy, it runs perfectly.
+Perhaps someone (I don't have time unfortunately) is willing to extend the
+BIOSEXT.COM program to automatically (temporary) switch back to 4.77 MHz when
+accessing the floppy.
+
+If you have any questions/remarks regarding the modifications I described,
+you can reach me via
+
+                  email: eddy@duteca.et.tudelft.nl
+
+                   mail: Eddy Olk
+                         Beatrixstraat 8
+                         3264 XB  Nieuw-Beyerland
+                         The Netherlands
+
+Enjoy!!

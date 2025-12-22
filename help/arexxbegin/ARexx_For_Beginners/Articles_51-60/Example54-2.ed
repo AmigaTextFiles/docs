@@ -1,0 +1,59 @@
+/* Example54-2.ed */
+/* This program is an adaptation of Example54-1.ed which was taken */
+/* from the AmigaDOS manuals for Workbench2.04 and 2.1             */
+
+/* Transpose.Ed An example program to transpose two characters     */
+/* Given string '1234'. if cursor is on 4, this macro converts     */
+/* string into  '1243'                                             */
+
+Host = ADDRESS()
+IF LEFT(Host,2) ~= 'Ed' THEN DO
+  SAY 'a'x'This program can only be used when started from within ED.'
+  EXIT
+END
+
+ADDRESS VALUE Host
+'rv /Curr/'
+CurrPos = Curr.X
+CurrLine = Curr.LINE
+CurrText = Curr.CURRENT
+
+/* Check if cursor on 1st character, if so give error message       */
+/* as we cannot exchange the first with non existent on before it!! */
+
+IF CurrPos = 1 THEN DO
+  CALL CLOSE('STDOUT')
+  CALL OPEN('STDOUT','CON:100/50/440/40/Ed Error Message Window')
+  SAY 'a'x' Cursor must NOT be on first character of the line!'
+  DO WHILE TIME('E') < 2 ; END
+  EXIT
+END
+
+/* Check if on last line */
+
+'n'
+IF RC > 0 THEN LastLine = 1
+ELSE 'p'
+
+/* Next the code needs to reverse CurrPos and CurrPos-1 characters */
+/* and then replace the current line with the new one              */
+
+/* Swap the 2 characters */
+
+Character = SUBSTR(CurrText,CurrPos,1)
+CurrText = DELSTR(CurrText,CurrPos,1)
+CurrText = INSERT(Character,CurrText,CurrPos-2,1)
+
+/* insert the new string above current line - cursor will be on new line */
+
+'i !'||CurrText||'!'
+
+'n'     /* move down to old line                  */
+'d'     /* Tell ED to delete old line             */
+IF LastLine ~= 1 THEN 'p'   /* move back to new line if not last line */
+
+/* Now move cursor out along line to old position */
+
+DO Count = 1 to Currpos-1
+  'cr'
+END

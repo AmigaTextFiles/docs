@@ -1,0 +1,937 @@
+@DATABASE "ADB66"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 66 - Requester Commands"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 66 - REQUESTER COMMANDS@{UB}@{UU}
+@{JLEFT}
+
+There are two commands that will bring up requester windows. Both of them
+are only available from @{B}AmigaDOS Version 3.0 onwards@{UB}.
+
+These commands, which are normally only used within script files, are:-
+@{JCENTER}
+
+@{" RequestChoice " LINK "RequestChoice"} AmigaDOS Version 3.0 onwards
+@{" RequestFile   " LINK "REquestFile"} AmigaDOS Version 3.0 onwards
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "RequestChoice" "Part 66 - Requester Commands - REQUESTCHOICE"
+
+@{B}@{U}@{JCENTER}THE REQUESTCHOICE COMMAND@{UB}@{UU}
+@{JLEFT}
+
+@{B}Location@{UB}     - "c" directory
+
+@{B}Purpose@{UB}      - To provide a requester window in which the user
+               can select various buttons to cause different actions.
+
+@{B}Availability@{UB} - AmigaDOS Versions 3.0 Onwards
+
+The normal usage of REQUESTCHOICE is as follows:-
+
+  REQUESTCHOICE TitleText BodyText ButtonName Buttonname ....
+
+All the above arguments are @{B}essential@{UB}. "ButtonName" must appear at
+least once but can appear any number of times from 1 upwards.
+
+The keywords TITLE BODY and GADGETS can be included:-
+
+  REQUESTCHOICE TITLE TitleText BODY BodyText GADGETS ButtonName
+
+If, for some obscure reason, you wanted to put them in a different order,
+then the keywords are @{B}essential@{UB}:-
+
+  REQUESTCHOICE GADGETS ButtonName BODY BodyText TITLE TitleText
+
+An optional keyword PUBSCREEN is also available:-
+
+  REQUESTCHOICE Title Body Button1 Button2 ....  PUBSCREEN screenname
+
+This will cause the requester window to open on the public screen called
+"screenname" instead of the default public screen which is normally the
+workbench screen. (But see @{"Note 2" LINK "RequestChoice"225} below.)
+
+@{B}TitleText@{UB} is the text that will appear in the title bar of the window.
+
+@{B}BodyText@{UB} is the text that will appear in the body of the window.
+
+@{B}ButtonName@{UB} is the name of each of the selectable buttons that will be
+created at the bottom of the window.
+
+When a button is selected, a value is returned as follows:-
+
+  RIGHTMOST BUTTON (always present)                   - 0
+  LEFTMOST  BUTTON (if present)                       - 1
+
+  BUTTONS BETWEEN LEFTMOST AND RIGHTMOST (if present) - 2 onwards from left
+
+Thus if there are four buttons, the values returned by them will be:-
+
+        1   2   3   0
+
+The value returned will be sent to the display window unless it is
+redirected. For example:-
+
+  > REQUESTCHOICE >Nil: TitleText BodyText Buttonname
+
+@{"Click here" SYSTEM "REQUESTCHOICE >Nil: TitleText BodyText Buttonname"} to see the requester window produced by the above command line.
+
+The redirection of REQUESTCHOICE output to Nil: is because there is only
+one button and we know the value returned will be 0 (zero).
+
+But if we used:-
+
+  > REQUESTCHOICE >Env:Sel TitleText BodyText Button_1 Button_2
+
+@{"Click here" SYSTEM "REQUESTCHOICE >Env:Sel TitleText BodyText Button_1 Button_2"} to see the requester window produced by the above line.
+
+Click on a button and go to a Shell/CLI window and enter:-
+
+  > GETENV Sel
+
+The value returned has been redirected to the file "Env:Sel" which is, in
+reality, an @{"environmental variable" LINK "ADB:Parts_31-40/40.Env-Variables/Main"}.
+
+It is only where there are two or more buttons and we wish to take
+different actions depending on the button clicked that we really need to
+redirect the value returned to an environmental variable.
+
+The operation of REQUESTCHOICE is best illustrated by examples.
+
+Example-66.1 illustrates a possible use of only one button. You may have a
+lot of text for a user to read and you want to have a pause part way
+through as it will not all fit into the window:-
+
+  ; Example-66.1
+
+  ECHO "Here is a lot of text to read"
+  ECHO "*n   lot of text"
+  ECHO "*nEnd of first part of text"
+  REQUESTCHOICE >Nil: "Text To Read" "Click on `Continue' to read more"
+                       Continue
+  ECHO "*n*nHere is a lot MORE text to read"
+  ECHO "*n   lot MORE text"
+  ECHO "*nEnd of second part of text"
+
+If you run this script, this text will appear in the Shell/CLI window
+from which the script was started:-
+
+   Here is a lot of text to read
+
+      lot of text
+
+   End of first part of text
+
+Then the requester window will appear and wait for the use to click on the
+"Continue" button, then this text will appear:-
+
+   Here is a lot MORE text to read
+
+      lot MORE text
+
+   End of second part of text
+
+Note that the output from REQUESTCHOICE is redirected to Nil: with ">Nil:"
+This is to prevent the returned value of 0 appearing in the window.
+
+The second example demonstrates the use of more buttons.
+
+  ; Example-66.2
+
+  LAB Start
+
+  REQUESTCHOICE >Env:Selection "This is a test of REQUESTCHOICE" "Please
+        Click on a Button" "Yes" "No" "Maybe" "Never in a Million Years"
+        "Quit"
+
+  ECHO "You selected " NOLINE
+
+  IF $Selection EQ 0
+    ECHO "QUIT - Bye Bye"
+    UNSETENV Selection
+    QUIT
+  ENDIF
+
+  IF $Selection EQ 1
+    ECHO "Yes"
+  ENDIF
+
+  IF $Selection EQ 2
+    ECHO "No"
+  ENDIF
+
+  IF $Selection EQ 3
+    ECHO "Maybe"
+  ENDIF
+
+  IF $Selection EQ 4
+    ECHO "Never in a million years"
+  ENDIF
+
+  SKIP BACK Start
+
+This will set up a window with 5 buttons with the following names
+(values returned by each button are shown beneath their names):-
+
+  Yes   No   Maybe   Never in a Million Years   Quit
+
+   1    2      3               4                  0
+
+This time, instead of the output being redirected to Nil:, it is sent to
+"ENV:Selection" thus creating a @{"global" LINK "ADB:Parts_31-40/40.Env-Variables/Two"43} environmental variable called
+"Selection"
+
+If you are unsure of how the "IF $Selection" works then @{"click here" LINK "ADB:Parts_31-40/40.Env-Variables/Other"}.
+
+If you click on any of the buttons except "Quit" then the appropriate
+message will be echoed to the window and another requester window opened.
+
+If you click on "Quit" then the script will do its housekeeping by removing
+the variable "Selection" then exit.
+
+Of course, you could have any types of actions taking place for each of the
+buttons. The above example is a very simplistic demonstration.
+
+@{"Example-66.2" LINK "RequestChoice"120} made use of Global variables.
+
+If you wished to make use of @{"local variables" LINK "ADB:Parts_31-40/40.Env-Variables/Two"16} then you could use
+Example-66.3 which is identical to Example-66.2 except for the first few
+lines which are:-
+
+  ; Example-66.3
+
+  LAB Start
+
+  SET Selection `REQUESTCHOICE "This is a test of REQUESTCHOICE" "Please
+      Click on a Button" "Yes" "No" "Maybe" "Never in a Million Years"
+      "Quit"`
+
+  ECHO "You selected " NOLINE
+
+  IF $Selection EQ 0
+    ECHO "QUIT - Bye Bye"
+    UNSET Selection
+    QUIT
+  ENDIF
+
+  ..... rest of example same as @{"Example-66.2" LINK "RequestChoice"136}
+
+The line containing REQUESTCHOICE starts with "SET" to set up the local
+variable "Selection"
+
+The rest of the line, which is all the REQUESTCHOICE command, is enclosed
+in opening single quotes ``.
+
+You may recall the @{"principle" LINK "ADB:Parts_01-10/04.Using_Shell-CLI/Another"} that enclosing commands within back apostrophes
+`` causes the @{B}result@{UB} of the command to be inserted into the command line.
+
+This results in the value returned by the REQUESTCHOICE command being put
+into the local variable "Selection".
+
+In the section starting "IF $Selection EQ 0" I have used UNSET for the
+local variable instead of UNSETENV for the global variable used in
+Example-66.2.
+
+@{B}Note 1@{UB}
+
+The requester window appears in the top left corner of the screen (unless
+you are using a utility such as "ARQ" which replaces the standard requester
+with much better ones that are centred in the screen.
+
+As yet I have not found any way to make the standard requester window
+appear anywhere else but the top left corner.
+
+@{B}Note 2@{UB}
+
+On @{"my Amiga" LINK "ADB:Misc/Read_Me_First!!/Author"18}, the option PUBSCREEN only works from within a script. If used
+in a Shell/CLI window the requester window always appears on the default
+public screen.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "RequestFile" "Part 66 - Requester Commands - REQUESTFILE"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND@{UB}@{UU}
+@{JLEFT}
+
+@{B}Location@{UB}     - "c" directory
+
+@{B}Purpose@{UB}      - To provide a file requester window in which the
+               user can select a file name
+
+@{B}Availability@{UB} - AmigaDOS Versions 3.0 Onwards
+
+This command needs to have the following file available for use:-
+
+  libs:asl.library
+
+This is a standard AmigaDOS library from @{B}AmigaDOS version 2.0 onwards@{UB}.
+However, REQUESTFILE itself needs to have available the asl.library version
+that is provided with AmigaDOS version 3.0 or later. It will not work with
+the asl.library file that came with AmigaDOS version 2.0 or 2.1.
+
+@{"Click here" LINK "Output"} here to read about how to use the requester window and what its
+output is.
+
+The REQUESTFILE syntax can be one of is:-
+
+  REQUESTFILE
+
+  REQUESTFILE option(s)
+
+This means that REQUESTFILE can be used:-
+
+  @{" Without an option " LINK "NoOption"}
+
+or with one or more of these options:-
+
+  @{" DRAWER        " LINK "Drawer"}   
+  @{" FILE          " LINK "File"} /K
+  @{" PATTERN       " LINK "Pattern"} /K
+  @{" TITLE         " LINK "Title"} /K
+  @{" POSITIVE      " LINK "Positive"} /K
+  @{" NEGATIVE      " LINK "Negative"} /K
+  @{" ACCEPTPATTERN " LINK "AcceptPattern"} /K
+  @{" REJECTPATTERN " LINK "RejectPattern"} /K
+  @{" SAVEMODE      " LINK "SaveMode"} /S
+  @{" MULTISELECT   " LINK "MultiSelect"} /S
+  @{" DRAWERSONLY   " LINK "DrawersOnly"} /S
+  @{" NOICONS       " LINK "NoIcons"} /S
+  @{" PUBSCREEN     " LINK "PubScreen"} /K
+
+The @{"/K" LINK "ADB:Parts_61-70/63.Format_&_Template/K"} means that the item is optional but, if used, the keyword MUST be
+used with its arguments.
+
+The @{"/S" LINK "ADB:Parts_61-70/63.Format_&_Template/S"} means that the item is a "switch". If the option is used the action
+is switched from the default to the option. A switch does NOT have an
+argument - it is used on its own.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Output" "Part 66 - Requester Commands - Output From REQUESTFILE"
+
+@{B}@{U}@{JCENTER}OUTPUT FROM THE REQUESTFILE COMMAND@{UB}@{UU}
+@{JLEFT}
+
+@{"Click here" SYSTEM "REQUESTFILE >Nil:"} to view an example of the requester window.
+
+Provided that you started "AmigaDOS For Beginners" from workbench using its
+Index Icon, then the window that appears should show a list of the files in
+the "ADB:Misc" directory (which is the current directory being recognised
+by your viewing program because it is the one holding the index files).
+
+There should be nothing shown in either the drawer or file text gadgets.
+You can use the "Volumes" and "Parent" buttons and the "Drawer" and  "File"
+text gadgets to see how they work but, for this example, the "OK" and
+"CANCEL" buttons will do nothing except close the window.
+
+If no window appears then either the REQUESTFILE command is in a directory
+NOT in your @{"path" LINK "ADB:Parts_11-20/18.Path/What"} or it is not on your disk at all. @{"Click here" LINK "Simple"} to see a
+simple representation.
+
+Under normal operating conditions (not in the sample selectable above),
+if you select one of the file or directory names that appear in the
+requester window, then the requester window will be closed and that file
+or directory name will be returned.
+
+If REQUESTFILE is used in a Shell/CLI window as in:-
+
+  > REQUESTFILE
+
+then the name of the file or directory selected will appear in the
+Shell/CLI window in inverted commas. Not really of much use!! But if you
+use REQUESTFILE in a script file then the returned name can be assigned as
+the value of an environmental variable @{"(click here for example.)" LINK "NoOption"23}.
+
+When used @{B}without@{UB} the @{"DRAWER" LINK "Drawer"} option, there will be no entry in the DRAWER
+text gadget of the file requester window (unless you subsequently enter a
+directory name there) and the returned file name will have no path.
+
+But if you enter a drawer name into the DRAWER text gadget then select a
+file from that drawer then the returned string will include the path name
+as well as the file name.
+
+If you select a directory name instead of a file name (i.e. you have a name
+in the "Drawer" text gadget and a blank in the "File" text gadget then
+click on "OK") then the returned string will be the name of the directory.
+
+If you click on "OK" when there is NOTHING in either the "Drawer" text
+gadget or the "File" text gadget then a null string is returned. That means
+the string will be 0 bytes long. A test for this situation is illustrated
+in this line from @{"Example-66.4" LINK "NoOption"38}:-
+
+  IF $Selection EQ ""
+
+If you select the CANCEL button then the window will close and return an
+@{"RC code" LINK "ADB:Parts_21-30/29.FAILAT_&_RETURN_CODE/RC"} value of 5 making it possible, in a script file, to use "IF WARN"
+to carry out some appropriate action. This is illustrated in @{"Example-66.4" LINK "NoOption"33}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "NoOption" "Part 66 - Requester Commands - Using REQUESTFILE Without Options"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND USED WITHOUT OPTIONS@{UB}@{UU}
+@{JLEFT}
+
+REQUESTFILE can be used on its own without any options:-
+
+  REQUESTFILE
+
+If you use something like this in a Shell/CLI window:-
+
+  > TYPE `REQUESTFILE`
+
+and select a filename from the requester window that will appear, then that
+file will be inserted into the TYPE command line. If you selected the S:
+drawer and the "startup-sequence" file then the command line would become:-
+
+  >TYPE S:startup-sequence
+
+and your startup-sequence file would be displayed in the Shell/CLI window.
+
+You may recall the @{"principle" LINK "ADB:Parts_01-10/04.Using_Shell-CLI/Another"} that enclosing commands within back apostrophes
+`` causes the @{B}result@{UB} of the command to be inserted into the command line.
+
+A simple example script using the above features is as follows:-
+
+  ; Example-66.4
+
+  LAB Start
+
+  ECHO "Select a file name from the requester for typing"
+
+  REQUESTFILE >Env:Selection
+
+  IF WARN
+    ECHO "CANCEL Selected"
+    SKIP Another
+  ENDIF
+
+  IF $Selection EQ ""
+    ECHO "You clicked OK without a file name selection!"
+    SKIP Another
+  ELSE 
+    TYPE $Selection
+  ENDIF
+
+  UNSETENV Selection
+
+  LAB Another
+
+  ASK "Type another file? (Y/N)"
+
+  IF WARN
+    SKIP BACK Start
+  ENDIF
+
+In this script I first check for a return code of 5 (@{"CANCEL" LINK "Output"53} selected) with
+the "IF WARN" line and divert to the "Another" label.
+
+The next IF tests to see if the variable "$Selection" has no content, i.e.
+it is = "". This will happen if the @{"OK button is selected" LINK "Output"46} while the file
+name gadget has no content.
+
+Having passed these two tests, the script can then go ahead and type the
+selected file.
+
+There are other possible error situations. For example, the user might have
+a directory name in the directory gadget but no file name in the filename
+gadget. The script would then try to TYPE a directory name. Also, a non
+existent file could be entered and again an error would arise.
+
+I could have made the script very complex and put in error trapping but
+this would have detracted from the demonstration of how REQUESTFILE works.
+
+You may recall that in @{"Example-66.3" LINK "RequestChoice"178} I used a @{"local" LINK "ADB:Parts_31-40/40.Env-Variables/Two"16} variable instead of a
+@{"global" LINK "ADB:Parts_31-40/40.Env-Variables/Two"43} one.
+
+If I used a local variable in the above Example-66.4 with the line:-
+
+  SET Selection `REQUESTFILE`
+
+then we could not test for return codes because any return code would be
+from the SET command and NOT from the REQUESTFILE command.
+
+The difference is that REQUESTCHOICE does not test for return code values
+but for values 0, 1, 2 etc. depending on the button pressed.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Drawer" "Part 66 - Requester Commands - RequestFile DRAWER Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND DRAWER OPTION@{UB}@{UU}
+@{JLEFT}
+
+The DRAWER option can be used with or without the DRAWER keyword:-
+
+  REQUESTFILE DRAWER Directory_Name
+
+  REQUESTFILE Directory_Name
+
+When used, the nominated directory's name will appear in the "Drawer" text
+gadgets and the contents of the drawer will be listed in the display
+window.
+
+@{"Click here" SYSTEM "REQUESTFILE Sys:Devs"} to see an example which uses this command line:-
+
+  REQUESTFILE Sys:Devs
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "File" "Part 66 - Requester Commands - RequestFile FILE Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND FILE OPTION@{UB}@{UU}
+@{JLEFT}
+
+The FILE option can be used to nominate a certain file name to be placed
+into the "File" text gadget.
+
+It MUST be used with the keyword:-
+
+  REQUESTFILE FILE File_Name
+
+@{"Click here" SYSTEM "REQUESTFILE FILE S:Startup-Sequence"} to see an example which uses this command line:-
+
+  REQUESTFILE FILE S:Startup-Sequence
+
+@{B}NOTE@{UB} that this @{B}DOES NOT@{UB} set the drawer gadget to the same directory as is
+nominated in the file path!!!
+
+I would prefer to make sure that the same directory is used. To do this you
+could use, for example:-
+
+  REQUESTFILE DRAWER S: FILE S:Startup-Sequence
+
+@{"Click here" SYSTEM "REQUESTFILE DRAWER S: FILE S:Startup-Sequence"} to see it in action.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Pattern" "Part 66 - Requester Commands - RequestFile PATTERN Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND PATTERN OPTION@{UB}@{UU}
+@{JLEFT}
+
+The PATTERN option allows you to specify which file names will be shown in
+the requester's file list by using @{"pattern matching" LINK "ADB:Parts_21-30/22.Pattern_Matching/Main"}.
+
+As well as putting only those files matching the pattern into the requester
+window, it will also put a PATTERN text gadget into the window. You can
+then use this text gadget to alter the preset pattern to any other pattern
+that you like.
+
+Compare this to the @{"ACCEPTPATTERN" LINK "AcceptPattern"} option which does NOT display a pattern
+text gadget but only displays file names matching the pattern specified.
+
+As an example, @{"click here" SYSTEM "REQUESTFILE DRAWER ADB: PATTERN #?.info"} to see the @{"ADB: directory" LINK "ADB:Misc/Using_ADB/Assignment"} show only #?.info files
+(which are the icons). This uses the command in this way:-
+
+  REQUESTFILE DRAWER ADB: PATTERN #?.info
+
+Note that only files are affected. All directory names are shown regardless
+of the pattern.
+
+If you wanted to see all names EXCEPT icons, then you could use the
+@{"negative wild card" LINK "ADB:Parts_21-30/22.Pattern_Matching/#?"46}:-
+
+  REQUESTFILE DRAWER ADB: PATTERN ~(#?.info)
+
+@{"Click here" SYSTEM "REQUESTFILE DRAWER ADB: PATTERN ~(#?.info)"} to see its affect.
+
+If you wish to have a pattern text gadget without any pattern in it, then
+use:-
+
+  REQUESTFILE PATTERN ""
+
+The "" causes a blank to be placed into the pattern gadget and @{B}ALL@{UB} files
+will be displayed.
+
+@{"Click here" SYSTEM "EXECUTE ADB:Parts_61-70/66.pattern_test"} to see the above line in action.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Title" "Part 66 - Requester Commands - RequestFile TITLE Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND TITLE OPTION@{UB}@{UU}
+@{JLEFT}
+
+The TITLE option lets you put a title into the title bar of the requester
+window.
+
+@{"Click here" SYSTEM "REQUESTFILE TITLE Test_of_the_TITLE_Option"} to see the use of this line:-
+
+  REQUESTFILE TITLE Test_of_the_TITLE_Option
+
+If you have any spaces in the title name then you MUST enclose it in
+inverted commands:-
+
+  REQUESTFILE TITLE "Test of the TITLE Option"
+
+@{"Click here" SYSTEM "EXECUTE ADB:Parts_61-70/66.Title_Test"} to see the above line in action.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Positive" "Part 66 - Requester Commands - RequestFile POSITIVE Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND POSITIVE OPTION@{UB}@{UU}
+@{JLEFT}
+
+The POSITIVE option allows you to specify the text that will appear in the
+positive, i.e. left hand, gadget instead of the normal "Ok".
+
+@{"Click here" SYSTEM "REQUESTFILE POSITIVE Yeah_Man"} to try out this command line:-
+
+  REQUESTFILE POSITIVE Yeah_Man
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Negative" "Part 66 - Requester Commands - RequestFile NEGATIVE Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND NEGATIVE OPTION@{UB}@{UU}
+@{JLEFT}
+
+The NEGATIVE options allows you to specify the text that will appear in the
+negative, i.e. right hand, gadget instead of the normal "Cancel".
+
+@{"Click here" SYSTEM "REQUESTFILE NEGATIVE Oh_Nooo!!"} to try out this command line:-
+
+  REQUESTFILE NEGATIVE Oh_Nooo!!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "AcceptPattern" "Part 66 - Requester Commands - RequestFile ACCEPTPATTERN Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND ACCEPTPATTERN OPTION@{UB}@{UU}
+@{JLEFT}
+
+The ACCEPTPATTERN will only display in the requester window those file
+names that match the pattern. The window will NOT show a pattern text
+gadget as did the @{"PATTERN" LINK "Pattern"} option.
+
+@{"Click here" SYSTEM "REQUESTFILE ADB: ACCEPTPATTERN #?.info"} to demonstrate this line which displays only icon file names:-
+
+  REQUESTFILE ADB: ACCEPTPATTERN #?.info
+
+@{"Click here" SYSTEM "REQUESTFILE ADB: ACCEPTPATTERN ~(#?.info)"} to demonstrate this line which displays all BUT the icon
+file names:-
+
+  REQUESTFILE ADB: ACCEPTPATTERN ~(#?.info)
+
+This would be the same as using the @{"REJECTPATTERN" LINK "RejectPattern"} option in this way:-
+
+  REQUESTFILE ADB: REJECTPATTERN #?.info
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "RejectPattern" "Part 66 - Requester Commands - RequestFile REJECTPATTERN Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND REJECTPATTERN OPTION@{UB}@{UU}
+@{JLEFT}
+
+The REJECTPATTERN option rejects all files matching the pattern and show
+all other files. The window will NOT show a pattern text gadget as did the
+@{"PATTERN" LINK "Pattern"} option.
+
+
+@{"Click here" SYSTEM "REQUESTFILE ADB: REJECTPATTERN #?.info"} to demonstrate this line:-
+
+  REQUESTFILE ADB: REJECTPATTERN #?.info
+
+This is, in effect, the same as using the @{"ACCEPTPATTERN" LINK "AcceptPattern"} option in this
+way:-
+
+  REQUESTFILE ADB: ACCEPTPATTERN ~(#?.info)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "SaveMode" "Part 66 - Requester Commands - RequestFile SAVEMODE Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND SAVEMODE OPTION@{UB}@{UU}
+@{JLEFT}
+
+The SAVEMODE option will switch the requester from a LOAD FILE requester to
+a SAVE FILE requester.
+
+This does not mean to say that the filename selected will be SAVEd. This
+can only be done via proper coding in the script that calls the REQUESTFILE
+command.
+
+What DOES happen with SAVEMODE is that the text and background colours in
+the file name area of the requester window are reversed to make it look
+different to a normal requester window.
+
+@{"Click here" SYSTEM "REQUESTFILE SAVEMODE"} to demonstrate this line:-
+
+  REQUESTFILE SAVEMODE
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "MultiSelect" "Part 66 - Requester Commands - RequestFile MULTISELECT Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND MULTISELECT OPTION@{UB}@{UU}
+@{JLEFT}
+
+The MULTISELECT option allows more that one file name to be selected.
+
+To use multiselection, the user must hold down a shift key and click once
+on each of the file names required, then click on the "OK" gadget.
+
+Each of the file names will be included in the returned string, each
+enclosed in inverted commas and separated from each other by a space:-
+
+  "File_1" "File_2" "File_3"
+
+This cannot be demonstrated very easily from within Amigaguide/Multiview
+so try it out with Example-66.5:-
+
+  ECHO "Please select more than one file by holding down the shift key"
+  ECHO "and clicking on each file to be selected, then click on *"OK*""
+  REQUESTFILE >Env:MultiTest ADB: MULTISELECT
+  ECHO "*nThe files you selected were:-*n"
+  GETENV MultiTest
+  UNSETENV MultiTest
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "DrawersOnly" "Part 66 - Requester Commands - RequestFile DRAWERSONLY Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND DRAWERS ONLY OPTION@{UB}@{UU}
+@{JLEFT}
+
+The "DRAWERSONLY" option will cause the requester window to display only
+drawer names.
+
+Also, there will be no file name text gadget.
+
+@{"Click here" SYSTEM "REQUESTFILE Sys: DRAWERSONLY"} to demonstrate this line:-
+
+  REQUESTFILE Sys: DRAWERSONLY
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "NoIcons" "Part 66 - Requester Commands - RequestFile NOICONS Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND NOICONS OPTION@{UB}@{UU}
+@{JLEFT}
+
+The NOICONS options will cause all icon file names ( .info ) to be
+excluded.
+
+@{"Click here" SYSTEM "REQUESTFILE ADB: NOICONS"} to demonstrate this line:-
+
+  REQUESTFILE ADB: NOICONS
+
+This is the same as using @{"REJECTPATTERN" LINK "RejectPattern"} in this line:-
+
+  REQUESTFILE ADB: REJECTPATTERN #?.info
+
+The big advantage of it, however, is that you could use NOICONS as well as
+REJECTPATTERN to exclude a pattern other than #?.info as in this example
+line:-
+
+  REQUESTFILE ADB: NOICONS REJECTPATTERN index
+
+@{"Click here" SYSTEM "REQUESTFILE ADB: NOICONS REJECTPATTERN index"} to demonstrate the above line which would show all file names in
+ADB: except icons and index files.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+@NODE "PubScreen" "Part 66 - Requester Commands - RequestFile PUBSCREEN Option"
+
+@{B}@{U}@{JCENTER}THE REQUESTFILE COMMAND PUBSCREEN OPTION@{UB}@{UU}
+@{JLEFT}
+
+The PUBSCREEN option allows you to nominate the name of a public screen
+other than workbench for the requester window to open on.
+
+It is used like this:-
+
+  REQUESTFILE PUBSCREEN Screen_Name
+
+If the screen name has any spaces in it then it must be enclosed in
+inverted commas:-
+
+  REQUESTFILE PUBSCREEN "Screen Name"
+
+Not knowing which screens you will have open when you read this, I cannot
+demonstrate it for you.
+
+@{B}Note@{UB} that it WILL work from a Shell/CLI command line (compare this to
+REQUESTCHOICE which will NOT work with the PUBSCREEN option from a
+Shell/CLI command line - @{"See Note 2" LINK "RequestChoice"225} under the REQUESTCHOICE heading.)
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+
+@NODE "Simple"
+
+
+    ________________________________________________
+   |                                                |
+   |                Select File                     |
+   |________________________________________________|
+   |                                              | |
+   |                                              | |
+   |  Names of Directories and Files              | |
+   |                                              | |
+   |  in current or nominated directory           | |
+   |                                              | |
+   |  listed here.                                | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |                                              | |
+   |______________________________________________|_|
+   |             ______________________________     |
+   |            |                              |    |
+   |     Drawer |______________________________|    |
+   |                                                |
+   |             ______________________________     |
+   |            |                              |    |
+   |       File |______________________________|    |
+   |                                                |
+   | _________   _________   _________   _________  |
+   ||         | |         | |         | |         | |
+   ||   OK    | | Volumes | | Parent  | | Cancel  | |
+   ||_________| |_________| |_________| |_________| |
+   |________________________________________________|
+
+
+@ENDNODE
+

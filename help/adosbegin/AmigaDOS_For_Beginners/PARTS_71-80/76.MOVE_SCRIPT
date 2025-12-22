@@ -1,0 +1,436 @@
+@DATABASE "ADB76"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 76 - The MOVE Script"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 76 - THE MOVE SCRIPT FILE@{UB}@{UU}
+@{JLEFT}
+
+@{B}Availability@{UB} - This script is @{B}not@{UB} part of AmigaDOS "S" directory files.
+It is one created by myself to overcome the problems with @{"DPAT" LINK "ADB:Parts_71-80/75.DPat_Script/Problems"}
+
+The MOVE script will not work @{B} v1.2 and earlier@{UB}.
+@{JCENTER}
+
+@{" General Comments On MOVE   " LINK "General"}
+@{" Usage of MOVE Script       " LINK "Usage"}
+@{" The MOVE Script Listing    " LINK "Listing"}
+@{" Explanation of MOVE Script " LINK "Explanation"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Part 76 - The MOVE Script - General Comments"
+
+@{B}@{U}General Comments On The MOVE Script@{UB}@{UU}
+
+As mentioned in the article @{"DPAT SCRIPT" LINK "ADB:Parts_71-80/75.DPat_Script/Problems"}, there is no command to move a
+file from one disk to another (i.e. to make a copy of it and delete the
+original). The @{"Rename" LINK "ADB:Parts_11-20/11.Rename/Files"14} command will only do this from one directory to
+another on the same disk and, in @{B}v1.x,@{UB} will not allow pattern matching.
+DPAT itself also has problems when trying to rename files such as not
+allowing a move from one disk to another.
+
+The best way of doing a move, of course, is with a @{"directory utility" LINK "ADB:Misc/Glossary/DirUtility"}
+program.
+
+Or you could use one of the MOVE commands in the @{"Public Domain" LINK "ADB:Misc/Glossary/PD"} that have
+been written in "C" or "Assembler" that would work a lot quicker than this
+script.
+
+However, as an exercise in writing scripts, @{"EXAMPLE-76.1" LINK "ADB:Parts_71-80/Example-76.1/MAIN"} on this disk does
+the job. It has a lot of error trapping in it to illustrate how to check
+for certain erroneous entries in the command line.
+
+The basis of any MOVE command is to take the file(s) out of one directory
+and put them into another. The method of doing this can be one of:-
+
+1. If the TO and FROM directories are @{B}on the same device@{UB}, then it is
+   possible to simply change the disk's pointers to the file so that it's
+   parent directory is shown as the destination directory instead of the
+   source directory. @{B}The file is NOT physically moved on the disk@{UB}.
+
+   This is the method used by Directory Utility programs and by some of the
+   "Move" type programs in the Public Domain that can be used like "C"
+   commands.
+
+   This method @{B}CANNOT@{UB} be used in an AmigaDOS script.
+
+2. The file is physically written to the destination directory and deleted
+   from the source directory.
+
+   This method is essential if the file is being moved to another device.
+
+Example-76.1 necessarily uses the second method with @{"Line 47" LINK "Explanation"145} (copy) and
+@{"line 54" LINK "Explanation"174} (delete). The script could be very simple and consist of these two
+lines plus Lines 3-5. This would give this script:-
+
+  .KEY from/a,to/a
+  .BRA {
+  .KET }
+  COPY >nil: {from} {to}
+  DELETE >nil: {from}
+
+This works well if you get your command line entries right but gives no
+indication if files are not found, if the destination does not exist, or a
+number of other things.
+
+The script (@{"Example-76.1" LINK "ADB:Parts_71-80/Example-76.1/MAIN"} on the disk) has the following specifications:-
+
+- source must not be a device or directory name so it must not end in
+  ":" or "/". If ending in some other characters then a check must be
+  made to see if it is a directory.
+- source files can be single file name or a pattern.
+- a message must be given if the source file(s) cannot be found.
+
+- destination must be a disk or directory. To ensure this the input must
+  end in ":" or "/"
+- destination disk or directory must be found to exist and a message
+  given if it does not.
+
+- source and destination paths must not be the same (if they are there
+  would be a danger of the DELETE command deleting the files without a copy
+  having been made!!).
+- a message must be given to indicate which files have been moved.
+
+I think that covers all possibilities. The example script handles all these
+specifications.
+
+I have set it up so that the destination must end in ":" or "/" because,
+from @{B}v1.3 onwards,@{UB} if you copy with pattern matching and use a destination
+file name, as in:-
+
+  > COPY disk:dir/test#? df1:trial
+
+then, if a directory called "df1:trial" does not exist, the COPY command
+will create one of that name and copy all files matching the pattern into
+it.
+
+If, however, no pattern matching is used, as in:-
+
+ > COPY disk:dir/test df1:trial
+
+then "test" will be copied and given the file name "trial" in the root
+directory of "df1:". If there were already a file called "trial" it would
+be overwritten.
+
+My set up overcomes this ambiguity.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Usage" "Part 76 - The MOVE Script - Usage"
+
+@{B}@{U}Usage of Script@{UB}@{UU}
+
+@{B}v1.2 and earlier@{UB} - This script will not work as you cannot refer to the
+current process number with @{"<$$>" LINK "ADB:Parts_31-40/39.Execute_&_Dot/Referring"}.
+
+You use the script as follows:-
+
+  > MOVE source destination
+
+where:-
+
+- "source" is the file(s) (including the path if the file(s) are not in the
+  current directory) to be moved. @{"Pattern matching" LINK "ADB:Parts_21-30/22.Pattern_Matching/Main"} can be used to move
+  multiple files.
+
+- "destination" is the name of the disk or directory (it must end in ":" or
+  "/") to which the file(s) are to be moved.
+
+For example:-
+
+  > move df0:s/myscript_no_#? df1:s/
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Listing" "Part 76 - The MOVE Script - Listing"
+
+@{B}@{U}The MOVE Script Listing@{UU}@{UB}
+
+This script has become somewhat larger than other examples. Rather than
+list it here all in one go, I have split it up into parts together with
+line by line explanations under the heading @{"Explanation of MOVE Script" LINK "Explanation"}
+
+If you wish to view it all at once then @{"click here" LINK "ADB:Parts_71-80/Example-76.1/MAIN"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Explanation" "Part 76 - The MOVE Script - Explanation"
+
+@{B}@{U}Explanation of Script@{UB}@{UU}
+
+@{B}    . Example-76.1
+
+ 1. . $VER: move 01.01 (16-Dec-93)
+ 2. . This script will move a file from one disk and/or directory to
+      another
+
+ 3. .KEY from/a,to/a
+ 4. .BRA {
+ 5. .KET }
+
+ 6. FAILAT 21
+
+Line 6@{UB} is needed as the LIST and COPY commands will fail with return code
+20 if files are not found.
+
+@{B} 7. ECHO >Env:move{$$} {from} FIRST 256
+
+Line 7@{UB} puts the last character from {from} into the variable move{$$}.
+(See explanation of @{"Line 5 in the DPAT script" LINK "ADB:Parts_71-80/75.DPAT_Script/How"15}).
+
+@{B} 8. IF $move{$$} EQ ":"
+ 9.   SKIP errorfrom
+10. ENDIF
+
+11. IF $move{$$} EQ "/"
+12.   SKIP errorfrom
+13. ENDIF
+
+Lines 8-13@{UB} check to see if {from} ends in a ":" or a "/". If so, a disk
+or directory has been specified as the source which does not meet our
+specifications. We therefore skip to label "errorfrom".
+
+@{B}14. ASSIGN Current: ""
+15. CD >Nil: {from}
+16. IF NOT FAIL
+17.   CD Current:
+18.   SKIP errorfrom
+19. ENDIF
+
+Lines 14-19@{UB} come into effect if {from} does not end in ":" or "/". Even
+though these characters were not found at the end of {from} the {from}
+could still be the name of a directory.
+
+@{B}Line 14@{UB} preserves the name of the current directory in the "Current:"
+assignment. (The "" refers to the current directory.) This is so that
+we can return to the current directory in Line 17.
+
+@{B}Line 15@{UB} attempts to change the current directory to {from}. If {from}
+IS a directory (which we do NOT want) then the CD command will succeed
+(it will "not fail") and @{B}Lines 17 and 18@{UB} will apply. Now we go back to
+the proper current directory in @{B}Line 17@{UB} and skip to the error message
+from @{B}Line 18@{UB}.
+
+If {from} is NOT a directory name (which is what we DO want) then the
+CD command in @{B}Line 15@{UB} will fail and we will reach @{B}Line 20@{UB}. The current
+directory was NOT changed by @{B}Line 15@{UB} so no need to change it back.
+
+@{B}20. ECHO >env:move{$$} {to} FIRST 256
+
+Line 20@{UB} does the same for {to} as @{B}Line 7@{UB} does for {from}. That is, it
+records the last character of move{$$}.
+
+@{B}21. IF $move{$$} EQ ":"
+22.   ASSIGN >Nil: {to} EXISTS
+23.   IF NOT WARN
+24.     SKIP move
+25.   ELSE
+26.     SKIP nodest
+27.   ENDIF
+28. ENDIF
+
+Line 21@{UB} checks to see if the destination is a disk or device name. If
+it is NOT, then the script goes straight to @{B}Line 29@{UB}.
+
+@{B}Line 22@{UB} checks to see if the disk or device actually exists.
+
+@{B}Line 23-24@{UB} allows the script to skip to the "move" label if the disk or
+device is found.
+
+@{B}Lines 25-26@{UB} skip to the display of the "no destination" message as the
+disk or device has not been found.
+
+@{B}29. IF $move{$$} EQ "/"
+30.   IF EXISTS {to}
+31.     SKIP move
+32.   ELSE
+33.     SKIP nodest
+34.   ENDIF
+35. ENDIF
+
+Lines 29-35@{UB} do the same for a directory destination as @{B}Lines 21-28@{UB} do for
+a disk or device destination. The only difference is that we can use
+"IF exists" to check for a directory whereas we had to use "ASSIGN ...
+exists" to check for a disk or device.
+
+@{B}36. SKIP errorto
+
+Line 36@{UB} can only be reached if {to} does not end in ":" or "/". We therefore
+skip to the error message.
+
+@{B}37. LAB move
+
+38. LIST >T:move1{$$} {from}
+39. IF FAIL
+40.   SKIP nofile
+41. ENDIF
+
+@{B}Line 37@{UB} is reached after our script has found that all (but one) of the
+requirements of the specification have been met. The one not yet checked
+for is the possibility of the same path being used in {from} and {to}.
+This will be done by the copy command in @{B}Line 47@{UB}.
+
+@{B}Line 38@{UB}. We now need to check if the source file(s) exist, so we will
+list them to a temporary file "T:move1{$$}".
+
+@{B}Line 39-41@{UB}. If a source file name was used with no pattern matching and
+that source file does not exist then the "List" in @{B}Line 38@{UB} will fail with
+return code 20. We then skip to the no file error message.
+
+@{B}Line 42@{UB} is reached in two situations:-
+
+- the source file name had NO pattern matching and DOES exists, or
+- pattern matching was used irrespective of whether or not any files
+  matched the pattern (List does NOT fail if there are no matches to the
+  pattern).
+
+@{B}42. LIST >T:move2{$$} T:move1{$$}
+43. SEARCH >nil: T:move2{$$} empty
+44. IF NOT WARN
+45.   SKIP nofile
+46. ENDIF
+
+Lines 42@{UB} lists the temporary file created by @{B}Line 38@{UB} to "T:move2{$$}" so
+that we can see if the first is empty (zero bytes) or not. In @{B}Line 38@{UB}
+the file "T:move1{$$}" will be empty if no files matched the pattern.
+
+@{B}Line 43@{UB} searches the file "T:move2{$$}" to see if it contains the word
+"empty". If it is found then no files matched the source pattern and the
+warn flag is not set.
+
+@{B}Line 45@{UB} skips to the "no file" message as search did find the word "empty".
+
+@{B}47. COPY >Nil: {from} {to}
+48. IF WARN
+49.   SKIP errorcopy
+50. ENDIF
+
+Lines 47@{UB} does the actual copying of the files(s)
+
+@{B}Line 48@{UB} checks to see if the copy command has succeeded. After all our
+previous checking, the only obvious reason for a failure to copy is if the
+source and destination paths are the same. If we try to do something like:-
+
+  COPY MyDisk:MyDir/myfile MyDisk:MyDir/
+
+we will get an error message:-
+
+  Can't open myfile for output - object is in use
+
+and, in @{B}v2+,@{UB} a return code of 5. @{B}V1.x,@{UB} surprisingly, gives a return code
+of 0 so this will not work. See @{"V1.3 Users Note" LINK "1.3"}.
+
+@{B}Line 49@{UB} skips to the "errorcopy" label if the copy failed only in @{B}v2+.@{UB}
+
+@{B}51. ECHO "*nThe following files have been moved from {from} to {to}*n"
+52. LIST {from} QUICK NOHEAD
+53. ECHO ""
+
+Lines 51-53@{UB} show the user which files have been moved. Line 53 is merely a
+spacer line.
+
+@{B}54. DELETE >Nil: {from}
+55. SKIP end
+
+Line 54@{UB} then deletes them from the source.
+
+@{B}56. LAB errorfrom
+57. ECHO "{from} is a disk or directory name. Do not use these for FROM"
+58. SKIP end
+
+59. LAB errorto
+60. ECHO "You must end your TO argument in : or /"
+61. SKIP end
+
+62. LAB nofile
+63. ECHO "your FROM specification {from} was not found"
+64. SKIP end
+
+65. LAB nodest
+66. ECHO "Your TO specification {to} does not exist"
+67. SKIP end
+
+68. LAB errorcopy
+69. ECHO "Copy aborted - you have probably used same path for FROM and TO."
+70. ECHO "FROM = {from} TO = {to}"
+71. SKIP end
+
+Lines 56-71@{UB} are the various error messages.
+
+@{B}72. LAB end
+73. DELETE >nil: env:move#?{$$}
+74. DELETE >nil: t:move#?{$$}
+75. ASSIGN Current: Remove
+
+Lines 73 to 75@{UB} do the housekeeping by removing all the variables and
+temporary files and the assign to "Current:". These lines will work in all
+versions. However, @{B}v2+@{UB} users could replace line 73 with:-
+
+  UNSETENV move1{$$}
+  UNSETENV move2{$$}
+
+We could not use:-
+
+  UNSETENV move?{$$}
+
+as "UNSETENV" does not support wild cards.
+
+It is therefore better, for the sake of compatibility and neatness, to
+leave Line 73 as it is.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "1.3" "Part 76 - The MOVE Script - Note For V1.3 users"
+
+@{B}@{U}V1.3 Users Note@{UB}@{UU}
+
+As mentioned @{"above" LINK "Explanation"162}, the @{B}v1.x@{UB} COPY command gives a return code of 0 instead
+of 5 when you try to copy a file into the same directory that it is already
+in. However, it does give an error message "Can't open filename - object
+is in use".
+
+There is no simply way, therefore, to trap this sort of error in user
+input.
+
+If you are still using @{B}v1.x@{UB} and want to seriously use this script file,
+you could try adding this line between 47 and 48:-
+
+  COPY >Nil: {from} Ram:
+
+Then, if you find you have accidently lost your files through using identical
+paths for source and destination, you could get them out of Ram:.
+
+There would be other more complex ways of checking for the error. For
+example, you could get the user to input a source path separately from
+the file name with pattern then compare the source path with the destination
+path. However, as this is really only an instructional script of little
+use to people who have directory utility programs, it is not worth the
+effort.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

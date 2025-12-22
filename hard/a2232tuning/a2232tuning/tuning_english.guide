@@ -1,0 +1,516 @@
+@database 07096510-0
+@master tuning.guide
+@$VER: 1.0
+@author "Markus Marquardt"
+@(c) ""
+@index HeddleyAutoIndex
+@remark Created with Heddley v1.1 (c) Edd Dumbill 1994
+
+@node "Main" "A2232 Tuning"
+
+                              A2232 Tuning
+
+          Upgrade/Modification for the A2232 Multi-Port Serial-Card
+
+                       Version 1.03 23.3.1997
+
+                 Idea & Realisation by @{"Markus Marquardt" link "Autor" 0}
+
+         Many thanks for support and inspiration to Jukka Marin
+
+                  English translation by @{"Leslie Ayling" link "Leslie" 0}
+
+   General
+      @{" Hints          " link "Hinweise" 0}                  General Hints
+      @{" Introduction   " link "Einleitung" 0}                  What is this?
+
+   a2232.device   
+      @{" Specifications " link "DevDaten" 0}                  Specs of the new Device
+      @{" Installation   " link "DevInstall" 0}                  Installing the Device
+      @{" Technical      " link "DevTech" 0}                  Technical Information
+
+   Hardware-Modification
+      @{" Important!     " link "UmbauWichtig" 0}                  Read BEFORE Commencing!
+      @{" Options        " link "UmbauVar" 0}                  Modification Options
+      @{" Materials      " link "UmbauMat" 0}                  You will need ...
+      @{" RTS/CTS Hshake " link "UmbauShake" 0}                  RTS/CTS-Handshake Modification
+      @{" Baudrate  A    " link "UmbauBaudA" 0}                  Baudrate-Mod Variation A
+      @{" Baudrate  B    " link "UmbauBaudB" 0}                  Baudrate-Mod Variation B
+      @{" Technical      " link "UmbauTech" 0}                  Technical Information
+@endnode
+
+@node "Hinweise" "A2232 Tuning - Hints"
+                              General Hints
+                              =============
+
+These Instructions and Software are FREEWARE. Only a small fee for media is
+permitted. Commercial use of this package is FORBIDDEN.
+While all care has been taken in the preparation of this package, the author
+accepts no liability for damage caused as a result of the information contained
+herein.
+
+If you use either the Modification or the "a2232.device" , or if you have any
+ideas or suggestions for improvements please send me a postcard or an e-mail.
+
+
+                             Contact address:
+                             ================
+
+                             Markus Marquardt
+                              Goerzallee 45a
+                               12207 Berlin
+
+                                  Germany
+
+                   EMail: adrock@h-raiser.tmb.sb.sub.de
+@endnode
+
+@node "Einleitung" "A2232 Tuning - Introduction"
+                                Introduction
+                                ============
+
+It was once... the 'A2232 Multi-Serial-Card for the Amiga 2000' (Quotation
+from the Packaging). These Zorro-2 cards, that also work in the A3000 and
+A4000, appeared on the market around 1989. For that time they were an innovative
+concept. Unfortunately some limitations of the card leave it relatively unusable
+in the present day. Meanwhile no similar card is currently available.
+These instructions describe how to get some reasonable performance out of this
+"Good Old Piece".
+
+This Package also includes a new Device ("a2232.device") as well as modification
+instructions for the hardware.
+
+With the use of the new Device some existing limitations are removed, and the
+performance of the A2232 card is improved.
+
+To get the maximum performance out of the A2232 card and eliminate all handshake
+(RTS/CTS) problems, the hardware can be improved for a relatively low cost
+(about 10 to 20 DM).
+
+@endnode
+
+@node "DevDaten" "A2232 Tuning - Leistungsdaten der Device"
+                    Specifications of the a2232.device
+                    ==================================
+
+With the a2232.device the A2232 card achieves the following:
+
+o Efficient Processor Utilization.
+
+  The Device is written in 100% Assembler and uses a different IRQ-Handling
+  Scheme compared to the original Device for the A2232 Card. Several seldom-used
+  features are sacrificed in favour of speed however.
+
+o Functioning RTS/CTS-Handshake for unidirectional Transfers
+
+  The original Device had Problems with the RTS-Handshaking when receiving
+  Data. This Problem is fixed with the new Device. However it only works if
+  while receiving data, no data is sent on the same port simultaneously.
+  To get fully working bidirectional handshaking, you have to modify the
+  hardware as described later in this document.
+
+o Functioning 115200 Baud Modes
+
+  Through optimization it is possible, on a maximum of 2 ports, to achieve an
+  interface speed of 115200 baud. The rest of the ports can still be used at
+  19200 baud.
+
+
+o These Features of the original serial.device are NOT supported:
+
+  o DSR-Signal
+  o XON/XOFF Handshake (maybe I will implement this later)
+  o Sending BREAKs
+
+@endnode
+
+@node "DevInstall" "A2232 Tuning - Installing the Device"
+                       Installing the a2232.device
+                       ===========================
+
+The Installation of the Device is trivial. Simply copy "a2232.device" to your
+DEVS: directory. That's it.
+
+                                 IMPORTANT!
+                                 ==========
+
+One should make sure not to access both the new a2232.device and the old
+serial.device when the a2232 card is used. Because both devices attempt to access
+the hardware causing a conflict.
+
+Furthermore be aware that with the new A2232.device (in contrast to the original
+device) unit 0 corresponds to the first port of the first A2232 card.
+
+
+   Unit      Card      Port
+   ------------------------
+     0         1         1
+     1         1         2
+     2         1         3
+     3         1         4
+     4         1         5
+     5         1         6
+     6         1         7
+
+     7         2         1
+     8         2         2
+     9         2         3
+    10         2         4
+    11         2         5
+    12         2         6
+    13         2         7
+
+    14         3         1
+
+    etc...
+@endnode
+
+@node "DevTech" "A2232 Tuning - Tech Info for the A2232.device"
+                 Technical Information for the A2232.device
+                 ==========================================
+
+The Device automatically recognises a modified A2232 card. It does this by testing
+the CIA on the card to see if PA7 and PB7 have been connected. In this event it
+configures itself to deal with the modified card.
+
+The Clock rate of the ACIAs on each A2232 board is recognised by the software
+automagically. On startup of the device, the software sends two NUL characters
+to the first port on each installed a2232 card. By using a timer in the 8520 on
+the card, the time which the ACIA needed to send these characters is measured. With
+this time, the clock rate of the ACIA's baudrate clock is calculated.
+
+
+For Communicating with the A2232 card there exists for each port:
+
+o A Data-Area for entering parameters, and to exchange control information.
+
+o An Transmit-FiFo buffer of size 256 Bytes
+
+o A Receive-FiFo buffer of size 256 Bytes
+
+The new a2232.device dosen't communicate with the A2232 card through the use
+of any special Interrupts. All data transfers occur during the Vertical Blank
+Interrupt. Which on a standard PAL Amiga occurs at 50 times per second. (For
+NTSC machines this is 60 times per second).
+This therefore allows a maximum transfer rate of:
+50 * 256 [fifo buffer] = 12800 bytes per second per port.
+@endnode
+
+@node "UmbauWichtig" "A2232 Tuning - Important Information for the Modification"
+
+                                ATTENTION!
+                                ==========
+
+On the A2232 card are components which could possibly be damaged by static-
+electricity!
+
+Therefore please use a earthing wrist-strap or discharge any buildup by touching
+an earth point (like a radiator) before you begin the modifications.
+
+The Positions of the ICs is printed on the A2232 Card. For security double-check
+the part no.s on the IC's themselves. The modifications described here are for
+a Rev 6 A2232 board, other revisions may have board layout differences!
+
+The ICs can be removed from their socket's with either a special removal tool,
+or just a screwdriver. Exercise caution when bending the pins so that they
+don't break off, as replacements maybe hard to get.
+@endnode
+
+@node "UmbauVar" "A2232 Tuning - Modification Options"
+                           Modification Options
+                           ====================
+
+
+o Modification of the RTS/CTS-Handshake
+
+  This mod should ALWAYS be installed, because it allows bidirectional
+  Data exchange with the RTS/CTS-Handshake enabled. Bidirectional here means
+  sending and receiving data simultaneously on the same port. If you never
+  intend to do this (e.g. if you are running a BBS which doesn't support
+  bidirectional transfer protocols like hydra or s-modem) you can skip this
+  part or do this modification later when you need it.
+  When using the a2232 for networking applications such as PPP or SLIP
+  protocols, you will NEED this!
+
+
+o Baudrate-Modifications
+
+  Through this modification the baudrates of the A2232 can be altered to the
+  following configurations. Each card can have EITHER variation A or variaton B
+  but not both.
+
+
+  o Variation A
+
+    Possible Baudrates:
+       75,150,300,600,900,1200,1800,2400,3600,4800,9600 und 57600 Baud.
+
+    All 7 Ports can use 57600 Baud simultaneously with this!
+
+  o Variation B (as yet untested!)
+
+    Possible Baudrates:
+       100,150,220,270,300,600,1200,2400,3600,4800,7200,9600,14400,19200,
+       38400 and 230400 Baud.
+
+    With 230400 Baud a maximum of one Port is possible, otherwise the A2232
+    is overburdened.With 230400 Baud the theoretically possible transferrate
+    of 23040 Byte/Sec. is NOT reached. The maximum attainable transferrate
+    amounts to 12800 bytes/sec at the VBLANK rate of 50Hz.
+    For more about this see @{" Technical " link "UmbauTech" 0}  
+
+@endnode
+
+@node "UmbauMat" "A2232 Tuning - Material for the Mods"
+                      Necessary Material for the Mods
+                      ===============================
+
+o For all The Mods you will need:
+
+  o A Soldering iron, better still: A SolderStation with an earthing point.
+
+  o Solder (60/40) small gauge preferred.
+
+  o Standard-Tools: Screwdrivers, Pliers etc.
+
+
+o RTS/CTS-Handshake Mod
+
+  For the RTS/CTS-Handshake Mod about 2 metres of thin insulated cable is required.
+
+
+o Baudrate-Mod Variation A
+
+  o 1 x IC 74LS74
+
+  o Desoldering tool: Desoldering pump or Solder Wick
+
+
+o Baudrate-Mod Variation B
+
+  o 1 x Quartz Oscillator at 3.6864 MHz, whith TTL compat. output
+
+  o Desoldering tool: Desoldering pump or Solder Wick
+@endnode
+
+@node "UmbauShake" "A2232 Tuning - RTS/CTS-Handshake Modification"
+
+                           RTS/CTS-Handshake Mod
+                           =====================
+
+All of the following ICs must be removed from thier sockets and have the
+following pins bent horizontally, (so that those pins no longer make make
+contact with the IC socket) then replaced in their sockets.
+
+The following ICs must be modified:
+
+U78 (8520): Pin 9, 10, 11, 12, 13, 14, 15, 16 und 17
+
+U52, U54, U56, U58, U72, U74, U76 (6551 or 8551): Pin 8 und 17
+
+After the ICs have been replaced in their Sockets make the following connections
+with the thin gauge shielded cable cut into short lengths.
+
+   New Connections
+   ---------------
+
+   From                To                  Signal Name
+
+   U78 Pin 10          U59 Pin 10          /RTS #0
+    "   "  11          U60 Pin 10          /RTS #1
+    "   "  12          U61 Pin 13          /RTS #2
+    "   "  13          U61 Pin 10          /RTS #3
+    "   "  14          U79 Pin 10          /RTS #4
+    "   "  15          U80 Pin 10          /RTS #5
+    "   "  16          U81 Pin 10          /RTS #6
+
+   U52 Pin 17          U51 Pin 3           /CTS #0
+   U54 Pin 17          U53 Pin 3           /CTS #1
+   U56 Pin 17          U55 Pin 3           /CTS #2
+   U58 Pin 17          U57 Pin 3           /CTS #3
+   U72 Pin 17          U71 Pin 3           /CTS #4
+   U74 Pin 17          U73 Pin 3           /CTS #5
+   U76 Pin 17          U75 Pin 3           /CTS #6
+
+   U78 Pin 9           U78 Pin 17          /PA7 -> /PB7
+
+These alterations are shown in the IFF-File [UMBAU.IFF].
+@endnode
+@node "UmbauBaudA" "A2232 Tuning - Baudrate MOD A"
+
+                         Baudrate-Mod Variation A
+                         ------------------------
+
+Locate the IC at position U18 (74LS74) above it is a black component with only
+2 legs labelled FB1. Using a desoldering tool lift the end of FB1 nearest the
+FB1 legend on the board out of the hole. FB1 should now only be connected to the
+board by one lead.
+
+Next prepare a new IC 74LS74 as follows:
+
+Cut Pins 1, 2, 3, 4, 5, 6, 10 and 13 off completely with a pair of side-cutters.
+Using the side-cutters trim pins 8, 11 and 12 (in order to solder wires to them)
+then bend pins 8,11 and 12 horizontally.
+Next connect pin's 8 and 12 of the new IC together.
+
+At Pin 10 of the IC at Position U18 (74LS74) wire a small piece of shieled cable
+(approx. 1cm)
+
+Then piggyback the new IC over the top of U18 (74LS74), only soldering pins
+7 and 14 of the new IC to pins 7 and 14 of U18.
+All other pins of the new IC make NO CONTACT with U18.
+
+Then connect the other end of the wire that you previously soldered to  Pin 10
+of U18 to pin 11 of the upper IC.
+
+Then connect pin 9 of the upper IC to the open end of FB1. (the lead of FB1 you
+desoldered earlier.)
+
+
+The connections again in short-form:
+
+   U18 74LS74      Piggyback 74LS74        FB1
+
+   8 with 12
+
+   7    <---->     7
+   14   <---->     14
+   10   <---->     11
+                   9       <----------->   right connection(open end)
+
+@endnode
+@node "UmbauBaudB" "A2232 Tuning - Baudrate MOD B"
+                         Baudrate Mod Variation B
+                         ------------------------
+
+Simply replace the oscillator pack at Position Y1 with the new 3.6864 MHz
+replacement.
+@endnode
+
+@node "UmbauTech" "A2232 Tuning - Hardware-Mod Technical"
+                           Technical Information
+                           =====================
+
+
+                           RTS/CTS-Handshake Mod
+                           ---------------------
+
+In an unmodified A2232 the connections are thus:
+
+   Port    ACIA            RTS             CTS             DSR
+
+   0       U52             ACIA /RTS (8)   CIA PB0 (10)    ACIA /DSR (17)
+   1       U54               "    "   "    CIA PB1 (11)      "    "    "
+   2       U56               "    "   "    CIA PB2 (12)      "    "    "
+   3       U58               "    "   "    CIA PB3 (13)      "    "    "
+   4       U72               "    "   "    CIA PB4 (14)      "    "    "
+   5       U74               "    "   "    CIA PB5 (15)      "    "    "
+   6       U76               "    "   "    CIA PB6 (16)      "    "    "
+
+The Signals RTS and DSR are therefore directly connected to the corresponding
+ACIA, with the CTS-Signals being sensed directly by the 8520 CIA.
+
+Tests have shown that the ACIAs (8551 and 6551) are not able to operate the
+RTS signal independently from sending characters.
+
+The following problems exist:
+
+o With /RTS at logic "0", there can be no transfer of data as the transmitter
+  has apparently switched off.
+
+o With /RTS (during sending) being set to logic "0" in the appropiate ACIA
+  register, the ACIA /RTS output remains logic "1" until there are no more
+  characters to send in the transmit shift register.
+
+The Solution to the problem then is to handle the RTS signals not with the
+ACIA but with the port B of CIA 8520 on the a2232 card. Because the port B
+is already used to monitor the CTS signals, these signals have to be moved
+to the DSR inputs of the appriopate ACIAs.
+
+After the mod the system looks as follows::
+
+   Port    ACIA            RTS             CTS             DSR
+
+   0       U52             CIA PB0 (10)    ACIA /DSR (17)  not connected
+   1       U54             CIA PB1 (11)      "    "    "    "    "   "
+   2       U56             CIA PB2 (12)      "    "    "    "    "   "
+   3       U58             CIA PB3 (13)      "    "    "    "    "   "
+   4       U72             CIA PB4 (14)      "    "    "    "    "   "
+   5       U74             CIA PB5 (15)      "    "    "    "    "   "
+   6       U76             CIA PB6 (16)      "    "    "    "    "   "
+
+
+                               Baudrate-Mods
+                               -------------
+
+The Highest selectable Baudrate of the ACIAs is equal to 1/16 of the external
+Clock. At 1.8432 MHz this equals 115200 Baud. With the Flip-Flop 74LS74 this
+becomes 57600 baud for Variation A , and with a different oscillator becomes
+230400 baud for Variation B.
+
+@endnode
+
+
+@node "Autor" "A2232 Tuning - Author"
+                              Contact address
+                              ===============
+
+                             Markus Marquardt
+                              Goerzallee 45a
+                               12207 Berlin
+
+                                  Germany
+
+                   EMail: adrock@h-raiser.tmb.sb.sub.de
+@endnode
+@node "Leslie" "A2232 Tuning - English Translation"
+                            Contact address
+                            ===============
+
+                             Leslie Ayling
+
+                   EMail: layling@intercoast.com.au
+
+Any sections followed by (??) mean I'm not 100% confident in the translation.
+      However nothing critical to performing the mod is wrong.
+
+
+@endnode
+
+@node HeddleyAutoIndex "Index"
+@remark Index auto-generated by Heddley
+Index of database 07096510-0
+
+Documents
+
+@{"A2232 Tuning" link "Main"}
+@{"A2232 Tuning - Autor" link "Autor"}
+@{"A2232 Tuning - Baudraten-Umbau Variante A" link "UmbauBaudA"}
+@{"A2232 Tuning - Baudraten-Umbau Variante B" link "UmbauBaudB"}
+@{"A2232 Tuning - Einleitung" link "Einleitung"}
+@{"A2232 Tuning - Hardware-Umbau Technik" link "UmbauTech"}
+@{"A2232 Tuning - Hinweise" link "Hinweise"}
+@{"A2232 Tuning - Installation der Device" link "DevInstall"}
+@{"A2232 Tuning - Leistungsdaten der Device" link "DevDaten"}
+@{"A2232 Tuning - Material für den Umbau" link "UmbauMat"}
+@{"A2232 Tuning - RTS/CTS-Handshake Umbauanleitung" link "UmbauShake"}
+@{"A2232 Tuning - Technik der a2232.device" link "DevTech"}
+@{"A2232 Tuning - Umbauvarianten" link "UmbauVar"}
+@{"A2232 Tuning - Wichtige Informationen zum Umbau" link "UmbauWichtig"}
+
+Buttons
+
+@{" Baudraten A    " link "UmbauBaudA" 0}
+@{" Baudraten B    " link "UmbauBaudB" 0}
+@{" Einleitung     " link "Einleitung" 0}
+@{" Hinweise       " link "Hinweise" 0}
+@{" Installation   " link "DevInstall" 0}
+@{" Leistungsdaten " link "DevDaten" 0}
+@{" Material       " link "UmbauMat" 0}
+@{" RTS/CTS Umbau  " link "UmbauShake" 0}
+@{" Technik        " link "DevTech" 0}
+@{" Technik        " link "UmbauTech" 0}
+@{" Umbauvarianten " link "UmbauVar" 0}
+@{" Wichtig!       " link "UmbauWichtig" 0}
+@{"Markus Marquardt" link "Autor" 0}
+@endnode

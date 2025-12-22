@@ -1,0 +1,502 @@
+@database DCF77PlusPackage
+@$VER: 1.06
+@author  "Peter  Reibold"
+@(c)  "1997 by Peter  Reibold"
+
+@node "Main" "The DCF77 Plus package"
+                        @{b}The DCF77 Plus package V1.21@{ub}
+
+                     The "cheap" radio controlled watch
+                    ====================================
+
+                           © 1996-97 by Peter Reibold
+
+                                @{" What´s new? " link "New" 0}
+
+                       @{"         Introduction         " link "Introduction" 0}
+                       @{"         Installation         " link "installation" 0}
+                       @{"      Using the software      " link "Using" 0}
+                       @{"        Error messages        " link "Errors" 0}
+                       @{"   Description of DCF signal  " link "Description" 0}
+                       @{" Construction of the hardware " link "hardware" 0}
+                       @{"     System requirements      " link "system" 0}
+                       @{"            Credits           " link "Credits" 0}
+                       @{"            History           " link "History" 0}
+                       @{"    Copyright & liability     " link "Copyright" 0}
+@endnode
+
+@node "New" "What´s new?"
+
+  @{b}@{u} What´s new? @{ub}@{uu}
+
+Now you may connect the hardware using the @{b}joystick port 2@{ub}.
+There are 5 pins suitable for connecting them to the datawire. Power is
+supplied by the gameport, too.
+
+It is possible to handle a @{b}inverted@{ub} data-signal. The selection is adjustable
+with the Tooltype @{b}REVERSE=ON|OFF@{ub}.
+@endnode
+
+@node "Introduction" "Introduction"
+
+  @{b}@{u} Introduction @{ub}@{uu}
+
+DCF77 Plus is a package which allows every Amiga user to receive an exact
+system time on a very simple and advantageous way.
+
+This is achieved by using a hardware extension and the pertinent software.
+The linking can be done at the start of the computer in your WBStartup
+drawer, for instance.
+
+The advantage of this package is that you do not depend on commercial
+products and that self-construction often is more favourable.
+
+This project is based on the circuit from "Atomuhr V1.2" by Stefan Glükler,
+Chur/Switzerland. However, the circuit has been altered so that it covers
+the power supply directly from the serial port, and support for actual DCF
+modules has been added.
+@endnode
+
+@node "Installation" "Installation"
+
+  @{b}@{u} Installation @{ub}@{uu}
+
+The assembled hardware of DCF77Plus is connected simply to the serial port
+or to the joystick port 2 of the Amiga (be sure to switch it off before
+doing so!!!).
+
+Then you have to copy the DCF77Plus program file into an arbitrary drawer;
+the best location would be the ´WBStartup´ drawer.
+
+Ensure that your C: drawer contains the following files:
+
+-  Date
+-  Setclock
+
+These files are necessary to guarantee a flawless setting of the system time.
+
+As soon as the computer is turned on, the function of the receiver should be
+tested: The LED should begin to flash about once per second, indicating the
+received data bits in the normal case.
+
+If this is not the case, several causes are possible:
+
+- You have not assembled the hardware correctly.
+
+- The receivcer PCB with the ferrite antenna lies too densely in the range
+  of the computer or monitor, which has a disturbing influence. However,
+  a distance of 2.5 meters should be sufficient.
+
+- Change the direction of the ferrite antenna to ascertain the correct re-
+  ceiving direction.
+
+The function of the software can be tested using the diagnostics utility
+@{u}DCF77Plus_Check@{uu}. In its window all data bits are displayed. Additionally,
+you can find a short description of the individual bits at the top of the
+window.
+
+If errors occur while transferring or decoding the data, this will be indi-
+cated via a system requester.
+@endnode
+
+@node "Using" "Using the software"
+
+  @{b}@{u} Using the software @{ub}@{uu}
+
+DCF77Plus is called up completely simply through a double-click on its
+icon. Just copy the program into the @{u}WBStartup drawer@{uu}; so it is called
+up automatically after a reset.
+
+The programs @{u}DCF77Plus@{uu} and @{u}DCF77Plus_Check@{uu} can be configured over entries
+in the Tooltypes of their Icons.
+
+The following Tooltypes are at the disposal:
+
+	@{b}DEVICE=@{ub}		For the statement of the device-name, without
+			statement the serial.device is used.
+
+			Is the hardware connected to the joystick port 2,
+			the gameport.device has to be stated.
+
+	@{b}UNIT=@{ub}		For the statement of the unit-number, preset is 0.
+
+	                Running the hardware via the joystick port the unit
+	                determines the pin number to which the datawire is
+	                connected.
+
+        @{b}REVERSE=@{ub}        In order to invert the data-signal, set it to ON.
+                        Default is OFF. For being able to decide if it has
+                        to be changed to ON use the program DCF77Plus_Check:
+                        If the time values are circa 100 or 200 respectively
+                        (instead of normally circa 800 or 900), change
+                        REVERSE to ON.
+
+At the program DCF77Plus there is in addition following:
+
+	@{b}PRIORITY=@{ub}	Sets the priority of the program. The default is 0.
+			To prevent a system overload, only negative values
+			should be stated.
+
+	@{b}DEBUG=@{ub}		Switch on the debug-modus.
+			0 off
+			1 The screen flashes when system time has been
+			  updated.
+			2 Like 1, but flashes the screen also when
+			  synchronization impulse is received, indicating
+			  the beginning of the time-signal.
+			3 Like 2. You are informed about each signal of the
+			  time-signal being received, too.
+
+	@{b}DELTA=@{ub}		Defines a time correction. To the determined time x
+	        	hours are added	(x can also be negative). This is
+	        	useful if the software has to be adjusted for a
+	        	certain time zone.
+
+	@{b}SOUND=@{ub}		Here a IFF soundfile can be stated, which is played
+	   		after setting the system-time.
+
+	@{b}DONOTWAIT@{ub}	This keyword should be used to prevent the system
+	    		waiting	of the end of the program at a system-start.
+
+
+
+@{b}Examples@{ub}
+
+DEVICE=serial.device
+UNIT=0
+PRIORITY=-1
+DEBUG=1
+DELTA=-1
+SOUND=SYS:Prefs/Sounds/ping.iff
+
+The hardware is used with the serial.device at unit number 0.
+The program is started as a background task with a priority of -1. After
+updating the system time, the screen flashes once at the very end of the
+program and the IFF soundfile is played. The system time is set to the
+received time minus one hour (e. g. for the United Kingdom).
+
+In order to use the hardware at pin 6 of the joystick port 2, you may
+use the following:
+
+DEVICE=gameport.device
+UNIT=6
+@endnode
+
+@node "Errors" "Error messages"
+
+  @{b}@{u} Error messages during the completion @{ub}@{uu}
+
+During the execution of the DCF77Plus program, the following error messages
+can appear:
+
+ @{i}No DCF77 signal.@{ui}        This indicates that 5 minutes have been serviced
+                         in vain for the beginning of the time-signal.
+                         The program may be interrupted now.
+
+ @{i}Error receiving signal.@{ui} This means that over a longer period faulty data
+                         has been received and that it is not to be reckoned
+                         with a flawless reception.
+                         Also here the program may be interrupted.
+
+ @{i}Error opening device.@{ui}   The device or the unit was misstated.
+ 			 The program is interrupted.
+
+ @{i}Soundfile not found.@{ui}    The soundfile was misstated.
+ 			 The program is finished without playing the sound.
+
+
+  @{b}Solution: @{ub} In the @{u}first@{uu} case you should examine whether the hardware
+             functions correctly - see @{"Installation" link "installation" 0} for details.
+             Besides you can try to change the orientation of the ferrite
+             antenna in a manner that a signal can be received (LED flashes).
+
+             In the @{u}second@{uu} case you can try to remove the reception module
+             from electrically disturbing devices (e.g. computers, monitors
+             etc.) to increase the receiving quality.
+
+             In the @{u}third@{uu} and @{u}fourth@{uu} case you should examine the entry in
+             the Tooltypes and correct them if necessary.
+
+@endnode
+
+@node  "Description" "Description of the DCF signal"
+
+  @{b}@{u} The construction of the DCF signal @{ub}@{uu}
+
+The DCF signal is produced by the "Physikalisch Technische Bundesanstalt" in
+Braunschweig, Germany. This signal is radiated by a transmitter in Main-
+flingen/Frankfurt. This is done at a frequency of 77.5 kHz, and hence it is
+also called DCF77.
+
+Within one minute the so-called "time-signal" is radiated. It consists of
+a sequence of low and high bits. These bits are transferred through a
+short-term sinking of the amplitude to 25 %. If these sinkings are shorter
+than 120 ms so it indicates a low bit (0); with at least 180 ms it indicates
+a high bit (1).
+
+The 59th bit serves for synchronization purposes only. It contains no mark;
+the following zeroeth bit is a low bit (0). Thus you know exactly that the
+seconds are at 00 and that you can begin to receive the required data bits
+now and to decode them after that.
+
+
+The entire time-signal is composed as follows:
+
+@{u} Bit     Meaning              Value @{uu}
+
+ 0       Begin of a minute (always low)
+ 1-14    (unused)
+ 15      if "Hi": the reserve-antenna is in use
+ 16      if "Hi": it is 1 hour before transposition of time
+ 17      if "Hi": daylight saving time (MEST)
+ 18      time-zone bit, always  "Lo"
+ 19      if "Hi": it is 1 hour before intercalary second
+ 20      begin of time-signal, always "Hi"
+ 21      minute (unit)           1
+ 22           "                  2
+ 23           "                  4
+ 24           "                  8
+ 25      minute (ten)           10
+ 26           "                 20
+ 27           "                 40
+ 28      verify bit (completes on even parity)
+ 29      hour (unit)             1
+ 30           "                  2
+ 31           "                  4
+ 32           "                  8
+ 33      hour (ten)             10
+ 34           "                 20
+ 35      verify bit (completes on even parity)
+ 36      calendar day (unit)     1
+ 37           "                  2
+ 38           "                  4
+ 39           "                  8
+ 40      calendar day (ten)     10
+ 41           "                 20
+ 42      week-day                1
+ 43           "                  2
+ 44           "                  4
+ 45      month (unit)            1
+ 46           "                  2
+ 47           "                  4
+ 48           "                  8
+ 49      month (ten)            10
+ 50      year (unit)             1
+ 51           "                  2
+ 52           "                  4
+ 53           "                  8
+ 54      year (ten)             10
+ 55           "                 20
+ 56           "                 30
+ 57           "                 40
+ 58      verify bit (completes on even parity)
+ 59      no mark
+
+@endnode
+
+@node  "hardware"  "Hardware"
+
+  @{b}@{u} Construction of the hardware @{ub}@{uu}
+
+In essential, the hardware relies on a ready-made DCF module and the adapter
+circuit. The adapter circuit can be built using the following list:
+
+
+                         @{"     Layout     " link "layout" 0}
+                         @{" Required parts " link "parts" 0}
+                         @{"  Construction  " link "construction" 0}
+
+@endnode
+
+@node "layout" "Layout"
+
+  @{b}@{u} How to print the layout @{ub}@{uu}
+
+For the PCB you can select the file fitting to your printer from the "layout"
+drawer and send it to the printer using the "copy" command.
+
+The following layout files are supplied:
+
+-  Star24PinPrinter    for Star 24-pin printers
+-  24PinPrinter        for generic 24-pin printers
+-  9PinPrinter         for generic 9-pin printers
+-  Epson_Ink           for Epson ink printers
+-  HP_Ink              for Hewlett Packard ink printers
+-  laser               for laser printers
+
+These must be sent to the printer directly via the parallel port. This is
+performed simply by double-clicking the corresponding file's icon. Thereby
+the program @{u}ParPrint@{uu} is called, which is located in the same drawer.
+This program actually performs the transfer and is used like Commodore's
+"PrintFiles" utility.
+
+Alternatively you can enter something similar to the following in the CLI:
+
+ @{i}copy FileName par:@{ui}
+
+For instance,
+
+ @{i}copy Epson_ink  par:@{ui}
+@endnode
+
+@node "parts" "Required parts"
+
+  @{b}@{u} The following parts are required: @{ub}@{uu}
+
+
+- DCF module:  No. 641138 from Conrad (approx. 20 DM)
+
+- for the adapter circuit:
+
+    - photo-covered PCB
+    - IC1:     74 HC 14 N  (Schmitt trigger)
+    - IC2:     78 L 05     (5V voltage regulator)
+    - D1:      LED
+    - R1:      100  kOhm
+    - R2:       15  kOhm
+    - R3       470   Ohm
+    - C1, C2:  100  nF
+    - C2:        1  µF
+
+- besides a cable with 3 leads and a 25-pin Sub-D socket for the connection
+  to the serial port.
+
+- possibly a casing (e.g. Conrad No. 522244, 53x37x20mm with strap to hang
+  up)
+
+
+Altogether it comes to about 30 DM.
+@endnode
+
+@node "construction" "Construction"
+
+  @{b}@{u} Construction of the curcuit @{ub}@{uu}
+
+The best way to reproduce this project is to orientate yourself on the chart
+which is presented in the file @{i}DCF77Plus.iff@{ui}. As you can see, the con-
+struction is not problematic. If you want to use an electrolytic capacitor
+for C2, you should pay attention to the fact that the ground connector shows
+to the edge of the PCB.
+Here you can also see how to join the PCB with the DCF module.
+
+In order to use joystick port 2 instead of the serial port, you have
+the following possibilities to connect the datawire:
+
+- Pin 1 (up)
+- Pin 2 (down)
+- Pin 3 (left)
+- Pin 4 (right)
+- Pin 6 (fire)
+
+In this case you may omit the voltage regulator 78 L 05 because the port
+itself delivers 5 volts. But then you have to bypass the regulator by
+connecting its right and left solder pad. The power is supplied at
+pin 7 (+5V) and pin 8 (GND) of the joystick port.
+
+You can see the finished PCB (and how to install it in a casing completely
+with the DCF module) on the pictures in the @{u}Pictures@{uu} drawer.
+
+If you do not get the DCF module or you already own another one, you certain-
+ly can use this one. But you must pay attention, however, to the operating
+voltage (here 5V). It is not important whether the data-signal is negative
+or positive. Should the occasion arise, you can alter the REVERSE Tooltype.
+@endnode
+
+@node "system" "System requirements"
+
+  @{b}@{u} System requirements @{ub}@{uu}
+
+The DCF77 Plus package runs on all Amigas using Kickstart version 2.0 or
+above.
+
+It has been developed on an Amiga 4000 with Kickstart 3.1 and tested success-
+fully on an Amiga 500 with Kickstart 2.1 and an Amiga 4000 with Kick-
+start 3.0 and a Multiface Card III.
+
+To be able to read this documentation, 2.X users should replace the Default-
+Tool in its icon with @{u}Amigaguide@{uu}.
+
+The Default-Tool of the picture files should be replaced with @{u}Display@{uu}.
+@endnode
+
+@node "Credits" "Credits"
+
+  @{b}@{u} Credits @{ub}@{uu}
+
+Thanks to:
+
+- David Benn for ACE 2.4, which was used for developing this program.
+
+- Dirk Düsterberg for the PCB layout.
+
+- Marcel Döring for the MagicWB icon and for inspirations.
+
+- Domenic Gebauer for beta-testing.
+
+@endnode
+
+@node "History" "History"
+
+  @{b}@{u} History @{ub}@{uu}
+
+- @{u}Version 1.00 (20.10.1996)@{uu}
+
+  First public release of the project.
+
+- @{u}Version 1.10 (05.03.1997)@{uu}
+
+  In contrast to earlier you do not need to install the program in the
+  startup-sequence any longer; now just copy the program DCF77Plus to the
+  @{b}WBStartup@{ub} drawer.
+
+  The configuration is done no more over command line but comfortably over
+  @{b}Tooltypes@{ub}.
+
+  The hardware now is addressed over device and unit, thus the organization
+  at additional @{b}I/O-cards@{ub} is possible.
+
+  Now a @{b}sound@{ub} can be played back when setting the time.
+
+- @{u}Version 1.20 (01.05.1997)@{uu}
+
+  New is the possibility to connect the hardware via the @{b}@{b}joystick port 2@{ub}.
+
+- @{u}Version 1.21 (04.05.1997)@{uu}
+
+  @{b}Inverted@{ub} data-signals can now be decoded. This is configuered via the
+  REVERSE Tooltype.
+
+@endnode
+
+@node "Copyright" "Copyright & liability"
+
+  @{b}@{u} Copyright @{ub}@{uu}
+
+Copyright © 1996-97 by Ernolto Electronics
+                       c/o Peter Reibold
+                       Ottberger Weg 13
+                       D-31737 Rinteln
+
+             Email:    Peter.Reibold@t-online.de
+             Homepage: http://www.stud.uni-hannover.de/~peterr
+
+DCF77 plus is freeware. It may be used unrestricted as long as the supplied
+files are neither changed nor decompiled. All pertinent files may be trans-
+mitted in the complete package only.
+
+I would be happy if users would send me a postcard or Email.
+
+Inspirations, questions, or hints are accepted happily.
+
+
+  @{b}@{u} Exclusion from liability @{ub}@{uu}
+
+The informations contained in this instruction are made available without
+any warranty in reference to the application, the results or the using of
+these information, their fitness, precision, reliability, or relevance.
+All possible risks with regard to the application of these information are
+taken over by the user. Under no circumstances the author is liable for any
+direct, indirect, or accidental damages. This exclusion from liability
+replaces all contrary sounding explanations, all the same by word of mouth
+or written.
+@endnode

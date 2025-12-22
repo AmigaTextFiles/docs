@@ -1,0 +1,406 @@
+@DATABASE "ADB75"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 75 - The DPAT Script"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 75 - THE DPAT SCRIPT FILE@{UB}@{UU}
+@{JLEFT}
+
+@{B}Location@{UB}     - "S" Directory - All AmigaDOS version from @{B}1.3@{UB}
+
+@{B}Purpose@{UB}      - To allow pattern matching with wild cards to be used with
+               AmigaDOS or other commands that do not normally support
+               pattern matching.
+
+@{B}Availability@{UB} - AmigaDOS Versions 1.3 Onwards
+@{JCENTER}
+
+@{" General Comments  " LINK "General"}
+@{" The DPAT Script   " LINK "Script"}
+@{" How DPAT Works    " LINK "How"}
+@{" Problem With DPAT " LINK "Problems"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Part 75 - The DPAT Script - General Comments"
+
+@{B}@{U}General Comments About DPAT@{UB}@{UU}
+
+"DPAT" is short for "Double argument command PATtern matching". It is
+for commands that take two arguments. Compare this to the @{"SPAT" LINK "ADB:Parts_71-80/74.SPat_Script/MAIN"} script
+(previous article) which is for single argument commands.
+
+A single argument command line is one such as:-
+
+  > LIST s:startup-sequence
+
+where "s:startup-sequence" is the only argument to the "LIST" command.
+
+A double argument command line would be one such as:-
+
+  > COPY s:startup-sequence df1:s/
+
+where the FROM (s:startup-sequence) and TO (df1:s/) items are both
+arguments.
+
+The only command that I can find that would allow you to use DPAT in a
+useful manner is the @{B}v1.x@{UB} "Rename" command which does not support pattern
+matching in the FROM file name. The @{B}v2+@{UB} "Rename" command does allow this
+pattern matching. However, there may be others that you can come up with.
+
+Let's say you had a number of files on one directory that you wanted to
+rename (move) them all to another directory. The files all have similar
+names; for example:-
+
+   Thesis.1
+   Thesis.2
+   Thesis.3
+   ........ etc.
+
+You could use the "RENAME" command to rename them one after the other
+but the @{B}v1.x@{UB} RENAME command will not accept wild cards. So you use DPAT
+as follows:-
+
+  > DPAT RENAME disk:dir1/thesis#? disk:dir2/
+
+Line 15 of DPAT:-
+
+  LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}%s*" {opt1} {opt2}
+
+will create the file "T:q{$$}" with this content:-
+
+  RENAME "disk:dir1/Thesis.1" "disk:dir2/Thesis.1"
+  RENAME "disk:dir1/Thesis.2" "disk:dir2/Thesis.2"
+  RENAME "disk:dir1/Thesis.3" "disk:dir2/Thesis.3"
+
+and Line 25:-
+
+   EXECUTE T:q{$$}
+
+will cause each of these lines to be executed one after the other.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Script" "Part 75 - The DPAT Script"
+
+@{B}@{U}The DPAT Script@{UB}@{UU}
+
+This script has remained unaltered from @{B}v1.3@{UB} to @{B}v2.1@{UB} except for:-
+
+- from @{B}v2.0,@{UB} the inclusion of ".BRA" and ".KET" commands.
+
+- from @{B}v2.1,@{UB} the inclusion of the comment line holding the version number
+
+Neither of these affect the operation of the script.
+
+The example below is taken from @{B}v2.1.@{UB}
+
+The @{B}v3.1@{UB} DPAT script has some extra lines but I am not using these in the
+explanation as they appear not to work. @{"Click here" LINK "3.1"} if you wish to read
+about them.
+
+ 1. .KEY com/a,pat/a,dir/a,opt1,opt2,opt3,opt4
+ 2. .BRA {
+ 3. .KET }
+
+    ; $VER: DPAT 38.1 (11.10.91)
+    ; Do wildcards for double arg commands
+
+ 4. FAILAT 21
+ 5. ECHO >ENV:qw{$$} "{dir}" FIRST 256
+
+ 6. IF $qw{$$} EQ ":"
+ 7. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}%s*" {opt1} {opt2}
+      {opt3} {opt4}"
+ 8. SKIP doit
+ 9. ENDIF
+
+10. IF $qw{$$} EQ "/"
+11. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}%s*" {opt1} {opt2}
+      {opt3} {opt4}"
+12. SKIP doit
+13. ENDIF
+
+14. IF EXISTS {dir}
+15. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}/%s*"
+      {opt1} {opt2} {opt3} {OPT4}"
+16. ELSE
+17. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}*" {opt1} {opt2}
+      {opt3} {OPT4}"
+18. ENDIF
+
+19. LAB doit
+
+20. IF NOT FAIL
+21. EXECUTE T:q{$$}
+22. ELSE
+23. ECHO "{pat} not found"
+24. ENDIF
+
+25. FAILAT 10
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "How" "Part 75 - The DPAT Script - How DPAT Works"
+
+@{B}@{U}How DPAT Works@{UB}@{UU}
+
+In discussing this script I will assume that you have already studied the
+article on @{"SPAT" LINK "ADB:Parts_71-80/74.SPat_Script/MAIN"}. In some respects they are very similar so I will not go
+over the same ground again.
+
+Line 1:-
+
+  1. .KEY com/a,pat/a,dir/a,opt1,opt2,opt3,opt4
+
+is the same as that in "SPAT" except for the extra keyword "dir/a". This
+allows the use of the second argument. It is called "dir" as this will
+normally be a destination directory for the command.
+
+Line 5:-
+
+  5. ECHO >ENV:qw{$$} "{dir}" FIRST 256
+
+creates an environmental variable "qw{$$}" with the "ECHO" command. If you
+recall the article on "ECHO" you will remember that if the number after
+FIRST is greater than the length of the string being echoed then only the
+last character of the string is echoed. By using echo's "FIRST" option and
+using a very high number we record in "qw{$$}" only the last character of
+whatever the user enters on the command line in place of "dir/a". This last
+character is then used by the IF commands in lines 6 and 10. We need to use
+different LFORMAT strings depending on this last character:-
+
+- Lines  6- 9 handle the command if this last character is a ":"
+- Lines 10-13 handle the command if this last character is a "/"
+- Lines 14-18 handle the command if this last character is neither.
+
+Line 6:-
+
+  6. IF $qw{$$} EQ ":"
+
+tests to see if the last character of {dir} is ":". That means that the
+destination of the command will be the root directory of a disk (e.g.
+df1:), or an assigned directory (e.g. Devs:).
+
+Line 7:-
+
+   7. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}%s*" {opt1} {opt2}
+        {opt3} {opt4}"
+
+sets up a file "T:q{$$} in the same way as Line 7 of the "SPAT" command.
+This time, however, we have a new item in the LFORMAT string. It is:-
+
+  *"{dir}%s*"
+
+This puts into inverted commas the contents of {dir} followed by the file
+name (%s) of the file being listed. If LIST used {pat} and found a file
+named "df0:myfile" and {dir} was "df1:" then the *"{dir}%s*" would become:-
+
+  "df1:myfile"
+
+Note that {dir} will end in an ":" and so the *"{dir}%s*" does not need
+to include one.
+
+Line 8:-
+
+  8. SKIP doit
+
+skips to the "doit" label as the file to be executed (T:q{$$}) has been
+completed.
+
+Lines 10-13 are the same as Lines 6-9 except that the test is for the "/"
+character. The {dir} entry may have been something like:-
+
+  Mydisk:Personal_Letters/
+
+and the *"{dir}%s*" will become something like:-
+
+  Mydisk:Personal_Letters/MyFile
+
+Line 14:-
+
+  14. IF EXISTS {dir}
+
+is only reached if {dir} does NOT end in ":" or "/". It tests to see if
+{dir} is an actual directory.
+
+Line 15:-
+
+  15. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}/%s*"
+        {opt1} {opt2} {opt3} {OPT4}"
+
+is used if {dir} is found to be an existing directory. Note that this
+time, as {dir} did NOT end in ":" or "/", the symbol "/" is inserted into
+the string in *"{dir}/%s*"
+
+Line 17:-
+
+  17. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}*" {opt1} {opt2}
+        {opt3} {OPT4}"
+
+comes into effect if {dir} does not end in ":" or "/" and it is found that
+{dir} does NOT exists. This line can cause @{"problems" LINK "Problems"50} if the script arguments
+are used in the wrong way.
+
+The rest of the file (Lines 20-25) are the same as SPAT @{"Lines 8-13" LINK "ADB:Parts_71-80/74.SPat_Script/How"60}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Problems" "Part 75 - The DPAT Script - Problems With DPAT"
+
+@{B}@{U}Problems with DPAT@{UB}@{UU}
+
+As with SPAT, there are a number of problems with DPAT. Some are the same
+as those associated with @{"SPAT" LINK "ADB:Parts_71-80/74.SPat_Script/Revised"}; the one when no files match the pattern and
+the housekeeping aspect can be fixed up in the same way as we did with
+SPAT.
+
+One new problem is where no pattern matching is used for {pat} (i.e. a file
+name only is used) and that file name cannot be found. The "LIST" command
+will give a message indicating that the file was not found. However, as the
+LIST output is sent to "T:q{$$}" then the message ends up in the file that
+is to be executed by Line 21. When the file is executed, the result will
+depend on your workbench version.
+
+With @{B}v1.x,@{UB} the "T:q{$$}" file will contain this sort of message:-
+
+  Can't examine "path/filename": object not found
+
+and the error message will be:-
+
+  Can't: Unknown command
+
+With @{B}v2+@{UB} the "T:q{$$}" file will contain this sort of message:-
+
+  : object not found
+
+and the error message will be:-
+
+   wrong number of arguments
+
+Why? because ":" is a command that changes the current directory to the
+root directory of the existing current directory and the "object not found"
+is considered to be arguments to that command which it does not
+want.
+
+Another new problem is when there is no directory matching the {dir} entry.
+If a slash is placed after the non existing directory name then it is not
+really a problem. All that will happen is that you will get error messages
+saying that the command cannot be carried out. For example, when renaming
+our "Thesis" files, we would get:-
+
+  Can't rename "disk:dir1/Thesis.1" as "disk:dir2/Thesis.1"
+  Can't rename "disk:dir1/Thesis.2" as "disk:dir2/Thesis.2"
+  Can't rename "disk:dir1/Thesis.3" as "disk:dir2/Thesis.3"
+
+If you have @{B}v2+@{UB} each message line will be followed by:-
+
+  because object not found
+
+However, a real problem arises if you do NOT place the "/" after the
+destination directory and the directory is not found. Let's say that
+"disk:dir2" does not exist and our "Thesis" command line is:-
+
+  > DPAT RENAME disk:dir1/thesis#? disk:dir2
+
+Now the first file matching the "thesis#?" pattern will be renamed to a
+FILE named "dir2"! An attempt will then be made to rename the rest of the
+files matching the pattern in the same way but as the new name already
+exists you will be given messages saying:-
+
+  Can't rename "disk:dir1/Thesis.2" as "disk:dir2"
+  Can't rename "disk:dir1/Thesis.3" as "disk:dir2"
+
+If you have @{B}v2+@{UB} each message line will be followed by:-
+
+  because object already exists
+
+So you will have one file in the wrong place and with the wrong name and
+the others left where they were.
+
+This problem is more difficult to overcome as the script has Lines 16-18:-
+
+  16. ELSE
+  17. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" *"{dir}*" {opt1} {opt2}
+      {opt3} {OPT4}"
+  18. ENDIF
+
+(which are used in this situation) in case you use DPAT with a command that
+does NOT use a directory name as the second argument (but, off hand, I
+cannot think of such a situation).
+
+The final problem with DPAT is that, when used with "Rename", it cannot
+handle renaming from one disk to another, which would be the function of a
+MOVE command if AmigaDOS had such a command.
+
+@{B}@{U}Overcoming The Problems@{UB}@{UU}
+
+I am not providing a revised DPAT as I did with SPAT as I feel DPAT is
+rather useless, especially if you have AmigaDOS @{B}v2+@{UB} which supports pattern
+matching with "Rename".
+
+The next article @{"MOVE_SCRIPT" LINK "ADB:Parts_71-80/76.Move_Script/MAIN"} is an alternative that will overcome all the
+above mentioned problems including moving to another disk.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "3.1" "Part 75 - The DPAT Script - Extra Script In v3.1"
+
+@{B}@{U}The v3.1 DPAT Script@{UB}@{UU}
+
+The V3.1 DPAT script has these additional lines between @{"Lines 5 & 6" LINK "Script"24}
+
+  IF "$qw{$$}" EQ ""
+    LIST >T:qw{$$} {PAT} LFORMAT "{COM} *"%s%s*" *"%s*" {OPT1} {OPT2}
+      {OPT3} {OPT4}"
+    SKIP doit
+  ENDIF
+
+There are two things about this bit of script that appear odd.
+
+First of all I cannot find any way to make IF recognise a condition:-
+
+  EQ ""
+
+Secondly, the LIST command creates the file:-
+
+  T:qw{$$}
+
+and then there is absolutely no further reference to that file anywhere
+else in the script!!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

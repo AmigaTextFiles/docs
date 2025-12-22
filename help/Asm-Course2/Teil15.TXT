@@ -1,0 +1,262 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                15.Teil...
+
+Tja, wie ich es versprochen habe, werden wir heute lernen wie wir unsere
+Prograemmchen packen, und ausserhalb vom Seka starten.
+
+16.Umgang mit Packern
+
+Wie man programme ausserhalb vom Seka lauffaehig macht, das wissen wir ja
+schon...mit `WO`, dann wird ein lauffaehiges programm mit allen dazu
+gehoerigen Hunks uns so erzeugt..Der source muss dann allerdings von Seka
+in den Speicher gelegt worden sein, also ohne Org/Load, da er sonst nicht
+weiss wo das programm liegt und wie lang es ist. Also ohne Org und Load
+geht ja noch, aber wir wissen ja auch nicht wo dann unsere Bilderchen und
+Sounds liegen, dann koennten wir nicht damit arbeiten, das waere dann ja
+nicht so gut, oder ?
+
+Also es muss da was anderes geben, was uns als Programmieren mit festen
+Adressen bei unserer arbeit unterstuetzt...
+
+Keine Bange, das gibt es im Seka auch..aber wir muessen erstmal lernen wie
+man damit umgeht.
+
+Erstmal muss man wissen wo alles liegt, das heisst, man muss den totalen
+ueberblick ueber sein Werk haben...
+
+Das ist ja nicht so schwer...es koennte so aussehen
+
+Hauptprogramm mit Abspielroutinen und so, wird nach $30000 Assembliert und
+ist $1267 Bytes lang. Wir notieren uns..
+
+`Mainprog. $30000 - $31267`
+
+Die Musik liegt wenn sie nicht direkt mit >extern in das Mainprog
+eingebunden wurde bei $40000. Ein groesseres Modul belegt dann z.b 75 KB.
+Das waeren dann 75*1024 = 76800 in Hexa = $12c00
+
+`Modul $40000 - $52c00`
+
+Als letztes, weil wir nichts besonderes gemacht haben kommen noch die
+Planes. Nehmen wir ein 32 Farben Pal bild, also 5*10240 = 51200 Hexa $c800.
+
+`Plane $53000 - $5f800`
+
+O.K, das waere mal ein Schnoedes geruest. Wir haben die einzelnen Adresse
+der Sachen die wir so brauchen.
+Wenn wir also das listing assemblieren, legt es erstmal den Source ab. Um
+den rest den wir natuerlich auf Diskette haben auch noch in den Speicher zu
+kriegen druecken wir, wie bekannt, `Y`...dann wird es an die
+Vorgeschriebenen adressen geladen.
+
+Im groben kann man jetzt ja sagen das unser `Intro` den bereich von $30000
+bis $60000 belegt, natuerlich mit zwischenraeumen, aber so ungefaehr. Und
+genau das alles muss man natuerlich noch abspeichern. Aber vorher muessen
+wir mal gucken was denn dort noch steht wo wir nichts hingeladen haben. Da
+koennte allesmoegliche stehen, gehen wir mal davon aus das irgendwelcher
+muell von irgendwelche programmen dort liegt die schon lange nicht mehr
+laufen, vielleicht noch ein rest vom Soundtracker oder Cygnus ED...
+
+Wenn wir das abgespeichert haben und das dem Packer zum packen geben, dann
+wird es nicht viel kuerzer, weil sich dieses zeug unheimlich schlecht
+packen laesst, also fuellen wir vor dem Assemblieren, unseren Arbeits
+speicher mit Nullen, das wuerde in unserem Beispiel so aussehen...
+
+Seka>F
+Start)$30000
+End)$60000
+Data>0
+
+Dann wird alles gefuellt. Jetzt koennen wir assemblieren und die Sachen
+einbinden.
+Nachdem das passiert ist muessen wir das Abspeichern. Dazu benutzen wir den
+Befehl `WI`, was ausgeschrieben `Write Image` heisst. Es bedeutet nicht
+anderes das man einen speicherbereich den man selber eingeben kann
+abspeichert. Allerdings wird wirklich nur der Speicherbereich
+abgespeichert, sonst nicht...Also ist das auch nicht Lauffaehig. Um es ans
+laufen zu kriegen muessten wir es mit einem Monitor nach $30000 laden und
+mit dem Sprung Kommando den PC auf das Intro verbiegen..dann wuerde es
+laufen.
+
+Allerdings, wenn wir die Hunks selber davorsetzen, wer noch nicht weiss was
+Hunks sind, wartet bis ich diesen Satz fertig habe, dann schreibe ich was
+dazu, dann belegt das Intro satte 198 KB, und das ist ein Bisschen Viel
+fuer ein Intro.
+
+Die Hunks von denen ich dauernd spreche, sind vor jedem Ausfuehrbarem
+Programm das der Amiga laden kann. Sie sagen ihm wo er das Programm
+hinlegen soll wenn es eine feste Adressen hat, oder sie sagen ihm wie er
+das Programm umschrieben soll wenn er es irgendwoanders hinlegen will, weil
+er halt da wo es hin soll keinen Platz mehr hat. Je nach programm gibt es
+mehr oder weniger Hunks, und sie von Hand ausrechnen, das ist einigen
+wenigen Programmierern vergoennt, uns nicht..also lassen wir auch die
+finger davon, O.K.
+
+So, reden wir weiter ueber das vermeintliche Intro. Wiegesagt 198 Kilobyte
+ist ne ganze menge naemlich 202752. Was meint ihr wie lange es dauert bis
+er das eingeladen hat. Und die Hunks muessten woir ja auch davorsetzen, und
+die einzige moeglichkeiten die ich kennen waere das mit WO vom Seka
+abzuspeichern, aber ich hatte ja schon gesagt, das das nichts ist.
+
+Also, wir muessen es kuerzer kriegen und startbar machen.
+
+Jetzt will ich mal kurz sagen was ein Packer macht...wie er das macht kommt
+hinterher !
+
+Ein packer verkuerzt fertige Programme oder Dateien, und erzeugt
+Lauffaehige Programme daraus. Aha, das hoert sich ja schonmal ganz gut aus.
+Wenn wir das Ding durch einen Packer jagen, haetten wir zwei Fliegen mit
+einer Klappe geschlagen.
+
+Packen wir erstmal dieses Teil, dann werde ich euch noch erklaeren was es
+mit dem Packen ueberhaupt auf sich hat.
+
+Also wenn ihr alles vorbereitet habt..ich meine das mit dem Fuellen und Wi
+und so, dann muesstet ihr jetzt das Image von dem Intro auf Diskette haben.
+Starten wir also den Packer...Ihr koennt im Prinzip alle packer nehmen die
+Images packen koennen, das es aber nicht soviele gibt, habe ich euch einen
+in die Box gepumpt. Bytekiller heisst das Ding.
+
+Starten wir also den Bytekiller 1.3, den koennt ihr von mir bekommen.
+
+Als erstes fragt er wie der Seka nach arbeitsspeicher...
+
+Allocate work space (KBbyte)
+
+Er will wissen wie lang die zu Packende, wir von Fach nennen das
+Komprimieren, Datei ist.
+Da muessten wir in unserem Fall 200 eingeben, ist aufgerundet, aber es ist
+besser ein bisschen zuviel als zuwenig.
+Nachdem ihr das eingeben habt Allociert er den Platz.
+
+Dann kommt...
+
+Filename to load
+
+Hier muesst ihr den Filenname eingeben. Falls der Pfad nicht auf dem
+Directory liegt muss er auch noch eigegeben werden, also z.b
+
+Df1:Images/Intro.ima
+
+dann laedt er es...
+
+Dann gibt er die Orginal laenge an. Hier koennt ihr nochmal sehen ob ihr
+alles richtig abgespeichert habt.
+
+Jetzt fragt er
+
+Offset (max. $0800) :$
+
+Er will die Suchtiefe wissen, was das ist kommt hinterher bei der
+erklaerung der Funktionsweise von Packalgorhytmen.
+Auf jedenfall soviel..Je hoeher die Suchtiefe ist desto effenzienter
+arbeitet der Packer, desto kuerzer wird das Programm.
+
+Dann verschwindet der Bytekiller fuer eine kurze oder laengere Zeit, der
+Bildschirm aendert staendig die Farbe....Der Meister arbeitet jetzt..
+
+Irgendwann kommt er dann wieder, mit einer Neuen Frage
+
+create Executable File or Data File ? (e/d) :
+
+Jetzt will er wissen was er da gepackt hat, und als was das behandelt und
+abgespeichert werden muss. Hier muessen wir natuerlich Executable also `e`
+druecken, denn es soll ja lauffaehig sein.
+
+Nu, nachdem er das weiss hat er im speicher die noetigen Hunks erzeugt, es
+fehlen allerdings noch zwei werte. Naemlich..
+
+Locate File at :$
+
+Da muessen wir eingeben wohin er das File entpacken soll, das heisst in
+unseren speziellen Fall, $30000, und das geben wir auch ein.
+
+Nun kommt noch eine Besonderheit des Bytekillers, die Viele andere von
+diesen Imagepackern nicht haben. Er fragt noch wo er das entpackte
+anspringen soll. Denn es koennte ja sein das ein Bild bei $20000 liegt und
+das Mainprogramm bei $30000, dann muss man ja bei $30000 anspringen und
+nicht bei $20000. Viele Packer nehmen aber die Locateadresse auch als
+einsprungadresse, der Bytekiller nicht, er fragt
+
+Jmp in :$
+
+Dort geben wir die Startadresse ein. In unserem Fall auch $30000
+
+Jetzt fragt er nur noch nach dem namen unter dem er das gepackte zeug
+abspeichern soll. Haben wir den eingegeben macht er das auch ganz brav.
+Dann kehrt er wieder ins CLI zurueck, dort kann man dann das ergebnis laden
+und anschauen. Es kommt allerdings vor das ein packer mal ein Programm
+nicht richtig entpackt kriegt oder so. Deshalb haben die meisten packer
+einen Decrunch effekt, der soll anzeigen wann der Packer arbeitet und wann
+nicht mehr, und wann das Programm dran ist. So kann man feststellen ob der
+Amiga schon abgestuerzt ist, oder ob er nocht entpackt. Alles Klor ?
+
+So, dann haben wir auch schon was gepackt...jetzt will ich auch noch etwas
+ueber den Packvorgang selbst sagen. Ich werde das packen anhand von zwei
+sehr einfachen Methoden erklaeren.
+
+Die erste Methode des Packen ist die einfachste und eignet sich
+hervorragend fuer bilder.
+
+Der Packalgorhytmus geht den zu packenden speicher bereich durch,
+und,vergleicht ein Byte immer mit dem davor. Sobald er auf zwei gleiche
+trifft, schaut er sich noch das naechste an. Findet er nach dieser methode
+drei gleiche aufeinander folgende Bytes, dann schreibt er anstatt
+
+$31 $31 $31
+
+jetzt nur noch $03 $31, dann weiss er beim entpacken das jetzt 3 mal die
+$31 kommt. Das bringt zwar nur 1 Byte, aber was sagt ihr zum beispiel bei
+unserem versuch. Da sind hinter dem Mainprog auch ungefaehr 63488 Nullen,
+weil wir das ja gefuellt haben, die verschwinden dann auch in drei bytes,
+naemlich so
+
+$00 $f8 $00
+
+Das sagt der Entpackeroutine `Jetzt kommt $f800 mal die 0, und das ist doch
+eine Grossartige ersparnis, findet ihr nicht ?
+
+Jetzt kommt die zweite einfache methode.
+
+Der packalgorhytmus ueberprueft den Speicher bereich auf gleiche Byte
+folgen, wie zum beispiel $31 $45 $37 $37, findet er davon mehrere im
+Speicher, dann gibt er einer solche Kombination einen Namen, und dann steht
+nur noch der Name dieser Kombination dort, die erlaubte laenge der
+kombinationen ist von Packer zu Packer verschieden. Hier tritt auch der
+offset vom Bytekiller in aktion, er sagt dem Packalgorhytmus in welchem
+Umkreis er nach diesen Kombinatioenen suchen soll, wenn ihr da zum beispiel
+einen Wert eingebt, der ihn im bereich von einem KB suchen laesst ist diese
+methode halt nicht so effizient wie wenn man sie in einem Bereich von
+Hundert KB, oder dem ganzen listing suchen laesst. Aber wenn wir wirklich
+das ganze listing untersuchen wuerden, dann wuerde ein normales DemoImage,
+von 100 Kilobyte, Tage dauern, deshalb der Offset !
+
+Es gibt natuerlich viele dutzend Packverfahren, aber die sind teilweise so
+kompliziert das nur der Programmierer weiss was da passiert, wer mehr
+darueber wissen schroiebt mir einen Kleinen brief, dann werde ich noch ein
+Paar erklaeren, aber ich glaube nicht das daran einer interresse hat.
+
+Packer arbeiten aber nicht immer nur mit einem der verfahren, sondern haben
+mehrere drauf, manche gucken sich erstmal den Speicher bereich an, und
+entscheiden dann nachwelchem Prinzip sie das machen. Bei manchen kann man
+es waehlen, dann muss man aber schon ein bisschen bescheid wissen, denn ein
+Routine mit der man immer bombig Intros packen kann, versagt
+hoechstwarscheinlich an einer Textdatei, genauso umgekehrt. Die letzte
+gruppe von Packern benutzt halt mehrere packalgorhytmen. Sie gehen auch
+zwei oder drei mal ueber den Speicher, und holen mit jedem Weiter
+verfahren, immer mehr raus.
+
+Naja, wenn ihr jetzt ein bisschen uebung mit dem Bytekiller habt dann
+faellt es euch auch nicht schwer die anderen zu verstehen, also viel spass
+bei der Suche nach eurem Lieblings packer.
+
+Achja, probiert doch ein bisschen mit dem Offset rum, schaut euch dochmal
+an was der bytekiller mit Offset $0050 aus einer datei macht, und was mit
+Offset $0800. Ist Vielleicht mal ganz interressant, zu wissen wo er
+aufhoert effektiv zu werden, oder ab wann er einfach zu langsam wird !
+
+Bye...
+
+                Jeff Kandle
+

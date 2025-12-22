@@ -1,0 +1,126 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQg.texinfo on 24 October 1995 -->
+
+<TITLE>Amiga-FAQ - Lokalisierung</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQg_29.html">AmigaBasic</A>
+&gt;&gt; <A HREF="AmigaFAQg_31.html">WindowPtr</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX65"></A>
+<A NAME="IDX66"></A>
+<A NAME="IDX67"></A>
+<A NAME="IDX68"></A>
+<A NAME="IDX69"></A>
+<A NAME="IDX70"></A>
+<A NAME="IDX71"></A>
+<A NAME="IDX72"></A>
+<A NAME="IDX73"></A>
+<H2><A NAME="SEC30" HREF="AmigaFAQg_toc.html#SEC30">Wie lokalisiere ich mein Programm?</A></H2>
+Nehmen wir an, wir wollen ein <CODE>HelloLocalWorld.c</CODE> schreiben. Das
+letztendliche Programm sieht dann ungef&auml;hr so aus:
+<P>
+<PRE>
+    #include "HelloLocalWorld_Cat.h"
+    #include &#60;clib/exec_protos.h&#62;
+
+    struct Library *LocaleBase;
+
+    void main(int argc, char *argv[])
+
+    {
+        /* &Ouml;ffne die locale.library. (Kein Abbruch, wenn sie nicht
+           da ist, weil dann einfach die eingebauten Strings verwendet
+           werden. Aus diesem Grund auch keine Verwendung des
+           AutoOpening, auch wenn es der Compiler beherrscht.)
+        */
+        LocaleBase = OpenLibrary("locale.library", 38);
+        OpenHelloLocalWorldCatalogs(NULL, NULL);
+
+        printf(GetString(MSG_Hello));
+
+        CloseHelloLocalWorldCatalog();
+        if (LocaleBase) CloseLibrary(LocaleBase);
+    }
+</PRE>
+<P>
+Die Funktion GetString pr&uuml;ft, ob die gew&uuml;nschten Kataloge vorhanden sind
+und liefert einen Zeiger auf einen String, entweder den eingebauten oder
+den Katalogstring. (In unserem Fall den deutschen String.)
+<P>
+Der Hauptunterschied zum gewohnten HelloWorld.c ist also (abgesehen von
+der minimalen Initialisierung und dem Gegenst&uuml;ck am Programmende, das
+bei den meisten modernen Programmiersprachen oder unter C mit Hilfe des
+FlexCat-Paketes sogar auch noch entf&auml;llt),
+Strings durch einen Funktionsaufruf zu ersetzen. Man braucht also eine
+Datei <TT>`HelloLocalWorld_Cat.c'</TT>, die die Funktionen OpenHelloLocalWorld,
+GetString, CloseHelloLocalWorld_Cat.h und die eingebauten Strings enth&auml;lt
+(dies k&ouml;nnte ein Array sein, das unter anderem
+<PRE>
+        array[MSG_Hello] = "Hello, local world.\n";
+</PRE>
+enth&auml;lt) und ein Includefile <TT>`HelloLocalWorld_Cat.h'</TT>, das die
+ID's wie MSG_Hello definiert. Es ist nicht n&ouml;tig zu wissen, wie diese
+Dateien intern arbeiten, insbesondere ben&ouml;tigt man auch keine Kenntnis
+der <CODE>locale.library</CODE>!
+<P>
+Dazu gibt es verschiedene Kataloggeneratoren (im Folgenden KG), n&auml;mlich
+<TT>`CatComp'</TT> (nur f&uuml;r Developer), <CODE>KitCat</CODE> (nur deutsche
+Dokumentation, was hierzulande kein Problem ist), <TT>`MakeCat'</TT> (das ich
+nicht kenne) und <CODE>FlexCat</CODE> (das ich empfehle, einerseits, weil
+es sehr flexibel im erzeugten Source ist und z.B. Lokalisierung unter 2.0
+sowie beliebige Programmiersprachen unterst&uuml;tzt, selbst Amiga-E, Cluster,
+Pascal, ... und andererseits, weil es von mir ist ;-) ), die diese Dateien
+sowie die Kataloge erzeugen. (Der obige Quelltext k&ouml;nnte je nach KG
+leicht unterschiedlich aussehen.) Siehe Aminet, directory <TT>`dev/misc'</TT>.
+<P>
+Wie funktionieren diese KGs? Zun&auml;chst erzeugt man eine sogenannte
+<CODE>Katalogbeschreibung</CODE> (<CODE>Catalog description</CODE>), die so aussehen
+k&ouml;nnte:
+<PRE>
+    ; Mit einem Semikolon beginnende Zeilen sind Kommentare
+    # language english
+    ; die Sprache der eingebauten Strings
+    # version 0
+    ; die Katalogversion (0 = beliebig)
+    MSG_Hello (1/15/30)
+    Hello, local world
+</PRE>
+Jeder String wird durch zwei Zeilen wie die letzten beiden definiert:
+MSG_Hello ist die String-ID, (1/15/30) gibt den Wert der ID sowie die
+minimale und maximale L&auml;nge an. (Diese Argumente k&ouml;nnen auch weggelassen
+werden, in welchem Fall einfach die n&auml;chste freie ID verwendet wird.)
+<P>
+Nun schreiben wir das Programm. Sobald es fertig ist, wird mit dem KG eine
+sogenannte Katalog&uuml;bersetzung (eine f&uuml;r jede andere Sprache als die
+eingebaute) erzeugt, die so aussehen k&ouml;nnte:
+<PRE>
+    ; Mit einem Semikolon beginnende Zeilen sind Kommentare
+    ## language deutsch
+    ; the catalog language
+    ## version $VER: Deutsch.catalog 1.0 (22.12.93)
+    ; the catalog files version string
+    MSG_Hello
+
+    ; Hello, local world
+</PRE>
+Beachten Sie die leere Zeile nach der String-ID! (Die Argumente von
+## language und ## version w&auml;ren vielleicht leer.) Hier m&uuml;ssten
+jetzt die deutschen Strings eingesetzt werden. Mit dem KG wird daraus
+dann der eigentliche <CODE>Katalog</CODE> erzeugt. (Beachten Sie auch, da&szlig;
+hier die Angaben &uuml;ber String-ID und Stringl&auml;nge fehlen: Sie werden
+aus der Katalogbeschreibung &uuml;bernommen.
+<P>
+Wenn das Programm ver&auml;ndert wird (neue Strings, andere L&auml;ngen) und die
+Katalogbeschreibung sich damit ebenfalls &auml;ndert, dann kann der KG analog
+benutzt werden, um auch die Katalog&uuml;bersetzung und damit den Katalog auf
+den neuesten Stand zu bringen.
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQg_29.html">AmigaBasic</A>
+&gt;&gt; <A HREF="AmigaFAQg_31.html">WindowPtr</A>
+</I></PRE>

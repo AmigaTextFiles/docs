@@ -1,0 +1,106 @@
+        <html>
+        <head><base target="_self">
+<title>русский транзит - amiga#1: arexx, функции работы со связными портами</title>
+</head>
+<body link="#009999" vlink="#006666" alink="#000088" bgcolor="#ffffff" text="#000000">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta name="keywords" content="amiga,develope,ARexx,связный,порт,closeport,getarg,getpkt,openport,reply,typepkt,waitpkt">
+
+<font face="Arial, Helvetica, sans-serif" size="4">
+<p align="left"><a name=A1510>Функции работы со связными портами</a></p></font>
+
+<blockquote><p align="justify">
+С помощью связных портов различные задачи и процессы, одновременно работающие в Амиге, общаются между собой В ARexx-e порты используются чрезвычайно интенсивно как для посылки сообщений операционной системе, так и для общения с другими ARexx-программами. ARexx-контроль над связными портами значительно беднее, нежели чем в языке С. Тем не менее, имеющиеся функции могут оказаться весьма и весьма полезными.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Необходимо иметь в виду, что в описании функций все ссылки на т.н. &quot;пакеты&quot; (которые по сути являются С-шными структурами RexxMsg) представляют собой 32-разрядные адреса, записываемые с помощью hex-строк (например '7acf 54е2'х).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15101>
+<b>CLOSEPORT</b>()
+<blockquote>res = <b>CLOSEPORT</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Закрыть порт, идентифицированный по его &quot;имени&quot;. Можно закрывать только порты, открытые в этой же ARexx-программе с помощью функции <a href="AMIGA-15-10.html#A15104">OPENPORT()</a>. Возвращается булевское значение TRUE в случае успешного закрытия порта.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15102>
+<b>GETARG</b>()
+<blockquote>res = <b>GETARG</b>(&lt;пакет&gt;[,номер])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция выуживает команду, имя функции или строку аргументов из полученного пакета. &quot;Пакет&quot; должен быть адресом, возвращенным функцией <a href="AMIGA-15-10.html#A15103">GETPKT()</a>. Если определен &quot;номер&quot; аргумента, то возвращается только аргумент в этой позиции (&quot;номер&quot; аргумента не должен превышать общее число аргументов &quot;пакета&quot;).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15103>
+<b>GETPKT</b>()
+<blockquote>res = <b>GETPKT</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращает адрес пакета, находящегося первым в очереди, &quot;подвешенной&quot; к идентифицированному по &quot;имени&quot; связному порту (разумеется, порт уже должен быть открыт). Если &quot;почтовый ящик&quot; пуст, будет получено значение '0000 0000'х.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15104>
+<b>OPENPORT</b>()
+<blockquote>res = <b>OPENPORT</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция создает оющедоступный (public) связной порт и присваивает ему &quot;имя&quot; (регистр букв &quot;имени&quot; должен учитываться при последующих обращениях к порту!). Возвращается адрес созданного порта, либо ноль '0000 0000'х в случае какой-либо неудачи (например, если мало памяти).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15105>
+<b>REPLY</b>()
+<blockquote>res = <b>REPLY</b>(&lt;пакет&gt;,&lt;код&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает &quot;пакет&quot; пославшему его источнику, предварительно модифицировав значение поля первичного результата этого &quot;пакета&quot; в соответствии со значением параметра &quot;код&quot;. Эта операция называется &quot;ответом&quot; на полученный ранее &quot;пакет&quot;.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15106>
+<b>TYPEPKT</b>()
+<blockquote>res = <b>TYPEPKT</b>(&lt;пакет&gt;[,&lt;опция&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция информирует о типе полученного &quot;пакета&quot;. В случае отсутствия &quot;опции&quot; возвращается упакованное четырехбайтовое значение, распаковав которое можно получить требуемую информацию почти так же, как и явно использовав некоторую &quot;опцию&quot;. Сначала рассмотрим вызов TYPEPKT() без &quot;опции&quot;:
+</p></blockquote>
+
+<blockquote><ul><p align="justify">
+<li>Байт 0 - содержит число аргументов;</li><br>
+<li>Байт 2 - содержит флажки, которые были установлены при создании пакета. С этими флажками имеет дело функция <a href="AMIGA-15-10.html#A15105">REPLY()</a> при ответе на присланный пакет;</li><br>
+<li>Байт 3 - имеет булевское значение TRUE (1), если пакет был вызван в качестве команды и 2, если пакет был вызван в качестве функции.</li>
+</p></ul></blockquote>
+
+<blockquote><p align="justify">
+В случае спецификации опции 'A' (Arguments) функция возвратит число аргументов пакета. Опция 'С' (Command) возвратит TRUE, если пакет был вызван в качестве команды, либо - FALSE в противном случае. Опция 'F' (Function) возвратит TRUE, если пакет был вызван в качестве функции.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Следует учесть, что ARexx-программы для интерпретатора текущей версии (1.15) не следует рассматривать в качестве надежного &quot;хозяина&quot; для других ARexx-процессов; в силу этого вызовы портов других ARexx-процессов должны быть вызовами команд, а не функций (по умолчанию строка аргументов для этого случая должна быть единственной).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15107>
+<b>WAITPKT</b>()
+<blockquote>res = <b>WAITPKT</b>(&lt;имя&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция ожидает прихода пакета в указанный &quot;именем&quot; связной порт (порт должен быть открыт на момент исполнения WAITPKT()). После получения пакета следует использовать функции <a href="AMIGA-15-10.html#A15103">GETPKT()</a> и <a href="AMIGA-15-10.html#A15105">REPLY()</a>.
+</p></blockquote>
+
+<hr>
+
+</body></html>

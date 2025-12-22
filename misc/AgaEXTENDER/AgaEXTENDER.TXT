@@ -1,0 +1,848 @@
+
+Subject:  AgaEXTENDER.
+
+Author:
+ Fabio Bizzetti, via Fra' Giarratana 62/c, 93100 Caltanissetta, Italy
+ fax/voice: +39 934 27220 / email: bizzetti@mbox.vol.it
+
+(c) copyright 1996 by Fabio Bizzetti. All rights reserved.
+
+
+The aim of this project is to improve drastically the performances of AGA
+Amigas (possibly also OCS/ECS), extended to both future and old Amigas,
+with the minimum efforts possible, both commercial and technological.
+
+The Amiga is losing day after day the rest of its small market due to its
+limited hardware, and although faster CPU's can be mounted, the video/audio
+hardware cannot be improved in a cheap way to make it "popular".
+Nowadays the competition is MultiMedia, and the Amiga needs a revolution,
+but creating a new machine would still not resolv the problem, having millions
+of already installed machines that cannot and must not become obsolete.
+Both Graffiti and AGX don't help much, they only emulate a VGA's ModeX style
+screen, that requires manipulation both in VGA and Graffiti/AGX Amiga, but in
+this case we've a so poor bandwidth that makes all efforts at the end useless.
+
+We're in front of a bad problem, the CPU->AGA bandwidth is very poor when it
+comes to complex or "chunky graphics" based applications, but we can't release
+an AGA+ for many reasons:
+# It would cost too much at the moment, and would also require too much time
+  to be developed, therefore it would probably not be that big improvement
+  proportionally to the efforts to make it.
+# All the previous A1200/A4000/CD32 would be cut off, or anyway I don't believe
+  that many old users would mass-upgrade changing Lisa or the whole chipset.
+# We've to keep the compatibility with older Amigas, this is indispensable,
+  and is part of the Amiga "philosophy". The Amiga users consider the fact that
+  most of the Amiga software run also on older Amigas, more than it happens
+  in the PC world, as of vital importance, more than absolute performances.
+
+But we *need* to drastically improve the situation, it's more serious than it
+seems. My fears are that the Amiga loses all its already small commercial
+market and become supported only by PD/ShareWare. It means an hobbyst computer,
+and I like it a lot, but we also need high quality software (meaning hard work
+behind it) that means commercial software.
+
+Games and expecially MultiMedia/Productivity software are decisively important
+to avoid the death of the Amiga and, more, make it again better than others.
+
+Also mounting the fastest PowerPC card will not improve some serious lacks of
+the audio/video architecture of the A1200, that doesn't deserve to become
+obsolete when and if a new chipset will be released (perhaps not installable
+in the old A1200s).
+
+The solution exists, and it's optimal both technically and commercially, thus
+Amiga Technologies should consider it carefully in my opinion.
+
+A custom chip nowadays can be made, and if it's really worth it should be made.
+Commodore made Akiko, and other interface chips, but no-one of them is
+comparable to this in terms of real performances-gaining (about audio/video).
+Nowadays technology allows the making of such a custom chip easily, although
+it's more complex than Denise/Lisa, the technology of 1996 should surely allow
+the making of the AgaEXTENDER.
+Many custom chips produced today (on other platforms) are much more complex
+than this one, that here is presented in an advanced version that could be
+reduced as needed, in case resources don't allow a full implementation.
+
+I consider myself an expert of the Amiga architecture, an appassionate of
+hardware and a skilled and original coder. This is the project I designed:
+
+The AgaEXTENDER is a device to plug-in the RGB port of old Amigas, and to be
+integrated in the motherboard of future Amigas. It is based on a line-buffer
+device, much cheaper than frame-buffer.
+
+The whole AgaEXTENDER's work-cycle is based on a horizontal line, starting
+from an Horizontal Synch and temporized via both the PixelClock output and the
+28Mhz AGA clock (doubled internally to 56Mhz in case of PAL/NTSC Scan Doubling,
+that the AgaEXTENDER implement to use VGA monitors also for PAL/NTSC screens).
+
+A brief description of its features and performances:
+
+# ChipMem->RGBport bandwidth of more than 22Mb/sec allowing i.e. such modes:
+a) 24 bit (R,G,B byte based or 3 byteplanes) up to about 512*290 in PAL/DBLPAL
+   or 512*580 PAL interlaced (with or without overscan).
+b) 24 bit (A,R,G,B longword based) up to 384*290 in PAL/DBLPAL or 384*580 PAL
+   interlaced (with or without overscan), becoming 768*580 with hardware
+   antialiasing enabled (linear interpolation).
+c) 15 bit (word based) resolution up to 1024*290 in PAL/DBLPAL or 512*580 PAL
+   interlaced (with or without overscan).
+d) YUV (8+8+8, byteplanes based) resolution up to about 512*290 in PAL/DBLPAL
+   or 512*580 PAL interlaced (with or without overscan).
+e) YUV (6+5+5, word based) resolution up to 1024*290 in PAL/DBLPAL or 1024*580
+   PAL interlaced, or 512*580 DBLPAL (with or without overscan).
+f) 8 bit (classic chunky mode) resolution up to 512*290 with 4 PlayFields.
+f) 16 bit (YUV or RGB chunky mode) resolution up to 256*290 with 4 PlayFields.
+g) 8 bit chunky mode for OS, resolution 768*600 31Khz 50Hz
+Scale (Zoom) effects on the playfields. Full hardware smooth scroll support.
+Many other video modes, completely programmable by skilled coders.
+# Full OS support (draggable screens and AGAnormal/AGAextended together).
+# Hardware completely programmable via 256 registers.
+# HiRes-copper, for advanced effects/modes.
+# Support for fast MPEG/JPEG display, due to built in YUV conversion and more.
+# 16bit 3D audio, extremely high playback rate, 4+4+4+4 (or more) channels.
+# Scan doubler. No bandwidth waste (unlike scan doubled DBLPAL/DBLNTSC).
+# Extremely fast transparency effects.
+# Antialiasing both horizontal and vertical.
+# Fully programmable resolutions, independent for each playfield.
+
+
+The device can be described as made of 3 principal parts:
+
+ 1ST STAGE: (FETCH)
+ 2ND STAGE: (AUDIO/VIDEO PROCESSING)
+ 3RD STAGE: (OUTPUT)
+
+###############################################################################
+
+ 1ST STAGE: Fetch   (Watch diagrams-picture STAGE1_Fetch.IFF)
+
+
+NOTE: the genlock audio bit freezes/allows the operations of this stage.
+
+The function of this stage is basically to fetch more data possible from Lisa,
+and to sort and store it into the internal line-buffers of the AgaEXTENDER.
+
+To achieve full bandwidth usage, there are 3 samplers connected to the
+analog RGB output. Resolution is 3+3+2 bits ( 3 red + 3 green + 2 blue ).
+This choice is optimal because we could switch back to normal Amiga
+screen at any moment, and not having time to load 256 color registers,
+we get the best generic color palette limiting the resolution of one of
+the 3 primary colors. Logic would suggest blue because it has the smallest
+contribution to the brightness sensation, also if human vision has a good
+colour discrimination capability in blue colors.
+
+Thus we have this input from analog RGB, that will be directly converted back
+into the 1..8 originary Lisa bitplanes serial data stream with no problems,
+providing we set-up a special 256 palette in Lisa's color registers. This
+allows us to have upto 8 independent extremely versatile DMA channels. There's
+always the advice to use 32bit-wide and FastPage modes. The transfer rate is
+selected by the AGA pixelclock period selected in BPLCON0 (140/70/35 ns).
+
+For each of these 8 serial streams (coming directly from each AGA bitplane)
+there's a shifter to delay of 0..63 bits the stream, then there's a register
+that contains the bitlenght of the chunky cell from memory, and a bit-based
+mask that filters eventual undesidered bits in the stream, in a continue cycle.
+If active this circuit will waste some bandwidth, but it is very useful to
+speed up CPU work when there's the need of fixed point math, i.e. in special
+fading effects.
+
+Examples:
+1)  bitlenght=8, filtermask=%11111111
+    byte based: no wasted bits.
+2)  bitlenght=16, filtermask=%1111111100000000
+    word based: upper 8 bits used, last 8 bits wasted for fixed point support.
+
+NOTE: the mask is 64bit long, although only -bitlenght- least significant ones
+are used.
+
+So, although this means to waste ChipMem->RGB bandwidth, the global computer
+gfx performances will be heavily improved when this possibility is useful to
+speed up routines needing low bits for fixed point, giving to the AgaEXTENDER
+raw data and thus freeing the CPU from heavy video processing work, that will
+be performed internally in the AgaEXTENDER.
+
+The implementation is simply a circuit that checks the mask register, and
+provides or not a clock signal at its exit, to filter or not the bitdata.
+
+At the exit of this bits filter, a 64bit register is checked to distribute
+the stream into one 64bit cell of a line-buffer and thus allow a large number
+of chunky modes and color resolutions.
+NOTE: there're 4 line-buffers; the output will be destinated to one or unlikely
+more of them (for special FX involving more playfields), and 4 audio-buffers
+(that will be explained after).
+
+EXAMPLE:
+
+...distributor register...
+<---------------------------64 bits---------------------------->
+RRRRRRRRDDDDDDDDZZIIIPPPPPPPPPPPaaaaaaaaRRRRRRRRGGGGGGGGBBBBBBBB
+0000000000000000000000000000000000000000111110001111100011111000
+
+(R=register address, D=immediate data) for HiRes-copper
+(Z=Zbuf,I=interpolation,P=Palette,a=alpha,R=red,G=green,B=blue)
+
+NOTE: The R and D fields are special: they dont belong to the cell, they
+are *not* part of the memory of line-buffers, but whenever all the 8+8 bits
+are filled (in any line-buffer's cell of any line-buffer), the content
+(8 bits for address and 8bit for immediate data) are used by the HiRes-copper
+to execute 1 instruction (MOVE), simply copying the data in the addressed
+register.
+Due to the way the HiRes-copper's instruction register is thought, one or
+more channels can be used to fill it, thus allowing more or less bandwidth
+for the HiRes-copper, as needed by the application.
+
+In the example of before, the circuit distributes the stream into 15bits mode.
+Of course (in this case) bitlenght=16, mask=%0111111111111111 to filter the
+first unused bit of the word.
+
+This example allows a 5+5+5 bits RGB chunky mode, word based in memory (16bit).
+
+With the same method and using 3 of the 8 channels, we can have 3 BytePlanes,
+all internally stored in the same line-buffer.
+
+NOTE: in the usual horizontal-line based cycle, at the start of the line
+each channel will have a start position in the destination line-buffer, to
+use more than one channel to fill the same line-buffer. Example:
+
+BPLDATA0          BPLDATA1          BPLDATA2          BPLDATA3       (channels)
+a                 b                 c                 d           (line-buffer)
+
+In this case a,b,c,d are the starting points to begin to fill the line-buffer.
+There're 2 more registers:
+1) write N cells, skip M cells. (read below about anti-aliasing and VGA modes).
+2) number of cells to process, then halt. (to avoid overwrite).
+
+
+Of course, the distributor doesn't change any bit in the line-buffer that is
+not explictly selected, thus allowing to load firstly the fields that are
+constant (example: Z, I, and/or any other), or allowing multiloading of data
+for even more complex special FX's.
+
+
+Please note that although this stage may seem "complex", it is based on a
+one-bit/pixelclock machine, and its excellent performances are the result
+of its versatility, not of its complexity.
+
+
+Q: So the AGA sprites bandwidth will be wasted?
+A: No, because having the line-buffer we can use an extreme overscan (that
+   kills AGA sprites) and not waste anything from sprite AGA bandwidth.
+
+Q: Can I always have linear chunky mode?
+A: Always, just using proper modulo/pointer settings if you want to use more
+   than 1 DMA channel. You can have much more though: the AgaEXTENDER registers
+   are totally programmable and allow "strange" modes that will impressively
+   simplify the CPU work, and thus speed up the Amiga gfx a lot. There's also
+   a very powerful as much as simple HiRes-copper.
+
+Q: Can I have hardware scroll as in the AGA chipset?
+A: Yes, always, also in the most strange and complex video modes.
+
+Q: The programmable pixelrate and zoom functions make the device more complex?
+A: No. They're simply fixedpoint registers added to an internal pointer in
+   the 2nd STAGE that reads the line-buffers and sends the data to the screen.
+   The clock is fixed, AGA's 28Mhz or x2 (56Mhz if Scan doubling is enabled).
+
+Q: Why do we have the bit shifter/delayer in the first part?
+A: Because thus we can scroll the playfield also in case we use it for a
+   background and we wanna exploit the bandwidth as much as possible, also
+   not using byte/word/longword based chunky mode but N bits based.
+   This would not be good for drawing with the CPU, but for a fixed backgroud
+   it allows 100% use of bandwidth and smooth scroll at the same time, for
+   example with a 11bit chunky mode used to display a perfectly hardware
+   scrollable 2048 colors dithered background. All with no CPU time waste.
+   Ofcourse, multiples of 64bit scroll are made changing AGA bitplane pointers.
+   i.e: in case of 8 bit chunky mode, we'll use 0/8/16/24/32/40/48/56 values..
+   Furthermore, being the 1st STAGE a one-bit based machine, using a bit
+   delayer instead of i.e. a byte-one, we simplify the project and gain from
+   versatility at the same time.
+
+Q: Why the 2 registers to write/skip consecutive data?
+A: To emulate VGA's ModeX for SVGA emulators, to get twice or more apparent
+   bandwidth in a playfield using linear interpolation, to make clever tricks
+   that speed up gfx routines, and to allow virtually any number of audio
+   voices.
+
+Q: Can I have sprites?
+A: Although the AgaEXTENDER would be too complex with hardware sprites, due to
+   its extreme versatility and clever design, you can have sprites programming
+   up to 4 PlayFields with cross-transparency/priority effects (and much more)
+   using the built-in HiRes-copper. Thus very complex sprites can be emulated.
+
+Q: Planar modes were very useful too, do I lose them?
+A: I could say that you can switch back any moment to the Amiga hardware
+   (worst case: in the next raster line) and thus have draggable screens
+   that can be selected as Aga normal or Aga extended screen modes.
+   But, since the AgaEXTENDER has been designed in a clever way to allow
+   with or without tricks every screen mode immaginable, studying it you
+   will see that it is perfectly possible (with proper register settings)
+   to have all configurations of planar modes and/or mixed chunky+planar
+   at the same time. There're virtually no limits. With proper registers
+   settings you get a screen with 8-bit chunky mode and 8-bit alpha channel,
+   that allows "fog/light" effects, transparecy and much more, like a cockpit
+   in the bottom of the screen that doesn't need CPU time to be rendered,
+   and if you want, this cockpit is in high resolution while the picture
+   being draw was 160*128 in memory but looks 320*256 on the screen due
+   to linear interpolation. The limits are of the coder, not of the
+   versatility of the AgaEXTENDER. The device is thought to optimize the use
+   of bandwidth and to minimize CPU intervention for video effects, still
+   being an external relatively simple device connected to the RGB port.
+
+Q: Aren't there "WAIT" and "SKIP" instructions in the HiRes-copper?
+A: No, it's a very simple SIC (single instruction computer) and thus doesn't
+   need the instruction opcode, but only the 2 operands (adress and data).
+   Anyway, a "WAIT" instruction can be emulated using just "NOP" instructions
+   (writing to the register address $FF). The lack of WAIT/SKIP instructions
+   is not a disadvantage, since the stream of data from Lisa can't be
+   stopped anyway. The HiRes-copper can "program" itself, redirecting part or
+   the total of its bandwidth for other purposes, in a horizontal-line basis.
+
+Q: Why the AgaEXTENDER speeds up MPEG decompression?
+A: First, it allows free YUV conversion (any format).
+   Second, it "decompress" in hardware each component using linear
+   interpolation, so we can have i.e. a YUV screen that looks 320*256 1x1
+   but is (in memory) 160*128 for the Y component and 80*64 for U,V all
+   perfectly interpolated for best gfx quality and minimum CPU usage
+   (multiloading data), requiring only 30K bytes/frame to get in output a 24
+   bits image, while the CPU->chipmem bandwidth is more than 100K bytes/frame.
+   This makes effectively the AGA chipset, with all its bandwidth problems,
+   still much faster than SVGA chips for Video applications. We can still
+   overlay not-interpolated gfx for text, at any different resolution. The
+   combinations are infinite. Moreover, another kind of compression can be
+   made: the "I" field can be used as information channel to display two
+   consecutive pixels (in memory) as 2^(I+1) interpolated ones in the screen.
+   This allows more video compression for free.
+
+Q: Why the transparency support?
+A: CrossFading (transparency among images) is a good effect for MultiMedia
+   applications as Scala, and extremely impressive for videogames. Moreover,
+   AgaEXTENDER's clever design allows also priorities among playfields, and
+   the HiRes-copper can extend nearly infinitely the possibilities of the
+   AgaEXTENDER.
+
+Q: Isn't the line-buffer too complex (simultaneous access of upto 8 channels)?
+A: With clever engineering it should be possible to simplify it a lot.
+   An hint: Each of the 8-channels's cell from the distributor can be stored
+   temporarily into a 64bit wide register, and once completed it can be stored
+   into one 64bit cell of the line-buffer. The triple buffering means 3 times
+   more static ram for the line-bufferings but it's simple ram, single access.
+   The triple buffering is made just "rotating" (addressing) one of the 3
+   images of the line-buffer for next line, one for currently displayed line
+   and one for the previously displayed line for vertical anti-aliasing.
+   Again, with incredibly complex devices such as the ones found into the PSX
+   or Saturn, the AgaEXTENDER device, although "apparently complex", should be
+   easy to implement in a cheap way, being at the end just a simple one-bit
+   sequential (and pipelined) device.
+
+Q: So you give away another part of the video bandwidth to audio?
+A: No. You exploit the unused vertical blank lines to have the bandwidth
+   required for advanced audio. Example: In a PAL screen there are 56 unused
+   lines (312-256), if we use them for audio, we get upto 4 MegaBytes/sec.
+   How? we can have 8bitplanes at a AGA resolution of 1472*56, meaning 82432
+   bytes in a frame, meaning 4,121,600 bytes/sec for audio! And all this is
+   "for free": using the video bandwidth *when* it would have been wasted
+   exactly for nothing (vertical blanking).
+
+#######################################
+
+Audio Buffers part.
+
+There're also four 64bit audio buffers, allowing upto 4 16bit stereo3D channels
+(meaning 16 total 16bit voices). To allow a fast transferiment of data during
+vertical blank, each of these buffers must have a lenght of at least i.e.:
+(8*44100)/50fps=7056bytes in case of CD stereo quality and 3D stereo sound.
+In case technology doesn't allow so much ram into the device, there's a
+different solution based on horizontal lines for audio too, as for video,
+and requires much less ram for audio buffers.
+
+The registers work in the same way as for line-buffers, you've only to select
+(for each of the 8 channels from AGA bitplanes) the destination as one of the
+4 audio buffers instead of one of the 4 line-buffers.
+
+Using the same tricks with AgaEXTENDER registers, you may load mono data, then
+use the same data field for both left and right channels, front and rear,
+(still having independent volume control for each of them, and thus allowing
+real 3D sound with minimum CPU and memory usage) and/or i.e. you may load
+8 bit datas, or 14 consecutive or whatever you prefer.
+
+Read also the 2nd and 3rd STAGE part (about audio).
+
+
+Q: What is 3D sound?
+A: Imagine a 3D game like AlienBreed3D, where you are near a monster.
+   If you calculate the amplitude of the sound from Front-Left,Front-Right,
+   Rear-Left,Rear-Right directions, and set these values into the volume
+   registers of the AgaEXTENDER, you'll have the 3D space surroud sensation
+   and thus feel the 3D direction where the sound is coming from. All with
+   minimum CPU and memory usage. 3D sound can be used not only for "space
+   sound", but also for excellent stereo surround music/sound effects.
+
+Q: How many channels do I get?
+A: Maximum is four, but they can be stereo or mono, 3D or 2D, and upto 16 bits
+   each.
+
+Q: What is the maximum sample rate?
+A: It can be *extremely* high, i.e. in only 20 lines during VBL you can get
+   1536000 bytes/sec, enough for four 3D-stereo-16bit tracks at 48000 Hz!
+   It could be also possible to implement hardware ADPCM decompression
+   to get four times more these performances and save a lot of memory.
+
+Q: Do I get variable sampling rate?
+A: Yes, it's all independent and asynchronous. Moreover, the 3rd STAGE part
+   (read after) can interpolate the audio data to limit aliasing distortion
+   in case you use low sampling rates.
+
+Q: Why, although they're stereo surround and 16bit, only 4 channels nowadays?
+A: First, this is only an extension to the AGA chipset, so it should be kept
+   simple to keep low the costs. This will not limit performances, because the
+   design of the AgaEXTENDER hide many possibilities that the best coders will
+   discover or invent. Example: we can get a much higher number of voices if
+   we use the skip-registers and multiload data, that will be smoothed and
+   thus apparently mixed in the 3rd STAGE (this can also be used for echo/
+   riverber realtime CPU-free effects). Again, the only limits are of the
+   coder, the hardware can allow "unlimited" number of voices using tricks.
+
+###############################################################################
+
+
+2nd STAGE: Video Elaboration   (Watch diagrams-picture STAGE2_Elaboration.IFF)
+
+
+Due to clever design, the line-buffers can be normal ram, single access.
+The horizontal interpolation doesn't need 2 simultaneous accesses, because
+it's sequential and thus a register can contain the last fetched pixel.
+
+The selectable YUV->RGB converter can be placed at the end of the 1st stage
+or at the begin of the 2nd. Due to complexity, only one will be used (in the
+first of the four line-buffers).
+
+For 3D (display priority) effects is used the Z field in the video cells,
+and a register enables or disables the use of the Z mode. Two bits are
+sufficient for Z field, being 4 the number of playfields.
+
+The Alpha fields can be used for cross-transparency effects among the
+playfields; if 4 circuits can't be implemented (due to technology problems)
+at least 2 circuits will be used: allowing the first and second line-buffer
+with this feature. This will allow realtime MultiMedia/Video effects that
+no SVGA chip can handle in realtime, like cross fading (a picture fades
+into another, with cross transparency), with no CPU usage (all made by
+the AgaEXTENDER, using chipram). No SVGA chip can allow such Video
+performances, and the CPU->chipram bandwidth problem here and in many other
+MultiMedia applications is not present.
+
+The 11bit palette field can be used partially or totally as one channel.
+Loading an immediate value in the RGB field in the same cell, example an
+RGB value of 50%,50%,50% (for fog effects) or 0%,0%,0% (for "darkness" effect)
+will allow CPU-free shading, with no wasted bandwidth. The RGB and palette
+outputs will be mixed together (this is selectable using Mode registers) of
+an amount proportional to the Alpha channel. Thus, in this case, if we fill
+the line-buffers with 1 word/pixel (8bit for palette and 8bit for Alpha,
+or 2 byteplanes if necessary), we'll feature shading effects for free.
+All the heavy computation is made by the AgaEXTENDER, speeding up the gfx
+routines of the CPU, and beating the PC hardware in TextureMapping+Shading.
+
+Before each palette table, there's a mask+or register to select a palette
+bank to allow fast color switching in OS's AgaEXTENDED draggable screens,
+when palettes with less than 11bits are used.
+
+The "scaling" and programmable resolution are performed simply using a fixed
+point register, that will be added every 28/56Mhz clock cycle to the pointer.
+Thus the AgaEXTENDER has always a fixed resolution (SHRES) where the pixels
+are subdivided to N (not integer, fixed point) parts to provide any apparent
+resolution.
+Ofcourse, using negative step values, we'll have an horizontally flipped
+playfield (all with no CPU usage nor bandwidth waste).
+This will allow any resolution, always with complete bandwidth usage, and
+advanced effects for MultiMedia and games, including realtime CPU-free Zoom,
+parallax effects for free, X Flip for free (Y Flip and 180degrees rotations
+handling the Y Flip with AGA pointers and modulo) and many other effects
+limited only by the imagination of coders. It will also allow programmable
+resolution for WB screens with the same resolution scalable to overscan or not.
+Imagine (in Scala Multimedia) zoom, CrossFading (transparency among images),
+fast animation decompression, shading effects (on a pixel base, not only the
+whole screen), and many other special effects: all without the need to use a
+powerful CPU and all implemented by the AgaEXTENDER, thus practically removing
+the problem of CPU->chipram bandwidth, because the few data that the CPU must
+copy in chipram (animations and images) are compressed, then cleverly
+decompressed internally by the AgaEXTENDER. Once more a time, this shows the
+superiority of clever and versatile (wise, foresee) custom solutions rather
+than standard sad solutions such as the ones used by PC clones.
+
+NOTE: The antialiasing (linear interpolation) part must be discussed with an
+engineer, to adapt it to the technology being used. Anyway, to clear doubts
+about its complexity, I'll show an example;
+To double the apparent resolution, it's sufficient a 3 states machine:
+1) Output Pixel A (the one previously fetched, and stored in a register)
+2) Output Pixel A+B and shift one position to the right (features antialiasing)
+3) Output Pixel B (currently fetched) and swap registers
+IMPORTANT: The antialiasing is performed in this stage, not in the fetch one.
+NOTE: the "I" 3bits field allows for each pixel compression of upto 128 times,
+giving antialiasing (linear interpolation) quantity selection for each pixel.
+
+The 2nd STAGE is the one that will be semplified depending on the limits of
+technology; it basically "elaborates" and mixes the data fetched and sorted
+in the first stage.
+There're too many ideas to illustrate all them here: some will be implementable
+and some others will not (fully or partially) depending on the technology
+being used. Here I would like to have comments from a VLSI/ULSI engineer,
+to discuss about limits of the technology that could be used, and drive my
+hardware/software imagination to get the best from the technology being used.
+Whatever technology is used, AGA performances can be improved a lot.
+
+###############################################################################
+
+3RD STAGE: Output    (Watch diagrams-picture STAGE3_Output.IFF)
+
+NOTE: the genlock audio bit enables/disables a circuit to pass through the
+      AgaEXTENDER to disable the device.
+
+Video part:
+
+The Vertical Synch from Lisa is unchanged.
+The Horizontal Synch is independent, to allow scan-doubling for free (AGA
+spends 2 times more bandwidth in this case). NOTE: this independence is meant
+only as single or double speed, to double horizontal frequency of scan modes
+such as PAL/NTSC, with no need to use doubled bandwidth. In this case, the
+line buffer would load a 15Khz line, and output it two times (30Khz each).
+NOTE: the horizontal centering is performed selecting the blank time and
+starting position of pixels from the OUTPUT buffer.
+
+NOTE about 2nd STAGE, 3rd STAGE and related graphic diagrams:
+The "OUTPUT BUFFER" is an unnecessary part that has been included only to
+semplify the explanation, but it can be removed to semplify the final hardware.
+
+The device should provide digital output rather than analog for 2 reasons:
+1) Using an external DAC (such as the VideoHybrid) will semplify the IC.
+2) Providing RGB and Alpha digital outputs will be useful in SetTopBoxes, or
+   in MultiMedia multi-gfxchip applications. This way the AGA+AgaEXTENDER
+   technology could be sold to provide high performances parallel solutions,
+   using a digital mixer, with an extremely versatile programming capability,
+   and low costs (and experienced programmers/developing tools).
+
+#######################################
+
+Audio part:
+
+
+For each of the 4 DAC's, there will be a 20 (or more) bits register, with a
+reset input and a data input (automatically added to previous content, using
+integer signed arithmetic). This audio machine will have a period of 2^N
+cycles, beginning with a reset and continuing storing (adding) new sample data
+coming from the audio buffers, and at the end shifted to the right of N bits,
+to get all the virtual audio channels digitally mixed into one, ready for a
+single DAC conversion.
+NOTE: Each pointer will have a fixed point part, to allow any apparent sampling
+frequency. The pointer will point to an address in one audio buffer, and every
+clock cycle of the audio subsystem, a fixed point delta (DDA) will be added to
+the pointer.
+NOTE: You can select which of the 16bit part to use, thus allowing mono modes
+(useful for ambient sounds, where only programming the 4 independent volumes
+is necessary, thus saving much ram).
+NOTE: Of course, every "reset" of the state machine means also the begin of a
+new machine's cycle, and to output to the DAC the previously elaborated 16bits.
+
+---
+
+Four 16bit DAC's. (Or use multiplexed output to use four external 16bit DAC's).
+
+---
+
+We have 2 input connectors from the Amiga audio, that will be mixed with the 2
+front audio output of the AgaEXTENDER. Other 2 connectors will be used for the
+2 rear speakers, or mixed with the front ones using an external switch if four
+speakers system is not available (absoluly recommended). 8)
+
+###############################################################################
+
+NOTE: since the AgaEXTENDER registers can be written only by the HiRes-copper,
+every VerticalBlank if the AgaEXTENDER is enabled (through audio genlock bit)
+the HiRes-copper is automatically started with a standard configuration.
+
+This is an example of how the 256 internal registers could be mapped:
+
+
+NOTE: EVERY REGISTER IS BYTE SIZE.
+
+N.  Name         Function
+
+$00=StartPtA_D0  ;15..8 addr. 64bit cell in the line buff to store data
+$01=StartPtB_D0  ;7..0 addr. 64bit cell in the line buff to store data
+$02=StartRstA_D0 ;15..8 addr. "" cell in the line buff to restart storing data
+$03=StartRstB_D0 ;7..0 addr. "" cell in the line buff to restart storing data
+$04=FilterS_D0   ;select the byte to start storing in the bitfilter reg. 0..7
+$05=FilterD_D0   ;store a byte (with postincrement) in the 64bits bitfilter
+$06=SortS_D0     ;select the byte to start storing in the distributor reg. 0..7
+$07=SortD_D0     ;store a byte (with postincrement) in the 64bits distributor
+$08=Delay_D0     ;bitdelayer: value is from 0 to 63 (multiples of 64 thru AGA)
+$09=BitLenght_D0 ;from 1 (planar) to 64 (full RDziPaRGB)
+$0A=Total_D0     ;number of cells to process before halt (till next HorizSynch)
+$0B=Write_D0     ;number of consecutive cells to write into the buffer
+$0C=Skip_D0      ;number of consecutive cells to skip of the buffer
+$0D=Dest_D0      ;bitflags to select to write or not in each line/audio buffer
+$0E=Mode0_D0     ;bitmapped register
+$0F=Mode1_D0     ;bitmapped register
+
+[...]
+
+$70=StartPtA_D7  ;15..8 addr. 64bit cell in the line buff to store data
+$71=StartPtB_D7  ;7..0 addr. 64bit cell in the line buff to store data
+$72=StartRstA_D7 ;15..8 addr. "" cell in the line buff to restart storing data
+$73=StartRstB_D7 ;7..0 addr. "" cell in the line buff to restart storing data
+$74=FilterS_D7   ;select the byte to start storing in the bitfilter reg. 0..7
+$75=FilterD_D7   ;store a byte (with postincrement) in the 64bits bitfilter
+$76=SortS_D7     ;select the byte to start storing in the distributor reg. 0..7
+$77=SortD_D7     ;store a byte (with postincrement) in the 64bits distributor
+$78=Delay_D7     ;bitdelayer: value is from 0 to 63 (multiples of 64 thru AGA)
+$79=BitLenght_D7 ;from 1 (planar) to 64 (full RDziPaRGB)
+$7A=Total_D7     ;number of cells to process before halt (till next HorizSynch)
+$7B=Write_D7     ;number of consecutive cells to write into the buffer
+$7C=Skip_D7      ;number of consecutive cells to skip of the buffer
+$7D=Dest_D7      ;bitflags to select to write or not in each line/audio buffer
+$7E=Mode0_D7     ;bitmapped register
+$7F=Mode1_D7     ;bitmapped register
+
+$80=AudPerA_A0   ;Frequency, high byte (it's only the fixedpoint delta to add)
+$81=AudPerB_A0   ;Frequency, low byte (it's only the fixedpoint delta to add)
+$82=AudVolFL_A0  ;0..255, Volume of front left channel
+$83=AudVolFR_A0  ;0..255, Volume of front right channel
+$84=AudVolRL_A0  ;0..255, Volume of rear left channel
+$85=AudVolRR_A0  ;0..255, Volume of rear right channel
+$86=AudMode_A0   ;bitflags
+$87=AudNLen_A0   ;audio machine: N lenght (to allow mixing of N virtual voices)
+$88=AudMixL_A0   ;mixer/smoother: 0=audio_off 1=normal 2=TwoCells 3=Three...
+$89=AudMixR_A0   ;mixer/smoother: 0=audio_off 1=normal 2=TwoCells 3=Three...
+
+[...]
+
+$B0=AudPerA_A3   ;Frequency, high byte (it's only the fixedpoint delta to add)
+$B1=AudPerB_A3   ;Frequency, low byte (it's only the fixedpoint delta to add)
+$B2=AudVolFL_A3  ;0..255, Volume of front left channel
+$B3=AudVolFR_A3  ;0..255, Volume of front right channel
+$B4=AudVolRL_A3  ;0..255, Volume of rear left channel
+$B5=AudVolRR_A3  ;0..255, Volume of rear right channel
+$B6=AudMode_A3   ;bitflags
+$B7=AudNLen_A3   ;audio machine: N lenght (to allow mixing of N virtual voices)
+$B8=AudMixL_A3   ;mixer/smoother: 0=audio_off 1=normal 2=TwoCells 3=Three...
+$B9=AudMixR_A3   ;mixer/smoother: 0=audio_off 1=normal 2=TwoCells 3=Three...
+
+$C0=PalWriteA    ;store alpha into current palette register
+$C1=PalWriteR    ;store red into current palette register
+$C2=PalWriteG    ;store green into current palette register
+$C3=PalWriteB    ;store blue into current palette register
+$C4=PalStartH    ;write here the starting entry, high byte of address
+$C5=PalStartL    ;write here the starting entry, low byte of address
+$C6=PalAInc      ;increment current palette register by N value
+
+[...]
+
+control registers
+
+[...]
+
+
+$FF=No-Op        ;does nothing (still requires a unused data operand).
+
+NOTE: If the device is too complex, another solutions is:
+      Every Horiz.Synch the data coming from BITPLANE0 is assumed to contain
+      commands. This way it can change registers, or reconvert with a register
+      write the BITPLANE0 input to Video or Audio, untill the next HorizSynch.
+
+###############################################################################
+
+Q: But, aren't SVGA chips still better than AGA+AgaEXTENDER?
+A: But what is the best solution to this problem? Not improving nothing at all?
+   Buying a SVGA card and putting it into a 40Mhz 68030 Amiga wouldn't improve
+   the situation unless we have a 200Mhz 68060 or a fast PPC604e, and having
+   such fast CPU's wouldn't make the Amiga much better than PC: and why users/
+   developers should risk on it while the PC market is so sure, just to have
+   only a slightly better OS? Windows will improve too, and after the
+   hardware, also the software of PC will make us nearly forget the advantages
+   of AmigaOS. The AgaEXTENDER is *not* only a device to allow 24bit images,
+   it's much more.
+   The AgaEXTENDER can allow any planar+chunky video mode, that will speed up
+   everything and allow realtime effects such as transparency, free rotation in
+   the pitch axis (3D), zoom/flip in 2D screens, 3D effects (parallax and
+   sprites), accelerated MPEG decoding, multi playfields, 16bit versatile audio
+   (any number of virtual voices that the 4Mb/sec (or more if we want) free
+   bandwidth allows), and much more, being completely programmable. I dont
+   believe that in the 1997 everyone will throw out their A1200/Walker and
+   spend a lot of money for PowerAmiga immediately. The AgaEXTENDER is the best
+   and only realistic solution to give new life to old A1200's and Walker, to
+   put it on the competition with Pentiums, and to not betray the old users,
+   being a clever add on to the existing AGA architecture. I would also add
+   that the PowerAmiga would be much more powerful and versatile if, instead
+   of buying SVGA chips, would allow something with the versatility of
+   AgaEXTENDER and the same old AGA, but with x2/x4 clock and the possibility
+   to use VideoRam / EDO Ram and/or 64bit bus. Or the PowerAmiga will be a ugly
+   copy of PC hardware, with only a different CPU (PowerPC is one of the worst
+   RISC's around, and the multiprocessing capabilities of 80686 don't seem to
+   show that the MsDos/Windows PC are destinated to die indeed) and a good OS
+   with a very huge and painful porting to make and an uncertain future.
+   AGA already exists, it's cheap, improving its bandwidth but keeping it as it
+   is wouldn't cost much indeed, and adding the versatility of a device like
+   AgaEXTENDER would let it outperform any standard chip that could be bought
+   from an external manufacter. Amiga Technologies could become a seller of
+   MultiMedia chipsets themself, selling AGA (with or without improved memory
+   access from CPU, and improved bandwidth from chipmem to screen) and the
+   versatility of the AgaEXTENDER: who would buy instead a SVGA chip that is
+   capable only to offer a standard 8bit chunky screen, or little more, and
+   needs a 200Mhz CPU just to fade part of a screen or to move a sprite?
+   Every A1200 out there cannot be upgraded, unless we use a device like this.
+
+Q: Perhaps the *best* solution is to give to all Amigas a SVGA chipset?
+A: Please understand that who programs both realtime 2D/3D games (exploiting
+   every possibility from the Amiga hardware) but also OS applications, can be
+   useful to suggest what both the more original coders and OS programmers can
+   need to make the "software miracles" that the Amiga needs today and in the
+   future. There's the need to have a *global* vision, including all the needs
+   that aren't only of today games ( = Doom) but also the ones that will be
+   needed in the near future. Thinking about best WorkBench performances,
+   thinking to give the unimaginated best possibilities to software as Scala.
+   Versatility, allowing coders to invent tomorrow what the hardware can't
+   directly offer or *foresee* today, but using the same fully programmable
+   hardware.
+   It's not like with the Pentium that can exploit its MIPS to hide the SVGA
+   simple chunky structure problems: the standard Amiga has only a 40-50Mhz
+   68030, that can't do all by itself if it wanna win the competition vs
+   Pentiums. Moreover, PC's have 200Mhz Pentium CPU's to hide the huge
+   limitations of the standard SVGA gfx chips (only the simplest chunky mode),
+   while the Walker will have a 40Mhz 68030 and there will never be a low-end
+   Amiga with the top of the range CPU: if you put a SVGA chipset into the
+   Walker, you only get a 50Mhz 80386. Did the A500 use CGA screens? To the
+   coders that know both VGA and AGA+AgaEXTENDER chips: tell me what is better.
+
+###############################################################################
+
+That's it, if an engineer examine the device and let me know if some
+parts can't be implemented and describe the reasons, I can adapt my ideas to
+the disponibility of the technology being used, and add new specific ideas.
+But all with the imagination of a coder (both of games and OS applications);
+with the AgaEXTENDER I am sure I've shown that with a simple and generic
+hardware structure the skilled coders can make software miracles.
+
+Amiga Technologies have the power to keep low the costs, both for new Amigas
+(with the AgaEXTENDER built in) and older Amigas with a AgaEXTENDER to be
+plugged in the RGB port, making a fair price (the Graffiti is ridicolously
+overpriced, and is practically useless).
+
+About the problem of ChipMem bandwidth, this can't obviously solved by the
+AgaEXTENDER, but since a chip write is parallelized with the execution of
+some CPU cached instructions and the AgaEXTENDER allows semplifications
+for the programmer's routines like no other gfx board does, I believe at
+the end that the ChipMem bandwidth will not be a big problem anymore.
+I recall that nowadays also PC software renders graphic into main ram and
+then copy them to video memory. But the AgaEXTENDER will be able to use
+complex screen modes immediately after the fastest possible CPU longword
+copy from fastram. The AgaEXTENDER can get highly compressed video with a
+fast copy CPU->chipram, and then decompress it internally.
+A dual-port ram for the new AGA Amigas would eliminate every CPU->chipram
+limitation where present, making the AgaEXTENDER even more useful, but would
+still keep compatibility with older AGA Amigas.
+
+The audio part is simply stunning, besides the lack of a DSP to keep costs low.
+With simple programming tricks it is possible to get more audio voices, as
+well as realtime riverber/echo effects that would extend the space sensation
+given by the 3D stereo sound, all saving as much ram for data as possible,
+and with minumum CPU usage, and with no Video bandwith waste.
+
+I wrote this doc in some days, so if it can become reality, I'll work on it
+and improve it as much as the technology that will be used will allow, anyway
+I think that the actual technology allows all the features of this project.
+I can write a complete emulator of the AgaEXTENDER (not realtime of course)
+in 680x0 optimized code, giving in output a complete timing diagram both for
+video and audio signals, to study the device.
+If the AgaEXTENDER is too complex, I can semplify it as much as needed to
+fit into the technology being used: from the 3+3+2 bit sampler to the
+line-buffer, it could be nearly done with TTL circuits, so I believe that
+also if a semplification could be needed, it will not need to be big.
+I've a lot of ideas to make an agaextender.library for complete OS legal use
+of the device, still allowing all the hidden potentials of the device, and
+keeping full compatibility with any future hardware (the library would accept
+a description in a "descriptor language" and program the AgaEXTENDER, the
+AGA's copper and BitPlanes, every low-level resource in the best way. When
+a new hardware will be available, a new library will do the same for it).
+
+I *HOPE* Amiga Technologies will consider this project with extreme attention,
+the old designers got too many good ideas refused for no good reasons, and the
+result is that the Amiga has lost many precious occasions to become great.
+
+      *** We don't need expensive hardware, we need clever solutions ***
+
+If the device is too complex (all depends on how much static ram the actual
+technology can allow to contain in a chip), there's a new version designed
+to remove 95% of audio buffers, and/or keeping only one (but improved) video
+buffer, keeping most of AgaEXTENDER features. The choice is between much ram
+single access, or some ram with multiple access. All depends on the technology
+being used; I can adapt the AgaEXTENDER project after being aware of the limits
+and qualities of the available technology.
+
+I really believe in this project, it has no comprimizes, only advantages
+both technical and commercial. I also believe that this device would attract
+thousands enthusiast developers to the Amiga again, as in 1985-1987.
+What would offer a PowerAmiga with standard PC chips to attract developers?
+What new features? What could make born new "enthusiam"? In a era where the
+PC has only the future more healthy than the present, such a PowerAmiga could
+only keep some applications' users and developers of the old Amigas. And if
+someone believes in a new standard system, then the BeBox will attract his
+attention more than every other system available.
+The more a solution is standard, the more it's less powerful.
+The PowerAmiga OS will allow the use of a wide range of standard gfx boards,
+that have in common only the simplest of chunky modes. It's like if in a
+society the govern decides that since some people are illiterate, every
+public information must be given by voice, not written. This way the
+"compatibility" will be guaranteed, but these societyes will be of the
+4th world. The lack of updates in Amiga's custom chips has provocated the
+need to buy Gfx Boards, but this last has deformated the sense of versatility
+of some users. Now, being the standard chips surely able to handle in a good
+way static images, WorkBench screens and (some of them) having a blitter to
+move windows, makes the WB much nicer but kills completely any Video/MultiMedia
+and Games application. If a generic user wants only a WB, he can buy a PowerMac
+or a BeBox, or a Unix PC. The Amiga is aimed to a market with various needs,
+from games, to WB, till advanced Video applications. The way PowerAmiga seems
+have taken will allow a nice WB, but no games or decent Video applications.
+Furthermore, only high-end PowerAmigas will run gfx based software at a decent
+speed; if to get 1/10 of what a 3DO-M2 can do, SVGA chips need a 200Mhz Pentium
+(that is NOT a slow CPU) using hardware banging, what can do the other CPU's
+and OS?
+
+If the next Amiga generation will use SVGA GfxChips and PowerPC CPU, then I
+believe that professional game developers will find much more convenient to
+learn to program the same GfxChip (SVGA) and a new CPU (80686 instead of
+PowerPC) because 80686 will have a solid market, while PowerAmiga will not
+have it, still being both simple PC clones.
+Applications such as Scala will be sad on a PowerAmiga with standard chipset
+and all done through the OS: how much more competitive than PC's will this be?
+
+The Amiga is originality, the Amiga is creativity, the Amiga is clever
+solutions, the Amiga can't be just another PC clone with a OS that cannot
+compete with the one of the BeBox, nor with all the others stable OS's around.
+
+The only wise Amiga future is a powerful and innovative custom chipset, and the
+AgaEXTENDER design could be the bridge between these two hardware generations.
+
+If the Amiga hardware will be a PC clone, then investing money and development
+into a standard 80x86 PC will be a much more wise choice. If the Amiga will be
+maybe less powerful than the most modern PC, but will have the clever solutions
+that can allow its enthusiast developers to overwork its custom hardware, then
+the Amiga will reborn and will have a valid commercial justification of life,
+both for hardware and software.
+
+I and many other developers renounced to big earnings from the PC market,
+accepting the extremely difficult economic condition of the Amiga market, to
+support the re-birth of the Amiga, due to the enthusiams we had for the Amiga.
+But if AT makes its hardware a PC clone, then we've no reason to support a
+PC clone with no market rather than a 80x86 PC with huge and trustable market.
+
+I hope that nobody will forget what the Amiga really was, and in which way
+it should evolve.
+
+Best Regards,
+
+
+
+------------------------------------------------------------------------------
+|                                                                            |
+|    Fabio "Maverick" Bizzetti - bizzetti@mbox.vol.it - Maverick* at IRC     |
+|              The maker of "CyberMan" and "Virtual Karting"                 |
+|   working on "Virtual Rally" and "StarFighter", the 3D game that will      |
+|                        bring the Amiga to the top                          |
+|                                                                            |
+------------------------------------------------------------------------------

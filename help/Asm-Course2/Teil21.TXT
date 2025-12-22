@@ -1,0 +1,416 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                21.Teil...
+
+So, das mit der Laufschrift ist ja ziemlich einfach, oder ?
+Naja, mit einer Plane ist das ja auch kein Problem. Was ist aber wenn wir
+Zeichensaetze machen die mehr als 2 Farben haben, weil sie halt schoener
+sind. Ganz einfach, dann muessten wir den ganzen Aufwand den wir fuer eine
+Plane gemacht haben, auf fuer die anderen machen. Ich spreche von dem
+Sicherheits bereich und so. Auch das Aussehen der Buchstaben muessten wir
+dann mehrmals kopieren, weil so ein z.B 8 Farbiger Buchstabe auch aus 3
+Planes besteht. Das ist zwar kein grosses hinderniss, aber es haelt doch
+eben auf.
+Deshalb werde ich ein Technik erklaeren, die man Normalerweise bei
+mehrfarbigen Laufschriften und bei Bobs, zwar nicht immer, aber oft anwendet.
+
+19.Verschachtelte Planes
+
+Hmmm, was heisst das denn ?
+
+Es ist im Prinzip logisch. Normalerweise liegt die Definition fuer einen 3
+Plane Buchstaben so im Speicher.
+
+Plane 1, Zeile 1
+Plane 1, Zeile 2
+...
+...
+Plane 2, Zeile 1
+Plane 2, Zeile 2
+...
+...
+Plane 3, Zeile 1
+Plane 3, Zeile 2
+
+Das heisst auch gleichzeitig `Um den Kompletten Buchstaben auf den Screen
+zu bringen, muessen wir fuer jede Plane einen Blitteraufruf machen, der
+dann die Plane an die Richtige Adresse setzt.
+Um die Anzahl der Aufrufe aber wieder auf eins zu setzen, verschachtelt man
+die Planes des leeren Playfields wo die Bobs (oder die Laufschrift) rein
+soll, und man verschachtelt die Bobs selber. Verschachtelt sieht eine
+Bobdefinition dann so aus.
+
+Plane 1, Zeile 1
+Plane 2, Zeile 1
+Plane 3, Zeile 1
+Plane 1, Zeile 2
+Plane 2, Zeile 2
+Plane 3, Zeile 2
+Plane 1, Zeile 3
+Plane 2, Zeile 3
+...
+...
+
+Jetzt kann ich die komplette Definition mit einem Schlag kopieren.
+Allerdings muessen dann die Bitplanepointer und die Modulo werte stimmen.
+
+Die Bitplanepointer muessen auf die ersten drei Zeilen der Bitplane zeigen.
+Bei dem Playfield wie wir es immer benutzen (normal PAL) saehen sie Pointer
+so aus.
+
+BPL1PT = $40000
+BPL2PT = $40028
+BPL3PT = $40050
+
+Natuerlich in der Copperliste getrennt geschrieben.
+Und die Modulowerte muessten bei 3 Planes 80 ($50) betragen, damit die
+Naechsten zwei Zeilen im Speicher uebersprungen werden, weil dort ja die
+Daten fuer die anderen beiden Planes stehen. Die zweite Zeile der Ersten
+Plane steht dann erst bei $40078. Das hoert sich vielleicht kompliziert an,
+ist es aber nicht.
+
+Das leere Playfield so zu initialisieren ist ja Null Problemo, aber wie
+machen wir das mit den Buchstaben fuer eine Laufschrift.
+Um das auszuprobieren muesst ihr einfach euer Bild mit dem Zeichensatz fuer
+die Laufschrift auf 4 Farben erweitern, und damit ihr es sehen koennt malt
+ihr noch, sofern es geht einen Bunten rand um die Buchstaben, ihr koennt
+natuerlich auch einen neuen Zeichensatz malen, ich lasse euch da freie
+Hand.
+Wichtig ist nur das es mehr als eine Plane ist, denn sonst laesst es sich
+schlecht verschachteln.
+
+Frueher war es ein Grosses Problem mit dem Verschachteln, es war fast
+unmoeglich, oder man musste grossartige Routinen fuerden blitter schreiben,
+um seine Bobs oder Laufschrift Buchstaben zu verschachteln. Bis der
+Kefrens-IFF-Converter kam. Er konnte das auf Knopfdruck.
+
+Ihr muesst einfach vor dem Abspeicher der RAW-Datei, wenn ihr aus dem
+IFF-ILBM ein RAW-NORM macht, nochmal drauf druecken, dann erscheint
+naemlich RAW-BLIT, das ist dieses Verschachtelte Format, das man benutzt
+wenn man mit dem Blitter arbeiten.
+So einfach ist das....
+
+Wenn man dann noch die Richtigen werte einstellt laeuft die Laufschrift wie
+gehabt mit einem Aufruf, obwohl sie aus 2 Planes besteht. Natuerlich muesst
+ihr bei den Blitteraufrufen die zu kopierende Zeilenzahl verdoppeln, denn
+die veraendert sich ja.
+
+So nebenbei habe ich mal eine Liste mit den Wichtigsten Registern und
+Adressen getippt, sie ist fertig, und ich setze sie dann natuerlich
+hierein.
+
+Einfach ausschneiden und in den Source kleben...
+
+Register.....
+
+Bpl1Mod=        $Dff108         ;Bitplane modulo ungerade Planes (1,3,5)
+Bpl2Mod=        $Dff10a         ;Bitplane modulo gerade Planes (2,4,6)
+BplCon0=        $Dff100         ;Bitplane Kontroll Register 0
+BplCon1=        $Dff102         ;Bitplane Kontroll Register 1
+BplCon2=        $Dff104         ;Bitplane Kontroll Register 2
+Bpl1Pth=        $Dff0e0         ;Bitplane Kointer 1-6 (Msb)
+Bpl2Pth=        $Dff0e4         ;Werden jeden VBI neu eingesetzt
+Bpl3Pth=        $Dff0e8
+Bpl4Pth=        $Dff0ec
+Bpl5Pth=        $Dff0f0
+Bpl6Pth=        $Dff0f4
+Bpl1Ptl=        $Dff0e2         ;Bitplane Pointer 1-6 (Lsb)
+Bpl2Ptl=        $Dff0e6         ;Werden jeden VBI neu eingesetzt
+Bpl3Ptl=        $Dff0ea
+Bpl4Ptl=        $Dff0ee
+Bpl5Ptl=        $Dff0f2
+Bpl6Ptl=        $Dff0f6
+BltCon0=        $Dff040         ;Blitter controll register 0
+BltCon1=        $Dff042
+BltSize=        $Dff058         ;Blitter size (Start) Register
+BltAFWM=        $Dff044         ;Blitter erstes wort maske A
+BltALWM=        $Dff046         ;Blitter letztes wort maske A
+BltAMod=        $Dff064         ;Blitter A Modulo
+BltAPth=        $Dff050         ;Blitter A Pointer (19bits)
+BltADat=        $Dff074
+BltBPth=        $Dff04c
+BltCPth=        $Dff048
+BltBMod=        $Dff062
+BltCMod=        $Dff060
+BltDMod=        $Dff066         ;Blitter D Modulo
+BltDPth=        $Dff054         ;Blitter D Pointer (19bits)
+Color0=         $Dff180         ;Start der Hardwarefarbentabelle 0-31
+Color1=         $Dff182
+Color2=         $Dff184
+Color7=         $Dff18e
+Color8=         $Dff190
+Color9=         $Dff192
+Color10=        $Dff194
+Color11=        $Dff196
+Color12=        $Dff198
+Color13=        $Dff19a
+Color14=        $Dff19c
+Color15=        $Dff19e
+Color16=        $Dff1a0         ;Hier liegen die Spritefarben {16-31)
+Color17=        $Dff1a2
+Color18=        $Dff1a4
+Color19=        $Dff1a6
+Color20=        $Dff1a8
+Color21=        $Dff1aa
+Color22=        $Dff1ac
+Color23=        $Dff1ae
+Color24=        $Dff1b0
+Color25=        $Dff1b2
+Color26=        $Dff1b4
+Color27=        $Dff1b6
+Color28=        $Dff1b8
+Color29=        $Dff1ba
+Color30=        $Dff1bc
+Color31=        $Dff1be
+Cop1Lc=         $Dff080         ;Copper Startadresse 1
+Cop2Lc=         $Dff084         ;Copper Startadresse 2
+CopJmp1=        $Dff088         ;Copper ausloeser (Strobe) 1
+CopJmp2=        $Dff08a         ;Cooper ausloeser (Strobe) 2
+DDFStop=        $Dff094         ;Display Data Fetch Stop
+DDFStrt=        $Dff092         ;Display Data Ftech Start
+DiwStrt=        $Dff08e         ;Display Window Start x,y
+DiwStop=        $Dff090         ;Display WIndow Stop x,y
+DmaCon=         $Dff096         ;Direct Memory Access Controll Register
+DmaConR=        $Dff002         ;DMA controll and blitter status read
+Intena=         $Dff09a         ;Interrupt Enable Register
+Intreqr=        $Dff01e         ;Interrupt Request Register
+PotGoR=         $Dff016         ;Pot Data (rechte Maus taste)
+Vposr=          $Dff006         ;Position of the Video beam on screen
+VPos=           $Dff004         ;Holds highbits of Video beam positon
+Spr0pt=         $Dff120         ;SpriteDma Pointer
+Spr1pt=         $Dff124
+Spr2pt=         $Dff128
+Spr3pt=         $Dff12c
+Spr4pt=         $Dff130
+Spr5pt=         $Dff134
+Spr6pt=         $Dff138
+Spr7pt=         $Dff13c
+CIAapra=        $Bfe001
+
+Adressen...
+
+Execbase=       4
+Openlibrary=    -552
+Forbid=         -132
+Permit=         -138
+
+Ihr koennt es auch ausdrucken und an die Wand haengen. Das werde ich glaube
+ich auch jetzt mal tun...ist doch hilfreich so eine Liste neben sich zu
+haben.
+
+So, dann mal weiter...Aber eigentlich brauche ich ja garnichts mehr zu
+erklaeren zu den Bobs, denn die Technik kennt ihr ja schon von der Routine
+die die Buchstaben in den Puffer kopiert.
+
+So bevor es mit dem Blitter weitergeht, habe ich hier noch ein nette kleine
+Routine. Eigentlich 2...Die erste kann Punkte auf den Bildschirm setzen,
+und die zweite kann punkte auf dem Bildschirm loeschen.
+
+Wofuer ihr sie gebrauchen koennt weiss ich nicht. Ich jedenfalls habe ein
+Feuerwerk, und ein Pixelweise verschwindendes Bild daraus gemacht.
+
+Set:
+        Divu    #8,d0
+        Mulu    #40,d1                  ; Hier den Wert der Plane breite
+                                        ; einsetzen, da die Routine sonst
+                                        ; nicht richtig arbeitet
+                                        ; Normal 40, Overscan 44.
+        Add.w   d0,d1
+        Swap    d0
+        Move.b  #,d2
+        Sub.b   d0,d2
+        Bset    d2,(a5,d1)
+        Rts
+Clear:
+        Divu    #8,d0
+        Mulu    #40,d1                  ; Ebenso
+        Add.w   d0,d1
+        Swap    d0
+        Move.b  #,d2
+        Sub.b   d0,d2
+        Bclr    d2,(a5,d1)
+        Rts
+
+Man muss die Routinen mit der Basisadresse der Plane in A5, der
+X-Koordinate des Punktes in D0, und der Y-Koordinate in D1 anspringen.
+Achtet bitte auf den Kommentar, er ist fuer das Funktionieren der Routine
+wichtig.
+
+Ha, ich koennte mich Totschlagen...Habe ich mir die Scheissarbeit gemacht,
+und die Befehlsliste getippt. Und als ich eben in einer alten Diskette nach
+einem Noch aelteren SourceCode gesucht habe, ist mir ein Viel bessere
+Befehlsliste unter die Finger gekommen. Sie enthaelt gleichzeitig auch die
+Adressierungsarten die es gibt, und wie man den Befehl aufruft.
+Ich will die euch nicht vorenthalten, verzeit mir bitte, Schade um das
+Druckerpapier was fuer die Erste Liste draufgegangen ist. Naja, Nobody is
+Perfekt, ich hatte die Wirklich vergessen.
+
+
+ABCD     Quelle,Ziel      Addition zweier BCD Zahlen
+ADD      Quelle,Ziel      Binaere Addition
+ADDA     Quelle,An        Binaere Addition zu einem Adressregister
+ADDI     #n,<ea>          Addition mit einer Konstanten
+ADDQ     #n,<ea>          Schnelle Addition mit 3-Bit Konstanten
+ADDX     Quelle,Ziel      Addition mit Uebertrag im X-Flag
+AND      Quelle,Ziel      Logisches Und
+ANDI     #n,<ea>          Addition mit einer Konstanten
+ASL      n,<ea>           Arithmetische Verschiebung nach links
+ASR      n,<ea>           Arithmetische Verschiebung nach rechts
+B<bed>   Label            Verzweigt bedingt, ja nach Bedingung
+BCHG     #n,<ea>          Veraendert Bit n (0 -> 1 / 1 -> 0)
+BCLR     #n,<ea>          Setzt Bit n auf 0
+BSET     #n,<ea>          Setzt Bit n auf 1
+BRA      Label            Verzweigt (JMP-aehnlich)
+BSR      Label            Verzweigt in ein Unterprogramm (wie JSR)
+BTST     #n,<ea>          Testet Bit n (Ergebnis -> Z-Flag)
+CHK      <ea>,Dx          Prueft ein Datenregister auf Grenzen,
+                          loest ggf. CHK-Instruction-Exception aus
+CLR      <ea>             Loeschen eines Operanden
+CMP      Quelle,Ziel      Vergleich zweier Operanden
+CMPA     <ea>,An          Vergleich mit Adressregister
+CMPI     #n,<ea>          Vergleich mit einer Konstanten
+CMPM     Quelle,Ziel      Vergleich zweier Speicheroperanden
+DB(bed)  Reg,Label        Prueft die Bedingung, dekrementiert Reg
+                          und verzweigt ggf.
+DIVS     Quelle,Ziel      vorzeichenrichtige Division des 32-Bit Ziel- durch
+                          16-Bit Quelloperanden.Das Ergebnis liegt im Lo-Wort
+                          von Ziel, der Rest der Division im Hi-Wort.
+DIVU     Quelle,Ziel      wie DIVS, nur ohne Vorzeichen
+EOR      Quelle,Ziel      Exclusiv ODER
+EORI     #n,<ea>          Exclusiv Oder mit einer Konstanten
+EXG      Rn,Rn            Austausch zweier Registerinhalte
+EXT      Dn               Vorzeichenrichtige Erweiterung auf
+                          doppelte Breite
+JMP      Label            Springe zur Adresse
+JSR      Label            Rufe Unterprogramm auf;Die Ruecksprungadresse wird
+                          auf den Stack gelegt;
+                          Beendigung des Unterprogramms mit RTS
+LEA      <ea>,An          Lade effektive Adresse in Adressregister
+LINK     An,#n            Baue Stackbereich auf
+LSL      n,<ea>           Logische Verschiebung links
+LSR      n,<ea>           Logische Verschiebung rechts
+MOVE     Quelle,Ziel      Uebertrage einen Wert von Quelle nach Ziel
+MOVE     SR,<ea>          Uebertrage den Statusregister-Inhalt
+MOVE     <ea>,SR          Uebertrage den Statusregister-Inhalt
+MOVE     <ea>,CCR         Flags laden
+MOVE     USP,<ea>         Uebertrage den User-Stackpointer
+MOVE     <ea>,USP         Uebertrage den User-Stackpointer
+MOVEA    <ea>,An          Uebertrage einen Wert in ein Adressregister
+MOVEM    Regs,<ea>        Uebertrage mehrere Register auf einmal
+MOVEP    Quelle,Ziel      Uebertrage Daten zur Peripherie
+MOVEQ    #n,Dn            Uebertrage schnell eine 8-Bit Konstante in ein
+                          Datenregister
+MULS     Quelle,Ziel      vorzeichenrichtige Multiplikation zweier Worte zu
+                          einem Langwort
+MULU     Quelle,Ziel      wie MULS nur ohne Vorzeichen
+NBCD     Quelle,Ziel      Negation einer BCD-Zahl (9er Komplement)
+NEG      <ea>             Negation eines Operanden (2er Komplement)
+NEGX     <ea>             Negation eines Operanden mit Uebertrag
+NOP                       Keine Funktion (no Operation)
+NOT      <ea>             Inversion eines Operanden
+OR       Quelle,Ziel      Logisches ODER
+ORI      #n,<ea>          Logisches oder mit einer Konstanten
+PEA      <ea>             Lege eine Adresse auf den Stapel
+RESET                     Peripherie zuruecksetzen
+ROL      n,<ea>           Rotation nach links
+ROR      n,<ea>           Rotation nach rechts
+ROXL     n,<ea>           Rotation nach links (Uebertrag -> X-Flag)
+ROXR     n,<ea>           Rotation nach rechts (Uebertrag -> X-Flag)
+RTE                       Rueckkehr aus Exeption
+RTR                       Rueckkehr mit laden der Flags
+RTS                       Rueckkehr aus Unterprogramm (nach BSR/JSR)
+SBCD     Quelle,Ziel      Subtraktion zweiter BCD-Zahlen
+S<bed>   <ea>             Setze Byte auf -1, wenn Bedingung erfuellt
+STOP                      Verarbeitung anhalten,evtl. TRAP Exception
+SUB      Quelle,Ziel      Binaere Subtraktion
+SUBA     <ea>,An          Binare Subtraktion von einem Adressregister
+SUBI     #n,<ea>          Subtraktion einer Konstanten
+SUBQ     #n,<ea>          Schnelle Subtraktion einer 3Bit Konstanten
+SUBX     Quelle,Ziel      Subtraktion mit Uebertrag -> X-Flag
+SWAP     Dn               Vertauscht beide Registerworte
+TAS      <ea>             Pruefe ein Byte und setze Bit 7
+TRAP     #n               springe in eine Exception
+TRAPV                     Ist Ueberlauf Flag (V-Flag) gesetzt, dann Exception
+TST      <ea>             Testen eines Operanden und ggf. Setzen von N/Z-Flag
+UNLK     An               Baue Stackbereich ab
+
+------------------------------------------------------------------------------
+An       Adressregister (A0-A7)
+Dn       Datenregister (D0-D7)
+Label    Adresse / Label
+Reg      Register (A0-A7 / D0-D7)
+Quelle   Quelloperand
+Ziel     Zieloperand
+#n       Direktwert
+<ea>     Adresse oder Register
+------------------------------------------------------------------------------
+
+Bedingungen ( <bed> )
+
+<bed>    Bedingung         Bedeutung              Bits
+T        True              Immer
+F        False             Nie
+HI       higher            hoeher als             C' ^ Z'
+LS       lower or same     kleiner gleich         C v Z
+HS       higher or same    groesser gleich        C'
+CC       Carry clear       Carry-Flag geloescht   C'
+NE       not equal         ungleich               Z'
+EQ       equal             gleich                 Z
+VC       Overflow clear    kein Ueberlauf         V'
+VS       Overflow set      Ueberlauf              V
+PL       plus              positiv                N'
+MI       minus             negativ                N
+GE       greater or equal  groesser gleich        N ^ V v N' ^ V'
+LT       less than         weniger als            N ^ V' v N' ^ V'
+GT       greater than      groesser als           N^V^Z' v N'^V'^Z'
+LE       less or equal     weniger oder gleich    Z v N^V' v N'^V
+
+^= AND / v=OR / '= NOT
+------------------------------------------------------------------------------
+
+Die ist auch viel besser zum an die Wand haengen...
+
+Und hier noch die Adressierungsarten..
+
+
+ Adressierungsarten:
+
+ Datenregister direkt        Dn
+ Adressregister direkt       An
+   " indirekt                (An)
+   " ind. mit Postinkrement  (An)+
+   " ind. mit Predekrement   -(An)
+   " ind. mit 16 Bit Offset  O16(An)
+   " ind. mit 8 Bit Offset   O8(An,Rn)
+ Absolut kurz                xxxx.W
+ ABsolut lang                xxxxxxxx.L
+ Unmittelbar                 #`Daten`
+ Programmzaehler ind. mit     O16(PC)
+           16 Bit Offset
+ " ind. mit 8 Bit Offset     O8(PC,Rn)
+
+Legende:
+
+ An        Adressregister (A0-A7)
+ Dn        Datenregister (D0-D7)
+ O16       16 Bit Wert
+ O8        8 Bit Wert
+ Rn        Register (A0-A7 / D0-D7)
+ `Daten`   bel. Wert (bis 16 Bit)
+
+Anhand der Legende kann man sich die noetigen Parameter zusammendenken.
+
+Naja, da habe ich diesen teil leider wieder voll gestopft. Das reicht fuer
+Heute erstmal..
+Ich fang jetzt mit dem Intro an was wir dann zusammen machen wollen. Ein
+paar Routinen werde ich wohl aus dem Kurs nehmen. Aber nicht alle..sie sind
+zum teil sehr schlecht geeignet fuer den Einsatz in einem Intro.
+Wie ihr merkt halte ich aber mein Versprechen vom 1.Teil das ich am Ende so
+ein Paar Listen rueberruecke.
+
+Viel Spass damit...Ich werde nu Duschen gehen, und mir das Intro ausdenken.
+Unter der Dusche habe ich naemlich immer die Besten Ideen
+
+Hasta Luego
+
+                Jeff Kandle

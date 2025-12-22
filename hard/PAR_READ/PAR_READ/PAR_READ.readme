@@ -1,0 +1,249 @@
+Short:        PAR: as a VOLUME in READ mode only.
+Author:       wisecracker@tesco.net (Barry Walker)
+Uploader:     wisecracker@tesco.net (Barry Walker)
+Type:         hard/hack
+Version:      0.94.80
+Architecture: generic, m68k-amigaos
+
+Distribution: Public Domain, Emailware.
+
+============================================================================
+
+Requirements Are:-
+------------------
+
+              Any Classic Amiga, SEE TEXT BELOW.
+              Standard Kickstart 2.0x and Workbench 2.0x or better.
+              RexxMast running, and RX in the path.
+              PAR: Device installed.
+              A home built, VERY simple piece of HW to toggle the -ACK line.
+              (There are two versions of the HW, PAR_READ_Simple and
+              PAR_READ_Complex. Both versions are simple... :)
+              (Project6 from TestGear2.lha in the hard/hack drawer of
+              AMINET is optional.)
+
+============================================================================
+
+History:-
+---------
+
+02-06-2008.
+-----------
+Version 0.94.80, correct some text errors.
+
+10-05-2006.
+-----------
+Version 0.94.70, minor text error.
+
+08-05-2006.
+-----------
+Version 0.94.60, rearranged the drawers and files more logically.
+
+06-05-2006.
+-----------
+Version 0.94.50, added another piece of simple HW to do the same task.
+
+27-11-2005.
+-----------
+Version 0.94.00, first upload to AMINET.
+
+============================================================================
+
+This is a project to use PAR: as a VOLUME in READ mode only, NOT as a DEVICE.
+I have NOT included PAR: in WRITE mode as this is easily done.
+
+For example connect a standard parallel port printer to the parallel port
+and from a CLI or Shell type:-
+
+Echo > PAR: "This is a test line."<RETURN>
+
+This is a test line.
+
+Is printed to by the printer, so WRITE mode is possible without any special
+knowledge.
+
+PAR: in READ mode however is not so easy and was intended to accept binary
+data IN through the parallel port to the computer WITHOUT ANY knowledge of
+the HW registers or DEVICE offsets at all.
+
+Very SIMPLE home built HW is needed for this to work and this is covered in
+detail in the archive. ONLY pins 2 to 10 inclusive of the parallel port are
+needed for FULL operation and if 5V is required then two other pins are used.
+
+See the FULL archive for ALL details.
+
+I decided on using ARexx and the extremely simple script is shown below:-
+
+/* =================================================================== */
+
+/* ----------------------------------------------- */
+/* PAR: used as a ~volume~ for binary data access. */
+/*            (C)2005, B.Walker, G0LCU.            */
+/* ----------------------------------------------- */
+/* Use ECHO for printing to the screen and SAY for */
+/*      printing any variables to the screen.      */
+/* ----------------------------------------------- */
+/*   IMPORTANT!!!, run ONLY from a SHELL or CLI.   */
+/* From the SHELL/CLI, type:-  RX PAR.rexx<RETURN> */
+/* ----------------------------------------------- */
+
+
+/* Show my version number and (C) for one line only. */
+/* (Note these two lines can be omitted.) */
+    ECHO 'c'x
+    ECHO '$VER: PAR.rexx_Version_0.94.00_(C)01-09-2005_B.Walker_G0LCU.'
+
+
+/* Set up any variables. */
+    ParaByte = ''
+    MyByte = ''
+
+
+/* Set the signal for breaking the script, ~Ctrl C~. */
+    SIGNAL ON BREAK_C
+
+
+/* ------------------------------------------------------------------- */
+/* This is the main working loop for accessing the parallel port. */
+    DO FOREVER
+
+/* Open up a channel for reading from the parallel port. */
+    OPEN(ParaByte, 'PAR:', 'R')
+
+/* Read a single binary character from the port. */
+    MyByte = READCH(ParaByte, 1)
+
+/* If MyByte is a NULL then this corresponds to the EOF, 0, so correct */
+/* it by making sure ALL NULLs are given the value of 0. */
+    IF MyByte = '' THEN MyByte = 0
+
+/* All major data access done, NOW IMMEDIATELY close the channel. */
+    CLOSE(ParaByte)
+
+/* Print the character onto the screen. */
+/* This binary character ~MyByte~ can now be manipulated by all */
+/* of the normal methods available under ARexx. */
+    SAY 'Byte at parallel port is decimal value '||C2D(MyByte)'.    '
+    END
+/* ------------------------------------------------------------------- */
+
+
+/* Cleanup and exit from the script. */
+Break_C:
+    EXIT
+
+/* =================================================================== */
+
+It works on ANY Classic Amiga, but could possibly work on an A1 using OS4
+OR MOS so long as RexxMast and RX is available AND PAR: is an installed
+DEVICE on the system. Device offsets are not needed for this to work as
+can be seen above, hence my term VOLUME. :)
+
+As the offsets are not required for correct operation then PAR: acts for
+all intents and purposes like a disk in a disk drive and can be written
+to, or, as in this case, READ from, and binary data aquired from the port
+displayed onto the screen.
+
+If you are interested further AND own an A1 and OS4 or MOS and would like
+to experiment with this then please Email me at the address at the end of
+this README.
+
+There is an ARexx Voltmeter program using the A-D Converter inside the
+archive and is a little more sophisticated than the very basic script
+above.
+
+(See ~Testing Evaluation~ below for more information.)
+
+----------------------------------------------------------------------------
+
+How the Voltmeter works is, a window is generated by IconX of the size
+specified in the Project icon and the program is run inside that window.
+You can vary this window size to take into account any strange font setup
+that you may have.
+
+(I hope you enjoy messing with it like I do... :)
+
+----------------------------------------------------------------------------
+
+The archive is Public Domain/Emailware and you may modify them as you
+please for your OWN experiments. See below.
+
+(Original idea and (C)2005 goes to B.Walker, G0LCU.)
+
+----------------------------------------------------------------------------
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Public Domain and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200 in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. All memory expansions were ~DISABLED~ using
+    the NoFastMem program from the System drawer. Also tested on two A600s
+    with various memory configurations, a 1MB A500+ and an old style A500
+    with a 0.5MB memory expansion at $C00000 using the A500+ emulator and
+    Workbench 2.04, and LBNL an A600 emulating KS3.0x and running
+    Workbench 3.0x. Also tested on an A4000 with various upgrades and
+    OS3.9x.
+
+    All test conditions were/are running STANDARD KS2.0x to 3.9x, and using
+    standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before disconnecting or connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU,
+   70 King George Road,
+   Loughborough,
+   Leicestershire,
+   LE11 2PA,
+   England.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~hard/hack~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

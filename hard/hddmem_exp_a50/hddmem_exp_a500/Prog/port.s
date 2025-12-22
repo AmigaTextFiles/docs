@@ -1,0 +1,95 @@
+    move.l    $100,a0
+    move.l    $104,a1
+    move.w    $108,d0
+    lea       $10a,a2
+    move.l    a0,d7
+    tst.l     d7
+    bne       lab1
+    move.l    a1,d7
+    tst.l     d7
+    bne       lab2
+exit:moveq.l  #0,d0
+    rts
+
+lab1:move.l   a1,d7
+    tst.l     d7
+    bne       two_cycle
+zapis:btst    #7,$bfe001
+    beq       exit
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    move.w    d0,(a0)
+    bra       zapis
+
+lab2:move.l   a0,d7
+    tst.l     d7
+    bne       two_cycle
+read:btst     #7,$bfe001
+    beq       exit
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    move.w    (a1),(a2)
+    bra       read
+
+two_cycle:btst #7,$bfe001
+    beq       exit
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    move.w    d0,(a0)
+    move.w    (a1),(a2)
+    bra       two_cycle
+

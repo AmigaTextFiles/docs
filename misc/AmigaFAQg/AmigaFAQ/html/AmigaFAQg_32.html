@@ -1,0 +1,129 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQg.texinfo on 24 October 1995 -->
+
+<TITLE>Amiga-FAQ - Pragmas</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQg_31.html">WindowPtr</A>
+&gt;&gt; <A HREF="AmigaFAQg_33.html">Fehlende Funktionen</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX76"></A>
+<A NAME="IDX77"></A>
+<A NAME="IDX78"></A>
+<H2><A NAME="SEC32" HREF="AmigaFAQg_toc.html#SEC32">Was sind Pragmas?</A></H2>
+Pragmas sind spezielle Anweisungen an den C-Compiler.
+Zwei Probleme entstehen bei der Verwendung von Pragmas:
+<OL>
+<LI>Pragmas sind hochgradig compilerspezifisch. Nicht einmal die
+Amiga-Compiler haben dieselben Pragmas, selbst wenn damit das gleiche
+bewirkt wird.
+<LI>Man kann sich nicht darauf verlassen, da&szlig; ein Compiler Pragmas
+ignoriert, die er nicht versteht. Dies gilt selbst dann, wenn man einen
+Ausdruck wie den folgenden verwendet:
+<PRE>
+    #ifndef MY_COMPILER
+    #pragma DoAnything
+    #endif
+</PRE>
+</OL>
+Das letztere Problem l&auml;&szlig;t sich umgehen, indem man Pragmas wie folgt
+in eigene Include-Files setzt. (Das gleiche gilt &uuml;brigens auch f&uuml;r
+Pr&auml;prozessor-Kommandos wie #asm (Aztec-C) oder #extern (C++).)
+<PRE>
+    #ifndef MY_COMPILER
+    #include &#60;mypragmas.h&#62;
+    #endif
+</PRE>
+<P>
+Aber was machen Pragmas auf dem Amiga? Meistens werden sie verwendet,
+um dem Compiler mitzuteilen, wie gewisse Library-Funktionen aufgerufen
+werden. (Tats&auml;chlich wird fast immer diese Verwendung gemeint, wenn
+Amiga-Besitzer &uuml;ber Pragmas sprechen.) Gew&ouml;hnliche C-Funktionen erwarten
+ihre Argumente auf dem Stack, Library-Funktionen dagegen in bestimmten
+Registern. Ferner erwarten sie den <CODE>Library-Base-Pointer</CODE> in Register a6.
+Betrachten wir eine Pragma-Anweisung von Aztec-C:
+<PRE>
+    #pragma amicall(SysBase,0xd2,FreeMem(a1,d0))
+</PRE>
+Dies weist den Compiler an, das erste Argument in Register a1 und das
+zweite in d0 zu laden. Ferner wird der Inhalt der Variablen SysBase in
+Register a6 geladen. Maxon-Pragmas sehen genauso aus, Dice- und SAS-Pragmas
+sind allerdings etwas komplizierter:
+<PRE>
+    #pragma libcall SysBase FreeMem d2 0902
+</PRE>
+Hier ist d2 (wie 0xd2 oben) der <CODE>Library-Vektor-Offset</CODE> (siehe
+n&auml;chstes Beispiel). Die letzte Ziffer ist die Zahl der Argumente, die
+davorstehende 0 ein Code f&uuml;r das Register mit dem Ergebnis und die davor
+stehenden Ziffern sind Codes f&uuml;r die Register mit den Argumenten in
+verkehrter Reihenfolge. (Die Codes bedeuten 0=d0, 1=d1, .., 8=a0, 9=a1, a=a2,
+..)
+<P>
+Ein Kommando wie <SAMP>`FreeMem(fib,sizeof(*fib);'</SAMP> w&uuml;rde ein Compiler
+nun in folgenden Code &uuml;bersetzen:
+<PRE>
+    move.l  _fib,a1
+    move.l  260,d1	    ; sizeof(struct FileInfoBlock)
+    move.l  _SysBase,a6
+    jsr     -0xd2(a6)       ; 0xd2 = _LVOFreeMem
+</PRE>
+FreeMem in dieser Art aufzurufen ist k&uuml;rzer und schneller als zun&auml;chst die
+Argumente auf den Stack zu legen und dann eine Funktion _FreeMem aufzurufen,
+die letzten Endes doch nur dasselbe tun und die Argumente vom Stack in
+dieselben Register laden w&uuml;rde.
+<P>
+Das Portierungsproblem der Pragmas umgeht man, indem man sie folgenderma&szlig;en
+in den eigenen Quelltext einbindet:
+<PRE>
+    /*  SAS/C, Dice und GNU-c (ab Version 2.6.1) machen es	*/
+    /*  ganz einfach:						*/
+    #if defined(__SASC)  ||  defined(_DCC)  ||  defined(__GNUC__)
+      #include &#60;proto/exec.h&#62;
+    #else
+
+      /*  Lade den Funktionsprototyp. Dieser ist nicht vom	*/
+      /*  verwendeten Compiler abh&auml;ngig.			*/
+      #include &#60;clib/exec_protos.h&#62;
+
+      /*  Pragmas sind vom Compiler abh&auml;ngig, aber wenigstens	*/
+      /*  die Namen der Dateien mit Pragmas sind relativ	*/
+      /*  einheitlich.						*/
+      #ifdef AZTEC_C
+        #include &#60;pragmas/exec_lib.h&#62;
+      #elif defined(__MAXON__)
+        #include &#60;pragmas/exec_pragmas.h&#62;
+      #endif
+
+      /*  Deklariere SysBase-Variable				*/
+      extern struct ExecBase *SysBase;
+    #endif
+</PRE>
+Das obige Beispiel kann problemlos mit allen angegebenen Compilern
+verwendet werden und produziert optimalen Code. (Die proto/*.h-Files
+machen &uuml;brigens auch nichts anderes als clib/*_protos.h und
+pragmas/*_pragmas.h mit #include einzulesen und dann die
+SysBase-Variable zu deklarieren.)
+<P>
+Eine abschlie&szlig;ende Frage bleibt allerdings: Wie bekommt man die Pragmas?
+Die meisten Compiler haben bereits fertige Pragmas im Lieferumfang.
+Allerdings hilft das nicht, wenn man z.B. eine neue Library benutzen
+m&ouml;chte oder nur die Pragmas einer veralteten Version hat. In diesem Fall
+kann man die Pragmas selbst aus den sogenannten <CODE>FD</CODE>-Files erzeugen.
+Dazu haben die meisten Compiler ein Utility namens <CODE>fd2pragma</CODE>.
+(Das NDU hat z.B. ein Directory namens FD, in dem die FD-Files aller
+Libraries und Devices des OS enthalten sind. siehe Abschnitt <A HREF="AmigaFAQg_25.html#SEC25">Wo bekomme ich die Amiga-Include-Dateien?</A>) Es gibt
+auch ein frei kopierbares fd2pragma, das Pragmas f&uuml;r Aztec, Dice, SAS und
+Maxon sowie LVO-Files f&uuml;r den Aztec-Assembler und eventuelle Tag-Versionen
+produziert. (Aminet, <TT>`dev/misc/fd2pragma2_0.lha'</TT> oder auf den
+Fish-CDs)
+<P>
+F&uuml;r Pragmas unter dem gcc siehe Abschnitt <A HREF="AmigaFAQg_40.html#SEC40">Inline-Dateien</A>.
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQg_31.html">WindowPtr</A>
+&gt;&gt; <A HREF="AmigaFAQg_33.html">Fehlende Funktionen</A>
+</I></PRE>

@@ -1,0 +1,1379 @@
+This is Info file gcc-faq.info, produced by Makeinfo-1.55 from the
+input file Amiga-GCC-FAQ.texi.
+
+
+File: gcc-faq.info,  Node: Problems with asm(),  Next: How do I save RAM?,  Prev: Writing code for libnix,  Up: Advanced Questions
+
+Problems with asm()
+===================
+
+   	It seems a lot of people have trouble making heads or tails of GNU's
+documentation for this function.  As such, someone (or several
+someones) is going to be rewriting the GCC documentation with regards
+to asm().  Unfortunately, this won't be ready in time for 2.7.0, so I'm
+including some answers to a couple of the problems people are having
+with asm().  [Perhaps the new GNU documentation for asm() will be
+distributed as a "patch" when it is done.]
+
+   [Niels M|ller <nisse@lysator.liu.se>]
+     How do I create and use functions that take their arguments in
+     registers?
+   I'm not an expert, but I'll nevertheless try to answer.
+
+   If you define a function like below, the effect is that it takes two
+arguments, in registers D0 and A0. (I hope I got this right, I have
+actually never used this myself).
+
+     int my_func(void /* Don't declare any arguments here */)
+     {
+        register int arg1 __asm("d0");
+        register int *arg2 __asm("a0");
+     
+        return do_something(arg1,arg2);
+     }
+   [Response from Tom Ollila]
+
+   This works since those registers are not used for anything else. When
+declared in this way arg1 and arg2 are hardcoded to registers d0 and a0
+(and are therefore not used for anything else when doing register
+allocations (if alive)). And with scratch registers such as do and a0, =
+a function call will trash the registers if used inside the called
+functi= on.
+
+   The "correct" way to make this thing above would be the following:
+
+
+     int my_func(void /* Don't declare any arguments here */)
+     {
+        register int d0 __asm("d0");
+        int arg1 =3D d0;
+        register int * a0 __asm("a0");
+        int * arg2 =3D a0;
+     
+     ...
+     }
+   [back to Niels]
+
+   To make gcc call a function that takes registerized arguments is a
+little more tricky. Here you have to use inline assembler. I quote an
+example from the gcc manual (I guess the processor used in the example
+is a sparc):
+
+   You can put multiple assembler instructions together in a single
+`asm' template, separated either with newlines (written as `\n') or wit=
+h semicolons if the assembler allows such semicolons.  The GNU assembler
+allows semicolons and all Unix assemblers seem to do so.  The input
+operands are guaranteed not to use any of the clobbered registers, and
+neither will the output operands' addresses, so you can read and write
+the clobbered registers as many times as you like.  Here is an example
+of multiple instructions in a template; it assumes that the subroutine
+`_foo' accepts arguments in registers 9 and 10:
+
+          asm ("movl %0,r9;movl %1,r10;call _foo"
+               : /* no outputs */
+               : "g" (from), "g" (to)
+               : "r9", "r10");
+
+   This is equivalent to the C-statement
+     foo(from,to);
+   except that "from" and "to" are passed in registers r9 and r10, and
+not on the stack. To call amiga-style libraries is similar, the inline
+headers shows how it can be done.
+
+   [Tomi Ollila]
+      To make gcc call a function that takes registerized arguments is a
+     little more tricky. Here you have to use inline assembler. I
+     quote an  example from the gcc manual (I guess the processor used
+     in the example  is a sparc):
+
+     /* example deleted */
+
+   We have written some macros to make these things easier. I'll
+include one of the macro files below. These macros are used as follows:
+
+   ...To declare a function (named `function') that takes int argument
+in register d0 and ...
+
+
+     void RAF2(function,
+     	  int,		arg,	d0
+     	  int *,	rvp,	a0)
+     #if 0
+     {	/* this is for emacs c-mode */
+     #endif
+     
+     ... and to make a call to this functions (RRAPx -macros also return a v=
+     alue)
+     
+     int main()
+     {
+       int rv;
+     
+       RAP1(function,
+            int,	6,	d0,
+            int *,	&rv,	a0);
+     	 =20
+     ...
+     }
+
+   Tomi Ollila.
+
+     /*
+      * $Id: rafrap.h,v 3.1 1994/04/17 11:31:54 too Exp $
+      *
+      * Author: Tomi Ollila <too@nsdi.fi>
+      *
+      * Created: Fri Apr 15 17:32:12 1994 too
+      * Last modified: Wed Oct  5 20:44:08 1994 too
+      */
+     
+     #ifndef RAFRAP_H
+     #define RAFRAP_H
+     
+     /*
+      * There can be no prototype checks when using these macros so please
+      * be _VERY_ careful with your code when using these.
+      * (could someone tell me if arguments can be but in register by default
+      * somehow with GCC (too))
+      */
+     
+     #define _S(x) #x
+     
+     #if 0
+     #define RAP1(func, type1, reg1) \
+       static inline void func(type1 a##reg1)\
+     {\
+        register type1 reg1 __asm(#reg1) =3D a##reg1;\
+        __asm __volatile(_S(jsr __##func)\
+          : : "r" (reg1):  "a0", "a1", "d0", "d1", "memory");\
+     }
+       /* the new version below will be more informative */
+     #endif
+     
+     #define RAP1(func, type1, name1, reg1) \
+       static inline void func(type1 name1)\
+     {\
+        register type1 reg1 __asm(#reg1) =3D name1;\
+        __asm __volatile(_S(jsr __##func)\
+          : : "r" (reg1):  "a0", "a1", "d0", "d1", "memory");\
+     }
+     
+     #define RAP2(func, type1, name1, reg1, type2, name2, reg2) \
+       static inline void func(type1 name1, type2 name2)\
+     {\
+        register type1 reg1 __asm(#reg1) =3D name1;\
+        register type2 reg2 __asm(#reg2) =3D name2;\
+        __asm __volatile(_S(jsr __##func)\
+          : : "r" (reg1), "r" (reg2):  "a0", "a1", "d0", "d1", "memory");\
+     }
+     
+     #define RRAP1(rettype, func, type1, name1, reg1) \
+       static inline rettype func(type1 name1)\
+     {\
+        register rettype _res __asm("d0");\
+        register type1 reg1 __asm(#reg1) =3D name1;\
+        __asm __volatile(_S(jsr __##func)\
+          : "=3Dr" (_res) : "r" (reg1) :  "a0", "a1", "d0", "d1", "memory");=
+     \
+        return _res;\
+     }
+     
+     #define RRAP2(rettype, func, type1, name1, reg1, type2, name2, reg2)\
+       static inline rettype func(type1 name1, type2 name2)\
+     {\
+        register rettype _res __asm("d0");\
+        register type1 reg1 __asm(#reg1) =3D name1;\
+        register type2 reg2 __asm(#reg2) =3D name2;\
+        __asm __volatile(_S(jsr __##func)\
+          : "=3Dr" (_res) : "r" (reg1), "r" (reg2)\
+          :  "a0", "a1", "d0", "d1", "memory");\
+        return _res;\
+     }
+     
+     /*
+      * RAFs
+      */
+     
+     #define RAF1(funname,type1, arg1, reg1) \
+       funname(VOID)                     \
+     {                                   \
+       register type1 reg1 __asm(#reg1); \
+       type1 arg1 =3D reg1;
+     
+     #define RAF2(funname, type1, arg1, reg1, type2, arg2, reg2) \
+       funname(VOID)                     \
+     {                                   \
+       register type1 reg1 __asm(#reg1); \
+       type1 arg1 =3D reg1;                \
+       register type2 reg2 __asm(#reg2); \
+       type2 arg2 =3D reg2;
+     
+     #define RAF3(funname, type1, arg1, reg1, \
+     	     type2, arg2, reg2, type3, arg3, reg3) \
+       funname(VOID)                     \
+     {                                   \
+       register type1 reg1 __asm(#reg1); \
+       type1 arg1 =3D reg1;                \
+       register type2 reg2 __asm(#reg2); \
+       type2 arg2 =3D reg2;		    \
+       register type3 reg3 __asm(#reg3); \
+       type3 arg3 =3D reg3;
+     
+     #endif RAFRAP_H
+
+
+File: gcc-faq.info,  Node: How do I save RAM?,  Next: Writing shared libraries and resident (pure) code,  Prev: Problems with asm(),  Up: Advanced Questions
+
+How do I save RAM?
+==================
+
+   [Jochen Wiedmann, Joerg Hoehle]
+
+   A simple try is to do a
+         setenv TMP MyHardDrive:t
+   before compiling. This will create temporary files on the harddisk
+and not in RAM:. Depending on what you compile this can save several
+100KB of RAM and it doesn't slow down the compiler very much.
+
+   Another try is to turn off optimization (`-O0' or not `-O' at all)
+until your program is stable.  Optimizing needs a lot of memory.
+
+   Another try is to run `cpp', `cc1', `as' and `ld' directly instead
+of through the `gcc' driver.  This saves at least one times your
+current stack size.  Use the `-v' option to `gcc' to see what the
+command lines would look like and copy&paste them.
+
+   Previous *inlines* used a lot of memory during compilation, but this
+is no longer the case.  The new inlines (preprocessor based macros)
+even work without optimization.
+
+
+File: gcc-faq.info,  Node: Writing shared libraries and resident (pure) code,  Next: I want to change from SAS/C to GCC,  Prev: How do I save RAM?,  Up: Advanced Questions
+
+Writing shared libraries and resident (pure) code
+=================================================
+
+   Here is some discussion from the amiga-gcc-port mailing list
+
+   [Peter Ivimey-Cook]
+      Obviously there must be other solutions. Being able to build a
+     library  is not far away from being able to build a pure
+     (=residentable)  program, and gcc-2.3.3 was both largely above
+     64KB in size and  residentable. So what's the trick?
+
+   Don't use global data referenced absolutely! residentable implies
+reentrant, which means that global data is read-only apart from the
+first instance (i.e. it's OK to initialise it, once, but once
+initialised it can't be modified or reinitialised). This effectively
+means the only data used in the must be on the stack or referenced from
+it by pointers, as the stack is separate for different invocations of a
+resident program.
+
+   Of course this does pose a major headache for programs which use
+lots of global data. And watch out for library use too!
+
+   Failing this, one must use a global data access mechanism which
+allows:
+
+   the base address to be set up - e.g. by calling AllocMem() and
+storing the result in a register (NOT a global!)
+
+   *all* accesses to "global" data are relative to this register.
+
+   [Peter Ivimey-Cook]
+     BUT: If we build a shared lib from the static link lib, code
+     exists only once  and is SHARED between callers of the lib
+     (callers means different executables, using the lib)  Here the
+     problem comes up that the DATA MUST not be shared between
+     different callers.   This is because it is PRIVATE to the
+     individual caller.   IMHO the only way to realize multiple callers
+     is the use of -fbaserel, since now access  is relative to the A4
+     register and thus, every program can have IT'S OWN data, without
+     interferring with each other.
+
+   It depends on the way the library is constructed. Most Amiga
+libraries are written to be re-entrant - i.e. they don't use global
+data items which would require loading - they use the stack. For items
+which can't be done this way, there are two solutions -
+   * Use the library data space. It's global, unless you make provision
+     for it to be otherwise - and availabl easily off a6.
+
+   * Manage your own data space, using tags or whatever to allocate
+     space for callers. Note that the only indication you have as to
+     who is the current caller is the result of FindTask().
+
+   So, in general libraries try to make required data passed through
+parameters, or available on the stack, or shareably global. In which
+case no baserel or anything else is required.
+
+   [Jochen Wiedmann]
+   *  Of course it is possible to write shared libraries
+     (ixemul.library,     for example) with gcc, but *only* if the
+     source is written with a     shared library in mind.
+
+   *  It is possible (Matthias told how) to develop a solution that
+     would     allow to use existing source of link libraries for
+     shared libraries     (libbfd sources, for example) with at most
+     very minor modifications
+
+   * fbaserel would be a must for the above solution. On the other hand
+        it is not possible yet, at least not without going to the
+     assembler     level. (Really deep, not just using some headers
+     with asm keywords.)
+
+   [Christian Stieber]
+      Jochen Wiedmann writes:
+          Of course it is possible to write shared libraries
+          (ixemul.library, for example) with gcc, but *only* if the
+          source is written with a shared library in mind.
+      Could you elaborate on that so that we know a little more about
+     it,  please?
+
+   *  keep in mind that all callers use the same global and static
+     variables;   that means: either protect them with semaphores (e.g.
+     if your library   is using a memory pool), or allocate a block of
+     memory inside your library   and pass pointers around.
+
+   *  the "startup" code will contain the ROMTag structure and related
+     data,   as well as stubs to push parameters on the stack, calling
+     the C function,   cleaning up the stack.
+
+   *  I generally write the libOpen(), libClose(), libInit() etc.
+     functions   as normal C functions, but some people might prefer to
+     put them into   the "startup code".
+
+   That's about all. It also means that many link-lib functions (e.g.
+from libnix) can't be used; this has to be decided on a per-function
+basis.  It's pretty safe to say that you can't use stdio and malloc().
+strcpy(), isdigit() are safe, etc. Just be careful. Think about what
+the function does; that should give you an idea whether you can use it
+or not.
+
+   [further elaboration by Christian Stieber]
+
+           Can you tell me what you mean by "startup code" here (since
+     you put it  in quotes).
+
+   Simple. The "startup code" is generally something that you pass to
+the linker as the first file. It will then end up being the first thing
+in the executable, i.e. the stuff in the "startup code" is the stuff
+that gets executed when you start the program.
+
+   A shared (Amiga) library doesn't get executed; however, a shared
+Amiga library is supposed to be built in a specific way:
+
+     	moveq #-1,d0
+     	rts			[ROMtag Structure]
+     
+     ROMTag:
+     	a structure telling exec about the library
+     	is supposed to be here
+
+   That's why I used the term "startup code" in quotes. Instead of the
+usual "startup code" duties (opening `stdin/stdout/stderr', setting up
+`malloc()' etc.) the "library startup code" includes the two asm
+statements and the ROMTag structure; as well as other data related to
+libraries.
+
+   [Jochen Wiedmann]
+      Jochen Wiedmann writes:
+           Of course it is possible to write shared libraries
+          (ixemul.library,  for example) with gcc, but *only* if the
+          source is written with a  shared library in mind.
+      Could you elaborate on that so that we know a little more about
+     it,  please?
+
+     Does it mean that you can't use any global variable? Or only one
+     but  declare it with something like `__asm__("a4")' and use it as
+     a base  pointer? Does it imply that you must use the `inline/*.h'?
+     Does it imply  that you must use a special startup code , and, if
+     so, what must it  do?
+
+   In short: You may well use something like
+       struct ExecBase *SysBase;
+   and read this variable from anywhere within your program, because you
+can
+   * initialize it from the library startup code and
+
+   * be sure that it never changes but you must not use global or
+static data otherwise.
+
+   [Christian Stieber]
+
+   [about why `-resident' isn't what you normally use for shared
+libraries]
+           This is really a special case of resident code, and has
+          nothing to do  with -resident
+       Hmm, why is it called -resident then?
+
+   You were talking about writing shared libraries. As I explained in
+my last mail, `-resident' causes the startup code to create a new data
+segment for they don't clone their datasegment (usually. Some libraries
+do that).
+
+   That means you use `-resident' for programs that you want to be
+"pure"; you don't use `-resident' for libraries even though libraries
+are "pure" as well.
+
+
+File: gcc-faq.info,  Node: I want to change from SAS/C to GCC,  Next: Inline Headers,  Prev: Writing shared libraries and resident (pure) code,  Up: Advanced Questions
+
+I want to change from SAS/C to GCC
+==================================
+
+   Great!
+
+   [Kriton Kyrimis]
+      I am also wondering if it is possible to link object files that
+     were  created by different conpilers, specifically GCC and SAS. I
+     need to do
+
+   Try compiling SAS programs using DATA=FAR CODE=FAR, then use the
+hunk2gcc program to convert the object files from amiga format to sun
+format.
+
+   One problem with this approach would be with floating point code and
+with integer multiplication/division. If you can compile with CPU=68020
+(or higher) and MATH=68881, then SAS/C will produce inline code, and
+you will have no problem. Otherwise, you'll have to grab the necessary
+modules from the SAS libraries and convert them to sun format as well.
+(Compiling with the option that produces code that uses
+`utility.library', and linking with `-lauto'  might alleviate the
+problem.)
+
+   And here's a little AREXX program to automagically convert sas libs
+to gcc libs:
+
+   This arexx program is based on help from Philippe BRAND.
+
+     /********************************HISTORY**********************************
+     * 18-DEC-94 : DJR : Created                                              *
+     **************************************************************************
+     *                                                                        *
+     * Name      : saslib2libgcc                                              *
+     * Author : David J. Ruscak ruscakd@polaroid.com *
+     * Created   : 18-DEC-94                                                  *
+     * Purpose   : to convert SAS libraries to GCC libraries                  *
+     *                                                                        *
+     *************************************************************************/
+     
+     
+     /* To convert a SAS library to a GCC format library several steps are
+        involved.
+     
+      1) cd to RAM: Either copy the library to RAM: or give the full path name.
+     
+         EX: gnu:saslib2libgcc X11:lib/Xtnb.lib
+     
+      2) You need the SAS Librarian 'oml' with a version =>  Library
+         otherwise you'll get an error such as 'unknown hunk'.
+     
+      3) You need hunk2gcc, mv, ar and ranlib. If your using gcc you have the
+         fastram, VMM2.1 swap works fine too.
+     
+     */
+     
+     
+     /* TRACE R */
+     SIGNAL ON ERROR
+     OPTIONS RESULTS
+     
+     IF ~SHOW('l','rexxsupport.library') THEN
+       IF (~ADDLIB("rexxsupport.library",0,-30,0)) THEN
+          DO
+             ECHO "Can't load rexxsupport.library"
+             EXIT 10
+          END
+     
+     
+     fullname = ""
+     
+     PARSE ARG fullname
+     
+     IF fullname  == "" THEN
+        DO
+           ECHO " No Library to convert"
+           ECHO ""
+           ECHO " EX: gnu:saslib2libgcc X11:lib/Xtnb.lib"
+           EXIT 10
+        END
+     
+     IF (~EXISTS(fullname)) THEN
+        DO
+           ECHO "Can't find" fullname
+           EXIT 10
+        END
+     
+     
+     ADDRESS COMMAND
+     /* make 2 directories for object files   */
+     
+     IF EXISTS('object') THEN
+        DO
+          ECHO "Directory object exists Please delete or rename it."
+          EXIT
+        END
+     'makedir  object'
+     
+     IF EXISTS('object2') THEN
+        DO
+          ECHO "Directory object2 exists Please delete or rename it. "
+          EXIT
+        END
+     'makedir  object2'
+     
+     'oml -oobject 'fullname 'X *' /* SAS Object Librarian  */
+     
+     
+     IF EXISTS('object') THEN
+      DO
+        objfiles = SHOWDIR('object','F')              /* list of all object files */
+        nfiles = WORDS(SHOWDIR('object','F'))         /* count of object files    */
+        DO    UNTIL nfiles == 0                /* must be a more efficient way... */
+         'hunk2gcc >NIL: object/'WORD(objfiles,nfiles)   /* convert to GCC object */
+         'mv >NIL: obj.#? object2/'WORD(objfiles,nfiles) /* restore original names*/
+         nfiles = nfiles - 1
+        END
+      END
+     
+     
+     'cd object2' /* directory of converted objects */
+     path =  PRAGMA('D','object2')
+     
+     IF (INDEX(fullname,':') > 0) THEN    /* strip out assign */
+             fullname = SUBSTR(fullname,LASTPOS(':',fullname) + 1)
+     
+     IF (INDEX(fullname,'/') > 0) THEN    /* strip off directories */
+             libname = SUBSTR(fullname,LASTPOS('/',fullname) + 1)
+     ELSE
+             libname = fullname
+     
+     dot = POS('.',libname)
+     
+     gcclibname = 'lib'SUBSTR(libname,1,dot)'a'
+     
+     'ar qc 'gcclibname' #?.o'    /* archive new library */
+     
+     'ranlib 'gcclibname
+     
+     IF EXISTS(gcclibname) THEN
+       DO
+         needslash = LASTPOS(':',path)
+         IF ~(needslash == LENGTH(path)) THEN
+           path = path'/'
+         ECHO " The following indicate a hunk2gcc error:"
+         ECHO " Short reloc into N_DATA, what should I do?
+         ECHO " Short reloc into N_BSS, what should I do?
+         ECHO ""
+         ECHO ""
+         ECHO " Remember to move/rename "path"object2/"gcclibname" appropriately ."
+       END
+     ELSE
+       ECHO "No library created, what could have gone wrong ????"
+     
+     EXIT
+     
+     ERROR:
+     
+        ECHO " error = "RC
+        ECHO " Hope its not the dreaded *Invalid Hunk type*"
+     EXIT
+
+
+File: gcc-faq.info,  Node: Inline Headers,  Next: Writing Hooks,  Prev: I want to change from SAS/C to GCC,  Up: Advanced Questions
+
+Inline Headers
+==============
+
+   [Christian Stieber]
+           compiling bgui:demos/font.c:
+             gcc -O3 -noixemul bgui:demos/font.c
+      got errors:
+             font.c:100: unterminated macro call
+
+   This is because the inlined varargs aren't useful at all. Do
+`#define NO_INLINE_STDARG' (or whatever it is called), and create
+varargs stubs like this:
+
+     Prototype: BOOL SomeFunction(int, char *, ...);
+     and        BOOL SomeFunctionA(int, char *, APTR);
+     
+     Stub function:
+     #define NO_INLINE_STDARG
+     #include <inline/someinline.h>
+     BOOL SomeFunction(int A, char *B, ...)
+     {
+       return SomeFunctionA(A,B,(&B)+1);
+     }
+
+   That isn't really ANSI-C, but it works on all Amiga compilers I know
+of.
+
+   Create a .c file for every function, compile, ar and link it to the
+program. Make sure the optimizer is on, else `SomeFunctionA' won't be
+inlined.
+
+   How to create stubs for non-varargs functions: In order to be able
+to compiler without `-O', you want to create stubs for the inline
+functions as well:
+     #define NO_INLINE_STDARG
+     #define SomeFunctionA InlinedSomeFunctionA
+     #include <inline/someinlines.h>
+     #undef SomeFunctionA
+     BOOL SomeFunctionA(int A, char *B, APTR C)
+     {
+       return InlinedSomeFunctionA(A,B,C);
+     }
+
+   Again, create such a file for every function and put the *.o files
+into the archive mentioned above.
+
+
+File: gcc-faq.info,  Node: Writing Hooks,  Prev: Inline Headers,  Up: Advanced Questions
+
+Writing Hooks
+=============
+
+   [Tomi Ollila]
+      How to I write a hook function - I.E. Specify which registers
+     parameters  should be received in and that the result should be
+     returned in register D0.
+
+   One way to do this is to write the function entry the following way:
+
+     ULONG hook(void)
+     {
+       register char * a0 __asm("a0");
+       char * buffer = a0;
+       register ULONG d0 __asm("d0");
+       ULONG size = d0;
+     
+       ...
+     
+       return length;
+     }
+
+   We wrote some macros for AmiTCP/IP project to make it easier to
+write this kind of function entries...
+
+     #define RAF2(funname, type1, arg1, reg1, type2, arg2, reg2) \
+       funname(VOID)                     \
+     {                                   \
+       register type1 reg1 __asm(#reg1); \
+       type1 arg1 = reg1;                \
+       register type2 reg2 __asm(#reg2); \
+       type2 arg2 = reg2;
+   would make the above function look like:
+
+     ULONG RAF2(hook,
+     	   char *,	buffer,	a0,
+     	   ULONG,	size,	d0)
+     #if 0
+     {
+     ...}
+     #endif
+
+   The whole macro file `amiga_raf.h' is available at kampi.hut.fi,
+directory /AmiTCP. It defines RAF1 - RAF7 for both GNU C and SAS C
+compilers (someone could write these to DICE as well).
+
+       Is there anyway to specify that a function should NOT be made
+     inline (As   I wouldn't want the hook function inlined.
+
+   Compile it in a separate module. This way gcc doesn't see the
+function code when compiling. If you give a pointer to the function,
+then it must also exist as a callable function.
+
+
+File: gcc-faq.info,  Node: C++ and Objective C,  Next: Notes For Un*x Hackers,  Prev: Advanced Questions,  Up: Top
+
+C++ and Objective C
+*******************
+
+* Menu:
+
+
+* C++::
+
+
+File: gcc-faq.info,  Node: C++,  Up: C++ and Objective C
+
+C++
+===
+
+* Menu:
+
+
+* Use _complex.h instead of complex.h::
+
+* Linking errors::
+
+
+File: gcc-faq.info,  Node: Use _complex.h instead of complex.h,  Next: Linking errors,  Up: C++
+
+Use _complex.h instead of complex.h
+-----------------------------------
+
+   	Because Amiga Dos is not case-sensitive, and there are both
+complex.h and Complex.h on the Unix distribution, one had to be
+changed.  This choice was recommended by the libg++ maintainer.
+
+   (don't know much about these, except that they're not as well
+developed yet as the C compiler)
+
+
+File: gcc-faq.info,  Node: Linking errors,  Prev: Use _complex.h instead of complex.h,  Up: C++
+
+   [Kamil Iskra]
+
+     #include <iostream.h>
+     
+     int main()
+     {
+        cout << "Hello, world!\n";
+     }
+
+   Q: Why do I get:
+
+     /t/cc5337201.o: Undefined symbol _cout referenced from text segment
+     /t/cc5337201.o: Undefined symbol ___ls__7ostreamPCc referenced from text segment
+
+   When I compile the above source with:
+
+     gcc -o hw hw.cc
+
+   A: Perhaps you will find the solution yourself, if you look at the
+linker output from the new, BFD linker:
+
+     /t/cc5337201.o(.text+0x22): undefined reference to `cout'
+     /t/cc5337201.o(.text+0x28): undefined reference to `ostream::operator<<(char const *)'
+
+   Do you know why now? Obviously, a library is not linked in, since the
+symbol and operator you used is not found. You just have to add
+`-lstdc++' at the end of command line, or, even better, use `g++', not
+`gcc':
+
+     g++ -o hw hw.cc
+
+
+File: gcc-faq.info,  Node: Notes For Un*x Hackers,  Next: Support Utilities,  Prev: C++ and Objective C,  Up: Top
+
+Notes For Un*x Hackers
+**********************
+
+   [additions to this section are welcome]
+
+* Menu:
+
+
+* `fork()' is not implemented::
+
+
+File: gcc-faq.info,  Node: @code{fork()} is not implemented,  Up: Notes For Un*x Hackers
+
+`fork()' is not implemented
+===========================
+
+   This is from the current readme (in the ixemul source archive) for
+ixemul.library.
+
+   PORTING UNIX PROGRAMS
+
+   Most programs compile out-of-the-box.  There are a few exceptions to
+this rule.  First of all, programs like linkers and the like that have
+to be able to read or write the standard Amiga hunk format obviously
+need a lot of work.
+
+   Secondly, there is no virtual memory support, and therefore no real
+`fork()' function.  In most cases the `fork()' function is only used to
+spawn a new program, and in such cases it is possible to replace
+`fork()' by `vfork()', which is a light-weight `fork()' replacement
+that was originally created for Unix to reduce the overhead a real
+`fork()' introduced.
+
+   A `vfork()' doesn't create a copy of itself as `fork()' does, but
+uses the parent's code and data.  Since the child will quickly call
+`execve()' to spawn another program, this sharing of the code and data
+is no problem and saves a lot of time.
+
+   In some cases, such as a Unix shell (pdksh for example), you really
+want to be able to port a program that uses a fork() that cannot be
+replaced with `vfork()'.  There is a way to do this, although it is a
+lot of work.  First of all, the program has to be compiled with
+-resident.  Now you replace the `fork()' by a `vfork2()' call, and in
+the child code you call ix_resident() to copy the original data hunk to
+a new location.  Next you have to copy all the parent's data structures
+to the child.  In other words, you have to copy the complete state of
+the parent process to the child process.  This can be a lot of work.
+Finally, you call `vfork_resume()' which unblocks the parent so that
+you now have two processes running separately from each other.
+
+   It is important to realize that you should never `exit()' from the
+parent before all `vfork()''ed children have died.  Since exiting from
+the parent causes the parents code and data segments to be deallocated,
+the child would find itself without code space to run on, and would
+probably cause a severe machine crash!
+
+   So always call at least `wait (0)' before returning from the parent.
+
+   For an example of how this works, see jobs.c from the pdksh source
+distribution.  It's a kind of poor-man's `fork()'.
+
+   The third case I've come across that couldn't easily be ported were
+programs that dump their state to a new file.  Emacs does this, as does
+GNU Common Lisp.  The idea is that such a program will read lots of
+packages, and then dump itself to a new file.  That new file can in
+turn be executed, and you will no longer have to load all those
+packages.  All this assumes that when you load a program, all the code
+and data ends up at the same memory address.  Something that is true
+for Unix, but not for the Amiga due to the lack of virtual memory.
+
+   However, if someone wants to do a port of such a program, please
+contact me as I have developed a technique to implement this.  At
+least, I've made this work with a small test program.  I've tried to
+use it with GNU Common Lisp, but time constraints prevented me from
+developing this further.
+
+   The last problematic category I've seen is GNU Emacs.  This program
+assumes that all the data it allocates will always end up in a
+continuous memory block, and that the upper 8 bits of each memory
+address are always the same.  The Amiga, however, can have multiple
+memory blocks positioned at various places in memory.  While there is a
+GNU Emacs port, this port does assume this limitation and if you have
+an Amiga with many memory blocks (as I had) GNU Emacs may easily crash.
+No easy solution exists.
+
+
+File: gcc-faq.info,  Node: Support Utilities,  Next: Additional Support,  Prev: Notes For Un*x Hackers,  Up: Top
+
+Support Utilities
+*****************
+
+* Menu:
+
+
+* Frontends::
+
+* Debuggers::
+
+
+File: gcc-faq.info,  Node: Frontends,  Next: Debuggers,  Up: Support Utilities
+
+Frontends
+=========
+
+   [under construction]
+
+
+File: gcc-faq.info,  Node: Debuggers,  Prev: Frontends,  Up: Support Utilities
+
+Debuggers
+=========
+
+   GDB is the GNU debugger, and Fred Fish is the port maintaineer for
+it.  It is useable now with ixemul-based programs, though there are
+still some bugs to be worked out (it has problems when run in emacs
+because of the UNIX style pathnames it uses).  Read the documentation
+for more information.  The source archive will probably contain more
+amiga-specific information if it's needed.
+
+   If you start gdb with the -enforcer option, then the program you are
+debugging will automatically stop and drop into the debugger as soon as
+an Enforcer hit occurs.  This is obviously very useful.
+
+   Any debugger that can handle the stabs format should work.  If you
+know of any such, let me know.
+
+
+File: gcc-faq.info,  Node: Additional Support,  Next: Known Bugs,  Prev: Support Utilities,  Up: Top
+
+Additional Support
+******************
+
+* Menu:
+
+
+* amiga-gcc-port mailing list::
+
+* ADE mailing lists::
+
+* Individuals::
+
+* You never know it could be a problem in base FSF code::
+
+
+File: gcc-faq.info,  Node: amiga-gcc-port mailing list,  Next: ADE mailing lists,  Up: Additional Support
+
+amiga-gcc-port mailing list
+===========================
+
+   Actually, amiga-gcc-port is no longer the main mailing list for gcc.
+Around late 1995/early 1996, many of the subscribers of this mailing
+list migrated to the ADE mailing list.  However, I think it is still
+running, and you will probably get some response from someone (I
+believe Phillipe is still subscribed).  If it no longer exists, please
+let me know.
+
+     From: Leonard Norrgard <vinsci@nic.funet.fi>
+     To: amiga-gcc-port@nic.funet.fi
+     Subject: Monthly mailing list info for list amiga-gcc-port
+     
+     
+     [This is an automatic monthly posting from the mailing list maintainer]
+     [Contains important practical info about mailserver features you maybe]
+     [are not aware of.]
+     [Last changed June 22nd, 1993.]
+     
+     The mailing list amiga-gcc-port on lists.funet.fi is run automatically,
+     so you can both subscribe and unsubscribe to it simply by sending
+     e-mail to the mailing list server, or mailserver program.  You can
+     reach the mailserver at the address mailserver@lists.funet.fi as
+     described below.  Please use the mailserver rather than the address
+     amiga-gcc-port-request@lists.funet.fi (which remains valid) whenever
+     you can, so that human list management work can be minimized.
+       If the automated way of doing things doesn't work for you for some
+     reason, please use the amiga-gcc-port-request@lists.funet.fi address
+     instead, and I'll try to solve your problem manually.  Please NEVER
+     send subscription or unsubscription-requests to the address
+     amiga-gcc-port@lists.funet.fi as that would send your request to all
+     subscribers of the mailing list.
+     
+     To unsubscribe from this mailinglist only, send e-mail like this:
+          > To: mailserver@lists.funet.fi
+          >	Subject:
+          >
+          >	unsub amiga-gcc-port
+     To unsubscribe from _all_ mailinglists run by this mailserver, send
+     e-mail like this:
+          > To: mailserver@lists.funet.fi
+          >	Subject:
+          >
+          >	unsub *
+     
+     To subscribe to this mailinglist, send e-mail like this:
+          > To: mailserver@lists.funet.fi
+          >	Subject:
+          >
+          >	sub amiga-gcc-port your_first_name your_last_name
+     
+     To recieve additional information and help on how to use the
+     mailserver (this includes info on how to use the ftp archive
+     ftp.funet.fi by e-mail):
+          > To: mailserver@lists.funet.fi
+          >	Subject:
+          >
+          >	help
+     
+     If you do not receive this mail once a month, you may have been
+     silently removed from the list.  This can happen whenever your e-mail
+     address stops working for some reason (a common problem is to set up
+     mail forwarding from machine A to machine B and from machine B to
+     machine A so as to make a mail-forwarding loop).  So if you don't
+     receive this mail once a month, you may want to 1) check the mailing
+     list to see if you're still on it (see below), and 2) Resubscribe
+     using the usual mailserver sub command described above.
+     
+     To receive a list of all names on the mailing list
+     amiga-gcc-port@lists.funet.fi, send e-mail like this:
+          > To: mailserver@lists.funet.fi
+          >	Subject:
+          >
+          >	review amiga-gcc-port
+     
+     Virtually,
+     
+     The amiga-gcc-port mailing list management.
+
+
+File: gcc-faq.info,  Node: ADE mailing lists,  Next: Individuals,  Prev: amiga-gcc-port mailing list,  Up: Additional Support
+
+   The ADE mailing lists provide lots of information and support.  To
+subscribe to one send an e-mail message to majordomo@ninemoons.com with
+a line as follows:
+     subscribe <mailing list name> [<address>]
+   e.g.
+     subscribe ADE
+   To recieve more information about how to use the majordomo server,
+include a line
+     HELP
+
+   These are the mailing lists currently available:
+
+* Menu:
+
+* ADE::
+* ADE-GCC::
+* ADE-Projects::
+* ADE-Ixemul::
+
+
+File: gcc-faq.info,  Node: ADE,  Next: ADE-GCC,  Up: ADE mailing lists
+
+ADE
+---
+
+   This mailing list is for general discussion about the Amiga
+Developer's Environment, a project which is supported by volunteers
+from the Amiga community.  There are separate lists for discussions
+about specific parts of the ADE, such as ade-gcc for the GNU C
+compiler.  Please use this list only for topics that are of general
+interest or which do not clearly pertain to any of the other existing
+lists.  Note that you do not have to subscribe to the other more
+specific lists in order to post to them, if for example you have a
+question about gcc and want to post it to the ade-gcc list, but don't
+want to see the normal chatter that happens on a day-to-day basis in
+that list.
+
+   Because of the hard work from a number of members of the Amiga
+community, we now have a large body of development tools and other
+packages that have been ported to the Amiga and are available in both
+source and binary form.  The ADE is available via ftp at
+ftp.ninemoons.com:pub/ade/....
+
+   We welcome mirrors and will list them here as they come on line.
+The ADE will also eventually be available on CD-ROM as part of the new
+series of developer oriented CD-ROMs expected to be released by Cronus
+in the first quarter of 1996.
+
+   Although the ADE started out as ports of tools covered by the GNU
+General Public License, the GNU Library General Public License, or some
+code covered by the "Berkeley License", it certainly isn't limited to
+those.  Any package which is available in source is eligible to be part
+of the ADE.
+
+   One of the goals of the ADE is to have a completely self hosting
+environment.  I.E. that everything within it be compilable by the GNU C
+compiler or other provided compilers.  It should be possible for the
+recipient of these utilities to make whatever changes or bug fixes they
+want in any piece of code, and then rebuild and use that fixed version
+(and hopefully send those changes back for integration into future
+releases).
+
+
+File: gcc-faq.info,  Node: ADE-GCC,  Next: ADE-Projects,  Prev: ADE,  Up: ADE mailing lists
+
+ADE-GCC
+-------
+
+   This mailing list if for discussion of the GNU C compiler, though
+discuss- ions of other GNU compilers (such as C++, Objective-C, ADA,
+and Fortran) are also appropriate until such time as these tools have
+their own lists.
+
+   If you subscribe to this list, you should also subscribe to the
+general ADE list (ade@ninemoons.com).
+
+
+File: gcc-faq.info,  Node: ADE-Projects,  Next: ADE-Ixemul,  Prev: ADE-GCC,  Up: ADE mailing lists
+
+ADE-Projects
+------------
+
+   This list is for discussion of projects that people are working on
+related to the ADE.  This might include, for example, projects to
+extend various ADE tools to make them more AmigaDOS friendly, projects
+to port tools which are not currently part of the ADE but are intended
+to become part of it once ported, etc.  The current projects list can
+be found at <ftp.amigalib.com:pub/ade/PROJECTS>.
+
+   If you are looking for an interesting project to do, and you have not
+already been monitoring this list for a while, you should first check
+the projects list to see if the project you are interested in is
+already being worked on.  If you don't find it there, then post to this
+list asking if anyone is already working on something similar or would
+like to collaborate on this project.  When you have defined a project
+to work on and are reasonably certain of the details of the project,
+send email to the maintainer of the projects list so that it can be
+included in the list.
+
+   Note that there may be rewards offered for certain projects that are
+deemed to be of importance to the overall evolution of the ADE.
+
+   If you subscribe to this list, you should also subscribe to the
+general ADE list (ade@ninemoons.com).
+
+
+File: gcc-faq.info,  Node: ADE-Ixemul,  Prev: ADE-Projects,  Up: ADE mailing lists
+
+ADE-Ixemul
+----------
+
+   This list is for discussion of ixemul.library, a Unix emulation
+library that fundamental to the ability to run Unix tools on AmigaDOS
+with few or no changes at all.  Essentially the library provides almost
+all of the functionality of a BSD like kernel and libraries, with the
+exception of a few hard to emulate functions like a true fork() routine.
+
+   If you subscribe to this list, you should also subscribe to the
+general ADE list (ade@ninemoons.com).
+
+
+File: gcc-faq.info,  Node: Individuals,  Next: You never know it could be a problem in base FSF code,  Prev: ADE mailing lists,  Up: Additional Support
+
+Individuals
+===========
+
+     Phillipe Brand
+     Ramses The Amiga Flying BBS - Main AmigaDOS-GNU BBS support site.
+     I can be reached on fidonet: 2:320/104.0
+     Phone numbers: +33-1-45845623/53791199/53791200
+     
+     Fred Fish
+     fnf@ninemoons.com
+
+
+File: gcc-faq.info,  Node: You never know it could be a problem in base FSF code,  Prev: Individuals,  Up: Additional Support
+
+You never know, it could be a problem in base FSF code
+======================================================
+
+   You might try subscribing to newsgroups in the gnu.gcc hierarchy.
+You might also try ftping some of the code and information from
+`<prep.ai.mit.edu>' in /pub/gnu  is the primary archive for the GNU
+Project.  If you need the FSF baseline code for something, it'll be
+there.
+
+
+File: gcc-faq.info,  Node: Known Bugs,  Next: Maintainers and Contributors,  Prev: Additional Support,  Up: Top
+
+Known Bugs
+**********
+
+* Menu:
+
+
+* C compiler::
+
+* C++ compiler (g++)::
+
+* Objective C compiler::
+
+
+File: gcc-faq.info,  Node: C compiler,  Next: C++ compiler (g++),  Up: Known Bugs
+
+C compiler
+==========
+
+* Menu:
+
+
+* -resident option::
+
+* -fbaserel option::
+
+* spilled register::
+
+* General bugs (not Amiga-specific)::
+
+
+File: gcc-faq.info,  Node: -resident option,  Next: -fbaserel option,  Up: C compiler
+
+`-resident' option
+------------------
+
+   	    The last version in which this worked was 2.3.3.  Hence, you'll
+need to get that version if you want to compile a program you can
+easily make resident.
+
+   	    Of course, you can always write your code to be resident, it
+just takes a little more effort (see above).
+
+   	    This problem is fixed in 2.7.0.
+
+
+File: gcc-faq.info,  Node: -fbaserel option,  Next: spilled register,  Prev: -resident option,  Up: C compiler
+
+`-fbaserel' option
+------------------
+
+   Fixed in 2.7.0
+
+
+File: gcc-faq.info,  Node: spilled register,  Next: General bugs (not Amiga-specific),  Prev: -fbaserel option,  Up: C compiler
+
+spilled register
+----------------
+
+   [Kamil Iskra]
+
+   If you compile AmigaOS-specific sources which use direct OS calls
+through `inlines', in some cases compiler might refuse to compile your
+source and write:
+
+     fixed or forbidden register was spilled.
+     This may be due to a compiler bug or to impossible asm
+     statements or clauses.
+
+   Expression does not have to be very complex. For example, this simple
+source produces the problem:
+
+     #include <proto/intuition.h>
+     
+     struct IntuitionBase *IntuitionBase;
+     struct EasyStruct esg;
+     
+     STRPTR GetString(struct EasyStruct*);
+     
+     void easyreq(void)
+     {
+        struct EasyStruct es={sizeof(struct EasyStruct)};
+        es.es_Title=GetString(&esg);
+        es.es_GadgetFormat=GetString(&esg);
+        EasyRequestArgs(0, 0, 0, 0);
+     }
+
+   Yeah, I know this code doesn't make sense, but I wanted to make it as
+simple as possible :-).
+
+   With this source, the problem appears when GCC is invoked with
+`-fbaserel' (and optimization turned on, if you use `inlines' from
+Aminet GCC 2.7.0).
+
+   This seems to be caused by the fact that GCC runs out of registers in
+such cases. In the above source, `EasyRequestArgs()' uses registers
+`a0'-`a3' as its parameters and `a6' as a pointer to `IntuitionBase'.
+`a4' is used by `-fbaserel', `a5' is a frame pointer and `a7' -- stack
+pointer, so all address registers are used.
+
+   It is hard to say whether this is a bug. Compiler can behave
+strangely if too many of its registers are used, this is described in
+GCC manual. One thing is sure: this worked well in the past and no
+longer works with the current GCC releases (2.7.x).
+
+   In some cases simplifying expressions might help. For example, try to
+define more local variables for function arguments, split function into
+two, smaller ones etc.
+
+   If nothing helps, or if you don't want to modify the source code too
+much, there is an ultimate solution: you have to force the OS-call that
+causes problems not to be inlined.
+
+   If you use `inlines' distributed with Aminet GCC 2.7.0, you have to
+change the name of the function in `inlines'. The most neat way to
+achieve this seems to be using preprocessor. In the above source, you
+should do:
+
+     #define EasyRequestArgs _EasyRequestArgs
+     #include <proto/intuition.h>
+     #undef EasyRequestArgs
+
+   This way stub from `libamiga.a' will be used instead of `inline'
+call.
+
+   Newer GCC versions have new `inlines'. The workaround described
+above will work, too, but GCC will generate a warning about redefined
+symbol. To get rid of it, just do not add the `#define' line. So, in
+the above source, you should do:
+
+     #include <proto/intuition.h>
+     #undef EasyRequestArgs
+
+   However, you'll loose one of features of new inlines -- local library
+bases. There's nothing you can do about it, I'm afraid.
+
+
+File: gcc-faq.info,  Node: General bugs (not Amiga-specific),  Prev: spilled register,  Up: C compiler
+
+General bugs (not Amiga-specific)
+---------------------------------
+
+   [Lars Hecking]
+
+   Main g++ development seems to take place at Cygnus. Useful
+information about  the current status can be obtained from
+<URL:http://www.cygnus.com/~mrs>.   A list of g++-bugs to date is
+available at `<URL:http://www.cygnus.com/~mrs/g++-bugs/>'
+
+
+File: gcc-faq.info,  Node: C++ compiler (g++),  Next: Objective C compiler,  Prev: C compiler,  Up: Known Bugs
+
+C++ compiler (g++)
+==================
+
+   [under construction]
+
+
+File: gcc-faq.info,  Node: Objective C compiler,  Prev: C++ compiler (g++),  Up: Known Bugs
+
+Objective C compiler
+====================
+
+   [under construction]
+
+
+File: gcc-faq.info,  Node: Maintainers and Contributors,  Next: Future,  Prev: Known Bugs,  Up: Top
+
+Maintainers and Contributors
+****************************
+
+*Gcc v2.2.2 port*
+     Markus Wild
+
+*Gcc v2.3.3 port*
+     Markus Wild
+
+*Gcc v2.4.5 port*
+     Philippe Brand, Lars Hecking, Fred Fish
+
+*Gcc v2.5.0 and up*
+     Philippe Brand, Fred Fish, Leonard Norrgard
+
+*Ixemul.library*
+     Markus Wild, Leonard Norrgard, R. Luebbert, Hans Verukil
+
+*Libnix*
+     Matthias Fleischer, Gunther Nikl
+
+   Also, much testing, suggestions and debate have been provided by
+
+   - Jorg  Hoehle
+
+   - Peter Ivemey-Cook
+
+   - Christian Stieber
+
+   - Walter Harms
+
+   - Lars Hecking
+
+   - Kriton Kyrimis
+
+   - Kamil Iskra
+
+   - Niklas Hallqvist
+
+   - Jochen Wiedmann
+
+   - Thomas Walter
+
+   - Laurent Perron    not necessarily in that order.
+
+   [ I just compiled this list from looking at the 1995 archive and
+some of the '94, whoever consistently either (a) made suggestions and
+wrote some code or (b) has been reporting bugs from attempts at
+compiling GNU software for a long time (i.e. not someone who's just
+having problems porting their favorite package).  If I've left someone
+out, or if you have a problem with my criteria, or if you think I
+should just thank the mailing list as a whole, mail me].
+
+   The present FAQ maintainer is Lynn Winebarger (owinebar@indiana.edu).
+However, you should send corrections to amiga-gcc-port@nic.funet.fi for
+a look over, as that's what I'll do anyway. Flames directed to
+/dev/null.
+
+
+File: gcc-faq.info,  Node: Future,  Next: History,  Prev: Maintainers and Contributors,  Up: Top
+
+Future
+******
+
+   [under construction]
+
+
+File: gcc-faq.info,  Node: History,  Prev: Future,  Up: Top
+
+History
+*******
+
+   [under construction]
+

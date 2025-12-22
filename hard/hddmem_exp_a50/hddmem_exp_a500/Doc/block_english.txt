@@ -1,0 +1,198 @@
+ 1.  Analysis of circuit structure of the extension memory unit.
+
+  Structure circuit description of the extension memory unit.
+
+  The circuit desribes logic way of connection HDD, memory module SIMM and ROM
+to the system bus A500, based on MC68000 CPU. The circuit includes the
+following blocks:
+
+* "Amiga 500" with MC68000 central processor;
+
+* addresses decryption block;
+
+* HDD controller;
+
+* connector for connection HDD;
+
+* dynamic memory controller;
+
+* refresh rate control block;
+
+* multiplexers block;
+
+* dynamic memory (such as SIMM) block;
+
+* ROM control block;
+
+* ROM;
+
+* flexible logic chip FX740-68;
+
+* connector for programming a flexible logic chip, such as FX740-68;
+
+
+       "Amiga 500" with MC68000 central processor.
+
+  "Amiga500" in peripherals structure contain the system connector,
+consisting of address, data, control and power supply buses. On the circuit
+are shown all buses, inherings to the system connector, exception power
+supply bus. To these buses are connecting all devices which providing
+connection HDD, RAM and ROM to the "Amiga500".
+
+
+      Addresses decryption block.
+
+  Addresses decryption block using for allocation of addresses spaces HDD,
+RAM and ROM. This block is realized on chips DD1, DD2.1, DD2.2. The high
+addresses (A23, A22, A21) and address select signal (/AS)  are come into
+this block. From this input signals are formed four control signals, which
+in further are used other blocks.
+For more detail decryption of necessary address space:
+
+* two signals are come into dynamic memory controller and select address
+  spaces on 4 Mb everyone ($200000-$5FFFFF and $600000-$9FFFFF );
+
+* signsl (/C0) comes into the HDD controller and select address space
+  $C00000-$DFFFFF were are located HDD ports;
+
+* signal (/E0) comes into ROM control block and delect address space
+  $E00000-$FFFFFF were is located system ROM of "Amiga500";
+
+
+           HDD controller.
+
+  HDD controller using for generation control signals, which then are going
+to the HDD connector. It consist from DD2.4, DD4.3, DD4.4, DD10-DD13.
+Into this block signals are comes from the address decryption block (/C0),
+from the address bus (A12, A15-A20), from the control bus (/RESET, RD_WR),
+from the HDD connector (IRQ). From this input signals are formed four
+control signals for HDD and one control signal (/INT) for the system bus
+and data bus (D15) signal. Contol signals /CS0, /CS1, /IORD, /IOWR
+are using HDD for decryption and reading/writing your internal registers.
+Signal /INT2 call second level hardware interrupt in the "Amiga500".
+
+
+           Connector for connection HDD.
+
+  This connector used for connection HDD with IDE interface. It represent
+as 40-pin connector on the electric circuit diagram and marked as X4.
+Through this connector are pass following signals:
+
+* from the data bus (D15-D0) for data exchange between "Amiga500" and HDD;
+
+* from the system address bus (A2-A4) for address decryption of the internal
+  HDD register;
+
+* from control bus (/RESET) for initialization HDD during reset "Amiga500";
+
+* from HDD controller (/CS0, /CS1, /IORD, /IOWR) for decryption and
+  reading/writing internal HDD registers;
+
+* into HDD controller (IRQ) for generate interrupt;
+
+
+           Dynamic memory controller.
+
+  Dynamic memory controller using for creation signals, wich control blocks,
+providing dynamic memory work. It consist from DD2.3,DD3.1-DD3.4,DD4.1,DD4.2,
+DD5.1,DD5.2,DD6-DD9,DD13.1 chips. Some signals are comes into controller from
+address bus (A21), control bus (/AS, CDAC, /UDS, /LDS, RD_WR), from refresh
+rate control block (REGCLK) and two signals from address decryption block,
+which using for select addresses spaces $200000-$5FFFFF, $600000-$9FFFFF.
+From this input signals are formed control signals wich, in further are
+comes:
+
+* into dynamic memory block (/RAS1, /RAS0, /CAS3-/CAS0) for handle by the
+  protocol of selecting dynamic memory;
+
+* into refresh rate control block (CASREG) for reset counter at overflow;
+
+* into multiplexers (ADR_SW) for switching high and low addresses,
+  adequate for dynamic memory rows and columns;
+
+
+           Refresh rate control block.
+
+  Refresh rae control block using for clock regeneration signal
+generation for dynamic memory controller. It consist from DD20. Into this
+block is comes control signal (E) from the system bus. This signal
+represent 1/10 part of 68000 clock, and signal (CASREG) from dynamic
+memory controller, which using for reset counter during dynamic memory
+refresh cicle. From him is comed REGCLK signal as short impulses with
+clock 1/128 E (about 5.5Khz).
+
+
+           Multiplexers block.
+
+  Mulutlpexers block is using for creation multiplex signals for memory
+address row and column. It consist from DD16-DD18 chips. The multiplexing
+is made from two sets of the system address bus signals (A1-A10 and A11-A20)
+into one set of signals (MA0-MA9) accordingly. It is made depending of input
+control signal ARD_SW state, which coming from dynamic memory controller.
+
+
+           SIMM dynamic memory block.
+
+  SIMM dynamic memory block using for store 8 Mb information data.
+The installed memory module should support two standart dynamic memory
+control protocols:
+
+1. reading and writing (/RAS before /CAS);
+
+2. regeneration (/CAS before /RAS);
+
+  Memory module is inserted in 72-pin connector. It present as DD19 into
+the electric circuit diagram. From this connector passing following signals:
+
+* from data bus (D15-D0) for data exchange between "Amiga500" and HDD;
+
+* from multiplexer block (MA0-MA9) for decryption row or column;
+
+* from dynamic memory controller (/RAS1, /RAS0, /CAS3-/CAS0) for control
+  sampling and dynamic memory regeneration protocols;
+
+* from the system control bus (/WE) for control samlpling dynamic memory
+  regeneration protocols;
+
+
+           ROM control block.
+
+  ROM control block using for creation ROM sampling signal. It consists
+from DD3.5, DD3.6, DD5.3, DD5.4, DD13.3 chips. Into this block are coming
+signals from system control bus (/RESET) and from addresses decryption block
+(/E0). Formed at call to addresses $F80000-$FFFFFF sampling signal (/ROM_OE)
+coming to the ROM block and provides information arrival from it on the data
+bus.
+
+
+           ROM block.
+
+  ROM block using for constant storage of an operation system "AmigaOS" with
+512 Kb size. It consist from two DD14, DD15 (272000) 8-bit chips, providing
+summary 16-bit data transfer, required for 68000 CPU. Into this block are
+coming signals from system data bus (D15-D8 on ROM chip with even addresses,
+D7-D0 on chip with odd addresses), from the system address bus (A1-A18).
+
+
+           Flexible logic chip FX740-68.
+
+  Flexible logic chip using as alernate replacement of addresses decryption
+block, HDD controller, dynamic memory controller and ROM control block.
+On the electric circuit diagram the flexible logic chip is present as DD21.
+This chip allow to use more functionality circuit features at the expense
+his greater integration level in comprasion with average degree integration
+chips.
+  In case of installation flexible logic chip, such as FX740-68 all other
+chips from above designated blocks are not installed. All signals, which
+connected to three above detailed blocks, are connected to flexible logic
+chip and fulfil the same functions. For providing additional features to
+flexible logic chip are connecting following additional signals:
+D14, /DTACK and /OVR.
+
+
+           Connector for programming a flexible logic chip, such as FX740-68.
+
+  Connector for programming a flexible logic chip, such as FX740-68 using for
+programming flexible locig chip. On the electric circuit diagram it represent
+as X3. From this connector, using programmator, which can be both PC, and
+special device.

@@ -1,0 +1,77 @@
+	Using the 14Mhz speedup modification.
+
+If you have performaed the 14Mhz modification and find that you have disk
+errors, it is probably because of the track stepping speed having been
+altered.
+All of the disk read/write operations aren't directly controlled
+by the 68000 cpu so our sppedup mod shouldn't affect this. However the
+track stepping on the drives is controlled directly by the CPU.
+Normally the trackdisk.device uses a value of 0BB8 as a count between it
+when it should send step pulses to the drives. At high speed the time taken
+for the count will diminish, in some cases to a point where the step pulses
+are sent to the drive quicker than it's track to track access time which
+could be around 20ms.While using an 80track 5 1/4" drive with a 5ms track
+time there is no problem whatsoever, however with the internal drive on some
+machines they cannot keep up with the cpu.
+
+The fix is relatively simple however.
+
+If you are booting from a hard disk such as the A590 include the program
+SPEEDUP from this disk as part of your startup sequence.
+for example   -  SPEEDUP FFF   -   this will change the delay value from
+BB8 to FFF which should be sufficient for most drives. if not just increase
+the value till the read/write errors dissapear.
+For drive df1: use  SPEEDUP df1: fff
+
+If you are booting from floppy the procedure is a little more complicated.
+
+The easiest way is to add some code to the boot sector to directly patch
+the trackdisk.device code.
+
+When the machine is booting a series of vectors and values associated with
+trackdisk.device are loaded into RAM. On a 1meg Amiga with no hard disk or
+other auto-configuring device connected the location for the trackstep
+coundown value is loaded to $C0475E.
+All that has to be done is to modify this location during execution of the
+boot block code to our new count of $FFF.
+This location will differ for other configurations. Use ROMCRACK or some
+such thing to find the absolute location in memory for your particular
+system.
+
+Examine the bootblock code on this disk in the file TRAKBOOT
+Dissassemble it and you will find the assembler instruction:
+
+	move.w    #$0FFF,$c0475e
+
+This bootblock can be installed on any of your normal DOS disks to allow
+the speedup mod to operate correctly.It will however only work on a 1meg
+amiga with no axpansion memory or hard drive. With the hard drive however
+you can use the speedup program in your startup on the HARD disk as
+previously described.
+I am using kickstart 1.3 so this memory location may vary with other
+kickstart versions.
+
+Alternatively if you don't have the the trakboot file with this doco,
+modify your boot block to the following using a suitable sector editor:
+
+ 00: 444F 5300 DE23 CD7F 0000 0370 48E7 FFFE 
+ 10: 6152 4CDF 7FFF 43FA 0018 4EAE FFA0 4A80
+ 20: 670A 2040 2068 0016 7000 4E75 70FF 4E75
+ 30: 646F 732E 6C69 6272 6172 7900 2C78 0004
+ 40: 207A 001A 227A 001A 93C8 2009 7205 7400
+ 50: 227C 0000 0000 4EAE FD96 6008 0020 0000
+ 60: 003F FFFF 33FC 0FFF 00C0 475E 4E75 0000 ---- note the relevant bytes
+ 70: 0000 03F2 0000 03EB 0000 0001 0000 03F2
+ 80: 0000 0000 0000 0000 0000 0000 0000 0000
+ 90: 0000 etc.....
+
+If you find this hardware mod and doco usefull I urge you to send $5 (or
+more if you like it that much!) to :
+Leslie Ayling P.O. BOX 334 Glebe 2037 Australia
+in the spirit of shareware.
+
+ I hope you like the mod.......Regards Leslie Ayling.
+
+p.s. with an A590 with 2megs of ram the location of the countdown value
+appears to be $C069EE. so if you want to boot from the floppys (under 1.2
+kickstart for example make the appropriate changes).

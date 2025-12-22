@@ -1,0 +1,127 @@
+A500IDE V1.5
+--------------
+
+DISCLAIMER: I disclaim everything. You use this at your own risk.
+
+
+These are instructions for building a simple non-autobooting 
+IDE-harddisk (and ATAPI CDROM with new software) interface for
+Amiga 500 direct bus connection. It might work with other Amigas.
+
+This is only a hack, and even if it seems to work it may work unreliably.
+Many people have made this hack and it has worked faultlessly for some of
+them. But for some people it has not worked.
+
+I have tested the A500 bus interface on KS1.3 and KS2.05(ROM 37.300) 
+systems. Drives tested include eg. Conner Peripherals CP3044,
+Western Digital Tidbit 60 (2.5") and Seagate ST3850 (811 MByte drive). 
+and others. Speeds were about 400 KBytes/second, and even 600 KBytes/s.
+Prairietek 120 20MB 2.5" drive did not work(gave errors.) 
+
+---------------------------------------------------------------------------
+There is a device driver ide.device and its sources included. This
+ide.device supports only one drive. It won't work with drives over 4 GBytes.
+You can find a built binary in the "devs" directory.
+
+There is also new software by Radovan Kobularcik.
+That driver supports two drives per interface
+and also ATAPI CD-ROM drives. (However there are propably no CD-filesystems
+for OS 1.3) The driver supports HDToolBox for partitioning, and
+there is also a mounting program that uses partition information
+on the Rigid Disk Block that is written by HDToolBox.
+The software is in "rkide.lha". There are a few bugs:
+It may hang if there is no drive connected.
+For KS1.3 the line "filesystem = L:FastFileSystem" is not generated
+by the mounting software to the mountlist in RAM:.
+
+
+---------------------------------------------------------------------------
+Building the interface:
+The (simple) direct Amiga 500 bus connection versions:
+1.
+schem.iff is the one with two chips. Parts are: 74HCT688 and 74ALS00.
+You can substitute with 74ALS688, 74LS688, etc.. and 74F00.
+The IDE-cable must be short to minimize transfer errors.
+(ringing, crosstalk etc.) Use wire links or a 8 pole DIP switch
+to determine the base address. When a switch is on, the bit is 0.
+The P/Q pairs of the ´688 comparator do not necessarily have to
+be in the same order. In fact, the schema and PCB differ in this way.
+There is (in postscript files, bottom layer and component placing)
+a circuit board design using these two chips. You will need
+a high resolution postscript laser printer to print it.
+
+2.
+palide.pld is a logic equations file for PAL16L8 or similar device in
+Sprint programmer format. Edit it to give the base address wanted.
+This chip replaces the other chips in version 1. Otherwise follow the
+schem.iff connections.
+
+After changing the base address you must remember to change it in
+the software as well.
+
+The Amiga 500 and ATID connectors can be found from iff-file
+Connector.pic (c) P. Pihkala
+and the ATA(=ATID/IDE) connector from text file atacon.txt.
+
+To test the interface and find out interesting drive parameters use
+the program IdentifyDrive (it's in the software directory)
+
+---------------------------------------------------------------------------
+MOUNTING is needed as the interface does not autoconfig(tm)urate
+and the drive doesn't automount.
+
+An example mountlist is in ide.ml. Edit it to give partitions.
+
+The ide.device needs to be in the devs: directory.
+
+If you want FastFileSystem:
+If the Kickstart is 1.3, there must be L:FastFileSystem.
+With KS2.0 don't use the FileSystem = L:fastfilesystem line
+in the mountlist.
+
+An example command for introducing a partition to the system:
+Mount fre: from ide.ml
+
+A useful file for a boot floppy: startup.seq 
+Copy it to s/startup-sequence of the boot floppy after copying
+system files to the partition on the HD. It will re assign
+assign:s to that partition so it becomes the sys: partition.
+It will also start s/startup-sequence on the new sys: partition.
+You will also need devs:ide.device, mount command and a mountlist file
+on the boot floppy.
+
+You can format the partitions with AmigaDOS Format command.
+
+----------------------------------------------------------------------------
+See software/READ.ME for descriptions about the files in that
+directory.
+
+I am the author of (this) rdwt.asm and some of the other files.
+Check out Aminet hard/drivr directory for new software(sometime maybe).
+This hack is partially based on "Atid.lha" by P. Pihkala
+and SPARTAN SCSI driver sources by Paul Harker. 
+Spartan is on Aminet hard/hack and hard/drivr.
+
+My e-mail address is: mika.leinonen@cc.tut.fi
+Web-page(standard drafts here):www.students.tut.fi/%7Eleinone3/ide.html
+
+----------------------------------------------------------------------
+
+Version history:
+V1.5 March 2001
+     Added a place for an activity LED to PCB. Included new software.
+V1.4 November 2000
+     Fixed a bug in the PCB, /IOW and /IOR were on wrong IDE-con. pins.
+V1.3 August 2000
+     Removed "plide", a circuit with a PAL16L8 and 74LS245 buffers. 
+     One chip(74LS04) less in the "ttl-version". 
+     New PCB design for it.
+V1.2 Fixed bug that caused for example Seagate drives not to work.
+V1.1 November 1997: Not released for distribution.
+     automatic drive identification, 
+     New interface pcb and schematic "plide".
+V1.00002 September 1997: first version released for distribution
+     Edited schematic, none very important changes.
+V1.00001 February 1997  : some editing done
+V1.0 1996
+

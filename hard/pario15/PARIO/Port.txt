@@ -1,0 +1,131 @@
+                      8520 CIA and Parallel Port Overview
+
+
+   While the 8520 CIA chips are used for many functions, this text is limited
+to functions related to the parallel port.  For detailed information refer to
+the Amiga Hardware Reference Manual.
+
+   Unfortunately, the 8520 CIA's electrical parameters are not available to the
+public.  The earlier A500/A2000 Technical Reference manual states that port A
+has both active and passive pullup devices which can drive 2 TTL loads and port
+B has only passive pullup devices which have a "much higher current-sinking
+capability"...  The Amiga Hardware Reference manual, 3rd edition, states that
+both ports A and B have active and passive pullups.  I assume this is due to
+the newer revision of the 8520.
+
+   With this sparce information, common sense, and around 7 years of experience
+using the parallel port to test hardware projects, I have the following
+precautions and guidelines:
+
+1. *NEVER* connect, disconnect, or switch, parallel port lines with the power
+on!  *ALWAYS* shut the power off first!  In most cases, you should use the
+following sequence:
+
+   Power up:   - Turn on your Amiga
+               - Turn on the external device
+
+   Power down: - Turn off the external device
+               - Turn off your Amiga
+
+   If you have been switching devices with the power on you have been lucky...
+Not following the above precaution, and static electricity, are the two main
+causes of `user-induced' 8520 failures.
+
+2. Be very careful about static electricity!  The 8520, like any IC with MOS
+devices, is very susceptible to static discharge.  If you use an anti-static
+wrist strap and lack a good earth ground, connect it to one of the Amiga's
+metal connector shells or other suitable chassis (not case) ground.  Otherwise,
+get in the habbit of periodically touching the shell or chassis.  Obviously
+when connecting to, or touching, the connector shells, never touch the
+contacts...  Basically, use common sense.  For example, Wearing a wool sweater
+and sitting in a plastic chair on a shag carpet is not a good environment for
+this sort of work ;-)
+
+3. Do not exceed the port voltage and current limits!  Since the only
+specification available is the 2 TTL drive capability (3.2ma) on ports A and B,
+use standard guidelines for MOS IC's.  While I'm sure the 8520 can sink higher
+current levels, to be safe, limit your source and sink currents to 3ma.  Limit
+the absolute maximum voltage swing on any line to -0.5V and +5.5V.
+
+4. Buffer the data lines!  This provides a degree of isolation as well as
+noise immunity, especially important with long cable lengths.  When considering
+which logic family to use, the main thing to consider is noise immunity.  Speed
+is not a factor due to the limited throughput of the 8520.  Given an external
+power supply, power dissipation is probably not a factor as well.  The three
+practical options are the 74HC, 74HCT, and 74LS, families.
+
+   The 74HC family is clearly the best choice for this application.  It's input
+voltage threshold is 1/2 Vcc or around 2.5V, providing the best noise immunity.
+It's low-level and high-level noise margins are 28% of Vcc.  However, there is
+one important factor to consider when driving 74HC devices from devices with
+LSTTL thresholds.  Since the minimum LSTTL output-high (VOH) level is 2.4V it
+may not work due to 74HC's input threshold of 1/2 Vcc.  To prevent this problem
+when using LSTTL devices, use pullup resistors (ie: 10K) on the 74HC device's
+inputs.  Buffer/driver/tranceivers include the HC241, 244, 245, and 541.
+
+   The 74HCT family is similar to the 74HC family with LSTTL switching levels.
+It is intended as a very low power drop-in replacement for 74LS devices.  Both
+HCT and LS families have the same noise margin.  The low-level margin is 8% of
+Vcc and the high-level margin is 14% of Vcc.  If power consumption is not a
+concern, use the 74LS family with Schmitt trigger inputs to improve noise
+immunity.  Buffer/driver/tranceivers include the LS241, 244, 245, 541, and 645.
+
+5. Use an external power supply!  The port's +5V supply was intended to
+provide a pullup supply for the data lines, hence the name "+5V Pullup"...
+Though the port specification says there is 100ma available, there is an
+internal current limiting resistor.  If you draw more than around 10ma, you
+will violate TTL thresholds which means that most TTL compatible devices will
+not work properly.  There are sound and video digitizers that are powered from
+the port but due to their power consumption and circuitry, they are not
+affected by the current limitation.  They are also connected, either directly
+or by a very short cable, to the port which eliminates or reduces problems
+associated with longer cable lengths in a typical breadboard environment.
+
+   Radio Shack sells low cost 9 - 12Vdc wall mount adapters.  A simple, low
+cost, supply for analog and digital projects can be made from a 12V 500ma
+adapter, 3 voltage regulators (2-7805/L05, 7905/L05) and a voltage converter
+(ICL7660/62).  This provides +5V digital and +/-5V analog supplies.  The
+ICL7660/62 provides roughly -11V for the 7905/L05 negative regulator.  If you
+only need +5V, select a 9Vdc adapter and a 7805/LO5.  Note, most all wall mount
+adapters are unregulated.  Always select a higher voltage adapter (at least 3V)
+and use a regulator for your actual supply.  Use a 470 - 1000uf capacitor
+across the adapter's unregulated output.
+
+
+   The following table summarizes the 8520 CIA data lines and the parallel port
+connector pin assignments:
+
+-------+------+-------+--------+--------------------------------------------
+ CIA   | CIAx | DB-25 | DB-25  | Data line
+ Chip  | Name | Pin # | Name   | Description
+-------+------+-------+--------+--------------------------------------------
+ CIA-A | PC   |     1 | DRDY*  | Data-ready. Used with ACK* for handshaking
+   "   | PB0  |     2 | D0     | Data bit 0. Bidirectional
+   "   | PB1  |     3 | D1     | Data bit 1.      "
+   "   | PB2  |     4 | D2     | Data bit 2.      "
+   "   | PB3  |     5 | D3     | Data bit 3.      "
+   "   | PB4  |     6 | D4     | Data bit 4.      "
+   "   | PB5  |     7 | D5     | Data bit 5.      "
+   "   | PB6  |     8 | D6     | Data bit 6.      "
+   "   | PB7  |     9 | D7     | Data bit 7.      "
+   "   | F    |    10 | ACK*   | Data-acknowledge. Used with DRDY*
+ CIA-B | PA0  |    11 | BUSY   | Busy.       Bidirectional
+ CIA-B | PA1  |    12 | POUT   | Paper Out.       "
+ CIA-B | PA2  |    13 | SEL    | Select.          "
+       |      |    14 | +5V    | +5V Pullup. 100ma
+       |      |    15 | NC     | No connection
+       |      |    16 | RESET* | System reset
+       |      | 17-25 | GND    | Ground
+-------+------+-------+--------+--------------------------------------------
+Note: On the A1000, pins 14-22 are GND, 23 is +5V, 24 is NC, and 25 is RESET*
+
+   The BUSY line is also connected to the CIA serial data (SP) pin and the POUT
+line is also connected to the CIA serial clock (CNT) pin.  The the SP and CNT
+signals are open drain which allow implementation of a bidirectional serial
+interface.  The SEL line is also shared with the RS-232 ring indicator (RI)
+signal.
+
+   Tom Handley / 18 April 93
+   BIX     : thandley
+   Internet: thandley@bix.com or thandley@nesbbx.rain.com
+

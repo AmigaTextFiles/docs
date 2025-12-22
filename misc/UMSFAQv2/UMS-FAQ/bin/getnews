@@ -1,0 +1,40 @@
+.KEY HOST,GROUPS/K,HISTORY/K,STAMP/K,KILL/K,TO/K,PANIC/K,BATCH/K/N,BLIP/K/N,TRACE/K/N
+.bra {
+.ket }
+.def HOST news.demon.co.uk                      ; nntp server
+.def GROUPS "uulib:newsgroups"                  ; file containing list of groups
+.def HISTORY "amitcp:db/newshistory"            ; file containing news history
+.def STAMP "amitcp:db/newstamp"                 ; file containing date news last retrieved
+.def KILL "amitcp:db/nntpkillfile"              ; file containing kill instructions
+.def BLIP 10                                    ; frequency of display of blipmsg
+.def TO "UUspool:newsbatch"                     ; file to contain batched news
+.def PANIC 200000                               ; maximum size of pending news in T:
+.def BATCH 10                                   ; maximum number of requests batched to server
+.def TRACE 3                                    ; amount of information displayed
+
+set COMMANDS T:{HOST}.Commands
+
+if NOT EXISTS {GROUPS}                          ; Check we have a Groups file
+    echo "You must set up a '{GROUPS}' file, or give the name"
+    echo "of another file containing the news groups you want"
+    quit 10
+endif
+
+echo "NEWNEWS {GROUPS} {TO}" >$COMMANDS
+
+failat 16
+lab getnews
+
+nntpclient {HOST} COMPLEX BATCH {BATCH} BLIP {BLIP} BLIPMSG "NNTP: %5ld articles received" HISTORYFILE {HISTORY} STAMPFILE {STAMP} TRACE {TRACE} KILLFILE {KILL} <$COMMANDS
+
+if $RC EQ 15
+    echo "Failed, Retry at {HOST}"
+    wait 2
+    skip getnews back
+endif
+
+failat 10                                       ; back to default
+
+delete $COMMANDS
+wait 5
+endcli

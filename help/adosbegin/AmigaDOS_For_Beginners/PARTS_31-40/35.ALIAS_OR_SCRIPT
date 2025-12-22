@@ -1,0 +1,375 @@
+@DATABASE "ADB35"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 35 - Alias or Script File"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 35 - ALIAS OR SCRIPT FILE@{UB}@{UU}
+@{JLEFT}
+This articles discusses the advantages and disadvantages of using an alias
+or a script file to do the same job.
+@{JCENTER}
+
+@{" Introduction                              " LINK "Introduction"}
+
+@{B}The Pros and Cons of Each method:-@{UB}
+
+@{" Does one operate quicker that the other?  " LINK "Quicker"}
+@{" Wear and Tear on the Disk Drive           " LINK "Wear"}
+@{" Affect on Memory and Disk Space           " LINK "Memory"}
+@{" Another Advantage of Scripts over Aliases " LINK "Another"}
+
+@{B}And The Conclusion:-@{UB}
+
+@{" What Is The Best Solution?                " LINK "Best"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Introduction" "Part 35 - Alias or Script File - Introduction"
+
+@{B}@{U}INTRODUCTION@{UB}@{UU}
+
+In many cases it is possible to do the same thing using either an ALIAS
+or a script file. For example:-
+
+  ALIAS ds RUN dh2:Disk_Utilities/DiskSalv
+
+will allow the alias "ds" to run the "DiskSalv" program.
+
+However, we could do the same thing by creating a script file called "ds"
+with the one line:-
+
+  RUN dh2:Disk_Utilities/DiskSalv
+
+The file "ds" would be stored in the "S" directory and its "s" protection
+bit would be set.
+
+Either way (ALIAS or script file) you could enter:-
+
+  > ds
+
+and get the same result.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Quicker" "Part 35 - Alias or Script File - One Quicker?"
+
+@{B}@{U}Does one operate quicker that the other?@{UB}@{UU}
+
+In theory, the alias should operate faster than the script. Aliases are
+loaded into memory when a new shell is started. Thus disk access is not
+required to read the command line when an alias is entered at the prompt.
+Disk access is, however, still needed for any disk based commands that
+are in the command line that the alias represents.
+
+Script files must be read from the disk's "s" directory before the command
+line can be interpreted so, in theory, the operation should be slower
+by a very small degree. In practice, when using a hard drive system, my
+inferior human brain could not detect any difference. However, when I
+booted from a floppy disk, I thought I could detect a slightly longer
+time for the script file than the alias. It was so slight, though, that
+it was of no consequence.
+
+Another factor relating to speed is that the more aliases you put into
+the "Shell-Startup" file, the slower the creation of a new shell becomes
+(as discussed in the @{"last article" LINK "ADB:Parts_31-40/34.Alias/Warning"}).
+
+This slowness in starting a shell is not really a factor once the shell
+is up and running but if you are using the "NEWSHELL" command to start
+a script, as in:-
+
+  NEWSHELL CON:x/y/w/h/Tile from s:scriptname
+
+then it could become annoyingly slow in getting underway.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Wear" "Part 35 - Alias or Script File - Wear & Tear"
+
+@{B}@{U}Wear and Tear on the Disk Drive@{UB}@{UU}
+
+Another factor is that every time a script is called, the drive has to
+come into operation. If scripts are called with great frequency, the wear
+and tear on the drive would be a lot more than the "one off" loading of
+the aliases in the "Shell-Startup" file.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Memory" "Part 35 - Alias or Script File - Affect on Memory"
+
+@{B}@{U}How do Scripts and Aliases Affect Memory and Disk Space?@{UB}@{UU}
+
+As mentioned above, aliases are loaded into memory each time a new shell
+is started up. Therefore, if you are using a lot of aliases, and you have
+only a small amount of memory in your system, you may find it better to
+have only the more frequently used ones as aliases and the less frequently
+used ones as scripts. If you are frequently running out of memory on a
+low memory system then have a look at this aspect.
+
+Scripts, however, take up a lot more disk space than aliases. If you have
+a large hard drive then this need not be a problem but if you have a small
+and very full hard drive then it could be a factor. If you are operating
+a floppy based system then it would be a significant factor.
+
+Take the two aliases:-
+
+  ALIAS ds RUN dh2:Disk_Utilities/DiskSalv
+  ALIAS tb RUN dh2:Disk_Utilities/TurboBackup
+
+Putting these into the Shell-Startup file adds only 85 @{"bytes" LINK "ADB:Misc/Glossary/Bytes"} to the file;
+83 for the characters and 2 for the line feed at the end of each line.
+This may not use up any extra @{"blocks"  LINK "ADB:Misc/Glossary/FileSystem"19} at all on the disk, or it may add
+only 1 extra block to the file length.
+
+To have two script files on disk for each of these two lines would take
+up 4 disk blocks. Free disk space would drop by 1952 bytes for a floppy
+disk using OFS (Old @{"File system" LINK "ADB:Misc/Glossary/FileSystem"}) and 2048 bytes for a hard drive using FFS
+(Fast File System). (OFS provides 488 bytes per data block and FFS provides
+512.)
+
+To understand what happens, you need to realise that each file saved to
+disk uses a MINIMUM of TWO BLOCKS. One block is the "Header Block" which
+has information about the file and the other is the first data block of
+the file.
+
+Let's take a hypothetical file 1 byte long. When saved to disk it uses
+two blocks, the header block and a data block. All the extra bytes in
+the data block can @{B}not@{UB} be used by any other file. That data block is now
+dedicated to that file only. Adding a few bytes to our 1 byte file will
+not use up extra disk space as the extra bytes go into that first data
+block until it is full. It is only when the first data block is full that
+extra bytes added to our file would cause it to flow over into a second
+data block.
+
+So, if I put all 65 aliases mentioned in the @{"ALIAS article" LINK "ADB:Parts_31-40/34.Alias/Warning"} into 65 script
+files, they would take up 130 disk blocks, or 7.4% of available space on a
+floppy disk! Most floppy workbench disks would not have this sort of free
+space!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Another" "Part 35 - Alias or Script File - Another Advantage"
+
+@{B}@{U}Another Advantage of Scripts over Aliases@{UB}@{UU}
+
+Sometimes it is impossible to put what you want into an alias as more
+than one command line is required. Let's say that a program needed to
+be started from its own directory and an assignment made. You would need
+to use a script file something like this:-
+
+  ASSIGN Games: Mydisk:Games
+  CD Games:
+  RUN MyGame
+  CD sys:
+
+However, If you start to build up a lot of scripts of this sort your disk
+space is again quickly used up at the rate of at least 2 blocks per file.
+
+So, combine all such files into one as detailed under the heading
+@{"What is the Best solution" LINK "Best"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Best" "Part 35 - Alias or Script File - Best Solution"
+
+@{B}@{U}WHAT IS THE BEST SOLUTION?@{UB}@{UU}
+
+This must be entirely an individual decision. However, I would suggest
+that frequently used one line command lines be set up as aliases and the
+not so frequently used commands, and tasks that need more than one command
+line, be combined into the ONE disk based script file.
+
+So how to put a number of scripts into ONE file? I did it with something
+like the following script. It includes some concepts that I have not yet
+covered (e.g. the first three lines and the item {name}). These will be
+discussed in the article @{"EXECUTE & DOT" LINK "ADB:Parts_31-40/39.Execute_&_Dot/MAIN"}.
+
+Briefly, these "as yet unknowns" allow the user to enter the script name
+at a prompt followed by an @{"argument" LINK "ADB:Misc/Glossary/Arguments"}. For example, assuming that the
+following script is called "m", I could enter:-
+
+  > m aqua
+
+The argument "aqua" would then be substituted into the script wherever
+{name} appears allowing the script to SKIP to, for example, the LABEL
+"aqua".
+
+  .KEY name/a
+  .BRA {
+  .KET }
+
+  FAILAT 11
+  ASSIGN cdname: ""
+  ECHO "*nO.K. - Going to {name}"
+  SKIP {name}
+
+  LAB aqua
+  CD dh2:Aquarium
+  RUN aquarium
+  SKIP end
+
+  LAB GP
+  ASSIGN GPTerm: dh2:GPTerm
+  CD dh2:GPTerm
+  RUN GPTerm
+  SKIP end
+
+  LAB pc1
+  ASSIGN >nil: pc1: exists
+  IF WARN
+    MOUNT pc1:
+    ECHO "PC1: now mounted"
+  ELSE
+    ECHO "PC1: already mounted"
+  ENDIF
+  SKIP end
+
+  LAB tb
+  RUN dh2:Disk_Utilities/Turbobackup
+
+  LAB -h
+    SEARCH S:m lab NONUM
+  ENDIF
+
+  LAB end
+  CD cdname:
+  ASSIGN cdname:
+
+@{"Click here" LINK "How"} to read how it works.
+
+This script is less than 488 bytes so it takes up only 2 disk blocks
+(1 header and 1 data). If the 4 labels were separate scripts they would
+take up 8 disk blocks.
+
+This type of script can be added to or deleted from at any time as you
+want more items or no longer use an item. Keep the labels in alphabetical
+order so that, if the file becomes large, it is easier to find one item.
+
+Using a script like this would probably result in slightly slower reaction
+times than an alias or a single item script but I am up to about 36 items
+in my "M" script and reaction time is still so short as to be barely
+noticeable.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "How" "Part 35 - Alias or Script File - Best Solution - How it Works"
+
+@{B}@{U}How it Works@{UB}@{UU}
+
+This script, called "M" (short for menu), should be put in the "S" directory
+with its "s" protection bit set. I have used "M" instead of "Menu" to
+save typing. For the same reason I have kept the label names as short
+as possible while still keeping them meaningful.
+
+With this script you could then enter:-
+
+  > m name
+
+For example:-
+
+  > m tb
+
+would run the program "TurboBackup"
+
+The @{"first line" LINK "Best"23} sets up a key "name" which must be entered at the Shell
+prompt after the script name. The "/a" ensures that an entry without a
+name, as in:-
+
+  > m
+
+will not be accepted. An error message will result:-
+
+  EXECUTE: Parameters unsuitable for key "name/a"
+  required argument missing
+
+The @{"FAILAT 11" LINK "Best"27} line is there as "SKIP" gives a return code of 10 if it
+cannot find the label. This happens if you enter a wrong name after "m"
+on the command line.
+
+The @{"next line" LINK "Best"29} with the assignment allows the current directory to be
+recorded in the assignment list with the name "cdname:" so that the shell
+window can be returned to the same current directory in case any section of
+the script uses the "CD" command.
+
+The @{"first label `aqua'" LINK "Best"32} changes the CD to "Aquarium" as the program
+"Aquarium" must be started from its own directory. It then runs the program
+and skips the the "end" label.
+
+The @{"next label `GP'" LINK "Best"37} uses an assignment then proceeds in the same way as
+"aqua". The assignment could have been made in the startup-sequence but,
+if a program is seldom used, why clutter up your system with a lot a rarely
+used assignments?
+
+The @{"label `pc1'" LINK "Best"43} uses ASSIGN to check if "pc1:" has already been mounted.
+It then either mounts the device or tells you that it is already mounted.
+
+The @{"label `tb'" LINK "Best"53} is an example of a program that does not need anything
+special - it just needs to be run.
+
+The main problem with this sort of script is trying to remember the
+argument names to insert after the script name!! However, this can be
+overcome by having the @{"label `-h'" LINK "Best"56}. "-h" is a common argument that can be
+entered in the command line after a lot of commands to display some "Help".
+
+If you enter "-h" the @{"SEARCH" LINK "ADB:Parts_51-60/56.Search/Main"} command (which we are yet to discuss) will
+seek out and display all lines in the "S:m" file that contain the word
+"LAB" making it easier for you to find a label name without typing the
+whole file!
+
+Finally, @{"the `end' label" LINK "Best"60} returns the current directory to what it was
+before the script was changed, then removes the assignment "cdname".
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

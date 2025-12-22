@@ -1,0 +1,423 @@
+
+
+
+
+Amithlon itself consists of only two files, which can be found in the
+"isolinux" directory of your AmigaOS XL CD. These two files are "emubox.gz"
+and "bigird.gz".
+
+
+"emubox.gz" is a compressed linux kernel, and "bigird.gz" is a compressed
+linux ramdisk image. All you need to do is to somehow get these loaded and
+started, and from then on, the Amithlon kernel takes over.
+
+
+There is also a smaller version of bigird.gz, called "smallird.gz";
+This has everything in it to boot AmigaOS from a hard disk, but does
+not have the minimal OS3.9 disk image "amithlon_hd" that exists in
+bigird.gz and which you can use to prepare your disks. Using
+"smallird.gz" will save a few megabytes of memory, making them
+available to the emulated Amiga.
+
+
+If you have linux installed, with a bootloader
+
+
+If you already boot linux using a boot loader, things are easy --- you just
+need to copy the kernel and ramdisk image to your hard disk, and add them
+to your existing boot loader configuration file
+
+
+Using "grub"
+
+
+If your existing boot loader is "grub" (which comes, for example, with
+Mandrake linux), have a look at the file 
+
+    boot/grub/menu.lst
+
+
+
+You will find it starts with lines looking somewhat like this:
+
+    timeout 5
+
+    color black/cyan yellow/cyan
+
+    i18n (hd0,6)/boot/grub/messages
+
+    keytable (hd0,6)/boot/us.klt
+
+    altconfigfile (hd0,6)/boot/grub/menu.once
+
+    default 0
+
+   
+ 
+    title linux
+
+    kernel (hd0,6)/boot/bzImage root=/dev/hdd7  ide1=autotune ide0=autotune
+
+
+
+The important part you are looking for is the "(hd0,6)" thing. It will
+most likely look slightly different on your machine. Note that down.
+
+
+Now, copy emubox.gz, bigird.gz and smallird.gz from your Amithlon CD to
+your hard disk, into the "/boot/" directory. You should then have the
+files "/boot/emubox.gz", "/boot/bigird.gz" and "/boot/smallird.gz".
+
+
+Next, open "/boot/grub/menu.lst" in your favourite editor, and add the
+following entries at the bottom of the file:
+
+    title amithlon
+
+    kernel (hd0,6)/boot/emubox.gz init=/linuxrc console_level=0 root=/dev/ram0 vga=769 ramdisk_size=12010 leavepages=7400
+
+    initrd=(hd0,6)/boot/bigird.gz
+
+    
+
+    title amithlon_small
+
+    kernel (hd0,6)/boot/emubox.gz init=/linuxrc console_level=0 root=/dev/ram0 vga=769 ramdisk_size=2310 leavepages=5000
+
+    initrd=(hd0,6)/boot/smallird.gz
+
+
+
+
+(Note that the lines starting with "kernel" are oversized; They might wrap 
+on your screen, but everything between "kernel" and "leavepages=xxxx" should 
+be on the same line in the text file).
+
+
+You will have to replace the "(hd0,6)" with whatever you noted down earlier,
+so that grib actually looks at the right disk. 
+
+
+Save the file, reboot, and there should be two extra entries in the boot
+menu, called "amithlon" and "amithlon_small", which should boot Amithlon
+with or without the amithlon_hd disk image, respectively. Done!
+
+
+Using lilo
+
+
+If you are currently booting using lilo (which comes with many linux
+distributions, including RedHat 5.x, 6.x, 7.0 and 7.1), have a look at
+the file "/etc/lilo.conf". You will find lines like the following on
+top:
+
+    boot=/dev/hdc
+
+    map=/boot/map
+
+    install=/boot/boot.b
+
+    prompt
+
+    timeout=50
+
+    #default=linux
+
+    
+
+    image=/boot/bzImage
+
+    	    label=linux
+
+    	    read-only
+
+    	    root=/dev/hdc5
+
+    
+
+
+
+(Your file will probably looks lightly different, and may have several
+entries, but it should look similar).
+
+
+Now copy "emubox.gz", "bigird.gz" and "smallird.gz" from the "/isolinux"
+directory of your AmigaOS XL CD to the "/boot/" directory of your linux
+install, creating the files "/boot/emubox.gz", "/boot/bigird.gz" and 
+"/boot/smallird.gz". Then add the following entries at the bottom of
+your "/etc/lilo.conf" file:
+
+    image=/boot/emubox.gz
+
+            initrd=/boot/bigird.gz 
+
+            label=amithlon
+
+            root=/dev/ram0
+
+            vga=769
+
+            append="init=/linuxrc console_level=0 ramdisk_size=12010 leavepages=7400"
+
+    
+    
+
+    image=/boot/emubox.gz
+
+            initrd=/boot/smallird.gz 
+
+            label=amithlon_small
+
+            root=/dev/ram0
+
+            vga=769
+
+            append="init=/linuxrc console_level=0 ramdisk_size=2310 leavepages=5000"
+
+    
+
+    
+
+Note that the "append" lines are fairly long and may wrap on your display;
+However, everything enclosed in double quotes should be on the same line in
+the text file.
+
+
+Now, save that file AND RUN "lilo"! It is important not to forget to run
+lilo, because unlike grub, lilo needs to figure out where the files are
+BEFORE you reboot. 
+
+
+So you did run lilo, and it went all right? Cool! Then it's time to reboot.
+If your lilo is graphical, there should be two new entries in the boot menu.
+If it just comes up with a prompt, you should now be able to type "amithlon"
+or "amithlon_small" at that prompt, and start Amithlon that way.
+If it doesn't even come up with a prompt, go back to editing /etc/lilo.conf,
+and add the lines starting with "prompt" and "timeout" (as seen in my example
+above) to the top section. Then save, rerun lilo, and try again.
+
+
+
+If you have DOS or Windows installed
+
+
+In this case, you can use "loadlin" to get Amithlon started right from
+your DOS partition.
+
+
+Please note that loadlin will require you to boot into DOS mode first.
+Not Windows, not a DOS box in Windows, but DOS, plain and simple. There
+probably is a way to create an appropriate shortcut under Windows, which
+will reboot your machine the right way --- but I don't know the first thing
+about Windows, and the Windows installation next door belongs to my 
+girlfriend, so I am rather apprehensive about screwing it up.... If you
+can come up with a step-by-step guide on how to create such a shortcut,
+please feel free to send it to me for inclusion in this file :)
+
+
+To boot using loadlin, you need to copy the following files from the 
+"isolinux" directory of your AmigaOS XL CD to a directory (let's call
+it "\amithlon" on your DOS or Windows drive:
+
+      *. emubox.gz
+      *. bigird.gz
+      *. smallird.gz
+      *. loadlin.exe
+      *. amithlon
+      *. small
+
+
+
+Then to start Amithlon, simply change into this directory:
+
+    C:
+    cd \amithlon
+
+and then start loadlin either as
+
+    loadlin @amithlon
+
+or
+
+    loadlin @small
+
+(Note the spaces between "loadlin" and the '@' sign!).
+
+
+You might want to create a small batch file for this, which would contain
+all of the above:
+
+     C:
+     cd \amithlon
+     loadlin @amithlon
+
+
+
+(or use "@small" if you want to boot without the amithlon_hd diskimage).
+
+
+The files "amithlon" and "small" actually contain all those parameters that
+we needed to enter for the other boot methods; Feel free to edit them any
+which way you like (see below), there is nothing magical about them!
+
+
+If you do not have an existing OS
+
+
+If you hold a valid MS-DOS license that can be applied to the machine
+in question, one easy way is to create a small DOS partition, make it
+bootable (by formatting with "format /s c:"), and then to follow the
+procedures in the previous section.
+
+
+Another (free!) way is to use the linux based boot floppy already
+mentioned in the section about repartitioning (you can find it 
+here). 
+
+
+
+UPDATE: 2001-11-07
+
+
+The following description runs into trouble on "virgin" disks, i.e. disks
+that have never had any partitioning done to them under DOS/Windows. Such
+disks lack the so-called "master boot record".
+
+If you tried this method before, and gave up in disgust because things just
+would not boot, you can grab a DOS boot floppy and use
+ 
+    fdisk /mbr
+ to add an MBR to the partition table you created earlier.
+
+
+If you don't have a DOS floppy handy, or if you are doing this for the
+first time, you can simply type
+ 
+    dd if=/mbr of=/dev/hda
+ 
+at the boot disk's prompt (where "hda" is the name of the disk you want to 
+install on). WARNING: This will overwrite the partition table
+on that disk, and thus will make all data on it inaccessible. Please be sure
+to do this to the right disk, and that deleting the partition table is OK.
+That's usually the case for virgin disks, but.....
+
+If you are using the "dd" method for creating an MBR, you must
+do so before starting to create partitions. Please also note
+that you will need the updated version of the boot/fdisk disk image.
+
+
+
+Partition as described
+there (with just a small, 10MB FAT32 partition to boot from, and then
+dedicate the rest of the disk to the virtual drive for
+Amithlon. Please note down the name of the boot partition (which
+*will* need a '*' in the "Boot" column of the output of fdisk's 'p'
+command!). Write back the new partition table with 'w', which will
+give you back the command prompt.
+
+
+Next, type the command
+
+    mkdosfs /dev/hda1
+
+
+(where /dev/hda1 is the name of the boot partition). This will DOS-format
+your partition, and prepare it for copying over the Amithlon files and the
+boot loader.
+
+
+Next, type the command
+
+    mkdir /dos
+
+
+and then
+
+    mount /dev/hda1 /dos
+
+
+(once again, /dev/hda1 is the name of your boot partition)
+
+
+Next, we need to mount the CD-ROM with the Amithlon files. It often can
+be found as "/dev/hdc" (if the CD-ROM is the IDE secondary master, see the
+section on partitioning for the other device names). So we do
+
+    mount /dev/hdc /mnt
+
+
+
+(Note: there should be a few comments about /dev/hdc being write protected;
+That's OK and only shows you that you got the right device!)
+Check that mounting the CDROM worked by typing
+
+    ls /mnt
+
+
+
+There should be, amoung many other things, an entry reading "isolinux/".
+OK, now we copy over the Amithlon files to the boot partition:
+
+    cp /mnt/isolinux/*.gz /dos
+
+
+and also
+
+    cp /mnt/isolinux/isolinux.cfg /dos/syslinux.cfg
+
+
+
+Quickly check whether it worked with the command
+
+    ls /dos
+
+
+which should show the four entries "bigird.gz*", "emubox.gz*",
+"smallird.gz*" and "syslinux.cfg". That's it, that's all we need
+from the CD-ROM, so we unmount it with
+
+    umount /mnt
+
+
+
+Now, we need to make that partition bootable. Issue the command
+
+    syslinux /dev/hda1
+
+
+(where once again, /dev/hda1 is the name of your boot partition).
+Finally, unmount the boot partition:
+
+    umount /dos
+
+
+and just for good luck
+
+    sync
+
+
+
+That's it! You should now be able to reset your machine, and boot straight
+into Amithlon, the way you used to do from the CD. Remember to remove the
+boot floppy before you reboot, and look for your virtual drive in the
+HDToolBox....
+
+Next
+
+
+
+	
+	
+	Last Updated: Saturday 18 May 2002  10:35:27
+© Bernd Meyer 2001
+
+Design © Kymberly Fergusson
+
+
+
+    
+   
+
+
+
+

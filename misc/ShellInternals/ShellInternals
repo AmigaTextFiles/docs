@@ -1,0 +1,1638 @@
+This document describes the necessary internals needed to write a
+shell, that is, a command line interface, for AmigaDos. Similar
+documentation can be found in Ralph Babel's Guru Book.
+
+Unfortunately, writing a shell is an arcane art as its interfaces are
+deeply hidden in the internal layers of Tripos, a BCPL-based operating
+system which formed the basis for the dos.library, the file system
+known today as FFS, and the shell - or CLI as it was known in the
+days of Kickstart 1.2.
+
+The purpose of this document is to shed some light into these
+relatively arcane and dark areas of Tripos and AmigaDos.
+
+I) Resident segments and the shell
+-----------------------------------
+
+As Tripos is an operating system of its own, it doubles some
+mechanisms found in other system layers such as exec and
+expansion. AmigaOs is structured along independent system modules that
+are maintained by exec, the core library of the AmigaOs system, and
+that can be replaced or updated by programs such as
+LoadModule. Tripos, and hence its AmigaOs implementation as the
+dos.library, has a similar mechanism, there called the "resident
+list".
+
+The resident list is mostly known for keeping "resident" command line
+programs and can be modified by the "resident" command line tool, but
+it also keeps system segments such as the shell, the con-handler or the
+ram-handler. The resident list is a singly linked BCPL style list
+whose head pointer is found at
+
+BADDR(rootstruct()->rn_Info))->di_NetHand
+
+which is clearly a misnomer as this list has nothing to do with
+networking at all. rootstruct() is the root node of Tripos, found at
+DOSBase->dl_Root.
+
+The definition of resident segments can be found in dos/dosextens.h
+and looks as follows:
+
+struct Segment {
+	BPTR seg_Next;
+	LONG seg_UC;
+	BPTR seg_Seg;
+	UBYTE seg_Name[0];
+};
+
+seg_Name is actually a BCPL-string, and the structure extends towards
+the end to hold the string. That is seg_Name[0] is the length of the
+string in characters, with the characters itself following.
+
+seg_Next chains the nodes of this list together, with the last node
+having a seg_Next value of 0. Following the conventions of the BCPL
+language, it is a BPTR, not a pointer.
+
+seg_UC is the use count for resident command line programs if it is
+non-negative. Its value is incremented by one each time a resident
+program becomes used, and decremented by one afterwards. If it is
+negative, this indicates a system-type segment.
+
+The value -2 (CMD_INTERNAL or CMD_BUILTIN) is reserved for
+ROM-resident executable programs such as "Run" or "Set". It is
+actually the shell itself that adds these programs to the resident
+segment list, and they are part of the shell module, where "module" is
+here understood in the sense of exec resident modules, see section II.
+
+The value -1 (CMD_SYSTEM) represents resident programs that are not
+meant to be called by the user. Accordingly, the shell skips over them
+when searching for commands. In particular, the shell itself is
+represented by three (!) CMD_SYSTEM entries in this list.
+
+The value -999 (CMD_DISABLED) represents resident programs that should
+be excluded from the search process.
+
+The file dos/dosextens.h documents them:
+
+#define CMD_SYSTEM	-1
+#define CMD_INTERNAL	-2
+#define CMD_DISABLED	-999
+
+seg_Seg is the BPTR to the segment list which has the same structure
+as the singly-linked list of segments returned by LoadSeg() when
+loading a binary file from disk. In fact, the resident command places
+the return value of LoadSeg() here, or uses UnloadSeg() to dispose a
+resident program.
+
+As dos lacks for traditional reasons any finer grained access
+mechanism to its structures, the list of resident segments is
+Forbid()-locked. There is no semaphore to protect access to this
+list.
+
+As stated, the shell exists three times on this list:
+
+"Shell"     is the user-shell, which defaults to the ROM shell. This
+	    segment is used by SystemTagList() if SYS_UserShell is
+	    TRUE. The default segment placed here is the C entry point
+	    (see below) of the ROM shell.
+
+"BootShell" is the system shell, which is by default identical to the
+	    user shell. This shell is used SYS_UserShell is FALSE, and
+	    the caller of SystemTagList() did not provide any other
+	    shell by means of SYS_CustomShell. If non-NULL, the
+	    SYS_CustomShell tag is a pointer to a (C style) string
+	    providing a name of a resident segment on the resident
+	    list described above to be used as shell. Similar to the
+	    above, the default is again the C entry point of the ROM
+	    shell.
+	    
+"CLI" 	    is also the ROM shell, though this time the BCPL entry of the
+	    shell. Unlike what it name suggests, this entry is NOT
+	    used by the CLI icon in SYS:System. It is only used for
+	    the initial CLI when booting the system (or in case a BCPL
+	    program requests the CLI, which should not happen these
+	    days anymore).
+
+As already seen from this list, the shell can be instantiated by two
+different mechanisms, a "C"-style mechanism used for "Shell" and
+"BootShell" and a "BCPL"-style mechanism used for "CLI". More on this
+in section III.
+
+The command "NewShell", and the System() call in the dos.library now
+scan the resident list to start-up a shell, and through this mechanism
+it is possible to update the shell. In case you wonder, the "Run"
+command goes through System(), Execute() goes through System() as
+well, and the Workbench CLI and Shell icons go through "NewShell", so
+they are covered, too.
+
+This idea of replacing the shell by updating the entries on the DOS
+resident list was already used as of Workbench 1.3 where the following
+commands were found in the Startup-Sequence:
+
+resident shell L:Shell-Seg System pure
+resident CLI L:Shell-Seg System pure
+
+which replaced the "shell" and "CLI" entries on the resident list (the
+first arguments) with the segment coming from L:Shell-Seg (the second
+argument). Further, the "resident" command is instructed to make this
+a "system" segment (CMD_SYSTEM, see above) and to ignore the fact that
+the p bit of the file may not be set (third and fourth argument).
+
+For traditional reasons, namely for following the conventions
+established with Workbench 1.3, "L:Shell-Seg" is also the location
+where "LoadModule" will scan for a new shell. However, it replaces the
+ROM shell by different means, namely by injecting a ROM module of the
+name "shell" into the exec (not DOS) resident list where the
+dos.library startup code will pick it up, see section II for how this
+mechanism works.
+
+
+II) Locating the ROM shell and the Tripos Segment Array
+--------------------------------------------------------
+
+The ROM shell itself is (also) a ROM module in the sense of exec,
+i.e. the exec resident list found in SysBase->ResModules contains a
+pointer to a "struct Resident" whose rt_Name is "Shell". SysBase is
+the pointer to the ExecBase structure found in location 4 which is
+documented in exec/execbase.h, "struct Resident" is documented in
+"exec/resident.h".
+
+struct Resident {
+    UWORD rt_MatchWord;         /* word to match on (ILLEGAL)   */
+    struct Resident *rt_MatchTag; /* pointer to the above       */
+    APTR  rt_EndSkip;           /* address to continue scan     */
+    UBYTE rt_Flags;             /* various tag flags            */
+    UBYTE rt_Version;           /* release version number       */
+    UBYTE rt_Type;              /* type of module (NT_XXXXXX)   */
+    BYTE  rt_Pri;               /* initialization priority */
+    char  *rt_Name;             /* pointer to node name         */
+    char  *rt_IdString;         /* pointer to identification string */
+    APTR  rt_Init;              /* pointer to init code         */
+};
+
+Typically "rt_Init" is a pointer to the code to be executed, but for
+the purpose of the shell, this is instead a pointer to an array of two
+entries of which the first one points to the segment list for the BCPL
+style entry for "CLI" and the second points to a segment list for the
+the C style entry for "BootShell" and "Shell". Both segment lists are,
+of course, coming from ROM and not from LoadSeg(), and the ROM code
+tries to mimic a segment list of a single hunk for each of the two.
+
+Certainly, the Shell ROM module of the exec world now has to somehow
+enter the Tripos world, i.e. it has to become an entry on the resident
+segment list because the dos.library (aka "Tripos") only knows the
+latter, but not the former.
+
+The dos.library takes a small detour when initializing the resident
+list as it first populates the "seglist array", i.e. process->pr_SegList,
+of the bootstrap process (Tripos confusingly calls this a "task",
+though it is not related to exec tasks) with multiple entries, and the
+later bootstrap process of the dos.library - actually CliInit()
+discussed in section IV - fetches them from there to update the
+resident list itself. Thus, the "shell" segment moves from exec, to
+the seglist array, then to the resident list.
+
+This "seglist array" is an array of BPTRs, each pointing to a segment
+list similar to that returned from LoadSeg. It is pointed to by
+process->pr_SegList, defined in dos/dosextens.h, i.e. it is a property
+every process carries around.
+
+seglist[0] is the number of BCPL segments that should be initialized
+	   through GLOBIN, the run-time binder of Tripos. This binder
+	   scans segments by a procedure given in section IIIb) and by
+	   that populates the GlobVec of BCPL programs. The seglist of
+	   a regular process, and by that of a shell and also any
+	   handler, is four entries large, of which only the first two
+	   segments of a regular process and a C-style handler require
+	   initialization though GLOBIN. Thus, this element is 2 under
+	   such normal circumstances. For the bootstrap shell segment,
+	   this element is 4 as the "CLI" global vectors also require
+	   initialization, and the entire vector of the bootstrap
+	   process is 9 elements large.
+
+seglist[1] is, or used to be the Tripos kernel segment, also known as
+	   KLIB. It used to contain elementary functions of what is
+	   known as the dos.library today, such as memory allocation,
+	   calling of other system libraries, Input() and Output()
+	   functions. It contains also the entries for what used to be
+	   the MLIB in Tripos, which are machine-specific support
+	   functions such as elementary math functions (long multiply
+	   and divide, coroutine switching, date and time functions).
+	   This segment was always written in assembler as it provides
+	   the linkage of Tripos to the rest of the system.
+
+seglist[2] is the segment pointer for all other traditional GlobVec
+	   entries of Tripos such as LoadSeg(), UnLoadSeg(), DupLock()
+	   and all other higher device management functions. This
+	   segment is also known under the name BLIB. Today, this is
+	   an assembly-based "faked BCPL" entry segment. The
+	   separation of the functions into "kernel" (klib) and BCPL
+	   library ("blib") into two segments makes little sense as of
+	   today. This segment together with the previous one is used
+	   to populate the elementary parts of the "Global Vector" of
+	   BCPL programs as both segments are scanned for GV entries
+	   by the GLOBIN procedure given in section IIIb).
+
+seglist[3] is the segment pointer to the current process itself. If
+	   populated, it points to the segment of the current process.
+	   It remains 0 for the initial process.
+
+seglist[4] is the BCPL segment of the shell (or rather CLI) and is
+	   used to create the "CLI" entry of the resident list and the
+	   CLI of the bootstrap process. When a shell is initiated
+	   later on, it first finds its own segment in entry 3, as it
+	   is created as a regular process by Dos, and then has to
+	   move its own entry from [3] to [4] to make room for the
+	   programs it loads. BCPL programs loaded from CLI contain a
+	   small startup code that calls into GLOBIN to build up their
+	   own GlobVec, and merge this GlobVec with that of the
+	   shell. The public part of the Shell GlobVec is what is
+	   known today as "struct CommandLineInterface", the CLI
+	   structure, and it is pointed to by process->pr_CLI.
+
+The seglist for ordinary processes ends here. However, the dos.library
+startup code creates a somewhat larger segment array for the bootstrap
+process that contains additional segments important for its
+operation. The shell itself does not need to bother about these
+entries, and they do not appear on any shell seglist except that of
+the boot shell. The only operation the shell has to perform is to move
+its own seglist away from seglist[3] to seglist[4] if the latter is
+free. As seen above, this happens whenever the shell is started by the
+user. The bootstrap process has this entry already set.
+
+seglist[5] is the segment list of the con-handler, also originally a
+	   part of Tripos. The dos.library uses this segment to create
+	   the Device nodes (struct DosList, see dos/dosextens.h) for
+	   the CON and RAW devices. This initialization is part of
+	   the CliInit() private dos.library function which has to be
+	   called by the boot shell. This segment is taken from the
+	   exec resident module "con-handler" and is deposited in the
+	   seglist by the dos.library startup code.
+
+seglist[6] is the segment list of the ROM based file system. This used
+	   to be the OFS, originally also written in BCPL. Nowadays, it
+	   points to the segment of the FFS which is taken from the
+	   exec resident module named "fs".
+
+seglist[7] used to be the segment of the - then disk-based - "restart
+	   segment". Under 1.3, this was part of the disk-validator
+	   which kicked in if the OFS found a disk whose bitmap was
+	   absent or invalid, and was loaded from disk. Nowadays, this
+	   is part of the FFS and the entry remains 0.
+
+seglist[8] is the C segment of the shell and will be used by the
+	   dos.library initialization to create the "BootShell" and
+	   "Shell" entries on the resident list. This is unlike
+	   seglist[4] which contains the "CLI" BCPL type entry of
+	   the shell. The BPTR comes from the "shell" resident module
+	   of exec, as discussed above.
+	   This entry will be picked up by CliInit() to create the
+	   resident segments for "Shell" and "BootShell".
+
+seglist[9] is the segment list of the ram-handler which also
+	   originated in Tripos. It is taken from the exec resident
+	   module "ram-handler", naturally.
+
+
+III) BCPL vs. C Segments
+------------------------
+
+The ROM shell is present as three entries on the resident list, and
+two entries in the dos.library bootstrap segment array, as described
+in section II. Two entries in the resident list, namely "Shell" and
+"BootShell" are C-style segments, and copied by CliInit() from
+seglist[8] of the boot process, and one entry in the resident list,
+namely "CLI", is the BCPL style entry of the shell, which is copied
+from seglist[4].
+
+In this section, the structure of such segments will be discussed.
+The segment types correspond closely to two types of Dos Handlers,
+namely those that are mounted with a "GlobVec = -1" or "GlobVec = -2"
+entry in the MountList, which represent "C-style" devices, and those
+with "GlobVec = 0" or "GlobVec = -3", which correspond to "BCPL style"
+devices.
+
+While "C segments" are what one typically understand as a "program
+loaded through LoadSeg()", "BCPL segments" include an additional
+internal structure that allows the GLOBIN binder of Tripos to bind the
+GlobVec of the loaded binary with the GlobVec of the Tripos kernel,
+i.e.  entries from KLIB, BLIB and MLIB. They are also loaded through
+"LoadSeg()", though they contain an additional inner structure.
+
+IIIa) C Segments and C segment startup
+---------------------------------------
+
+C segments are easier to understand and correspond both to handlers
+with "GlobVec = -1" or "GlobVec = -2", and to the "Shell" and
+"BootShell" resident list entries of the shell.
+
+A "C style" segment is just an ordinary "segment list" as it is
+returned by LoadSeg. Such segment lists are singly-linked BCPL-style
+lists of the following structure:
+
+struct Segment {
+       BPTR seg_Next;
+       UBYTE seg_data[0];
+};
+
+where "seg_Next" is either 0, or the BPTR to the next segment, and
+seg_data contains the actual program code or program data. Segments
+are allocated by LoadVec() with AllocVec() (or, under Kick 1.3 and
+below, its Tripos counterpart, GETVEC()), that is, the long word right
+upfront the segment contains the size of the segment in bytes,
+including the size itself.
+
+C-style devices, and thus the C-style "Shell" and "BootShell" is run
+by creating a process, moving the BPTR of the segment as returned by
+LoadSeg() into BADDR(proc->pr_SegList)[3] and jumping into the first
+byte of the first segment. Handlers, as well as the shell, then have
+to wait on their process port for a "startup message" in the form of a
+DosPacket that arrives on their process message port.
+
+That is, they have to perform roughly the following operations:
+
+void __asm __saveds Start(void) /* <- first byte of first segment here */
+{
+     struct ExecBase *SysBase = ((struct ExecBase **)(4L));
+     struct Process *proc = ((struct Process *)(SysBase->ThisTask));
+     struct MsgPort *port = &(proc->pr_MsgPort);
+     struct Message *msg;
+     struct DosPacket *pkt;
+
+     WaitPort(port);
+     msg = GetMsg(port);
+     pkt = (struct DosPacket *)(msg->mn_Node.ln_Name);
+     :
+}
+
+As said, this type of startup logic is common to both DOS handlers
+with GlobVec = -1 or -2, and the C-style entry point of the shell. The
+DosPacket contains then data necessary to startup the handler or the
+shell. While handler startup is relatively well documented in the
+Bantam Book manual, Shell startup is an opaque process and discussed
+in more detail in section IV).
+
+
+IIIb) BCPL Segments and BCPL segment startup
+--------------------------------------------
+
+BCPL segments and BPCL startup is a bit different as Tripos provides
+additional services to populate the "GlobVec", the global vector of
+BCPL programs. In particular, it populates the GlobVec of the handler
+or the shell first by using the system segments [1] to [3], that is,
+the "KLIB" (kernel library) "BLIB" (BCPL system library) and "MLIB"
+(machine library) and the loaded segment itself, and fills in the
+GlobVec entries from those three system segments.
+
+BCPL segments contain, in addition to code, runtime binding
+information which GlobVec entries to populate with which code. In
+particular, the first long word of such a BCPL style segment contains
+the number of initial long words to skip *behind* the BCPL runtime
+linkage information, and in particular, to skip over the actual code,
+and then to interpret the runtime linkage information back to front.
+
+The initial long word offset is part of the loaded binary program,
+i.e. part of the binary on disk, or part of the ROM code. The runtime
+linkage information is included in the HUNK_CODE or HUNK_DATA hunks of
+the loaded program and loaded as such through LoadSeg(); there is no
+hunk structure to express the GlobVec built-up process and a BCPL style
+program is, as far as its structure on disk is concerned, not any
+different than a C or assembly language program.
+
+Note that this implies that BCPL style DOS handlers *cannot* be run
+from the first byte of the first segment as it contains an offset
+instead:
+
+FirstSegmentByte:
+	DC.L	(SegmentEnd-FirstSegmentByte) >> 2
+
+	:
+	:
+
+RuntimeLinkageTable:
+	dc.l	0
+	dc.l	GlobVecEntry,(EntryPoint - FirstSegmentByte)
+	:
+	:
+	dc.l	MAXGLOB
+SegmentEnd:
+
+As seen from the above figure, the offset goes behind the runtime
+linkage table, which is interpreted reversely from back to start, and
+it skips over the actual code of the program.
+
+The last entry - or the first entry that is scanned - contains a
+counter that indicates how many slots the GlobVec should at least
+have. The makeglob() function of Tripos takes the maximum over all
+BCPL segments, including the system segments in seglist[1] and
+seglist[2] to allocate a GlobVec of the proper size.
+
+Each following entry consists of two long words, the first of which
+contains the GlobVec entry to populate or overwrite, and the second
+the byte offset (not long-word offset) relative to the start of the
+segment. The list is terminated by a single 0-entry which is, since
+the array is interpreted back to front, at the lowest address of the
+table.
+
+Note that by this mechanism, a BCPL program may override operating
+system functions, namely by replacing the GlobVec entries on its own
+GlobVec by functions from its own segments rather than from the system
+segments.
+
+Populating the GlobVec with the information from the runtime linkage
+table is done by the GLOBIN() function in ROM, hidden in the arcane
+layers of the dos.library.
+
+Once the GlobVec is populated, the ROM code of Tripos receives the
+startup packed itself, i.e. it is not necessary for the handler to
+WaitPort() and GetMessage() as for C-style startup. Code execution
+then continues at the GlobVec entry G_START, at offset 1 in the
+GlobVec just populated, with register d1 (the first BCPL function
+argument) loaded with the BPTR to the startup DosPacket. Hence, it is
+necessary to populate at least G_START in the runtime linkage table of
+the "CLI" or a BCPL style handler. The "CLI" should, in addition, also
+define GlobVec entry G_CLISTART = 133 with the same function.
+
+Thus, a rather minimal BCPL style entry for a BCPL shell serving as
+replacement for "CLI" would read as follows:
+
+FirstSegmentByte:
+	DC.L	(SegmentEnd-FirstSegmentByte) >> 2
+
+Start:
+	lsl.l	#2,d1		; convert the BPTR to a CPTR
+	move.l	d1,a0		; move to a more convenient register
+	jmp	_main		; start main program
+	
+RuntimeLinkageTable:
+	dc.l	0
+	dc.l	1,(Start - FirstSegmentByte)
+	dc.l	133,(Start - FirstSegmentByte)
+SegmentEnd:
+
+and a C function such as
+
+void __asm __saveds main(register __a0 struct DosPacket *pkt)
+{
+	:
+}
+
+As stated above, WaitPort() and GetMsg() are not required here.
+
+IIIc) Combining C and BCPL Segments
+-----------------------------------
+
+As seen in sections IIIa) and IIIb), a shell that should serve as
+replacements for "CLI" and "Shell"/"BootShell" has to have two
+different segments, one BCPL style segment for "CLI" including runtime
+binding information, and one without for "Shell" and "BootShell".
+
+However, both the C and BCPL style logic can be combined into a single
+common startup logic by noting that if the segment offset long word
+remains small enough, it re-assembles a harmless "ori.b #xxx,d0"
+instruction that can be executed as part of the C startup process:
+
+FirstSegmentByte:
+	DC.L	(SegmentEnd-FirstSegmentByte) >> 2	; this will become an ori.b #xxx,d0
+	moveq	#0,d1		; set the DosPacket to 0 if run from the first byte
+Start:
+	lsl.l	#2,d1		; convert the BPTR to a CPTR
+	move.l	d1,a0		; move to a more convenient register
+	jmp	_main		; start main program
+	
+RuntimeLinkageTable:
+	dc.l	0
+	dc.l	1,(Start - FirstSegmentByte)
+	dc.l	133,(Start - FirstSegmentByte)
+SegmentEnd:
+
+The C startup function then has to take care of waiting for its startup
+packet if it receives a NULL for C startup:
+
+void __asm __saveds main(register __a0 struct DosPacket *pkt)
+{
+     struct ExecBase *SysBase = ((struct ExecBase **)(4L));
+     struct Process *proc = ((struct Process *)(SysBase->ThisTask));
+     struct MsgPort *port = &(proc->pr_MsgPort);
+     struct Message *msg;
+
+     if (pkt == NULL) {
+          WaitPort(port);
+     	  msg = GetMsg(port);
+	  pkt = (struct DosPacket *)(msg->mn_Node.ln_Name);
+     }
+     :
+}
+	
+	:
+}
+
+IVa Shell Startup
+-----------------
+
+At this point, Shell startup and Handler startup divert as the
+DosPacket for the shell contains shell-specific information.
+
+First, the shell needs to reorganize the segment array of its own
+process, as found in Process->pr_SegList. As stated before, segments 1
+and 2 are reserved for "KLIB","MLIB" and "BLIB", the BCPL kernel
+library and the BCPL support library. If seglist[4] is free, the shell
+now moves its own segment from seglist[3] to seglist[4] leave room for
+the segment of BCPL style programs started through the shell. For the
+bootstrap shell, this already happened in the dos.library startup
+code.
+
+Next, shell initialization continues through one out of three (or, as
+of V45, four!) different startup mechanisms:
+
+pkt->dp_Type and pkt->dp_Res1,pkt->p_Res2 contain information on how
+the shell is to be used, and in particular, how it has to initialize
+itself. Three initialization methods have to be supported:
+
+Initialization as a boot shell (obviously, only for the ROM shell),
+initialization as a shell for the calls System()/Execute() and the RUN
+command, and initialization for the NewShell and NewCLI commands. In
+addition, shell releases later than V40 require a forth initialization
+type for self-initialization. This fourth startup method is used by
+the shell for the run-back or pipe construction, i.e. for the "&" or
+"|" and "||" operators, when the shell creates a new child shell of
+its own.
+
+Identification of startup types is as follows:
+
+*) If pkt->dp_Type is 0 and pkt->dp_Res1 is 0, then we are a boot
+shell.
+
+The boot shell may need build its own CLI structure as it may not get
+one from the system - at least not under v34 and before. The shell
+then continues initialization with a call to CliInit(), which is an
+undocumented dos.library function. This function copies elements
+from the seglist of the shell process into the DOS list of resident
+segments, more on this in section V.
+
+Its prototype and pragma are as follows:
+
+#pragma libcall DOSBase CliInit 39c 0801
+LONG __asm CliInit( __register __a0 struct DosPacket *dp );
+
+The return value consists of a series of flags whose discussion is
+postponed along with the return value of all the other CliInitXXX()
+functions.
+
+*) If pkt->dp_Type is nonzero, and pkt->dp_Res1 and pkt->dp_Res2 are
+0, the shell is initialized for System(), Execute() or the Run
+command, and in this case, the dos.library function CliInitRun() must
+be used to continue initialization. As above, it requires a pointer to
+the DosPacket just received in register a0 and it returns a flag
+value just like above.
+
+*) If pkt->dp_Type is nonzero, and pkt->dp_Res1 is nonzero as well,
+but pkt->dp_Res2 is 0, the shell is initialized for the NewShell or
+NewCli commands and initialization has to continue through
+CliInitNewcli(), also taking the DosPacket in a0 as argument and
+returning flags in d0.
+
+*) There used to be another startup mechanism that was identified by
+pkt->dp_Type non-zero, pkt->dp_Res1 0 and pkt->dp_Res2 being non-zero,
+but this is startup mechanism is not used anymore and there is no
+corresponding CliInitXXXX() function for it.
+
+*) Historically, under Kick 1.3 and before, pkt->dp_Type was a
+function pointer that performed interpretation of the startup
+packet. The CliInit() functions did not exist. Instead, the shell had
+to pick up pkt->dp_Type and call into this BCPL function with the
+startup DosPacket as argument. Thus, it was the responsibility of
+every process launching a shell to provide a suitable function, place
+its function pointer in pkt->dp_Type, and initialize the shell through
+this indirection mechanism. Two such mechanisms survived, namely those
+that were originally used by the NewShell command, and by the Run
+command. The former remained as is, whereas the latter was refactored
+into the System() call. Note that under Kick 1.3 and before the
+Execute() library function (or its BCPL equivalent) loaded the "Run"
+command from disk and continued there, quite reverse from later
+KickStarts where "Run" runs into System(), the modern equivalent of
+Execute().
+
+*) Finally, if pkt->dp_Type is zero and pkt->dp_Res1 is a pointer to
+the DosPacket itself, then it is the >V40 shell that starts up a child
+of itself to implement the "&" operator to run back a command, or to
+run a command as part of a pipe. In this case, the DosPacket is coming
+from the shell itself, and the shell needs to react to it according to
+its own specification. V40 shells do not support the "&" operator nor
+pipes, and hence do not make use of this startup type. There is no
+dos.library function to handle this type of startup as it is
+shell-specific.
+
+As a side effect of the CliInitXXXX() functions, the "struct
+CommandLineInterface *" is build and initialized, which contains the
+streams the shell should operate on. How the shell startup packet
+relates to the streams is described in section V.
+
+The dos.library shell startup functions identify error conditions by
+returning a value with bit 31 clear, and a value of IoErr() that is
+identical to the process pointer, i.e. SysBase->ThisTask. Under such
+conditions, the shell need to abort processing, has to release only
+its own resources and exit immediately. The startup packet is, in this
+case, already replied by the corresponding initialization function.
+
+Otherwise, i.e. in the absence of an error, the startup mode and the
+returned flags value determines when the startup packet has to be
+replied, how to react on EOF conditions on the shell input stream, and
+whether or not to close the input and output file handles.  This
+depends on whether the shell is supposed to be used synchronously or
+asynchronously, whether the channels are provided by the system or by
+a user and so on. When the startup-packet has to be replied is
+discussed below.
+
+The ROM shell continues at this point with the initialization of the
+Tripos resident segment list. While the CliInit() function already
+inserted there the "Shell", "BootShell" and "CLI" elements, the boot
+shell code now adds its built-in commands to the list. The commands
+"run" and "alias" retrieve special treatment of the shell as
+input/output redirection works a little bit different for them. From
+the V45 shell on, "execute" and "quit" are two additional special
+cases as the shell needs to maintain an execution stack for recursive
+script execution. The V46 shell includes with "(" another special
+command for pipe organization, and the V47 shell will also come with
+"execute" as a shell-internal.
+
+The process continues by potentially replying the startup message; how and
+when the startup message is replied depends on the purpose for which the
+shell has been created.
+
+If bit 3 of the return value from the CliInitXXXX() functions is clear
+and bit 31 is set, the startup packet is replied just before
+termination of the shell. This is necessary for the synchronous
+System() call which has to wait for the termination of the shell.
+
+Otherwise, the startup packet is replied either by the shell startup
+code immediately, or after the launching the first command loaded by
+the shell. The latter happens if the shell is called from RUN, and
+delaying the startup-packet avoids disk-grinding as it makes the caller
+wait until the Shell loaded the first command from disk.
+
+The flags returned from the CliXXX() functions are not defined
+anywhere in the system includes, so I list them here:
+
+#define FN_VALID        0x80000000
+#define FN_ASYNC        0x00000008
+#define FN_VALIDASYNC   0x80000008 /* shortcut */
+#define FN_SYSTEM       0x00000004
+#define FN_VALIDSYSTEM  0x80000004 /* shortcut */
+#define FN_USERINPUT    0x00000002
+#define FN_RUNOUTPUT    0x00000001
+
+IVb Shell execution and termination
+-----------------------------------
+
+From this point on, regular shell command processing starts. The shell
+reads commands from cli_CurrentInput, and passes cli_StandardInput and
+cli_StandardOutput to the executed programs, unless input or output
+are redirected by one of the redirection operators or the pipe
+operators. The flags value returned from one of the three CliInitXXX()
+functions determines now when the shell exists, and how the shell
+needs to react when cli_CurrentInput runs dry, i.e. signals an EOF
+condition.
+
+If bit 2 and bit 31 of the flag value are set simultaneously, the
+shell is a non-interactive shell coming from System(). In such a case,
+the shell reads only a single line from cli_CurrentInput, interprets
+it and then checks whether cli_CurrentInput equals
+cli_StandardInput. If so, it terminates even before an EOF is
+reached. The equality check is necessary as the "Execute" command
+redirects cli_CurrentInput to point to the script to execute, and thus
+termination needs to be delayed until after the full script has been
+run. Note, in particular, that the "Execute" command does not execute
+anything, but rather manipulates stream pointers and leaves execution
+to the shell.
+
+For any other bit combination, the shell continues reading from
+cli_CurrentInput until this stream is exhausted, and only then checks
+whether cli_CurrentInput is identical to cli_StandardInput. If so, it
+terminates, as in the above case.
+
+Finally, if cli_CurrentInput is different from cli_StandardInput,
+cli_CurrentInput is closed and shell sets cli_CurrentInput to
+cli_StandardInput, and then continues to pull commands from
+there. This mechanism is, as explained above, necessary to keep the
+"Execute" command operational, and it is also used to implement the
+Execute() system call which continues to read from the console if a
+standard input is present, and the same mechanism is also used for
+script execution.
+
+Under V45 and beyond, this mechanism is further refined to allow
+recursive execution of scripts. Under this more recent version, the
+shell keeps a stack of streams on which the cli_CurrentInput is
+"pushed" as soon as an "Execute" command is to be run, and from which
+the previous cli_CurrentInput is "popped" if the current
+cli_CurrentInput is exhausted.
+
+This shell-internal stack also requires special handling of the "Quit"
+command which, upon V40, terminated all recursively executed shell
+scripts. Under V45, the shell checks for the "Quit" command and empties
+the execution stack.
+
+The V40 "Execute" command "resolved" recursive execution in a
+different way, namely by creating a new script file if its own
+cli_CurrentInput is different from cli_StandardInput. This new script
+was formed by concatenating cli_CurrentInput, i.e. the current script,
+with the script to be executed, closing cli_CurrentInput and pointing
+cli_CurrentInput to the concatenated script. This concatenated script
+consists then of the new script and those parts of the previous script
+that were not yet executed. This procedure caused side effects as
+strange as not being able to "skip back" before the last invocation of
+"Execute" because it could not be seen by Execute. V45 avoids this
+problem by stacking streams in the shell as discussed above.
+
+Another notable special case is the "EndCLI" command which does not
+"end" much, but rather creates such an EOF condition by closing
+cli_CurrentInput if it is different from cli_StandardInput, moves
+cli_StandardInput to cli_CurrentInput, and manipulates the Tripos file
+handle of this stream to generate an EOF on the next read. Thus, it
+does not end much, but rather creates conditions upon which the shell
+terminates by itself.
+
+Once the shell encountered a condition that requires termination, bit
+31 of the flags word from CliInitXXXX() determines how the shell
+proceeds with its input and output streams. If the bit is clear, the
+shell needs to close cli_StandardInput and cli_StandardOutput, and
+ignores any other bits.
+
+If bit 31 is set, a somewhat more sophisticated logic has to be used,
+and further handling of streams depends on additional bits of the
+flags value:
+
+If bit 1 is set, cli_StandardInput remains open as it was provided by
+the user. If the bit is clear, cli_StandardInput was system-provided
+and has to be closed.
+
+If bit 0 is set, cli_StandardOutput has to be closed as it was
+provided by the RUN command. Otherwise, cli_StandardOutput was user
+provided, and hence has to remain open. Note that the interpretation
+of bits 0 and 1 are just the inverse to each other. Bit 1 suppresses
+closing the standard input, bit 0 enforces closing of the standard
+output.
+
+Finally, bit 3 indicates whether this is synchronous or asynchronous
+shell execution, and hence defines when the shell should return its
+startup packet: After completion of execution, i.e. "now" as part of
+the shell termination, or after successful startup. This was already
+discussed above in IVa)
+
+
+V The Shell Startup Packet
+---------------------------
+
+While section IV is (probably) sufficient to write a custom shell, the
+reader may be curious how the dos startup packet is populated in the
+three cases of CliInit(), CliInitRun() and CliInitNewcli(). Note that
+the information in this section may change any time and is system
+internal, and hence neither the shell nor user code should depend on
+the information provided in this section.
+
+Va CliInit()
+---------------
+
+CliInit() implements the boot shell system initialization. This is an
+easy case as no additional parameters are passed over. However, the
+function itself performs all the early AmigaDos initialization as
+creating the assigns for L:, LIBS:, DEVS:, S:, C: and ENVARC: and
+initializes all the modules on the exec module list marked as
+RTF_AFTERDOS by InitCode(). It also opens the output stream, and -
+depending on a flag in ExpansionBase - forces the corresponding output
+window open. Hence, it is not really the dos.library which creates
+these assigns, but rather the boot shell which does.
+
+It is also CliInit() which takes the elements from the Tripos seglist
+array and creates from them the "Shell", "BootShell" and "CLI"
+elements of the resident list. Apart from them, for legacy reasons,
+the con-handler and ram-handler go also in this list though I am not
+aware of a program that tries to search for them from there.
+
+Then, the function opens the stream to the boot shell console, places
+it in cli_StandardOutput, then opens "*" to fill the
+cli_StandardInput, and opens the startup-sequence and initializes
+cli_CurrentInput with it. It then returns to the shell, which then
+executes the startup-sequence to boot the system.
+
+Vb CliInitRun()
+---------------
+
+CliInitRun() is used to initialize a Shell for RUN, System() or
+Execute(). In fact, RUN just calls into System(), and Execute() calls
+into the same low-level dos.library function as System(), so it is
+really only one function within the dos.library that is covered here.
+The startup packet provided as argument of CliInitRun() includes
+additional parameters that are used to initialize the struct
+CommandLineInterface:
+
+pkt->dp_Arg1 is a BPTR to the "struct CommandLineInterface" from which
+the run command was launched, or the CLI structure (if any) of the
+process that called System(). It is used to "clone" properties of the
+original CLI.
+
+pkt->dp_Arg2 is the BPTR to the standard input of the new shell. It
+will be placed in cli->cli_StandardInput.
+
+pkt->dp_Arg3 is the BPTR to the output stream of the shell. It goes to
+cli->cli_StandardOutput.
+
+pkt->dp_Arg4 is the BPTR to the command input stream the shell should
+read commands from. As System() receives a string and not a stream as
+input, the first activity of System() is that it creates a dummy
+equivalent to a NIL: handle whose input buffer is populated with the
+string. This argument goes to cli->cli_CurrentInput. Curiously, there
+is currently no way to let System() provide a separate stream where
+the shell should read commands from, even though the shell receives
+one as its cli_CurrentInput.
+
+pkt->dp_Arg5 contains the lock of the current directory to be used by
+the shell. It is placed into the pr_CurrentDir of the process without
+being duplicated first.
+
+pkt->dp_Arg6 identifies whether the call is coming from RUN or System.
+If it is 0, then this is for a RUN, and the call clones new output
+streams from pkt->dp_Arg3. Otherwise, pkt->dp_Arg3 is used directly.
+One may wonder in how far the dos.library can tell apart as RUN also
+calls into System(), as stated before. The difference is that RUN
+calls System() with its first argument set to NULL, which is a special
+case.
+
+pkt->dp_Arg7 is finally a pointer to a tag list that includes
+additional parameters of the shell. Tags accepted here include
+NP_StackSize which sets the stack size of the shell, and NP_Path which
+defines a pointer to a BPTR-linked list of directory locks defining
+the command search path.
+
+
+Vc CliInitNewcli()
+-------------------
+
+CliInitNewcli() initializes a shell for the NewShell and NewCLI
+commands. The SYS:System/CLI program also uses NewShell, though
+indirectly through the System() call and thus also uses this startup
+mechanism, though indirectly. Unlike RUN, NewCLI/NewShell depends only
+on CreateNewProc() and on the "Shell" segment found on the system
+resident list. It starts the shell manually from this segment, and
+also creates and delivers the startup packet itself. In particular, it
+is always "Shell" segment that is used to create a new shell, and not
+the "BootShell" entry. Hence, NewCLI and NewShell run, potentially, a
+user shell.
+
+This startup packet is populated as follows:
+
+pkt->dp_Arg1 contains the lock of the current directly which is
+duplicated to also become the current directory of the new shell.
+
+pkt->dp_Arg2 is a BPTR to a small structure that defines the console
+window and initial script to be executed. The structure looks as
+follows:
+
+struct StartupOpts {
+        BPTR     so_Window;
+        BPTR     so_From;
+};
+
+and is not documented anywhere.
+
+so_Window is a BPTR to a filename that is used as input and output
+console, typically a path to CON: or any other interactive handler
+such as AUX:. This path is opened by CliInitNewcli() and used as
+cli_StandardInput of the shell. cli_StandardOutput is created by
+opening "*" from the same handler.
+
+so_From is a file name of the original script file to be executed
+first before starting to read from so_Window and, if zero, defaults to
+"S:Shell-Startup". It then becomes the cli_CurrentInput of the
+shell. Otherwise, cli_CurrentInput is set to cli_StandardInput.
+
+pkt->dp_Arg3 is a BSTR that will be copied into the cli_CommandDir of
+the new shell to be created, i.e. it represents the path where
+commands are searched. If this is zero, the command directory will be
+copied from the CLI passed in through dp_Arg4.
+
+pkt->dp_Arg4 is a BPTR (not a pointer) to the CLI structure
+(i.e. struct CommandLineInterface) from which newshell is called and
+which should be cloned for the new shell.
+
+pkt->dp_Arg5 is copied into the pr_FileSystemTask of the process that
+will become the new shell and as such contains a pointer to the
+message port of the handler that answers requests to the "SYS:"
+assign. The newshell command takes this from its own
+pr_FileSystemTask.
+
+As seen here, the arguments given to the CliInitNewcli() mode of the
+shell startup are mainly a permutation of the arguments given to
+CliInitRun(), and why precisely the shell requires two (three? four?)
+separate startup mechanisms lies in the legacy of the shell. The
+System() startup mechanism in Vb) currently cannot replace the
+NewShell mechanism discussed here as it does not allow to specify a
+separate startup script, but only a startup command.
+
+It would be surely beneficial to deprecate all startup mechanisms and
+go through a common tag-based protocol, though it is probably too late
+to make such a radical change.
+
+
+Vd Self-initialization of the shell
+------------------------------------
+
+As of V45, the shell can also run back itself if an & operator is on
+the line or if it needs to start a command as part of a pipe or
+concatenation operator that became native to the Shell in version
+46. All three, &, | and ||, use the same internal "run back" code of
+the shell and do not dispatch through the RUN command. As such, the
+shell also creates its own startup package, and sends it to its
+child-shell. This startup mode is identified by pkt->dp_Type = 0 and
+pkt->dp_Res1 pointing back to the startup packet itself.
+
+In this case, pkt->dp_Link and pkt->dp_Arg1 points back to the message
+carrying the DosPacket. As this packet is both send and received by
+the shell, it is up to the shell to define its meaning. In fact, the
+startup packet for self-initialization changed from V45 to V46, and it
+will change again for V47 as additional parameters will be required
+for some new shell features.
+
+
+VI Changes for AmigaOs 3.2
+--------------------------
+
+A couple of changes have been made to the dos.library and the shell
+as of AmigaOs 3.2, both of which carry now the major version number
+47. In particular, shell startup has been simplified significantly
+as only two startup mechanisms of the shell remained. In particular:
+
+CliInit() has been deprecated, and the shell will never be started as
+a boot shell. The initialization of the dos.library and mounting of
+AmigaDOS devices is no longer performed through this call, but by a
+separate process named "System-Startup", which is a ROM Module of its
+own.  This process performs now all the system initialization which
+was previously part of CliInit(). As last activity, the System-Startup
+uses the System() call to create the "Initial CLI". This shell
+receives a startup packet that indicates that the shell is initialized
+through CliInitRun().
+
+CliInitNewCli() has also been deprecated, and the NewCLI command
+now also runs through System() instead of starting the shell through
+some arcane logic. The shell receives (again) information to initialize
+itself through CliInitRun().
+
+As net result, only two startup mechanisms remain: CliInitRun(), which
+is the only startup mechanism that is triggered by the Os, and the
+shell-internal startup mechanism used for pipes and the run-back
+operator "&". NewShell and the boot shell both go through System()
+and hence CliInitRun().
+
+In order to implement NewShell, the RUN command and the boot shell,
+the System() call became more powerful and supports new tags.  This
+communication goes through a tag list CliInitRun() receives indirectly
+from dp_Arg7 as documented above.
+
+
+VIa Changes for the System() call
+---------------------------------
+
+As of V47, the dos.library System() function supports the following
+new tags:
+
+
+SYS_InName:	  Instead of providing an already open file,
+System() can also open the file for the caller and provide the
+resulting stream as input stream to the shell. This stream will be
+closed by the shell when it terminates. This tag is used by the
+NewShell command, it provides the path name to the input console. The
+difference between SYS_InName and SYS_Input is that the former opens
+the stream in the process of the shell, as part of CliInitRun(). This
+is actually a workaround for some buggy third-party CON:
+implementations.
+
+SYS_OutName: 	 Similar to SYS_InName, this tag provides the path
+to a logical file to which the shell output will be redirected.
+The file will be closed by the shell upon its termination. Similar to
+SYS_InName, the file will be opened by the shell process as part of
+CliInitRun(), for similar reasons, and it is therefore not quite
+equivalent to opening the stream upfront and delivering it through
+SYS_Output.
+If no Output stream is present, CliInitRun() will create one through
+opening "*" as file spec with the console process taken from the
+input file stream.
+
+SYS_CmdStream:	 Instead of taking commands from the first argument
+of System(), the commands of the shell can also come from a file
+handle that is provided by this argument. The command argument of
+System() shall then be NULL. This feature is also required to
+implement NewShell. There, the command stream is the file handle
+obtained by opening "S:Shell-Startup" or "S:CLI-Startup". For the boot
+shell, it is (obviously) "S:Startup-Sequence". The command stream will
+also be closed if the shell terminates. That is, the caller MUST NOT
+attempt to close it again if System() succeeds, i.e. returns a return
+code different from -1.  This sounds like a major new feature, though
+System() already processed its (first) "command" argument by creating
+a "fake" file handle which contains, in its input buffer, the commands
+to be executed. The only difference is now that this file handle can
+be passed in from the outside instead of getting created by System().
+
+If in addition to SYS_CmdStream SYS_Asynch is also set, the shell
+continues to read from its input stream (either set by SYS_Input or
+SYS_InName) when the command stream depletes. This, of course, is
+also required by NewShell.
+
+SYS_CmdName:     In symmetry to the above tags, this tag provides
+a path to a file that will be opened by System(), and which will then
+provide the command input for the shell. This tag works otherwise
+identically, including the side condition of SYS_Asynch.  This stream
+will also be closed upon termination.
+
+NP_Name:    	 While not a new tag, the V40 version of the
+dos.library ignored this tag and always set the process name of the
+shell to "Background CLI", which is of course not necessarily
+very telling.
+
+NP_UserShell:	This is not a new tag, but it is poorly documented.
+If this tag is set to TRUE, then the shell segment to be used is
+taken from the AmigaDos resident entry named "Shell". If this tag
+is FALSE, it depends on NP_CustomShell. 
+
+NP_CustomShell:	If NP_UserShell is FALSE, this tag defines the
+name of a resident module on the AmigaDOS list of resident commands
+that will be used for the shell. If not present, the default for
+the "custom shell" is "BootShell". It is by default identical to "Shell",
+though "Shell" is supposed to be replaceable by the user.
+
+Run and NewShell create by default a "user shell", i.e. get its shell
+segment from "Shell". Execute() and System() use the "BootShell" as
+default, though System() allows to override this by the above two tags.
+
+
+VIb Internal usage of System() in Os 3.2
+-----------------------------------------
+
+As all arcane magic disappeared in NewShell, its implementation
+became straight forward:
+
+SystemTags(NULL, /* Run-style */
+           SYS_InName,"CON:....", /* path to a CON: window */
+           SYS_Output,NULL,
+           SYS_CmdIn,"S:Shell-Startup",
+	   SYS_Asynch,TRUE, /* also continue from input */
+           SYS_UserShell,TRUE, /* use "Shell" as shell */
+           NP_Name,"Shell Process",
+           TAG_DONE);
+
+System-Startup creates the initial CLI that boots the system, except
+that the command stream is taken from "S:Startup-Sequence" and NP_Name
+is set to "Initial CLI" for consistency with older Kickstart versions.
+Inclusion of NP_CopyVars on the tag list ensures that the Initial CLI
+receives the "debug" and "interactive" shell variables that are enabled
+through the boot menu.
+
+The Run command also goes through System in the following way:
+
+SystemTags(NULL,
+           SYS_Input,inhandle,
+           SYS_Output,Output(),
+           SYS_UserShell,TRUE,
+           TAG_DONE);
+
+This is not new in V47, but was already implemented as such in earlier
+releases. The output of the shell stays identical to the output of
+the caller, and the inhandle points to a faked file descriptor that
+contains the command. Surprisingly, SYS_Asynch is not included in the
+tag list but set implicitly by System() if the command is NULL and
+neither SYS_CmdStream nor SYS_CmdIn is present. This is an unfortunate
+special case that was carried over from the V40 Run and System()
+implementation, and is also required for backwards compatibility reasons to the
+Execute() function of the dos.library.
+
+With this particular calling syntax, i.e. command argument == NULL and
+no explicit command stream given, the System() command - and not the
+Run command - prints the typical
+
+[CLI X]
+
+startup message on the console. The same combination also ensures that the
+shell created through Run remains non-interactive, i.e. it does not take
+user input, and terminates when the input is depleted, i.e. the command
+run in the background terminates. In particular, the console will not be
+instructed to redirect Control-C signals to this background process.
+
+The dos.library Execute() function can also be emulated by System(), though
+the return value of both functions is slightly different:
+
+SystemTags(NULL,
+	   SYS_CmdStream,cmd,
+	   SYS_Input,in,
+	   SYS_Output,out,
+	   SYS_UserShell,FALSE, /* Use "BootShell" as shell */
+           NP_Priority,0,
+	   TAG_DONE);
+
+Note that Execute() never creates a user shell, but depends on the system
+shell. Execute() returns DOSTRUE in case System() would return 0 upon
+success.
+
+
+VIc System() resource management
+---------------------------------
+
+The system autodocs are not quite clear on which resources are
+released when, and by whom. In particular, System() did have some
+defects in this area. Which resources shall be released by the shell
+is communicated through the return code of CliInitRun(), as discussed
+in section IVb.
+
+In particular, the return code with bit 31 = 0 belongs to the cases
+where an asynchronous shell is created through System() or Execute()
+with a command = NULL and no command input stream. The Run command
+uses this encoding. In such cases, resources are owned by the shell,
+and input and output streams are destroyed.
+
+The cases with bit 31 set correspond to all other cases that come
+through the System() command, including asynchronous shells detached
+with the SYS_Asynch tag set to TRUE. In such cases, resource management
+depends on whether the shell is asynchronous or not, which is then
+communicated through bits 0 and 1.
+
+
+The shell will handle resources as follows:
+
+SYS_Input:	This stream will not be closed by System(),
+unless System() successfully created an asynchronous shell. This
+happens if either SYS_ASync is set or both the command argument is
+NULL and no command stream is passed in, let it be through
+SYS_CmdStream or SYS_CmdIn. For asynchronous shells you need to open
+a dedicated stream for input, for example by opening "*", which will
+then be closed implicitly.
+
+In particular, Run will close its input through the equivalence to
+System() given in section VIb as it uses command = NULL, and the
+command will instead reach the shell through a faked input file
+handle.
+
+Execute() will close its input only if its command argument is NULL,
+again through the equivalence to System() from section VIb. Otherwise,
+it is synchronous and then keeps its input stream open.
+
+SYS_InName:	This will always be closed by System()
+as it is also responsible for opening it.
+
+SYS_Output:     Similar to SYS_Input, this stream will not be closed
+by System() unless the shell is asynchronous. The conditions for
+this are exactly as formulated for SYS_Input.
+
+SYS_OutName:	This will always be closed by System()
+as it is also opened by it.
+
+SYS_CmdStream:  This will always be closed by System() if it
+succeeds to create a shell, regardless whether the shell is
+asynchronous or not.
+
+SYS_CmdName:	This will always be closed by System() as it
+is also responsible for opening it.
+
+NP_CurrentDir:	This becomes the current directory of the
+created shell and is hence released by the shell if it dies down,
+independently of whether the shell is asynchronous or not. If
+System() fails with a return code of -1, this lock remains valid.
+This is a bit unfortunate as CreateNewProc() works differently by
+duplicating NP_CurrentDir before copying it into the new process.
+
+NP_Name:        The name is always copied, and the copy is
+released automatically when the shell dies. That is, the passed
+in pointer does not need to have a life time longer than that of the
+call.
+
+Concluding, the System() call does not touch resources if it fails,
+and it destroys the resources it created. For resources passed in, it
+depends on whether the call is asynchronous or not. Asynchronous calls
+receive the resources, they are passed over to the new shell created,
+and are destroyed there. Synchronous calls keep SYS_Input and
+SYS_Output alive, but will destroy NP_CurrentDir.
+
+Whether the latter is a defect or intentional is at this time
+unclear. It may be intentional as it allows to set a target directory
+for a new shell, and the user would be able to "CD" out of this
+directory, and delete it. This would not be possible if the lock
+would have been duplicated before by System(). In particular, System()
+takes care of filtering NP_CurrentDir out before it passes the tags
+into CreateNewProc() for creating the process of the new shell, and it
+would be much simpler to just leave the tag alone and let
+CreateNewProc() perform the duplication of the lock.
+
+
+VII Shell History and TAB expansion
+-----------------------------------
+
+In V47, it is no longer the console that keeps the history of shell
+commands, but the shell itself as this is a much more logical place.
+Also, the V47 shell performs TAB expansion. Note that this expansion
+is taken place in the shell and not the console, again because the
+shell knows its path and configuration much better than the console.
+
+This section provides the details of the interaction between the
+console, the shell and the dos.library.
+
+
+VIIa Medium Mode
+----------------
+
+As first step, the console is instructed to forward TAB expansion
+requests and history requests to the shell. The shell switches to
+this mode as follows:
+
+SetMode(file,2)
+
+where "file" is the handle to its input stream. Note that the second
+argument is usually 0 for the "cooked" mode where the console returns
+input only after the user edited a complete line, corresponding to
+CON:. The argument 1 corresponds to the "raw" mode where the console
+sends out each keystroke individually. The value "2" is new in V47
+and supported both by the system con-handler and ViNCEd.
+
+A suitable method to find out whether the console supports the medium
+mode is the following function:
+
+int SupportsMediumMode(BPTR file)
+{
+  struct FileHandle *fh = (struct FileHandle *)BADDR(file);
+  static __aligned struct InfoData id;
+  
+  if (SetMode(file,2)) {
+    /* the 2 stands for the medium mode
+    **
+    ** Now check with ACTION_DISK_INFO if this is a "CON mode variant"
+    */
+    
+    if (DoPkt(fh->fh_Type,ACTION_DISK_INFO,MKBADDR(&id),0,0,0,0)) {
+      if (id.id_DiskType == ID_CON)
+	supportsmedium = 1;
+      DoPkt(fh->fh_Type,ACTION_UNDISK_INFO,0,0,0,0,0);
+    }
+    
+    if (!supportsmedium)
+      SetMode(file,0); /* Set to ordinary cooked mode */
+  }
+
+  return supportsmedium;
+}
+
+While ACTION_DISK_INFO was already supported in V40 and before,
+ACTION_UNDISK_INFO is new in V47 and defined in <dos/dosextens.h>:
+
+#define ACTION_UNDISK_INFO      513
+
+It "gives the window pointer back" such that AUTO style consoles can
+be iconified again. It is already supported by ViNCEd.
+
+
+VIIb CSI sequences
+------------------
+
+Once this mode is activated, the con-handler transmits requests for
+TAB expansion and history functions to the shell by using CSI
+sequences. These sequences are transmitted immediately after the
+corresponding keystroke is received, the RETURN key is not required.
+
+This CSI sequence looks as follows:
+
+CSI <n>;<m>;<o> U <string>
+
+where n, m and o are ASCII encoded decimal numbers and <string> is an
+optional additional character string whose size in characters is by <m>.
+
+The value of <n> determines the requested activity:
+
+n=12,22,32,42,52: These values request a forwards TAB expansion where
+the value determines the type of expansion requested. The ROM shell
+currently handles all five identical, though in principle multiple TAB
+expansion keys could be defined. ViNCEd uses all five.
+
+The term "forwards" here indicates that, if a TAB expansion is already
+active, the TAB key will either start a match process, or advance to
+the next possible match.
+
+The value of <o> indicates where the in TAB expansion pattern the
+cursor is positioned, and the <string> is the TAB expansion pattern
+itself. It is up to the shell to interpret this string. Typically, it
+will create from the <string> a search pattern by inserting at the
+cursor position a wild-card, and then will scan the files in the
+current directory for a match.
+
+n=13,23,33,43,53: These values request a backwards TAB
+expansion. Again, multiple keys may be possible, though the ROM shell
+handles them all alike and the ROM console only generates the
+first. ViNCEd can generate all five.
+
+This is a "backwards" request in the sense that the request is either
+started, or the previous match of all found expansions is displayed.
+
+
+n=2:              Advance in the history towards the previous (older)
+entry and display it. This request is send by the console if the
+cursor-up key is pressed. The <o> argument, the length and the
+additional string are not used.
+
+n=3:  	  	  Advance in the history towards the next (younger)
+entry and display it. This request is send by the cursor-down key.
+The <o> argument, the length and the additional string are not used.
+
+n=4:  	  	  Search the history in upwards (towards older
+entries) direction. This takes the pattern provided by <o> and
+the string and searches the history in upwards direction, inserting
+the found matches if any. It is typically bound to the Shift+Up
+key combination.
+
+n=5:		  Search the history in downwards (towards younger
+entries) direction. It takes the pattern provided by the cursor
+position <o> and the length <m> and inserts any matches in the
+console.
+
+n=6:		  Search the history with a partial pattern towards
+older entries, ignoring the characters behind the cursor position.
+This corresponds to the Ctrl-R keyboard combination of the console,
+but works otherwise identical to n=4.
+
+n=7:	  	  Search the history with a partial pattern towards
+younger entries, ignoring the characters behind the cursor position.
+The ROM console does not bind a key to this function, though ViNCEd
+may through the user preferences.
+
+n=10:	    	  Rewinds the history, i.e. adjusts the current scan
+position in the history to its end. <m> <o> and <string> are ignored.
+
+The shell, upon receiving these sequences, performs whatever action
+is requested, and then updates the current input line by a packet
+of the type ACTION_FORCE, which replaces the current user input
+with the input created by the shell. Note that the shell cannot
+simply print the matches to the console as these characters would
+not be understood as user input by the console. Instead, the console
+user input must be "forced" to the generated input. Luckily, this
+packet already existed in V40 as part of the ARexx interface of the
+console:
+
+DoPkt(fh->fh_Type,ACTION_FORCE,fh->fh_Arg1,(LONG)buffer,len,0,0);
+
+fh is a "struct FileHandle" from dos/dosextens.h, i.e.
+
+fh = (struct FileHandle *)(BADDR(Input()))
+
+fh->fh_Type is the command message port of the console handler, and
+fh->fh_Arg1 identifies the console owner. <buffer> and <len> provide
+the input to be set. This input may include cursor movement CSI
+sequences to put the cursor at a specific position in the generated
+input.
+
+
+VIIc Access to the shell history
+--------------------------------
+
+As the history became part of the shell, an additional interface
+towards extended shell functions was made available in V47. This
+new dos.library function is defined as follows:
+
+APTR DoShellMethodTagList( ULONG method, struct TagItem *tags );
+APTR DoShellMethod( ULONG method, ...);
+
+#pragma libcall DOSBase DoShellMethodTagList 480 8002
+#ifdef __SASC_60
+#pragma tagcall DOSBase DoShellMethod 480 8002
+#endif
+
+As seen from the above, it is available at offset -480 of the v47
+dos.library.
+
+<method> identifies the type of function the shell shall perform,
+<tags> provides additional arguments for the call. The function
+returns a pointer as result.
+
+The following methods are currently available, defined in
+<dos/shell.h>, a new include file:
+
+SHELL_METH_METHODS:  Provide a list of all shell methods. This is
+a 0-terminated array of method-IDs the shell implements, and the
+above function returns a pointer to this array. No arguments are
+required.
+
+SHELL_METH_GETHIST:  Provide a struct MinList * which contains the
+history. Each element in the list is a struct HistoryNode * also
+defined in <dos/shell.h>:
+
+struct HistoryNode {
+  struct MinNode  hn_Node;
+  UBYTE          *hn_Line;
+};
+
+Note that this structure is read-only. 
+
+SHELL_METH_CLRHIST:  Erase the history. No arguments are required.
+
+SHELL_METH_ADDHIST:  Takes a single SHELL_ADDH_LINE argument which
+points to a zero-terminated string. This string is copied by the shell
+into the history, defining the youngest entry. Used by the history
+shell built-in to load a history from a file.
+
+SHELL_METH_FGETS:    Retrieves a zero-terminated string from the
+console, similar to what FGets() would do, except that the shell
+TAB expansion is available to the user. A char * to the read string
+is returned that needs to be copied by the caller as it remains in
+the internal buffer of the shell and may be erased or overwritten
+later.
+
+
+VIId Shell extended interface
+------------------------------
+
+As of V47, the "struct CommandLineInterface" has been extended
+somewhat. The struct ExtendedCommandLineInterface is defined in
+<dos/shell.h>:
+
+struct ExtendedCommandLineInterface {
+    LONG   cle_Result2;        /* Value of IoErr from last command        */
+    BSTR   cle_SetName;        /* Name of current directory               */
+    BPTR   cle_CommandDir;     /* Head of the path locklist               */
+    LONG   cle_ReturnCode;     /* Return code from last command           */
+    BSTR   cle_CommandName;    /* Name of current command                 */
+    LONG   cle_FailLevel;      /* Fail level (set by FAILAT)              */
+    BSTR   cle_Prompt;         /* Current prompt (set by PROMPT)          */
+    BPTR   cle_StandardInput;  /* Default (terminal) CLI input            */
+    BPTR   cle_CurrentInput;   /* Current CLI input                       */
+    BSTR   cle_CommandFile;    /* Name of EXECUTE command file            */
+    LONG   cle_Interactive;    /* Boolean; True if prompts required       */
+    LONG   cle_Background;     /* Boolean; True if CLI created by RUN     */
+    BPTR   cle_CurrentOutput;  /* Current CLI output                      */
+    LONG   cle_DefaultStack;   /* Stack size to be obtained in long words */
+    BPTR   cle_StandardOutput; /* Default (terminal) CLI output           */
+    BPTR   cle_Module;         /* SegList of currently loaded command     */
+    struct Hook cle_Hook;      /* For requesting shell functions          */
+    struct ExtendedCommandLineInterface *cle_This; /* pointer to itself   */
+    LONG   cle_Version;        /* Version of the interface. V47 currently */
+};  /* CommandLineInterface */
+
+This structure is returned by the following private function in the
+dos.library which exists since V47:
+
+#pragma libcall DOSBase ExtendedCli 3c0 00
+struct ExtendedCommandLineInterface *ExtendedCli(void);
+
+It should only be used in V47 and by the shell itself to learn whether
+it could offer any extended functions towards its internal state. The
+DoShellMethod() runs this function itself to check whether it can
+request a particular method from the shell.
+
+The shell should, if an extended CLI is found, update the cle_Hook
+member to a function which implements a super-set of the functions
+listed in section VIIc.
+
+The prototype for the hook function is as follows:
+ 
+UBYTE __asm *ShellHook(register __a0 struct Hook *hk,
+      	    	       register __a1 ULONG *method,
+      	    	       register __a2 struct TagItem *tags)
+
+The long-word pointed to by <method> identifies the function to
+implement, the currently available methods are listed in section VIIc.
+
+The dos.library always creates extended CLIs from V47 up, it is
+therefore of particular importance to use AllocDosObject() if a struct
+CommandLineInterface is to be constructed. A shell with a manually
+allocated struct CommandLineInterface will, therefore, be unable to
+offer extended functionalities. In particular, ARexx used to create
+CLIs itself without going through the dos.library. This was fixed in
+v47 as well.
+
+
+VIII System-Startup
+--------------------
+
+System-startup is a new component of the v47 Kickstart. It is a
+ROM-module that performs the same activities CliInit() did before,
+though the initialization order is somewhat different, and some new
+activities are included in System-Startup CliInit() did not perform.
+
+In V45 and below, exec initializes the dos.library through
+InitResident(). The dos.library then starts the boot shell, and
+signals the shell due to its startup packet that it should call
+CliInit(). CliInit() mounts then startup volume, the volumes collected
+by the expansion.library, creates the system assigns, collects
+DEVS:System-Configuration and initializes remaining exec modules. When
+the call returns, the boot shell continues with reading
+S:Startup-Sequence.
+
+In V47 and above, exec initializes the dos.library as before, but the
+dos.library then scans the resident list for the System-Startup
+module, and starts this as a process before it exits. The
+System-Startup process then initializes AmigaDOS, and as last step,
+creates the boot shell through System(). Thus, it is no longer the
+boot shell that initializes AmigaDOS, but System-Startup.
+
+The following steps are taken by System-Startup:
+
+- It first completes building the dos.library. That is, it builds the
+DosInfo structure and initializes it. It creates the list of CLIs,
+resets the time to 0 in case the battclock resource did not set it
+such that the boot file system completes the time stamp, and
+initializes the semaphores in DosInfo.
+
+- It initializes intuition provisionally, i.e. opens it, and places
+it in DOSBase and the public "GlobVec" for legacy BCPL programs.
+
+- System-Startup mounts all volumes collected recorded in
+ExpansionBase. Auto booting controllers left there the boot nodes
+for their partitions, and System-Startup carries them over into the
+DOS device list it created in the first step.
+
+- The next step is new in V47: In case a newer FFS is found in the
+FileSystem.resource, where it was placed by an auto-booting host
+adapter, then this file system replaces the ROM-based file system on
+the AmigaDOS resident list.
+This file system is then later used to mount floppies or other devices
+without an RDB. By this mechanism, a newer FFS in an RDB will be
+picked up and will be used even by system-mounted devices such as the
+floppies.
+
+- The devices PRT:, PAR:, SER: and PIPE: are mounted. The latter is an
+addition in V47. It cannot yet start these devices as the
+corresponding handlers are expected on disk in L:, though the device
+nodes are created. As PIPE: is mounted already at this point, pipes
+can already be used in the boot shell without explicitly mounting the
+PIPE: device.
+
+- The file system of the boot volume is started.
+
+- The system assigns are created. These are L:, FONTS:, DEVS:, LIBS:,
+S:, C:, SYS: and ENVARC:, the last is a "late assign" which completes
+the first time a program attempts to access it. It points to
+SYS:Prefs/Env-Archive.
+
+- All remaining file systems collected from expansion, along with
+the file systems for the floppies are started.
+
+- The devices RAW: and CON: are mounted, and the con-handler is added
+as an entry to the AmigaDOS resident list. The segment for the
+"con-handler" is taken from the exec list of resident nodes. In V47,
+if ROM-Updates are enabled, system-startup additionally scans the L:
+directory for a file named "con-handler" and loads it as replacement
+for the ROM-Module if a newer version is found. The ViNCEd Boot-Shim
+uses this mechanism.
+
+- The RAM: device is mounted, the segment is taken from "ram-handler"
+on the exec resident list or "L:Ram-Handler" if the latter exists
+(V47) and ROM-Updates are enabled. This again allows to update the
+RAM-Handler from disk without requiring a new ROM. As above, the
+segment is also added to the dos Resident list.
+
+- System-Startup scans all remaining exec resident modules not yet
+initialized, and checks whether a counterpart exist in LIBS: or DEVS:
+If ROM-Updates are enabled, it loads these components from disk and
+replaces the ROM-based modules by the modules loaded from disk. This
+is again a new feature in V47. For intuition, a downgrade to V40 is
+also possible. For example, the audio.device or the
+mathieeesingbas.library can be updated like this as they are
+initialized after the dos.library.
+
+- If a disk-based version of intuition is found, then the provisional
+version of intuition is shut down again, removed from the system and
+replaced by the loaded version. The new version is then placed in
+DOSBase and the public GlobVec.
+
+- As another new feature, System-Startup checks whether the monitor
+used by the boot menu requires AGA. This happens if a 31kHz mode was
+selected in the boot menu. If an AGA monitor is found active in
+graphics, System-Startup "enlightens" intuition and enables there AGA
+monitors in general. This allows using a 31kHz mode for the boot
+console. Previously, "enlightenment" of the system was performed much
+later as part of SetPatch.
+
+- All ROM-Modules flagged as RTF_AFTERDOS are initialized. These
+include, for example, the audio.device and mathieeesingbas.
+
+- DEVS:System-Configuration is loaded, and copied into intuition.
+This file contains the legacy pre-2.04 Kickstart configuration of
+intuition which is later on overridden by IPrefs.
+
+- System-Startup opens the boot console, i.e. the CON: filespec, and
+the S:Startup-Sequence file if it exists.
+
+- Unless disabled by a flag in expansion, the boot console is forced
+open. This will also complete initialization of intuition as it will
+open the boot screen. This step ensures that legacy programs receive an
+active intuition screen, while a modern system will keep the screen
+closed unless the workbench finally opens it. For example, the 2.04
+boot block on boot floppies will set this hidden flag in expansion to
+keep the boot console closed.
+
+- As a new feature in V47, System-Startup checks whether logging is
+enabled in the boot menu. If so, System-Startup locates the "SysLog"
+module from the exec resident list and starts it. This resident module
+captures data that would usually go through the serial port via the
+exec RawPutChar() function, and redirects it to RAM:syslog.
+
+- As another new feature, the "debug" and "interactive" shell
+variables are set if debugging or tracing were enabled in the boot
+menu.
+
+- Finally, the boot shell is started through System().
+
+- The System-Startup process dies away. In V45 and before, CliInit()
+would instead return to the boot shell, and the above steps would have
+been performed as part of this function.

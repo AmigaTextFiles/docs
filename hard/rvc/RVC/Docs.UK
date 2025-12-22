@@ -1,0 +1,259 @@
+			Remote Volume Control
+			=====================
+
+
+By: 		Edwin van den Oosterkamp (eto@icns.nl).
+
+Appendices:	Diagrams in IFF/ILBM "Diagram.IFF".
+		Docs in english and dutch.
+		Source code 8051 software "RVC.a51".
+		Object 8051 software "RVC.obj".
+		8051 Hex file in Intel format "RVC.hex".
+		VolumeControl executable for the Amiga.
+
+Preface
+-------
+
+One of things that take the most of my time is using my Amiga. Music
+is for me a MUST. But the level of music is important, and varies with
+artist and song. When the volume is to low I will get frustrated that
+I can't hear the music at a decent level. When the volume is to loud I
+will not be able concentrate myself on the Amiga since the music will
+take my complete attention.
+And my stereo is at the other side of the room...
+So I wanted to operate the volume of my amplfier from my computer. Now
+there are multiple solutions for a "problem" like this:
+
+- I could buy an amplifier with remote control.
+
+But I like my amplifier and don't want to bay an other one just since I
+am to lazy to walk over and change the volume.
+
+- I could build a remotecontrol using servos on the volume knob.
+
+There is no room at all near the potentio meter of the volume, so it
+was a mechanical problem implementing this one.
+
+- Adjust the volume electronically.
+
+Yes! This is what became my solution: a small box containing some
+electronics connected between the pre-amp and the power-amp. The
+box used RS232 to be adjusted by my Amiga.
+
+
+The solution
+------------
+
+Crystal has a chip in its productline which fits exactly into my
+application. The chip can be seen as an PGA (Programmable Gain Amp).
+The IC (CS3310 to be more specific) is already stereo, so just one
+is needed. It is used in high-end applications so it will do at home
+also...
+The CS3310 is also equipped with a software-mute making sure that no
+sound is going through the device. Below there is a table giving some
+typical audio parameters of the CS3310 and see why it is used in
+high-end applications:
+
+Stepsize:		  0.5   dB
+Minimal amp:		-95.5   dB
+Maximal amp:		 31.5   dB
+Error at 31.5 dB:	+-0.05  dB
+Difference R and L:	+-0.05  dB
+Distortion (2Vrms 1kHz):  0.001 dB
+Dynamic range:		116     dB
+Separation:		110     dB
+Output noise:		  4.2   microVrms
+
+Offcourse the CS3310 is NOT equipped with a RS232 port. (The parallel
+port of the Amiga is capable of driving the CS3310, but that would not
+allow long cables between computer and VolumeControl).
+One way to convert a RS232 to a appropriate digital signal is using
+a microcontroller like the 80C31. The 80C31 is equipped with a RS232
+port and multiple I/O ports.
+To obtain a speed of 9600Bd a clock crystal of 11.0592MHz is used. Since
+this is not the first application featuring a 80C31 with a 9600Bd serial
+port, this crystal is readly available (and not expensive!). This is
+also true for the microcontroller: it *is* a cheap device.
+
+RS232 utilizes voltages at approx 10V (positive and negative). These are
+not appropriate for direct microcontroller use. Therefore a RS232 line-
+driver is connected between the 80C51 and RS232.
+There exist a lot of these drivers and I selected the MAX232 made by
+Maxim, since it is a highly stable device.
+The MAX232 owns an internal (switching)power supply to convert the 5V
+supplied to the +10V/-10V needed for the RS232 interfacing.
+
+Back to the microcontroller. The software is loaded in a EPROM. It is
+possible to obtain an OTP (One Time Programmable) version of the 
+80C31 which is called the 80C51. But this one is more expensive and
+can be programmed just once.
+Also there is a version called the 87C51 which has an internal EPROM
+(including the erasor window) but for the price of that one it is
+possible to buy ten 80C31's...
+Using an EPROM with the 80C31 occupies some I/O ports, but since these
+ports are not used anyway, why not use an EPROM. The data and address
+bus of the 80C31 are multiplexed. To de-multiplex them a latch is
+needed (like the 74HCT573).
+
+
+Software
+--------
+
+The software (source, object and hexfile) for the controller is
+included in this archive. If not please contact me.
+
+When the controller is put to power, it initializes the RS232 port
+for 9600Baud, 8 databits, 1 stop bit and no parity.
+To wake the CS3310 the controller shakes the /Mute signal a little.
+When all initializations are done, the controller transmits a
+simple "Usage:". This usage can be received by connecting a Amiga
+to the RS232 and using terminal software on the Amiga. With this
+terminal software the RVC can be sent commands.
+When the string is transmitted the CS3310 is set to a value of $c0
+on both channels. This sets the amplification to 0dB.
+
+The instructionset used by the 80C31 looks much like the one of the z80.
+Compared to the instructions of the MC68000 there are a lot of small
+differences: Instead of "BSET.B #..." the 80C31 uses "SETB ..", but
+that is nothing compared to the MOV instruction:
+Comparing the MOV with the 68000 MOVE instruction we see that source
+and destination are changed! So, instead of "MOVE.B #0,Accu" the
+80C31 uses MOVE A,#0...
+
+
+Power supply
+------------
+
+Except for the CS3310 all parts need just a 5V supply. The CS3310
+needs a symmetrical 5V supply. Since I wanted to use a small adaptor
+for supply, the total inputvoltage must be kept low. But at the
+other hand: a component like the CS3310 must not be spoiled with
+a bad powersupply.
+Therefor I selected for the more expensive option by using a DC/DC
+converter for the supply. The NMH505S suits for this application:
+it is able to derive a +5V/5V supply from a single 5V input.
+
+An other problem with adapter supply is that those things are
+never decently stabilised. To stabilise the powersupply I added
+the 7805 and some capacitors. The 1N4001 diode is used as a kind
+of wrong connection protection.
+
+Around the CS3310 there are a lot of capacitors. These things are
+recommended in the application note by Crystal. This is also the
+fact for the 10Ohm resistor. These components should remove the
+noise on the analog lines made by the digital part of the CS3310.
+These components should be as close to the CS3310 as possible.
+
+The capacitor round the MAX232 are for the internal DC/DC converter
+of the MAX232. These capacitors do not need to be connected as close
+as possible, but the MAX232 and its surrounding components should
+be kept far from the CS3310 to prevent noise creation on the analog
+lines.
+
+Every IC must have its own 100nF capacitor over the supply! These
+are not drawn in the diagram.
+
+
+Amiga Software
+--------------
+
+To enable the volumecontrol to be used with the Amiga, there is some
+software written for the Amiga also. it is useles to include the
+complete software here some basic routines are shown below:
+
+To transmit informtion, the serial post must be opened. Offcourse
+the SER: device in dos.library could be used, but I rather use
+serial.device since it better performance.
+
+Opening of the serial.device (KS2.0):
+
+OpenSer:		MOVE.L	4.w,a6			;a6 = Execbase.
+			JSR	CREATEMSGPORT(a6)	;Create a MsgPort.
+			MOVE.L	d0,SerMsg		;Store and test the MsgPort.
+			BEQ.B	Ser_Error		;result=0? No MsgPort!
+			MOVE.L	d0,a0			;Place MsgPort in a0.
+			MOVEQ	#82,d0			;ULONG Size IOReq-struct.
+			JSR	CREATEIOREQUEST(a6)	;Create IOReq struct.
+			MOVE.L	d0,SerReq		;Store and test the IOReq.
+			BEQ.B	Ser_Error		;Result=0? No IOReq!
+
+;Make some default settings and open the device.
+
+			MOVE.L	SerReq(PC),a1		;APTR  StdIOReq.
+			MOVE.L	#9600,io_BAUD(a1)	;ULONG Baudrate.
+			MOVE.B	#$80,io_SerFlags(a1)	;UBYTE Flags: No protocol.
+			LEA.L	SerName(PC),a0		;APTR  Device name.
+			MOVEQ	#1,d0			;Unit number.
+			MOVEQ	#0,d1			;No flags.
+			JSR	OPENDEV(a6)		;Open it.
+			TST.L	d0			;Test the result.
+			BNE.B	Ser_Busy		;Ne device?
+
+It is possible to set more default settings, Things which are not set
+here are used from the preferences.
+
+Everything opened must also be closed:
+
+CloseSer:		MOVE.L	4.w,a6			;a6 = Execbase.
+
+			TST.L	SerReq			;Test StdIOReq.
+			BEQ.B	Ser_NoReq		;No req?
+			MOVE.L	SerReq(PC),a1		;APTR  StdIOReq.
+			JSR	CLOSEDEV(a6)		;Gone is the device.
+			MOVE.L	SerReq(PC),a0		;APTR  StdIOReq.
+			JSR	DELETEIOREQUEST(a6)	;Gone is the IORequest.
+			CLR.L	SerReq
+		
+;Free the message port of the serial device.
+
+Ser_NoReq:		TST.L	SerMsg			;Test MsgPort.
+			BEQ.B	Ser_NoMsg		;No MsgPort?
+			MOVE.L	SerMsg(PC),a0		;APTR  MsgPort.
+			JSR	DELETEMSGPORT(a6)	;Gone is the Messageport.
+			CLR.L	SerMsg
+Ser_NoMsg:
+
+Both the open and close routines are written for KickStart2.0 and
+higher. Things like devicenames and variable storage should also
+be specified.
+
+When serial is opened (and before closing it) the serial may be used.
+using is not more than calling DOIO...
+
+ChangeVol:		MOVE.L	4.w,a6			;a6 = ExecBase.
+			MOVE.L	SerReq(PC),a1		;APTR  Serial-IOReq.
+			MOVE.L	#4,io_Length(a1)	;ULONG Size (4).
+			MOVE.L	#SerFile,io_Data(a1)	;APTR  Buffer.
+			MOVE.W	#CMD_WRITE,io_Command(a1);Write command.
+			JSR	DOIO(a6)
+
+And this is how the string looks like:
+
+SerFile:		DC.B	$1b,'1',192,192		;Instellen: 0 dB.
+
+The RVC "protocol" wants that the <esc> ($1b) is transmitted first.
+After that the "1" is transmitted and the bytes for left and right
+are transmitted.
+
+
+Looking back
+------------
+
+My prototype draws a current of 100mA. This current will be smaller
+when the controller uses the idle-mode to reduce power consumption.
+When using the prototype nothing of the digital switching signals
+was found on the analog terminals.
+When the CS3310 has no supply voltage, it has a rather low impedance,
+so the input signal is ruined. When making a switch to bypass the
+RVS both the inputs and outputs of the CS3310 should be disconnected
+from the audio.
+
+When there are any questions about this subject, don't hesitate to
+contact me..
+
+Thank you for your attention...
+
+Edwin. Th. van den oosterkamp
+E-Mail:	eto@icns.nl
+WWW:	http://www.icns.nl/users/eto/
+

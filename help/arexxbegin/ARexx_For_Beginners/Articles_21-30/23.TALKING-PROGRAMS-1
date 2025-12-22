@@ -1,0 +1,928 @@
+@DATABASE "ARB23"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 23 - Talk Other Programs - Part 1"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 23 - TALKING WITH OTHER PROGRAMS - PART 1
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Comments On IPC                             " LINK "General"}
+@{" Programs That You Can Talk With                     " LINK "Programs"}
+@{" Instructions and Commands - Terminology             " LINK "Instructions"}
+@{" The HOST Address                                    " LINK "Host"}
+@{" The PREVIOUS Host Address                           " LINK "Previous"}
+@{" The ADDRESS & SHELL Instructions - General          " LINK "Address"}
+@{"    Format 1 - ADDRESS PortName                      " LINK "Format1"}
+@{"    Command Syntax                                   " LINK "Command"}
+@{"    Format 2 - ADDRESS                               " LINK "Format2"}
+@{"    Format 3 - ADDRESS PortName Expression           " LINK "Format3"}
+@{"    Format 4 - ADDRESS VALUE Symbol                  " LINK "Format4"}
+@{"    The VALUE Keyword                                " LINK "Value"}
+@{"    When To Use Format 4                             " LINK "When"}
+@{" Using Built In Functions After ADDRESS              " LINK "Using"}
+@{" Examples of ADDRESS & Functions Of Use With ADDRESS " LINK "Examples"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 23 - Talking With Other Programs - General"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - GENERAL@{UB}@{UU}
+@{JLEFT}
+As one of the main reasons for using AREXX is to communicate with other
+programs we had better have a look at how to do it. This is commonly called
+@{"Inter Process Communication" LINK "ARB:Misc/Glossary/IPC"} or "IPC" for short.
+
+Although IPC is one of the main reasons that people use ARexx, I have
+left any discussion of it until now as it is a bit difficult to write
+ARexx scripts for communication until some of the basic principles of
+ARexx have been mastered.
+
+The following paragraphs are taken from Article 1 of this disk and are
+worth repeating at this stage:-
+@{LINDENT 3}
+`The ARexx manual says:-
+
+   "... it can act as a hub through which applications - even those
+    created by different companies - can exchange data and commands".
+
+`Thus it can be used to tell one program to do things like pass commands
+or data to another program, or to receive commands or data from another
+program. This is known as "Inter Process Communication" (IPC).
+
+`To participate in IPC, a program must have been written with a "Message
+Port" called an "ARexx Port". A port is a software interface that can
+be accessed by other programs. In other words, it is a small module of
+the program code that is written to send signals to, and receive signals
+from, other programs.'
+@{LINDENT 0}
+Note that I have titled this and the next two articles "Talking @{B}WITH@{UB} Other
+Programs". A lot of programs have only the ability to listen to your ARexx
+program and cannot talk back to it (** but see note below). However, ARexx
+is set up to be a @{B}TWO WAY@{UB} communication system. In Article 40 we will
+make full use of this in having two ARexx programs talking WITH each
+other.
+
+(** NOTE - all programs with ARexx ports @{B}can@{UB} talk back to your ARexx program
+in the restricted sense that they can send a "message received" type of
+communication and/or a return code number. What I mean here is that many
+programs cannot send back instructions to your ARexx program or to whatever
+other program is communicating with it.)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Programs" "Article 23 - Talking With Other Programs - Which Programs"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - PROGRAMS THAT YOU CAN TALK WITH@{UB}@{UU}
+@{JLEFT}
+Your ARexx programs can communicate with:-
+
+- AmigaDOS
+- Programs that have been written with an @{"ARexx Port" LINK "ARB:Articles_01-10/01.Getting_Started/Ports"}
+- Other ARexx programs.
+
+In this and the next article I will deal with the first two of these.
+Talking with other ARexx programs will be left until I deal with the
+Rexxsupport.library in Articles @{"39" LINK "ARB:Articles_31-40/39.Support.Library/Main"} and @{"40" LINK "ARB:Articles_31-40/40.communications/Main"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Instructions" "Article 23 - Talking With Other Programs - Instructions & Commands"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - INSTRUCTIONS & COMMANDS@{UB}@{UU}
+@{JLEFT}
+First let's get some terminology straight.
+
+@{B}"Instruction"@{UB} is one of the 27 ARexx instructions such as "SAY", "IF"
+or "DO" etc.
+
+@{B}"Command"@{UB} is something to be sent to the external program with which ARexx
+is communicating.
+
+@{B}It is important to note that COMMANDS are NOT part of the ARexx system.@{UB}
+They are a part of the external program and thus their syntax/format is
+determined by that program. An example is one of the AmigaDOS commands
+found in your "C" directory. These can all be sent to AmigaDOS from ARexx
+after ARexx has @{"ADDRESSed" LINK "Address"} AmigaDOS. @{"Click here" LINK "Format3"} to see an example
+
+If ARexx finds something that @{B}cannot@{UB} be classified as one of:-
+
+   Comment          e.g. /* Comment */
+   Label            e.g. Display:
+   Assignment       e.g. Symbol = 23
+   Instruction      e.g. SAY "Hi there"
+   Function         e.g. RIGHT(string)
+
+then it assumes that it is a "Command" and tries to send it to the other
+program with which it is communicating.
+
+If the ARexx program is @{B}not@{UB} communicating with any other program then
+the unclassified item is ignored.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Host" "Article 23 - Talking With Other Programs - The HOST Address"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - THE HOST ADDRESS@{UB}@{UU}
+@{JLEFT}
+The "Host Address" is an ARexx Port (or @{"Message Port" LINK "ARB:Articles_01-10/01.Getting_Started/Ports"} which is part of
+the external program with which ARexx is currently communicating.
+
+Every ARexx program that is launched has a @{B}default host address@{UB} which
+is the port name of the program from which the ARexx program was
+launched.
+
+When you launch an ARexx program from Shell/CLI with the RX command, then
+that default host address is "REXX" which is the port name for ARexx itself.
+Using the RX command within Shell/CLI is really launcing an ARexx program
+from within the RexxMast process and not really from AmigaDOS. This is
+why the default host address is @{B}not@{UB} "COMMAND", the port name for
+AmigaDOS.
+
+When you launch an ARexx program from other programs, the default host
+address is the port name for the program from which the ARexx program
+was launched. For example, if launched from the program "ED" (the text
+editing program that comes with Workbench), the default host address is
+"Ed". (In the next article we will discuss launching ARexx programs from
+within other programs such as "ED".
+
+The @{"ADDRESS" LINK "Address"} instruction (which we will look at soon in this article) can
+be used to change the port name with which your ARexx program communicates.
+Thus we can talk not only to the default host address but to @{B}ANY@{UB} program
+currently running on the Amiga which has an ARexx port.
+
+If "ADDRESS" has been used to tell ARexx to talk to the port name "COMMAND"
+then the ARexx progarm can communicate with @{"AmigaDOS" LINK "ARB:Misc/Glossary/AmigaDOS"} and the port name
+"COMMAND" becomes the "Host Address". Commands can then be sent to
+AmigaDOS.
+
+If "ADDRESS" has been used to talk to, say, the port name "dopus_rexx"
+then the ARexx program can communicate with the program "DirectoryOpus"
+(if it is running) and the port name "dopus_rexx" becomes the "Host Address".
+Commands can then be sent to "DirectoryOpus".
+
+A lot of programs with ARexx ports give their ARexx port the same name
+as the program itself as is done with "ED". ARexx itself has a port named
+"REXX".
+
+Other programs use a port name that is very similar to the program name
+such as "dopus_rexx" for the program "DirectoryOpus",
+
+Having port names the same as or similar to the program name saves confusion
+and significantly reduces the possibility of two programs having the same
+ARexx port name!
+
+Some programs which allow more than one version of themselves to be run
+at the same time can have different port names for each version. For example,
+with "ED", the port names will be:-
+
+  1st "ED" to be run:-    Ed
+  2nd "ED" to be run:-    Ed_1
+  3rd "ED" to be run:-    Ed_2
+
+  and so on
+
+When @{B}ADDRESS@{UB} is used to create a new host address, then the host address
+that was previously being used as the current one becomes the @{"PREVIOUS" LINK "Previous"}
+host address and can be reaccessed by using @{"ADDRESS Format 2" LINK "Format2"}.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Previous" "Article 23 - Talking With Other Programs - The PREVIOUS Host Address"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - THE PREVIOUS HOST ADDRESS@{UB}@{UU}
+@{JLEFT}
+ARexx keeps track of both the current and previous host addresses so that
+you can easily switch between the two by using @{"ADDRESS Format 2" LINK "Format2"}.
+
+If you use:-
+
+  ADDRESS 'COMMAND'
+
+then
+
+  ADDRESS 'Ed'
+
+then "Ed" becomes the current address and "COMMAND" the previous address.
+
+@{B}ARexx ALWAYS keeps track of the previous address@{UB}
+
+You can swap between the current and previous addresses by using
+@{"ADDRESS Format 2" LINK "Format2"}
+
+It should be noted that all ARexx programs not only have a
+@{"default CURRENT host" LINK "Host"} but also a default @{B}PREVIOUS@{UB} host.
+
+In @{B}ALL@{UB} cases, the default PREVIOUS host address is @{B}COMMAND@{UB} which is the
+@{B}AmigaDOS@{UB} port name.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Address" "Article 23 - Talking With Other Programs - The ADDRESS & SHELL Instructions"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - THE ADDRESS & SHELL INSTRUCTIONS@{UB}@{UU}
+@{JLEFT}
+Note that the instruction "SHELL" is identical to "ADDRESS". I will talk
+only about "ADDRESS" as it seems to be the most commonly used. However,
+if you see reference to "SHELL" then just remember that it is the same
+as "ADDRESS".
+
+"ADDRESS" can be used in one of these formats:-
+
+  Format 1  -  ADDRESS PortName
+  Format 2  -  ADDRESS
+  Format 3  -  ADDRESS PortName Expression
+  Format 4  -  ADDRESS VALUE Symbol
+
+Each of these formats will be dealt with separately. However, to make
+things easier to follow, I have also included a section on @{B}Command Syntax@{UB}
+and @{B}VALUE Keyword@{UB} and I would suggest that you read them in the following
+order:-
+
+  @{" ADDRESS Format 1 " LINK "Format1"}
+  @{" Command Syntax   " LINK "Command"}
+  @{" ADDRESS Format 2 " LINK "Format2"}
+  @{" ADDRESS Format 3 " LINK "Format3"}
+  @{" ADDRESS Format 4 " LINK "Format4"}
+  @{" VALUE Keyword    " LINK "Value"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Format1" "Article 23 - Talking With Other Programs - ADDRESS Format 1"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - ADDRESS INSTRUCTION FORMAT 1@{UB}@{UU}
+@{JLEFT}
+@{B}ADDRESS Portname@{UB}
+
+The "PortName" is the name of an ARexx port that has been set up in another
+external program. Thus, the ED program, which has an ARexx port named
+"Ed" is addressed as:-
+
+  ADDRESS 'Ed'
+
+AmigaDOS, which has an ARexx port named "COMMAND" is addressed as:-
+
+  ADDRESS 'COMMAND'
+
+The virus checking program called "Virus_Checker" has an ARexx port named
+"Virus_Checker" is addressed as:-
+
+  ADDRESS 'Virus_Checker'
+
+@{B}** IMPORTANT NOTE **@{UB} The port names must be EXACTLY as specified by the
+external program, taking note of the case of each letter. If we used one
+of:-
+
+  ADDRESS 'ED'              instead of ADDRESS  'Ed'
+  ADDRESS 'Command'         instead of ADDRESS  'COMMAND'
+  ADDRESS 'Virus_checker'   instead of ADDRESS  'Virus_Checker'
+
+we would get a message telling us that the host environment could not
+be found as the case used does not exactly match.
+
+The port name should be included within quotes as it is a string and all
+strings should be in quotes.
+
+@{B}Warning@{UB} - If the port name is the value of a symbol, then you @{B}cannot@{UB} use
+programming like this:-
+
+  Port = 'Ed'
+  ADDRESS Port
+
+You @{B}must@{UB} use the format:-
+
+  ADDRESS VALUE symbol
+
+which is explained below under the heading @{"The VALUE Keyword" LINK "Value"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Command" "Article 23 - Talking With Other Programs - Command syntax"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - COMMAND SYNTAX@{UB}@{UU}
+@{JLEFT}
+Before going on to look at the other formats of the ADDRESS instruction,
+we should look at how to send commands to the other program.
+
+The syntax of the commands @{B}must be in accord with that set down in the
+manuals for the external program@{UB} with which ARexx is communicating. This
+is @{B}NOT controlled by ARexx@{UB} and so it will be difficult to give readers
+examples which they can all use as not everyone has the same programs.
+However, as the program "ED" is available to all people using this disk
+(at least it should be if you have not eliminated it from your workbench
+disk or partition!), I will use this where possible.
+
+Although I cannot tell you @{B}how@{UB} commands in various programs should be
+used, there @{B}are@{UB} a few important points to take note of.
+
+Some commands are used on their own and some can be followed by one or
+more @{"arguments" LINK "ARB:Misc/Glossary/Arguments"}. This should be explained in the program's manual.
+
+The command and its arguments are called the "Command Line". For instance,
+this is a command line that will tell "ED" to load a file for viewing:-
+
+  'OP "filename"'
+
+For example:-
+
+  'OP "S:Startup-Sequence"'
+
+The whole line is the @{B}command line@{UB} which is made up of the @{B}command@{UB} "OP"
+and its @{B}argument@{UB} "S:Startup-Sequence".
+
+As an example, lets load up the "ED" program with this AmigaDOS command
+line (enter it at your CLI/Shell prompt):-
+
+  > RUN ED Dummy
+
+(I am assuming that "ED" is not already running on your system. If it
+is, then shut down all versions of it that are running before using the
+above command line.)
+
+ED will not run without a filename so include the name "Dummy" just to
+get it going. "Ed" should appear with a blank window.
+
+Now go back to your Shell/CLI window (don't forget to click in it to
+activate it as the "ED" window will now be the active one) and enter:-
+
+  > RX Example23-1
+
+(I am assuming that you have "Articles_21-30" as the Shell's
+@{"Current Directory" LINK "ARB:Misc/Using_ARB/Examples"26}.)
+
+This ARexx script is as follows:-
+
+  /* Example23-1 */
+
+  ADDRESS 'COMMAND'
+  'COPY ARB:Articles_21-30/Example23-1.rexx RAM:'
+
+  ADDRESS 'Ed'
+  'OP "RAM:Example23-1.rexx"'
+
+It first addresses "AmigaDOS" (port name "COMMAND") and tells it to copy
+itself into RAM:. I have done it this way in case you accidently change
+the file while ED is active!
+
+It then addresses "ED" and tells it to open the file from RAM:.
+
+Now close the "ED" window as we will want to open a new one in a minute
+and still use the "Ed" port name.
+
+@{B}DON'T@{UB} delete the file from RAM: as we will use it again in a
+minute.
+
+You should take careful note of the @{B}case@{UB} of the command. If the manual
+say "LOAD" then @{B}do not@{UB} use "Load". With some programs, it does not matter
+if you use a different case (e.g. AmigaDOS and ED). However, if you get
+into the habit of using the case as per the manual, then you will not
+make the mistake of using the wrong case when the program demands an exact
+match of case.
+
+The entire command line @{B}must be a string.@{UB} This means that, unless it
+contains one or more @{B}symbols@{UB} (see below), then you should @{B}always@{UB} include
+the command line in quotes.
+
+Some programs will require the string arguments for their commands to
+be within string delimiters. This is the case with "ED". That is the reason
+for the file name being enclosed within "" and the whole command line
+being encloised within ''.
+
+If the whole command line is @{B}not@{UB} in quotes then you may run into problems.
+For example, let's look at the above "ED" command line again. If we had
+a program that contained these lines:-
+
+  OP = 55 /* OP used as a symbol for some purpose */
+  ..... lots more programming
+  ADDRESS 'Ed'
+  OP "RAM:Example23-1.rexx"
+
+The last line would be interpreted as:-
+
+  55 "RAM:Example23-1.rexx"
+
+This is @{B}NOT@{UB} what we wanted at all!!
+
+However, if the last line was:-
+
+  'OP "RAM:Example23-1.rexx"'
+
+then the "OP" is @{B}not@{UB} a symbol (it is part of a string) and the value "55"
+is not substituted.
+
+If the command line contains @{B}symbols holding string values@{UB} then that part
+of the command line that is the symbol @{B}should not be in quotes.@{UB}
+
+For example, have a look at this example program:-
+
+  /* Example23-2 */
+
+  ADDRESS 'Ed'
+  SAY 'Enter path and name of file to read'
+  PULL Filename
+  'OP "'||Filename||'"'
+
+In this case, the user enters a filename from the keyboard and that value
+is held by the symbol "FileName". Its value is then substituted for the
+"FileName" in the command line.
+
+Make sure all other "ED" windows are closed and open a new "ED" window
+again with:-
+
+  > RUN ED Dummy
+
+and try RX'ing Example23-2. Your Shell/CLI window will display:-
+
+  Enter path and name of file to read
+
+Now type in:-
+
+  RAM:Example23-1.rexx
+
+The command line sent to "ED" (last line of the example) would
+become:-
+
+  'OP "RAM:Example23-1.rexx"'
+
+If you like, try it out by entering a few file names together with their
+paths.
+
+If your "ED" window displays this message on its bottom line:-
+
+  Edits will be lost - type Y to confirm
+
+it means that you have made some change to the file in the "ED" window
+and it is asking for you confirmation that it is O.K. to voerwrite it
+without first saving it.
+
+We could also have this variation (not in an example program on disk):-
+
+  ADDRESS 'Ed'
+  SAY 'Enter path and name of file to read'
+  PULL FileName
+  Command = 'OP "'||Filename||'"'
+  Command
+
+In this case, if "RAM:Example23-1.rexx" was entered, the symbol "Command"
+ends up with the value:-
+
+  'OP "RAM:Example23-1.rexx"'
+
+and this is the command line that is sent to "ED".
+
+@{B}@{U}More About Sending Command Lines To a Host@{UB}@{UU}
+
+Command lines can only be sent to the host after you have asked it to
+listen for communications by using the ADDRESS instruction. However, once
+this has been done, you can keep sending commands without using another
+ADDRESS instruction provided that the commands are all to be sent to the
+same host. For example:-
+
+  ADDRESS 'Ed' /* Tell program ED to listen */
+
+  ... More ARexx programming
+
+  'OP "Filename"' /* Tell ED to load file for reading */
+
+  ... lots more ARexx programming
+
+  'OP "Filename"' /* Tell ED to load another file */
+
+  ... lots more ARexx programming
+
+  'OP "Filename"' /* Tell ED to load another file */
+
+  ... lots more ARexx programming
+
+  'Q' /* Tell ED to shut down */
+
+So, no matter how much ARexx programming is between the ADDRESS instruction
+and the various command lines sent to "Ed", ARexx will remember that "Ed"
+is the program that is currently the host.
+
+This will continue until another ADDRESS instruction is used to ask another
+program to be the current host.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Format2" "Article 23 - Talking With Other Programs - ADDRESS Format 2"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - ADDRESS INSTRUCTION FORMAT 2@{UB}@{UU}
+@{JLEFT}
+@{B}ADDRESS@{UB}
+
+This format (i.e. ADRESS used on its own) is used for "Swapping Between
+Hosts".
+
+I said @{"earlier" LINK "Previous"} that ARexx keeps track of two host address port names -
+the current one and the previous one. Using ADDRESS on its own:-
+
+  ADDRESS
+
+will switch between the two.
+
+This is illustrated in the program @{"Example23-3" LINK "ARB:Articles_21-30/Example23-3.rexx/MAIN"}.
+
+I will not explain it in full as it should mostly be self explanatory.
+Just take note that it uses these lines at various stages:-
+
+  ADDRESS 'COMMAND'          /* to make AmigaDOS the current host    */
+  ADDRESS 'Ed'               /* to make the 1st ED the current host  */
+  ADDRESS 'Ed_1'             /* to make the 2nd ED the current host  */
+  ADDRESS                    /* to swap between current and previous */
+
+It also uses @{B}OPTIONS FAILAT@{UB} which is explained in @{"Article 25" LINK "ARB:Articles_21-30/25.Options/FailAt"}. All this
+does is stop error messages that are being returned from "ED" from cluttering
+up your Shell/CLI window in between the output from the example
+program.
+
+It also uses an inbuilt function @{"SOURCELINE()" LINK "ARB:Articles_41-50/46.Error_Tracing-1/Sourceline()"} which we have not yet looked
+at. This one is very simple. It simply gets the specified line number
+of the ARexx program in which it is contained. Thus:-
+
+  SAY SOURCELINE(22)
+
+will display the 22nd line of the program.
+
+I have used SOURCELINE() to display the various lines of Example23-3 as
+it is being run to show you the significant lines.
+
+@{B}IT IS THEREFORE VERY IMPORTANT@{UB} that you do not alter the number of lines
+in the program!! If you do, then the lines containing SOURCELINE() may
+very well refer to @{B}INCORRECT LINES!!@{UB}.
+
+(@{B}Note@{UB} - Example23-3 and other examples show the directory of the RAM:
+disk. If you are using @{B}Workbench 1.3@{UB} or earlier there may not be anything
+in your Ram: disk, so copy something there now before proceeding. The
+standard startup-sequences for @{B}Workbench2.0@{UB} onwards always puts some things
+into Ram: so no worries!)
+
+As long as no new host port is addressed, "ADDRESS" on its own will switch
+between the current and previous hosts. However, as soon as a third host
+is addressed:-
+
+- the "PREVIOUS" host is dumped
+- the "CURRENT" host becomes the "PREVIOUS" host
+- the @{B}new@{UB} host becomes the "CURRENT" host.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Format3" "Article 23 - Talking With Other Programs - ADDRESS Format 3"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - ADDRESS INSTRUCTION FORMAT 3@{UB}@{UU}
+@{JLEFT}
+@{B}ADRESS PortName Expression@{UB}
+
+This format allows a command line to be included at the end of the same
+clause that contains the "ADDRESS" instruction. The command line is placed
+in the format where "Expression" is shown above. The command line is then
+sent to the external host. For example, in this instruction
+clause:-
+
+  ADDRESS 'COMMAND' 'Dir Ram:'
+
+the "Dir Ram:" is the "expression" that is sent to the host address, in
+this case to AmigaDOS. If you used the above line, you would see a directory
+of the disk in Ram: being displayed.
+
+Note that the above example is @{B}all one clause.@{UB} Compare this to:-
+
+  ADDRESS 'COMMAND'
+  'Dir Ram:'
+
+or:-
+
+  ADDRESS 'COMMAND' ; 'dir Ram:'
+
+both of which contain @{B}two separate@{UB} instruction clauses. (The semicolon ;
+is a clause separator and makes ARexx consider the two clauses in the
+same way as if they were on two separate lines.)
+
+If you use "Format 3" as the only type of ADDRESS instruction clause,
+then you can only send the command line that is at the end of that
+instruction clause. It @{B}does not@{UB} set up the port as the host for more than
+just that one command. For example, in this program:-
+
+  /* Example23-4 */
+
+  SAY 'Following is the directory of the RAM: disk'
+  ADDRESS 'COMMAND' 'Dir Ram:'
+  SAY 'Following is a listing of the RAM: disk'
+  'List Ram:'
+
+The command line 'Dir Ram:' at the end of the ADDRESS instruction is sent
+to AmigaDOS but the command line 'List Ram:' is @{B}not@{UB} sent as AmigaDOS has
+@{B}not@{UB} been set up as the host for more than just the one instruction
+clause.
+
+Similarly, if "Format 3" is used (i.e. the ADDRESS instruction plus a
+command line all in one clause), and there are already one or two host
+addresses in force, then the current and previous host addresses are @{B}NOT
+changed.@{UB} For example:-
+
+  /* Example23-5 */
+
+  SAY 'Following is the directory of the RAM: disk'
+  ADDRESS 'COMMAND'            /* AmigaDOS is now current host         */
+  'RUN ED Dummy'               /* Set up an ED window                  */
+  'Copy Example23-5.rexx RAM:' /* Copy this program to RAM:            */
+  'Dir Ram:'                   /* The DIR command is sent to AmigaDOS  */
+
+  ADDRESS 'Ed' 'OP "Ram:Example23-5.rexx"'  /* A command is sent to ED
+                                         without changing current host */
+
+  SAY 'a'x'PRESS ANY KEY TO CONTINUE'||'a'x
+  PULL Anything
+
+  'DELETE Ram:Example23-5.rexx' /* AmigaDOS is still the host address  */
+
+  ADDRESS 'Ed' 'Q' /* Another command to ED without changing
+                      host address */
+
+This time, the first ADDRESS instruction sets up "COMMAND" as the current
+host by using "Format 1" which allows multiple command lines to be sent
+to it.
+
+The second ADDRESS command makes "ED" the host @{B}for that line only!@{UB} The
+next command line 'DELETE ...' is sent to AmigaDOS, @{B}not@{UB} to ED.
+
+Finally another "Format 3" ADDRESS command is sent to "Ed" to close the
+window.
+
+So, if you wish to maintain two addresses and interchange them with
+"ADDRESS", but also want to send a "one off" command to a third host, then
+use "Format 3".
+
+Or maybe the entire program will only send the one command line to the
+one single host. You can use "Format 3" in this sort of situation as
+well.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Format4" "Article 23 - Talking With Other Programs - ADDRESS Format 4"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - ADDRESS INSTRUCTION FORMAT 4@{UB}@{UU}
+@{JLEFT}
+@{B}ADDRESS VALUE Symbol@{UB}
+
+The last format is used in cases where the host port name is contained
+as the value of a symbol. For example:-
+
+  /* Example23-6 */
+
+  AddName = 'COMMAND'
+  ADDRESS VALUE AddName
+  'Dir Ram:'
+
+This would make AmigaDOS the host address as the symbol "AddName" has
+a value of "COMMAND" (the AmigaDOS port name). The "VALUE" keyword has
+told ARexx to evaluate the rest of the clause to determine the host
+address.
+
+In this case you can @{B}NOT@{UB} have the command that is sent to the host as
+an expression in the same clause as the ADDRESS instruction (as in @{"Format 3" LINK "Format3"}).
+For example, if you used:-
+
+  AddName = 'COMMAND'
+  ADDRESS VALUE AddName 'dir Ram:'
+
+then ARexx would look for a host address called:-
+
+  "COMMAND dir Ram:"
+
+as the "VALUE" keyword has evaluated EVERYTHING that follows it into the
+one expression!! (See @{"The VALUE keyword" LINK "Value"}.)
+
+You must have the command line to be sent to the host as a separate
+instruction clause as in one of these:-
+
+  AddName = 'COMMAND'
+  ADDRESS VALUE Addname ; 'dir Ram:'
+
+or
+
+  AddName = 'COMMAND'
+  ADDRESS VALUE Addname
+  'dir Ram:'
+
+In the first case, the two clauses are on the same line but separated
+by a semi colon so they are treated as two separate clauses.
+
+See also @{" When To Use Format 4 " LINK "When"}.
+         @{" The VALUE keyword    " LINK "Value"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Value" "Article 23 - Talking With Other Programs - VALUE Keyword For ADDRESS"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - VALUE KEYWORD FOR ADDRESS@{UB}@{UU}
+@{JLEFT}
+As mentioned @{"earlier" LINK "Format4"19}, the VALUE keyword causes all that is contained in
+the rest of the clause to be evaluated as the required host address. Because
+of this, the following could be used to call on AmigaDOS:-
+
+  Add_1 = 'COMM'
+  Add_2 = 'AND'
+  ADDRESS VALUE Add_1||Add_2
+  'Dir'
+
+The two symbols "Add_1" and "Add_2" are combined into the one word "COMMAND"
+by the VALUE keyword.
+
+Offhand, I cannot see any use for this but it does explain why you cannot
+combine "Format 3" and "Format 4" by using something like:-
+
+  AddName = 'COMMAND'
+  ADDRESS VALUE AddName 'dir Ram:'
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "When" "Article 23 - Talking With Other Programs - When To Use Format 4"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - WHEN TO USE FORMAT 4 - ADDRESS VALUE SYMBOL@{UB}@{UU}
+@{JLEFT}
+By now I can hear you asking "When @{B}would@{UB} I use `Format 4'??"
+
+This will become clearer after we have looked at the @{"ADDRESS()" LINK "ARB:Articles_21-30/24.Talking-Programs-2/ADDRESS()"} function
+(Article 24) so please be patient until then.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Using" "Article 23 - Talking With Other Programs - Using Functions After ADDRESS"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - USING FUNCTIONS AFTER ADDRESS@{UB}@{UU}
+@{JLEFT}
+Some built in functions return a @{"Boolean Value" LINK "ARB:Misc/Glossary/Boolean"} (0 for False and 1 for
+True) depending on the result of the operation of the function. For example,
+the clause, or expression,:-
+
+  OPEN('MyFile','Sys:s/startup-sequence')
+
+will attempt to open the disk file "Sys:s/startup-sequence" with the
+internal name "MyFile". If it successful, the expression will have a value
+of 1. If it is not successful, it will have a value of 0.
+
+We will be looking at the @{"OPEN()" LINK "ARB:Articles_21-30/28.File_Handling/OPEN()"} function in Article 28.
+
+If the OPEN command is used as shown above without any host address having
+been accessed, then there is no problem with that line. The disk file,
+if it exists, will be opened. If it does not exist then this line will
+NOT give an error message. Any problem and error message will come later
+when you try to access the unopened and/or non existent disk file.
+
+However, if the OPEN command is used as shown above @{B}after@{UB} an ADDRESS
+command has been used to access a host address then we are in trouble.
+
+To understand why let's consider two facts.
+
+Firstly, we said @{"earlier" LINK "Instructions"} that, if a clause was @{B}NOT@{UB} one of:-
+
+   Comment          e.g. /* Comment */
+   Label            e.g. Display:
+   Assignment       e.g. Symbol = 23
+   Instruction      e.g. SAY "Hi there"
+   Function         e.g. RIGHT(string)
+
+then it is considered to be a "Command" clause, i.e. one to be sent to
+the external host.
+
+Secondly, if no external host has been set up with ADDRESS and the ARexx
+program is started from Shell/CLI, then a "Command" clause @{B}gives the
+appearance f being ignored@{UB} and no error message is given. The program
+proceeds to the next line.
+
+(I say "gives the appearance of being ignored" as we will see, when we
+come to look at @{"Signalling and Interrupts" LINK "ARB:Articles_31-40/33.Signalling/Error"} and at @{"Error Tracing" LINK "ARB:Articles_41-50/46.Error_Tracing-1/MAIN"} we will
+see that the the command that could not be sent anywhere actually returns
+an @{"Error Severity Number" LINK       "ARB:Articles_41-50/46.Error_Tracing-1/Severity"} of 5.)
+
+For example, in this program "SAY" has been accidently misspelled as
+"SAT":-
+
+  /**/
+  SAT "Testing"
+
+If started from Shell/CLI it would not give any visible error message.
+The "SAT" line is considered to be a command clause but, as there is no
+current host, it is ignored except for the non reported severity
+number.
+
+However, this program:-
+
+  /**/
+  ADDRESS 'COMMAND'
+  SAT "Testing"
+
+will give this error message if started from Shell/CLI:-
+
+ SAT: Unknown command
+ SAT failed returncode 10
+   3 *-* sat 'over testing';
+ +++ Command returned 10
+
+The "SAT: Unknown command" is really an error from AmigaDOS, @{B}not@{UB} from
+ARexx. The "SAT" line has been considered to be a "Command" clause and
+sent to AmigaDOS which sends back its error message. The rest of the error
+message comes from ARexx and we will learn about what it all means in
+@{"Article 46" LINK "ARB:Articles_41-50/46.Error_Tracing-1/Errors"}.
+
+So, to get back to our OPEN function, this line:-
+
+  OPEN('Name','Sys:s/startup-sequence')
+
+will have a Boolean value of "0" or "1" depending on whether or not the
+file was successfully opened. (This will be explained in @{"Article 28" LINK "ARB:Articles_21-30/28.File_Handling/OPEN()"}.
+
+Because we have not done anything with the returned Boolean value, it
+will be sent to the host address which will result in the host sending
+back an error message such as:-
+
+  1: Unknown command
+  0: Unknown command
+
+This leads us to the fact that a function should never be used on its
+own as in the example of OPEN() shown as few lines above. @{B}Always@{UB} use
+something like one of the following to make sure that the boolean value is
+not sent to a host:-
+
+  CALL FUNCTION()               in which case the boolean value of 0
+                                or 1 is returned in the variable RESULT,
+or
+
+  SAY FUNCTION()                in which case the boolean value is
+                                displayed in the output window,
+or
+
+  IF FUNCTION() = 1 THEN DO     in which case the 0 or 1 acts as the
+     ......                     trigger for either the THEN DO
+  END                           or the ELSE DO.
+  ELSE DO
+     ......
+  END
+
+As the last example allows different actions depending on the boolean
+value returned, it is often the best solution.
+
+To see the recommended action for the OPEN() function, @{"click here" LINK "ARB:Articles_21-30/28.File_Handling/Open()"39}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Examples" "Article 23 - Talking With Other Programs - Examples"
+
+@{B}@{U}TALKING WITH OTHER PROGRAMS - EXAMPLES AND FUNCTIONS OF USE WITH ADDRESS@{UB}@{UU}
+@{JLEFT}
+There is an example program using ADDRESS in @{"Article 26" LINK "ARB:Articles_21-30/26.Pragma/Directory"54}, but before getting
+on to it we need to look at a couple of inbuilt functions that will assist
+with using hosts. These are ADDRESS() and SHOW() which are discussed in
+the next article.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

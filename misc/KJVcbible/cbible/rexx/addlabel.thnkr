@@ -1,0 +1,64 @@
+/* */
+options results
+address 'Thinker'
+trace off
+
+'get see-thru'
+cthru=rc
+
+'position save 1'
+'get selected'
+if rc ~= 0 then exit 1
+selected = result
+
+if cthru = 1 then 'see-thru disable'
+'get current'
+current=result
+'get styles'
+styles=result
+if rc = 0 then arestyles=1
+else arestyles=0
+
+if substr(current,1,1) = '(' then do
+	brk=index(current,')',1)
+	if brk=0 then do
+	   if cthru = 1 then 'see-thru enable'
+	   'position restore 1'
+	   exit 2
+	end
+end
+else do
+	current = '()' || current
+	if arestyles = 1 then styles= '0000'X || styles
+	brk=2
+end
+
+firsttxt=substr(current,1,brk-1)
+lasttxt=substr(current,brk)
+if arestyles = 1 then do
+	firststyle=substr(styles,1,brk-1)
+	laststyle=substr(styles,brk)
+end
+len=length(selected)
+
+if substr(current,1,2) ~= '()' then do
+	firsttxt = firsttxt || ','
+	len=len+1
+end
+
+firsttxt=firsttxt || selected
+current=firsttxt || lasttxt
+
+if arestyles = 1 then do
+	do i=1 to len
+		firststyle = firststyle || '00'X
+	end
+	styles = firststyle || laststyle
+end
+
+'update current' current
+if arestyles = 1 then 'update styles' styles
+
+if cthru = 1 then 'see-thru enable'
+'position restore 1'
+exit 0

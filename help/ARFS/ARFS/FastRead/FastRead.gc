@@ -1,0 +1,160 @@
+G4C
+
+winbig -1 -1 240 177 "FastRead.gc"
+wintype 11010001
+usetopaz
+varpath "viewtext.g"
+
+xonload
+extract fastread.gc guipath fre_path
+assign GCHELP: $fre_path
+delvar fre_path
+ttget gchelp:fastread.gc
+guiload gchelp:viewtext.g
+ifexists port AREXX
+    ;Nop
+elseifexists file sys:system/rexxmast
+    run 'sys:system/rexxmast >nil:'
+else
+    ezreq "Can't start ARexx" Okay ""
+    assign gchelp: remove
+    guiquit viewtext.g 
+    guiquit fastread.gc   
+endif
+reqfile -1 -1 200 -60 'Select A Document' load guide gchelp:Docs
+ifexists file $guide
+    ;nop
+else
+    ezreq "Operation Aborted." Quit ""
+    assign GCHELP: remove
+    guiquit viewtext.g 
+    guiquit fastread.gc   
+    stop
+endif
+if $guide H= "@"
+    extract guide file list
+    appvar list .idx
+    joinfile gchelp:idx $list list
+    ifexists file c:getnodes
+    andifexists file c:writenode
+        run 'resident c:getnodes pure add'
+        run 'resident c:writenode pure add'
+    elseifexists file gchelp:bin/getnodes
+    andifexists file gchelp:bin/writenode
+        run 'resident gchelp:bin/getnodes pure add'
+        run 'resident gchelp:bin/writenode pure add'
+    else
+        ezreq "Cannot Find Binaries." Okay ""
+        gosub fastread.gc exit
+    endif
+    ifexists file $list
+        ;nop
+    else
+        cli 'getnodes $guide $list'
+    endif
+    lvuse fastread.gc 1
+    lvchange $list
+    guiopen fastread.gc
+    extract guide file wtitle
+    extract wtitle unquote wtitle
+    setwintitle fastread.gc "$wtitle                      "
+else
+    ezreq "Unknown Filetype." Quit ""
+    assign gchelp: remove
+    guiquit viewtext.g 
+    guiquit fastread.gc   
+endif
+
+xonkey #v
+xonkey #r
+if $$rawkey.code = 95
+    guiopen viewtext.g
+    set translation off
+    lvuse viewtext.g 1
+    lvchange gchelp:fastread.doc
+elseif $$rawkey.code = 78
+    lvuse fastread.gc 1
+    lvmove 1
+elseif $$rawkey.code = 79
+    lvuse fastread.gc 1
+    lvmove -1
+endif
+
+xonclose
+gosub fastread.gc exit
+
+xtextin 0 0 180 13   "" txt "" 80
+if $txt > ''
+    lvuse fastread.gc 1
+    lvsearch $txt ci next
+endif
+gosub fastread.gc search_update
+
+xbutton 180 0 20 13 »
+if $txt > ''
+   lvuse fastread.gc 1
+   lvsearch $txt ci next
+endif
+gosub fastread.gc search_update
+
+xbutton 200 0 40 13 Open
+reqfile -1 -1 200 -60 'Select A Document' load doc gchelp:Docs
+ifexists file $doc
+    ;nop
+else
+    ezreq "Operation Aborted." Okay ""
+    stop
+endif
+if $doc H= "@"
+    guide = $doc
+    extract guide file list
+    appvar list .idx
+    joinfile gchelp:idx $list list
+    ifexists file $list
+        ;nop
+    else
+        cli 'getnodes $guide $list'
+    endif
+    lvuse fastread.gc 1
+    lvchange $list
+    extract guide file wtitle
+    extract wtitle unquote wtitle
+    setwintitle fastread.gc "$wtitle                      "
+else
+    ezreq "Unknown Filetype." Okay ""
+endif
+
+xlistview 0 13 240 170  '' topic '' 0 txt
+gadid 1
+gosub fastread.gc fetchtext
+
+xroutine fetchtext
+cutvar topic cut word -2 offset
+extract topic upper topic
+extract topic unquote topic
+cli 'writenode $guide $offset'
+guiopen viewtext.g
+gosub viewtext.g switchgads
+update viewtext.g 2 "Subject: $topic"
+set translation off
+lvuse viewtext.g 1
+lvchange ram:guide.txt
+
+xroutine search_update
+if $$lv.line > ''
+   update fastread.gc 1 $$lv.line
+else
+   lvgo #0
+   update fastread.gc 1 0
+endif
+
+xroutine exit
+assign GCHELP: remove
+run 'resident getnodes remove'
+run 'resident writenode remove'
+ifexists file ram:guide.txt
+    delete ram:guide.txt
+endif
+guiquit viewtext.g 
+guiquit fastread.gc   
+   

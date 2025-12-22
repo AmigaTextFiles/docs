@@ -1,0 +1,551 @@
+@DATABASE "ARB21"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 21 - Random Number Functions"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 21 - BUILT IN FUNCTIONS - RANDOM NUMBERS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+@{JLEFT}
+We have already used the RANDOM functions a bit in examples so it is time
+we had a proper look at it.
+
+Parts of this article get rather complex, especially towards the end.
+If you are never going to use random numbers then it would do no harm
+to skip this article altogether.
+@{JCENTER}
+@{" General Comments             " LINK "General"}
+@{" The RANDOM() Function        " LINK "Random()"}
+@{" Seeding The Random Functions " LINK "Seeding"}
+@{" Non Integer Random Numbers   " LINK "NonInteger"}
+@{" Examples Of RANDOM()         " LINK "Examples"}
+@{" The RANDU() Function         " LINK "Randu()"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 21 - Random Number Functions - General Comments"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - GENERAL COMMENTS@{UB}@{UU}
+@{JLEFT}
+There are two built in functions that handle "Random" numbers. They are:-
+
+  @{" RANDOM() " LINK "Random()"}
+  @{" RANDU()  " LINK "Randu()"}
+
+The main thing to remember about "RANDOM" is that nothing is truly random
+with a computer. Everything proceeds along a set course. (At least I don't
+@{B}think@{UB} that computers can yet act and think independently of the programs
+that humans write into them?!?!)
+
+To illustrate this point, try out this example program which displays
+six "random" numbers between 1 and 6 inclusive:-
+
+  /* Example21-1 */
+
+  DO Throw = 1 to 6
+    SAY RANDOM(1,6)
+  END
+
+You can run it until Commodore rises phoenix like from its ashes and again
+releases the C=64 computer and it will @{B}always@{UB} give these six
+numbers:-
+
+  3
+  6
+  4
+  5
+  2
+  3
+
+(If you always get a different set of numbers then you may have a different
+version of ARexx than I have, which is 1.15. The point is that it @{B}always@{UB}
+gives the @{B}same@{UB} set of numbers.)
+
+Now change it to include a new first line, as in:-
+
+  /* Example21-2 */
+
+  CALL RANDOM(,,TIME('S'))
+  DO Throw = 1 to 6
+    SAY RANDOM(1,6)
+  END
+
+Now the program should give a different set of 6 numbers each time it
+is run.
+
+To put it rather simplistically, the "RANDOM" functions use a complex
+formula to set up an extremely long series of numbers. To obtain seemingly
+random numbers we must enter this series of generated numbers at a different
+point each time the program is run. Picking an entry point is called
+@{"Seeding The RANDOM Function" LINK "Seeding"} which is the function of the following new line
+in Example 21-2:-
+
+  CALL RANDOM(,,TIME('S'))
+
+which was not in Example21-1.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Random()" "Article 21 - Random Number Functions - The RANDOM() Function"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - THE RANDOM() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The format for this function is:-
+
+  RANDOM([Min],[Max],[Seed])
+
+The arguments are in square brackets so they are optional.
+
+@{B}Seed@{UB} is discussed under the separate heading @{"Seeding The Random Functions" LINK "Seeding"}.
+
+@{B}Min@{UB} and @{B}Max@{UB} represent the @{B}lowest@{UB} and @{B}highest@{UB} numbers that you want in
+the random number range.
+
+@{B}Min@{UB} and @{B}Max@{UB} arguments must be positive integer numbers, If you want a
+range of non integer numbers then see the heading @{"Non Integer Random Numbers" LINK "NonInteger"}.
+
+If omitted, these default values are used:-
+
+  Min = 0
+  Max = 999
+
+So that if you used:-
+
+  SAY RANDOM()
+
+then you would get a number between 0 and 999.
+
+A restriction on these numbers is that the difference between them must
+@{B}not@{UB} exceed 1000. Thus you could have things like:-
+
+  RANDOM(0,999)
+  RANDOM(10000,11000)
+
+However, using:-
+
+  RANDOM(1,1002)
+
+would give you an error message.
+
+I have not yet been able to get a maximum number greater than 992 when
+using RANDOM(0,999). This can be illustrated by the following
+program:-
+
+  /* Example21-3.rexx */
+
+  CALL PRAGMA('P',-5)
+
+  CALL RANDOM(,,TIME('S'))
+
+  Min = 1000
+  Max = 0
+
+  DO FOR 10000
+    Number = Random(0,999)
+    IF Number > Max THEN Max = Number
+    IF Number < Min THEN Min = Number
+  END
+
+  SAY 'Max Number recorded was' Max
+  SAY 'Min Number recorded was' Min
+
+The @{"PRAGMA()" LINK "ARB:Articles_21-30/26.Pragma/General"} function, which we will deal with later, sets the program's
+priority to -5 so that it can work away in the background and allow you
+to go about other things.
+
+There is nothing new in the rest of the program.
+
+This program will generate 10000 random numbers and report on the minimum
+and maximum numbers produced. The range I got was was 0 to 992 even after
+repeated runs of the program. I don't think that I would ever want a series
+of random numbers spread over a range of 1000 but I mention it in case
+you do.
+
+@{B}So take this warning.@{UB} You can check it out for yourself but if I were
+you I would not use RANDOM() if you need a range of numbers this high.
+Use @{"RANDU()" LINK "Randu()"} instead.
+
+The maximum value of MIN and MAX does not appear to be documented but
+it would seem to be about 10**9 (i.e. 100,0000,000). I don't think that
+I will be using numbers that large!! How about you?!?!
+
+If you want a bigger range of numbers than 1000 then use the @{"RANDU()" LINK "Randu()"}
+function.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Seeding" "Article 21 - Random Number Functions - Seeding The Random Functions"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - SEEDING THE RANDOM FUNCTIONS@{UB}@{UU}
+@{JLEFT}
+In the full RANDOM() syntax:-
+
+  RANDOM([Min],[Max],[Seed])
+
+@{B}Seed@{UB} is an integer number that will let you tell ARexx to enter the pseudo
+random series of numbers at a certain point.
+
+Each @{B}different@{UB} seed number enters the pseudo random series at a @{B}different@{UB}
+point. However, we do @{B}not@{UB} need to know the @{B}actual@{UB} point of entry. All
+we need to know is that, if we use the same seed number, we will @{B}always@{UB}
+enter at the same point and get the same series of numbers.
+
+This can be demonstrated by this example program:-
+
+  /* Example21-4 */
+
+  SAY 'Enter a positive integer number as the random seed'
+  PULL Number
+  IF DATATYPE(Number,'W') = 0 THEN CALL Error
+  IF SIGN(Number) = -1 THEN CALL Error
+
+  CALL RANDOM(,,Number)
+  DO Throw = 1 to 6
+    SAY RANDOM(1,6)
+  END
+
+  EXIT
+
+  Error:
+    SAY Number 'is not a positive integer number!!'
+    EXIT
+
+If you run this program a number of times and keep entering the same number
+you will always get the same six numbers. For example, if I enter 12 I
+always get:-
+
+  3
+  3
+  2
+  3
+  5
+  4
+
+Try it out with as many numbers as you like.
+
+Note that the program has to be rerun to duplicate the random numbers
+for the same seed number. Using the seed option more than once in the
+same programs is a @{B}no-no@{UB} (See note below about doing this).
+
+I said above that we do not need to know the point at which to enter the
+series, just that each different number enters at a different
+point.
+
+What we @{B}do@{UB} need to know, however, is how to ensure the program is given
+a @{B}different@{UB} seed each time it is run so that we get a @{B}different@{UB} set of
+random numbers each time.
+
+We do this by using the built in function @{"TIME()" LINK "ARB:Articles_11-20/20.Functions-Date&Time/TIME()"}.
+
+When @{"TIME('S')" LINK "ARB:Articles_11-20/20.Functions-Date&Time/Seconds"} is used, we get the number of seconds since midnight. As
+there are 86,400 seconds in a day, it is very unlikely that the program
+will be run at exactly the same number of seconds since midnight more
+than once so this is a good way of getting a different seed number each
+time it is run.
+
+This is the reason for this line in Example21-2:-
+
+  CALL RANDOM(,,TIME('S'))
+
+In that example, I used the format with the seed @{B}only once@{UB} and then used
+the format without the seed in the next use of RANDOM().
+
+@{B}You should \it NEVER \it use the seed option more than once in the same
+program!!@{UB}
+
+To demonstrate what happens if you do, I wrote a program - @{"Example21-5" LINK "ARB:Articles_21-30/Example21-5.rexx/MAIN"}
+- in which I "seeded" the RANDOM() function at the @{B}start@{UB} of the program
+then used RANDOM() @{B}with@{UB} seeding for every random number with:-
+
+  Number = RANDOM(1,6,TIME('S'))
+
+This simulates the throw of a dice. I arranged 10,000 "throws" and ran
+the program 3 times to get three different entry points into the random
+series. The three runs of the program were made to ensure that the first
+was not a "one off" situation and that the same phenomenon would occur
+at different entry points.
+
+The results of 30,000 throws are shown in the following table.
+
+@{U}Dice Number@{UU}   @{U} Run 1@{UU}   @{U} Run 2@{UU}   @{U} Run 3@{UU}   @{U}Average@{UU}
+
+ Number 1      6.06%    5.91%    5.99%    5.99%
+ Number 2     18.61%   18.48%   18.52%   18.54%
+ Number 3     30.23%   30.67%   30.06%   30.31%
+ Number 4     26.15%   26.98%   27.19%   26.77%
+ Number 5     15.76%   15.01%   15.14%   15.30%
+ Number 6      3.19%    2.95%    3.10%    3.08%
+
+So you can see that using a seed for @{B}every@{UB} use of RANDOM() is a complete
+no-no!!
+
+The program was run again but this time @{B}without@{UB} the seed in each use of
+RANDOM by using:-
+
+  Number = RANDOM(1,6)
+
+and the results were as follows:-
+
+@{U}Dice Number@{UU}   @{U} Run 1@{UU}   @{U} Run 2@{UU}   @{U} Run 3@{UU}   @{U}Average@{UU}
+
+ Number 1     16.67%   16.22%   16.47%   16.45%
+ Number 2     16.56%   16.69%   16.55%   16.60%
+ Number 3     16.93%   17.03%   16.70%   16.89%
+ Number 4     16.48%   16.60%   16.66%   16.58%
+ Number 5     16.52%   16.77%   16.76%   16.68%
+ Number 6     16.84%   16.69%   16.86%   16.80%
+
+As you can see, this is about as even a distribution as you could hope
+to get.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "NonInteger" "Article 21 - Random Number Functions - Non Integer Random Numbers"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - NON INTEGER RANDOM NUMBERS@{UB}@{UU}
+@{JLEFT}
+Although RANDOM() only produces integer numbers, we can get fractional
+numbers by:-
+
+- Using @{"RANDU()" LINK "Randu()"}
+
+- Using RANDOM() and:-
+
+  - Multiplying the "Min" and "Max" arguments by 10**Places
+  - Dividing the result of RANDOM() by 10**Places
+
+10**Places means 10 to the power of the number of decimal places that are
+needed. For example, for 2 decimal places, multiply and divide by 100.
+
+This is illustrated by this example which will give random numbers between
+1.50 and 2.50 to 2 decimal places:-
+
+  /* Example21-6.rexx */
+
+  CALL RANDOM(,,TIME('S'))
+
+  DO FOR 10
+    SAY RANDOM(150,250)/100
+  END
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Examples" "Article 21 - Random Number Functions - Examples Of Random()"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - EXAMPLES OF RANDOM()@{UB}@{UU}
+@{JLEFT}
+You may recall that we used the RANDOM() function in the following examples.
+Double click on them to read them now if you like:-
+
+  @{"Example12-5 " LINK "ARB:Articles_11-20/Example12-5.rexx/MAIN"}
+  @{"Example14-1 " LINK "ARB:Articles_11-20/Example14-1.rexx/MAIN"}
+  @{"Example16-11" LINK "ARB:Articles_11-20/Example16-11.rexx/MAIN"}
+  @{"Example19-1 " LINK "ARB:Articles_11-20/Example19-1.rexx/MAIN"}
+  @{"Example20-5 " LINK "ARB:Articles_11-20/Example20-5.rexx/MAIN"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Randu()" "Article 21 - Random Number Functions - The RANDU() Function"
+
+@{B}@{U}@{JCENTER}RANDOM NUMBER FUNCTIONS - THE RANDU() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The RANDU() function can be used in one of these formats:-
+
+  RANDU()
+  RANDU(Seed)
+
+@{B}Seed@{UB} is as discussed under the heading @{"Seeding The Random Functions" LINK "Seeding"}.
+
+Thus:-
+
+- The function must be seeded once only in a program.
+
+- It is best seeded with:-
+
+    CALL RANDU(TIME('S'))
+
+Once having seeded the random function, then you use only the RANDU()
+format - nothing within the brackets.
+
+So what does it do that is different to RANDOM()?
+
+Firstly, there is no format for giving the minimum and maximum numbers
+required.
+
+Secondly, it always returns a non integer number between between 0 and 1.
+
+As an example, run this program:-
+
+  /* Example21-7.rexx */
+
+  CALL RANDU(TIME('S'))
+
+  DO Count = 1 to 10
+    SAY RANDU()
+  END
+
+and you will get an output something like this:-
+
+  0.116474654
+  0.842482445
+  0.461865449
+  0.617831059
+  0.718826598
+  0.686081552
+  0.165519159
+  0.699220037
+  0.195044242
+  0.027000766
+
+but if you leave out the first line:-
+
+  CALL RANDU(TIME('S'))
+
+you will get the same set of numbers over and over again.
+
+The question is, of course, what is the good of numbers like this and
+how do we get a set range of random number??
+
+We do it by using this formula which includes the @{"TRUNC()" LINK "ARB:Articles_11-20/19.FUNCTIONS-Numeric/Trunc()"} function:-
+
+  Number = TRUNC(10**Places*((High-Low)*RANDU()+Low)+.5)/10**Places
+
+where the user sets these symbol values:-
+
+  Places = Number of decimal places required
+  High   = Highest number wanted in sequence
+  Low    = Lowest number wanted in sequence
+
+This looks a bit complicated so let's break it up into parts.
+
+  Number = TRUNC(10**Places*@{B} ((High-Low)*RANDU()+Low)@{UB}+.5)/10**Places
+
+@{B}((High-Low)*RANDU()+Low)@{UB} will give us a number somewhere between the high
+and the low specifications but with 9 decimal places. This can be shown
+by putting the highest and lowest possible numbers generated by RANDU()
+into the formula, i.e. 0.000000001 and 9.999999999:-
+
+  Low = 1 ; High = 10 ; SAY ((High-Low)* 0.000000001 +Low)
+  --> 1.00000001
+
+  Low = 1 ; High = 10 ; SAY ((High-Low)* 0.999999999 +Low)
+  --> 9.99999999
+
+Our formula now becomes one of:-
+
+  Number = TRUNC(10**Places* 1.00000001 +.5)/10**Places
+
+  Number = TRUNC(10**Places* 9.99999999 +.5)/10**Places
+
+Let's say that we wanted 2 decimal places. We would have:-
+
+  Lowest number:-
+
+  Number = TRUNC(10**2 * 1.00000001 +.5)/10**2
+  Number = TRUNC( 100  * 1.00000001 +.5)/100
+  Number = TRUNC(    100.000001     +.5)/100
+  Number = TRUNC(    100.500001        )/100
+  Number = 100 /100
+  Number = 1
+
+  Highest Number:-
+
+  Number = TRUNC(10**2 * 9.99999999 +.5)/10**2
+  Number = TRUNC( 100  * 9.99999999 +.5)/100
+  Number = TRUNC(    999.999999     +.5)/100
+  Number = TRUNC(   1000.499999        )/100
+  Number = 1000 /100
+  Number = 10
+
+It may not be very accurate for 9 decimal places but it is very adequate
+for most practical applications of, say, 2, 3, 4, etc. decimal
+places.
+
+We can set up this formula as an internal function as demonstrated in
+this example program:-
+
+  /* Example21-8.rexx */
+
+  CALL RANDU(TIME('S'))
+
+  SAY 'c'x'Number entered must be positive whole numbers !!!'||'a'x
+
+  SAY 'Enter LOWEST number for the series'
+  PULL Low
+
+  SAY 'Enter HIGHEST number for the series'
+  PULL High
+
+  SAY 'Enter number of DECIMAL PLACES'
+  PULL Places
+
+  Min = High
+  Max = Low
+
+  DO Count = 1 TO 100
+
+    Number = MyRandom(High,Low,Places)
+    IF Number > Max THEN Max = Number
+    IF Number < Min THEN Min = Number
+
+    SAY 'Number' Count '=' Number 'Current Min =' Min 'Current Max =' Max
+
+  END
+
+  SAY 'a'x'You entered HIGH =' High 'LOW =' Low 'PLACES =' Places||'a'x
+
+  SAY 'Max Number recorded was' Max
+  SAY 'Min Number recorded was' Min
+
+  EXIT
+
+  MyRandom:
+    PROCEDURE
+    ARG Low,High,Places
+  RETURN TRUNC(10**Places*((High-Low)*RANDU()+Low)+.5)/10**Places
+
+We have already covered all the programming features in this program so
+there should not be any need of explanation.
+
+Try it out a few times with different values for the various
+symbols.
+
+I used it to do the same thing as Example21-3 does with the RANDOM()
+function, i.e. trying to get numbers from 0 to 999 (as mentioned above,
+using RANDOM() would not give me a number higher than 992).
+
+By using these symbol values:-
+
+  Low = 0
+  High = 999
+  Places = 0
+
+I was able to get numbers from 0 to 999 inclusive. Thus, in this case,
+RANDU() is better than RANDOM().
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

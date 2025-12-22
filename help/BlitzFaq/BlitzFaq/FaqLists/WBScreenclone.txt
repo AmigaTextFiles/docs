@@ -1,0 +1,99 @@
+;first whe go to amiga mode
+AMIGA
+WBStartup
+NoCli
+
+;use tags
+NEWTYPE .tags
+a.l:b.l:c.l:d.l:e.l:f.l:g.l:h.l:i.l:j.l
+k.l:l.l:m.l:n.l:o.l:p.l:q.l:r.l:s.l:t.l
+u.l:v.l:w.l:x.l:y.l:z.l
+End NEWTYPE
+
+;define constants
+#SA_Left        =$80000021
+#SA_Top         =$80000022
+#SA_Width       =$80000023
+#SA_Height      =$80000024
+#SA_Depth       =$80000025
+;#SA_DetailPen  =$80000026
+;#SA_BlockPen   =$80000027
+#SA_Type        =$8000002D
+#SA_DisplayID   =$80000032
+#SA_Overscan    =$80000034
+#SA_PubName     =$8000002F
+#SA_PubTask     =$80000031
+#SA_PubSig      =$80000030
+#SA_LikeWorkbench=$80000047
+
+#PUBLICSCREEN=$0002
+naam$="Requestor"+Chr$(0)
+
+;for getting default wb settings i make
+;first the workbench screen my screen
+
+WBToScreen 0
+*pointertos.Screen=Addr Screen(0)
+*screenstruct.Screen=*pointertos.Screen\NextScreen
+
+;define  the  tags  and do NOT use wbwidth or wbhight function
+;they are not exactly correct.
+;Workbench  resolutions  higher  than 640x512 will result to a
+;wbwidth=640 and  wbhight=512 So, a piccasso screen of 800x600
+;will   not   work   exactly   like   it   has   to  be.   Use
+;*screenstruct.Screen\Width and *screenstruct.Screen\Height for
+;the exact results !
+
+;Acid Software, something to fix. ;-)
+
+scr.tags\a=#SA_Left          ,0
+scr.tags\c=#SA_Top           ,0
+scr.tags\e=#SA_Width         ,*screenstruct.Screen\Width
+scr.tags\g=#SA_Height        ,*screenstruct.Screen\Height
+scr.tags\i=#SA_Depth         ,WBDepth
+scr.tags\k=#SA_Type          ,#PUBLICSCREEN
+scr.tags\m=#SA_PubSig        ,0
+scr.tags\o=#SA_PubTask       ,FindTask_(0)
+scr.tags\q=#SA_PubName       ,&naam$
+
+;finaly this was what i am looking for ! Getting the exact viewmode !
+scr.tags\s=#SA_DisplayID     ,GetVPModeID_(*screenstruct.Screen\_ViewPort)
+
+scr.tags\u=#SA_Overscan      ,1
+scr.tags\w=#SA_LikeWorkbench ,1
+scr.tags\y=0                 ,0
+
+;now open my own screen, yupi !
+ScreenTags 0,titel$,&scr.tags
+Use Screen 0
+
+;again for ower new screen
+*pointertos.Screen=Addr Screen(0)
+*screenstruct.Screen=*pointertos.Screen\NextScreen
+
+;make my screen public screen !
+If PubScreenStatus_(*screenstruct.Screen,0)=0
+  Nprint "Could not make public !"
+EndIf
+
+;open a window
+Window 0,0,0,300,200,$1+$2+$8,"TEST",1,0
+Use Window 0
+
+wait for windowclose gadget
+Repeat
+  ev.l=WaitEvent
+Until ev.l=$200
+
+CloseWindow 0
+
+*pointertos.Screen=Addr Screen(0)
+*screenstruct.Screen=*pointertos.Screen\NextScreen
+
+;this will hold program end before every window is closed !
+
+While PubScreenStatus_(*screenstruct.Screen,1)=0
+  Delay_(50)
+Wend
+
+End

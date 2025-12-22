@@ -1,0 +1,442 @@
+@database 16436e28-0
+@master misc:temp/CDIDInfo.guide
+@$VER: 1.0
+@remark Created with Heddley v1.1 (c) Edd Dumbill 1994
+
+@node "Main" "RUiNa's (GM) CDID Information (C) 1997-1998"
+
+                               CDID Information
+
+
+
+                                 @{"Introduction" link "Document_0" 0}
+
+                                 @{"Details" link "Document_1" 0}
+
+                                 @{"Source" link "Document_3" 0}
+
+                                 @{"Contact" link "Document_2" 0}
+@endnode
+
+@node "Document_0" "Introduction"
+@next "Document_0"
+I was hunting for the best audio CD player for my amiga (cd32) and found most
+programs lacked good features that other programs had, vice versa, etc.
+
+I wanted to use OptyCDPlayer but the problem was that it didn't handle my cd32
+cd drive properly (hence, no Pause, no Search, etc.) and I think for this same
+reason, the display would be constantly updated (once every 1 or 2 seconds)
+which made it very difficult to use.
+
+I found that MUICDPlayer handled nearly everything for my drive correctly, and
+because it uses MUI as with OptyCDPlayer, I could keep it looking basically
+the same. This became the player of choice.
+
+Until..
+
+I started using CD-Datei to make a database of my CD's.. I had over 300 CD's
+at the time and it was at this time I realized MUICDPlayer didn't use the
+standard CDID files which means I would have to re-enter all 300 of my CD's.
+Something I surely didn't want to do..
+
+I found the MUICDPlayer docs included information on how it created its own
+identification files for the CD's but after a long web search/aminet search,
+irc search, etc.etc. I was unable to find any information on how the standard
+CDID format (used by OptyCDPlayer, CD-Datei, etc.) was determined. The point
+was to find this out, then write a small program to convert the MUI CDID files
+to the standard CDID format for Importing into CD-Datei.
+
+Needless to say, I was without luck and found no information on the standard
+CDID, but I was determined, and finally persevered. I put some simple audio
+CD's into my drive (two CD's which only had one music track each) and started
+to understand the format.. I basically looked at what the CDID looked like for
+the corresponding CD and reverse engineered the way that it is determined.
+
+So on with my quest/story.. I used a fine package from aminet
+(CDToolBox10.lha) to get information from the CD in the drive (using the
+CDInfo.exe). This program returns every piece of information necessary to
+create a CDID. So.. I wrote the conversion program.. what happened?
+
+It didn't work..
+
+Why? For some reason MUICDPlayer doesn't seem to get the right information
+about a CD for its own CDID files.. It even occured that putting the same CD
+in to the drive a few times could result in a difference in seconds of
+tracklengths. Anyway, my program did not like the MUICDID files so I once
+again decided to tackle it from a different approach.
+
+How it works now..
+
+I start by firing up GoldEd then typing in the CD information (CD Author, CD
+Title, Songnames (one per line)) and saving it to a temporary file in RAM: ..
+I place the appropriate CD in the drive and run an amigados script which also
+calls my conversion program. CDInfo.exe is called, with output routed to
+another file in RAM: instead of the screen, then my conversion program will
+read that file and the cd information file that I've typed, output a CDID
+file, and output a regular appropriately named text file to use with
+MUICDPlayer (when editing the CD in MUICDPlayer, I pick Load and pick this
+text file).. then I Import the CDID file into CD-Datei, and delete the RAM:
+files.
+
+Hopefully the source to my script and program can help someone (I doubt it)
+@endnode
+
+@node "Document_1" "Details"
+@next "Document_1"
+CDID Explanation
+
+A standard CDID file has a filename like this: ID15006FD903C7A6
+
+I've broken it down like this: ID + 15 + 0 + 06FD9 + 0 +3C7A6
+
+The First part is just simply the text 'ID' .. plain and simple.
+
+The Second part is the decimal value of the number of tracks on the CD (In
+this case, the CD has 15 tracks)
+
+The Third part is just a buffering 0
+
+The Fourth part is the hex value of the sum of the lengths (in kbytes) of one
+stereo part of audio CD tracks ONE and TWO (If the CD has only one track, the
+fourth part will be '00000')
+
+The Fifth part is once again a buffering 0
+
+The Sixth and final part is the hex value of the sum of all of the tracks on
+the CD
+
+So it looks like this:
+
+ID + NumberOfTracks + 0 + Hex sum tracks 1&2 + 0 + Hex sum all tracks
+
+To go into detail a bit more about what I did, we'll start by showing the
+output of the cdinfo.exe program for a normal audio CD:
+
+.... Start of cdinfo.exe output STATUS:
+
+Drive:  - Door:         Closed
+        - CD loaded:    Yes
+        - Motor:        On
+        - TOC read:     Yes
+        - CD-ROM:       No
+        - Eject reset:  Off
+
+Audio:  - Volumes:      Mute
+        - Playing:      No
+        - Paused:       No
+        - Speed:        Normal
+        - Dir:          Forward
+
+CD-ROM: - Sector size:  2048
+
+CDXL:   - ECC:          On
+
+Speed:  - Audio:        75
+        - CD-ROM:       150
+        - CDXL:         75
+        - Max:          150
+
+
+TOC:
+
+8 track(s).
+
+T# Type           Copy Offset               Size -- -------------- ---- ------
+---- -------- ------ ---- --------
+ 1 Audio 2ch      No        0   0M 00:00:00  28210  55M 06:16:10
+ 2 Audio 2ch      No    28210  55M 06:16:10  28610  55M 06:21:35
+ 3 Audio 2ch      No    56820 110M 12:37:45  21557  42M 04:47:32
+ 4 Audio 2ch      No    78377 153M 17:25:02  24083  47M 05:21:08
+ 5 Audio 2ch      No   102460 200M 22:46:10  23562  46M 05:14:12
+ 6 Audio 2ch      No   126022 246M 28:00:22  26110  50M 05:48:10
+ 7 Audio 2ch      No   152132 297M 33:48:32  24903  48M 05:32:03
+ 8 Audio 2ch      No   177035 345M 39:20:35  20865  40M 04:38:15 --
+-------------- ---- ------ ---- -------- ------ ---- --------
+                                            197900 386M 43:58:50
+
+.... end of cdinfo.exe output
+
+As you can see, all the information we need starts after the "TOC:" We find
+out how many tracks (8) which makes the CDID at this point:
+
+ID080  (ID + number of tracks (08) + 0)
+
+Then we see that the size of track 1 is 28210 and track 2 is 28610. We add
+these to get 56820 then convert this total to hex to get DDF4. Since there's 5
+spaces alotted for this value, we add a '0' to the beginning. the CDID now
+looks like this:
+
+ID0800DDF40 (ID + 08 + 0 + size of tracks 1 & 2 (0DDF4) + 0)
+
+Then we see that all tracks have already been summed in the output of
+cdinfo.exe so we just convert 197900 to hex and get 3050C. So now we have the
+total CDID calculated as this:
+
+ID0800DDF403050C (ID + 08 + 0 + 0DDF4 + 0 + sum of all tracks (3050C))
+
+Well that should be enough explanation.
+@endnode
+
+@node "Document_2" "Contact"
+@next "Document_2"
+I'm making this information e-mailware. If the information was of any interest
+to you, please write me an e-mail.
+
+Direct questions, comments, etc. to my e-mail:
+
+ruin@warwick.net
+
+Hope this was useful!
+@endnode
+
+@node "Document_3" "Source"
+Here I will show the AmigaDOS script, BASIC program, and an example of the
+text file I create in a regular text editor to create a CDID from an inserted
+audio CD.
+
+
+Here's an example text file (saved as ram:newCD) Note: for some reason my
+amigaguide creation program isn't recognizing that I hit enter between each of
+these things so I've written in a (*) for you to know where the carriage
+returns/enters are
+
+The Young Gods(*) Only Heaven(*) Outside(*) Strangel(*) Speed Of Night(*)
+Donnez Les Esprits(*) Moon Revolutions(*) Kissing The Sun(*) The Dreamhouse(*)
+Lointaine(*) Gardez Les Esprits(*) Child In The Tree(*)
+
+
+
+;Script start
+
+mdh0:tools/cdinfo >ram:cdinfo.txt   ; Run the cdinfo program and redirect
+                                    ; the output to a file in ram:
+
+if exists ram:newCD                 ; Check if the user has made a file in
+                                    ; ram: with the information as above
+    run mdh0:tools/CDIDCreator      ; run my BASIC program
+    cd ram: >NIL:                   ; change directory to ram
+    wait 2                          ; wait for end of disk activity
+    copy >NIL: newCDID to env:cdinf ; copy to env variables
+
+    rename >NIL: newCD as $cdinf
+    copy >NIL: $cdinf to cd-datei:disks/ ; automatically copy the CDID to
+                                         ; the CD-Datei disks directory
+    delete cdinfo.txt >NIL:         ; delete unused files from ram
+    delete newcdid    >NIL: endif
+
+; End of script
+
+
+
+Program Source: (sorry its not well documented)
+
+
+rem Open the file that contains the information about the CD in the drive rem
+Then open the file to output the correct CDID to
+
+open "ram:cdinfo.txt" for input as 1 open "ram:newCDID" for output as 2 open
+"ram:newCD" for input as 3
+
+twodigit$="no" tracks=0 spce$="0" id$="ID" drive$="ram:"
+ender$="ForMUICDP.txt"
+
+print "CDID Creator by Gino Mongelli (C)1998" print
+
+rem take in and skip all the useless data at the beginning of the file
+
+for x=1 to 27
+    line input# 1,baddata$
+    rem print "In Data #";x;", we have this useless info: ";baddata$ next x
+rem for counter=1 to 20000 rem next counter rem cls
+
+rem take in the line that contains the number of tracks
+
+line input# 1, tramtln$ rem print "Good Data: ";tramtln$ rem for counter=1 to
+10000 rem next counter rem cls
+
+rem read more extraneous data to skip over
+
+for x = 1 to 3
+    line input# 1,baddata$
+    rem print "In Data #";x;", we have MORE useless info: ";baddata$ next x
+rem for counter=1 to 10000 rem next counter rem cls
+
+rem now we will separate the data to get the real amount of tracks rem which
+we will use for the first part of the CDID AND to figure out rem how many
+lines we need to read from the cdinfo.txt file
+
+let firsttrkcr$=left$(tramtln$,1) let secndtrkcr$=mid$(tramtln$,2,1)
+
+rem print "First character of the track line is: ";firsttrkcr$ rem print
+"Second charcter of the track line is: ";secndtrkcr$ rem print
+
+if (asc(secndtrkcr$) >= 48) AND (asc(secndtrkcr$) <= 57) then twodigit$="yes"
+rem print "Does the amount of tracks on this CD have two digits?  ";twodigit$
+
+if twodigit$="yes" then trks$=left$(tramtln$,2) if twodigit$="no" then
+trks$=(spce$+left$(tramtln$,1))
+
+let c1= asc(firsttrkcr$) let c2= asc(secndtrkcr$) rem print "First digit of
+amount of tracks: ";c1 rem print "Secnd digit of amount of tracks: ";c2
+
+if twodigit$="yes" then tracks=((((c1-48) * 10)) + (c2-48)) if twodigit$="no"
+then tracks=(c1-48)
+
+
+REM here we read the author and title from the CD file then use those to REM
+create a filename to save it out for the MUI CD_Player to Load in.
+
+line input# 3, cdauthor$ line input# 3, cdtitle$
+
+ape$="" tree$="" ctr=1 while ((ape$<>chr$(32)) AND (ape$<>chr$(10)) AND
+(ctr<6))
+    ape$=mid$(cdauthor$,ctr,1)
+    tree$=tree$+ape$
+    ctr=ctr+1 wend
+
+let savemuifile$ = left$(tree$,(ctr-2))
+
+ape$="" tree$="" ctr=1 while ((ape$<>chr$(32)) AND (ape$<>chr$(10)) AND
+(ctr<6))
+    ape$=mid$(cdtitle$,ctr,1)
+    tree$=tree$+ape$
+    ctr=ctr+1 wend
+
+let savemuifile$=drive$ + savemuifile$ + left$(tree$,(ctr-2)) + ender$
+
+REM Print "the name of the file to save is ";savemuifile$
+
+REM Now that we have the filename, we will read in the song titles and REM
+finally write them out in the file to LOAD into MUI_CD_PLayer
+
+open savemuifile$ for output as 4
+
+dim songs$(100)
+
+ctr=1 while not eof(3)
+    line input# 3, songs$(ctr)
+    ctr=ctr+1 wend
+
+print# 4, cdauthor$ + " · " + cdtitle$ for x = 1 to ctr
+    print# 4,songs$(x) next x
+
+rem for counter=1 to 100000 rem next counter
+
+
+rem print rem print "I've calculated that there are";tracks;"tracks on this
+CD." rem print rem print "So far the CDID reads ID+";tracks;"+0" rem for
+counter=1 to 20000 rem next counter rem cls
+
+rem now that we've found the amount of tracks we will use that to read rem the
+info again and determine more about the CDID
+
+rem NOW WE WILL DIVIDE THE CDID UP INTO ITS COMPONENTS
+
+REM FIRST IS 'ID' THEN
+
+REM DAT1=TRKS$, DAT2$=SPCE$, DAT3$=TRKS12H$, DAT4$=SPCE$, DAT5$=ALLTRKH$
+
+rem we have space$ and dat1, so now we will find dat3 rem dat3 is the hex
+value of the sum of the lengths of one stereo side rem of both tracks 1 & 2
+(the value will be 00000 if there is only 1 rem track!!!!)
+
+if tracks=1 then dat3$ = "00000" if tracks=1 then plural$="no" if tracks > 1
+then plural$="yes"
+
+if plural$="yes" then line input# 1, frsttrkln$ if plural$="yes" then line
+input# 1, scndtrkln$
+
+rem on the track lines, the length value starts at char pos 45 and rem
+continues on for 6 chars
+
+if plural$="yes" then let trklen1$=mid$(frsttrkln$,45,6) if plural$="yes" then
+let trklen2$=mid$(scndtrkln$,45,6)
+
+rem if plural$="yes" then print "The string representing length of track 1 =
+";trklen1$ rem if plural$="yes" then print "The string representing length of
+track 2 = ";trklen2$ rem if plural$="no" then print "The CD has one track
+which makes this data = 00000"
+
+if plural$="yes" then length1=val(trklen1$) if plural$="yes" then
+length2=val(trklen2$)
+
+if plural$="yes" then trks12=(length1+length2)
+
+rem if plural$="yes" then print "The sum of the lengths of tracks 1 & 2 is:
+";trks12
+
+if plural$="yes" then trks12h$=hex$(trks12)
+
+rem if plural$="yes" then print "The sum of the lengths of tracks 1 & 2 in HEX
+is: ";trks12h$
+
+while ((len(trks12h$)<5) AND plural$="yes")
+    let temph$=trks12h$
+    let trks12h$="0"+temph$ wend
+
+rem if plural$="yes" then print "Now after making it five characters long, the
+LOTIHEX = ";trks12h$ rem if plural$="yes" then print rem if plural$="yes" then
+print "Now CDID looks like this:
+ID+";trks$;"+";spce$;"+";trks12h$;"+";spce$;"+xxxxx."
+
+REM NOW we have determined dat1, dat2, dat3, dat4. REM NOW we must determine
+dat5 which is the sum of the lengths of one stereo REM side of all tracks on
+the CD.. we don't have to sum them. The sum is REM given on the very last line
+of the cdinfo.txt
+
+rdsofar=2
+
+rem now we skip to the last track
+
+while (tracks>rdsofar)
+    line input# 1, badlastline$
+    rdsofar=rdsofar+1 wend
+
+rem now we skip past the last track and divider line to get to da real last
+line
+
+line input# 1, badlastline$ line input# 1, lastline$
+
+
+rem Print "We have determined the last line looks like this (next line) :" rem
+print lastline$
+
+rem again the position of the data we want is at charpos 45, length 6
+
+tot$=right$(lastline$,21) total$=mid$(tot$,1,7)
+
+rem print "string represent total is ";total$
+
+alltrk=val(total$) rem print "The decimal value of the total tracks is
+";alltrk
+
+alltrkh$=hex$(alltrk) rem print "The HEX value of the total tracks is
+";alltrkh$
+
+while (len(alltrkh$)<5)
+    let temph$=alltrkh$
+    let alltrkh$="0"+temph$ wend
+
+rem print rem print "Now that we fix the size, the HEX val of total trks is
+";alltrkh$ rem print
+
+CDID$ = id$+trks$+spce$+trks12h$+spce$+alltrkh$
+
+rem KEEP ONLY THIS PRINT print "CDID =
+";id$;trks$;spce$;trks12h$;spce$;alltrkh$;" ." print "SUCCESSFUL SUCCESSFUL
+SUCCESSFUL SUCCESSFUL SUCCESSFUL SUCCESSFUL"
+
+rem write the file "newCDID" to rename with the DOS script
+
+WRITE # 2, CDID$
+
+rem for counter = 1 to 200000 rem next counter
+
+close 1 close 2
+
+rem End of program
+
+
+Hopefully any of this can help
+@endnode
+

@@ -1,0 +1,40 @@
+; Magic Stuff ! check for mail
+
+sumsprint MY_1STNAME "" "exported=0 AND group=*"*"" FO="<MsgID,%s> - <Group,%s>\n" >ram:maillist
+IF `list ram:maillist lformat="%l"` EQ "empty"
+	ECHO "No Mail to send"
+	SKIP goofy
+ENDIF
+
+ECHO "Sending :"
+TYPE ram:maillist
+DELETE ram:maillist QUIET
+
+IF EXISTS ram:mailup
+	DELETE ram:mailup
+ENDIF
+
+; script to send mail up
+LAB retry
+
+umssmtp -h post.demon.co.uk >ram:mailup
+
+; Check the size of the mailup file.  This will be "empty" if no mail sent or
+; it will contain something if mail has left the machine
+
+IF EXISTS ram:mailup
+	IF `list ram:mailup lformat="%l"` EQ "empty"		; no mail went
+		ECHO "Retrying Mail"
+		SKIP BACK retry
+	ELSE												; Mail dispatched
+		TYPE ram:Mailup
+		DELETE ram:mailup
+		DELETE env:mailsize
+	ENDIF
+
+ECHO "Mail Sent O.K."
+
+LAB goofy
+
+WAIT 5
+ENDCLI

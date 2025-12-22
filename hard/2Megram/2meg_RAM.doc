@@ -1,0 +1,83 @@
+          2 Megabyte internal RAM for the A500 (and A2000)
+                                      by Leslie Ayling
+                                      p.o box 334 Glebe 2037
+
+** This mod will void all warranties and render your machine unserviceable. I make
+no guarantees as to the suitability of this mod to your particular system , as I am
+not providing the labour content.It was performed on a rev 5 motherboard but should
+be similar on all other A500's. Also, although this mod should work on an A2000, you
+will have to check out the circuit diagram for appropriate pin numbers, which will 
+probably be different to the A500.
+
+
+     Some months back I received my copy of Megadisk 11 containing an article by Steve Ripps, which described adding an extra 512k in addition to the standard 1 Meg the A500 normally has.
+     I had a few spare 41256's at the time in an old pc/xt motherboard floating around the shack, so installed the mod and was very happy with the results. (Great article by the way Steve thanks a lot!).
+     Shortly afterwards I constructed the sound sampler as described in AMAZING COMPUTING vol 4. no 5. and found that 1 1/2 megs still didn't leave me a lot of room to play with.
+
+     Sorry to digress, but the sound sampler in question does work when constructed, despite the ill informed reports published in Megadisk 14. The layout for the board in the original article is CORRECT. However the schematic diagram is INCORRECT.
+The data lines on U105 are reversed. IE. D0 of U105 should connect to D0 of U5 and D1 to D1 .....D7 to D7.
+The Data lines on U5 are connected to the right pins on the parallel connector. IE. D0 of U5 and U105 connect to pin 2 of the parallel connector and so on.
+I understand a correction has been printed in vol 4. no 8. but I haven't seen it to confirm what it says.
+You may find it easier to use TLC274 chips in stead of the TLC272 op amps as specified. I found them easier to obtain plus they simplify design as they are effectively 2 of the TLC272's.
+
+     Back to the memory though. Studying Steve's article it occured to me that if
+the bottom 512k bank was replicated 4 times to give a 2 meg block, if this 2 meg
+block could be repeated then the original concept could be expanded to allow an
+extra 2 megs (or more if necessary!) to be decoded by AGNUS.
+
+     Refer to the accompanying circuit diagram, your A500 circuit from the "Introduction to the AMIGA" manual ,and a TTL logic data book to obtain the correct pinouts for the chips that we'll be using.
+When the GARY decoding chip has lines A23, A22, and A21 LOW it sends the RAMEN* signal on the Agnus LOW telling it that the current address lies within one of the dynamic rams on board. (It also does so when accessing the $c00000 memory but we won't discuss that here.)
+If we could keep the A21 input on GARY low when A23 was also LOW, irrespective of A21's true state, then AGNUS would get the RAMEN signal for addresses between $200000 and $3FFFFF which funnily enough is the first 2 megs of the FAST-RAM area!
+     Remove the GARY chip, bend pin 37 (A21) horizontally and replace the chip in it's socket.
+Connect A23 and A21 to the inputs of a 74F08 (AND gate) and the output to the GARY pin 37.
+     Now GARY will only get the true A21 with addresses above $800000 , so as not to intefere with the decoding of the various devices that live above this address.
+Check with your favourite monitor program that $200000-$3FFFFF now also contain another four "phantom" blocks of chip ram.
+
+     The rest of the circuit is relatively straightforward. The 74F138 decodes the
+appropriate address space and gates the CAS signal to the corresponding 512k bank
+through the 74F32's. The 74F30 (8 input nand gate (use the 74S30 if you can't get
+the "F")) enables the 512k CHIP ram bank when : 
+
+A) none of the extra banks are being addressed or 
+B) when DTAC* is being asserted. This happens when the screen is being displayed etc.etc. I recommend you refer to Steve Ripps original article if this facet isn't clear.
+Note that 4 inputs of the 74F30 are tied to one of the other inputs.This allows provision for an extra 2 megs to be added easily later.
+The prototype was constructed on a piece of veroboard for the decoding chips and the memory array on a small 4 way 20 pin DIP array PC board. I piggy-backed 4 lots of 4 chips ,with the CAS pin of each bent out horizontally for connection to the 74f32's and soldered them into the array board. Then made small wire jumpers to the appropriate signals on one of the RAM chips on the mother board.
+Then I connected short wire jumpers to the data lines on each of the 16 main board memory chips. I connected four data lines to each of the 4 "stacks's" datalines.
+For example d0,d1,d2,d3 to stack 1, d4,d5,d6,d7 to bank 2 etc.
+
+********************* IMPORTANT ************************
+
+The arrangement of the data lines isn't crucial as long as d0-d7 connect to a chip activated by one of the CASL signals and d8-d15 connect to a chip activated by one of the CASH signals.
+Each of the new CAS signals will go to 2 chips ie CASL 200-27f will go to the LOWER two chips of the first bank of 512k which should have d0-d3 connected to one and d4-d7 connected to the other.
+The array board fitted nicely upside down just in front of the AGNUS chip.
+
+                    HOW IT WORKS
+
+The 74F138 chip is used to decode the address range $000000 - $3fffff into 8 512k blocks.
+The 74f138 is enabled when it's E1 and E2 lines are low, and when it's E3 line is high.
+E3 is tied to 5v so it is always high. E2 goes high when A22 OR A23 go high through the 74F32 OR gate.Therefore for the address' we need both are low so that E2 goes low also.
+E1 goes low when DTAC* is low. This is a line that AGNUS (or other devices) use to synchronise the processor during memory acceses (for example agnus holds the line high during video memory accesses thus keeping the 68000 waiting.
+When all these conditions exist the '138 decodes A19,A20 and A21 down into 8 512k blocks between $000000 and $3FFFFF. The 4 between $200000 and $3FFFFF are of interest to us.
+The outputs of this chip being active low, when none of the extra 
+memory banks are being accessed all the outputs are high.We detect this occurence with the 74S30. When all it's inputs are high it gives and output low signal.This signal is used to gate the appropriate CAS* signals back to the motherboard memory when none of the extra memory is being used.Otherwise CASL and CASH are gated through the the 74F32's to the appropriate 512k banks depending on the output of the '138.
+The gary chip is fooled by the addition of the gate on it's A21 input. GARY now only gets the true A21 when A23 is also high.
+This means that under addresses $800000 A21 will always be low to 
+GARY. Therefore GARY will see $200000-$3FFFFF ans being the same as $0-$1FFFFF and $600000-$7FFFFF as being the same as $400000-$5FFFFF. (The latter is unimportant since there isn't anything there anyway!)
+However in the range $0-$1FFFFF as previously described in steve Ripps article are 4 identical decodings of the 51k chip ram.
+Voila! we now have 8 such blocks between $0 and $3fffff.
+
+
+The new memory is not auto-configure of course but can be activated with ADDMEM,
+MEMINSTALL or the ZEROVIRUS extramem bootblock. All available through Megadisc.
+
+If there is sufficient interest, a board will be made available to greatly simplify construction. Projected cost is around the $35 dollar mark. If you are interested get in touch either direct or via Megadisk.
+The circuit can be modified to sit above memory location $400000 so that it can happily co-exist with any number of RAM-boards or the A590 for example should you wish to upgrade later.Please contact me DIRECT for these particular details with an S.A.S.E  and $2.
+
+If auto-configure isn't important then this mod represents excellent value for money. Say $300 for the 16 X 44256's ,$35 for the board and $10 worth of decoding ic's and ribbon cable.It does have the drawback of not running at true speed. In otherwords it is tied to the support chips as is the $C00000 memory.
+
+ Check this drawer for the El-Cheapo processor accelarator!!
+
+That's all for now. Hope that this is of some help
+                           Regards...............Leslie Ayling
+
+P.S.

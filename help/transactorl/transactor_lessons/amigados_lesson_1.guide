@@ -1,0 +1,257 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "AmigaDOS Prima Lezione"
+
+@{JLEFT}
+@{b}Prima Lezione: Struttura dell'AmigaDOS@{ub}
+                                           
+
+
+
+Prima di tutto bisogna sapere che l'AmigaOS è composto da più sotto
+parti sovrapposte in vari strati.
+
+Vi sono i device, le resource e le library. Quelli più a basso livello
+sono le resource, poi vengono i device ed infine le library.
+
+Esempi di questi sono: ciaa.resource, audio.device, exec.library.
+
+Una esempio molto semplificato della struttura interna dell'AmigaOS può
+essere rappresentata cosi (a partire dall'HW):
+
+
+        @{i}exec.library            layers.library@{ui}
+
+        @{i}dos.library             graphics.library@{ui}
+
+        @{i}icon.library            intuition.library@{ui}
+
+        @{i}workbench.library       gadtools.library@{ui}
+
+                                @{i}MUI.library@{ui} (anche se non fa parte dell'OS).
+
+
+A sinistra abbiamo la gestione dei task e dei processi oltre che del
+filesystem, A destra abbiamo la gestione della grafica.
+
+
+Compito della @{i}exec.library@{ui} è gestire l'intero sistema
+creando/schedulando/rimuovendo task, gestendo porte messaggi, semafori,
+liste di blocchi di memoria libera e così via. @{b}Exec@{ub} è il cuore
+dell'AmigaOS ed in genere è il gestore di tutte le risorse di amiga
+(infatti è con una funzione della exec.library che si possono "aprire"
+le resource ed i device).
+
+Sopra ad @{b}Exec@{ub}, c'è il @{b}DOS@{ub} che fornisce anch'esso la possibilità di
+interagire con i processi (livello superiore di un task) e con il
+filesystem, gestendo i file, i cassetti, i pacchetti DOS ecc. ecc.
+
+Il livello superiore è occupato (quasi a pari merito) dalla
+@{i}icon.library @{ui}(gestione delle icone) e dalla @{i}workbench.library@{ui} (appicon,
+appmenu).
+
+
+Compito della @{i}layers.library@{ui} è gestire la sovrapposizione delle
+finestre (layer = strato) più altre cose. Il più delle volte questa
+libreria viene usata dall'OS e poche volte viene manipolata direttamente
+dall'utente/programmatore.
+
+Sopra (ma in pratica è a fianco) della @{i}layers.library@{ui} risiede la
+@{i}graphics.library@{ui}. Questa libreria si incarica di svolgere quelle
+attività di grafica a basso livello come può essere il tracciamento di
+un cerchio, il riempimento di un'area, lo spostamento di un'area di
+pixel da una zona ad un'altra (blitting) e via dicendo. Viene usata da
+@{b}intuition@{ub} per il tracciamento delle finestre, dei gadget e via dicendo.
+Infatti, sopra alla @{i}graphics.library@{ui} c'è la @{i}intuition.library@{ui}. Suo è
+il compito di gestire prevalentemente schermi, finestre, menù e
+bottoni. Ultimamente la @{i}intuition.library@{ui} è stata potenziata ed estesa con il
+sistema @{u}BOOPSI@{uu} (Basic Object Oriented Programming System for Intuition)
+che ha permesso il proliferare di librerie quali @{u}MUI@{uu}, @{u}ClassAct@{uu} et
+similia.
+
+Chiudono il livello ultimo quelle librerie rivolte a semplificare la
+vita al programmatore quali: @{i}gadtools.library@{ui} (creazione/gestione di
+bottoni e menù), @{i}MUI.library@{ui}, @{i}bgui.library@{ui} e compagnia bella.
+
+
+Ora che abbiamo descritto molto sommariamente le varie librerie portanti
+dell'AmigaOS, passiamo ad esaminare brevemente, alcuni dei più
+importanti device. Quest'ultimi non sono organizzati a livelli, in
+quanto ognuno di essi, ha il compito di controllare/gestire l'hardware
+per il quale è stato progettato: @{i}audio.device@{ui}, @{i}trackdisk.device@{ui},
+@{i}timer.device@{ui}, @{i}serial.device@{ui}, @{i}parallel.device@{ui}, @{i}narrator.device@{ui},
+@{i}input.device@{ui}. Fatta eccezione per quelli il cui compito lo si intuisce
+dal nome, il @{i}timer.device@{ui} viene principalmente usato per la gestione
+delle temporizzazioni, permettendo la richiesta di invio di un segnale
+allo scadere di un determinato lasso di tempo; il @{i}trackdisk.device@{ui} per
+gestire i floppy disk, il @{i}narrator.device@{ui} per la gestione dei fonemi e
+la riproduzione di liguaggio umano; l'@{i}input.device@{ui} per la gestione di
+tastiera e mouse (per il joystick esiste un device specifico:
+@{i}game.device@{ui}, se non ricordo male).
+
+In generale, questi device sono l'ultima risorsa per accedere all'hw
+visto che di solito, funzioni similari sono offerte da librerie poste ad
+un livello più elevato. Per fare un esempio: se un nostro programma ha
+bisogno di essere sospeso per due secondi, il più delle volte è
+sufficente fare una chiamata alla @{i}dos.library@{ui} con la funzione @{i}Delay(100)@{ui}
+(2 secondi espressi in 50mi di secondo). Se invece abbiamo bisogno di
+tempi più accurati (la @{i}dos.library@{ui} è sufficentemente imprecisa),
+allora sarà il caso di rivolgersi alla @{i}timer.device@{ui} o addirittura alla
+@{i}ciaa.resource@{ui} o @{i}ciab.resource@{ui}.
+
+Anche per fare una stampa, anzichè usare il @{i}parallel.device@{ui} (o il
+@{i}printer.device@{ui}) il più delle volte può bastare un semplice 'Copy xxx
+to PRT:' fatta con una @{i}Run()@{ui} o una @{i}Exec()@{ui} della @{i}dos.library@{ui}.
+è ovvio, che non tutte le volte si può fare una determinata cosa con
+le procedure fornite; perchè sono troppo lente, o troppo complesse per
+l'uso che se ne vuole fare o per altre ragioni. Ecco perchè esistono i
+device e le resource che permetto un'accesso a basso livello ma @{b}@{u}LEGALE@{uu}@{ub},
+dell'HW.
+
+
+Adesso che abbiamo descritto in maniera sommaria le library ed i device
+(non ho mai usato le resource e quindi ne so molto poco :-( ), passiamo
+al primo programmino semplice semplice per spiegare praticamente ciò
+che ho descritto poco prima.
+
+
+#include <dos/dos.h>
+
+#include <proto/exec.h>
+
+#include <proto/dos.h>
+
+#include <stdio.h>
+
+#include <error.h>
+
+struct DOSBase *DOSBase;
+
+void main(void)
+
+{
+
+   if(DOSBase = (struct DOSBase *)OpenLibrary("dos.library",0))
+
+   {
+
+      printf("Aspetto per due secondi e poi termino...");
+
+      Delay(100);
+
+      printf("fatto.\n");
+
+      CloseLibrary((struct Library *)DOSBase);
+
+   }
+
+   else
+
+      perror("Impossibile aprire la libreria DOS!\n");
+
+}
+
+
+Questo programmino semplicissimo ed idiota, apre la @{i}dos.library,@{ui} e,
+usando una sua funzione, aspetta due secondi prima di terminare.
+Esaminiamo con la lente il sorgente:
+
+le prime cinque righe sono degli include per non generare errori e/o
+warning mentre si compila. Il primo file, contiene la dichiarazione del
+tipo di dato @{i}struct DOSBase@{ui}, il secondo contiene i prototipi delle
+funzioni @{i}OpenLibrary@{ui} e @{i}CloseLibrary@{ui}, il terzo il prototipo della
+@{i}Delay()@{ui}, il quarto della @{i}printf()@{ui} ed il quinto il prototipo
+della @{i}perror@{ui}.
+
+Adesso analizziamo le funzioni coinvolte. Come molti di voi sapranno,
+nel C non esistono le procedure, queste in realtà sono delle funzioni
+che non ritornano nulla. Anche l'AmigaOS, rispetta quasi sempre
+queste direttive e le sue librerie hanno moltissime funzioni e poche
+procedure, anche perchè il più delle volte si richiede qualcosa che
+deve essere per forza ritornato. Infatti, con la prima chiamata di
+funzione, richiediamo l'apertura delle libreria @{i}dos.library@{ui} versione 0.
+
+Cerca nella lista di exec delle librerie attualmente aperte, la libreria
+interessata, se non la trova apre la versione su disco, altrimenti la
+versione presente su ROM. Il numero 0 di versione, richiesto è il numero
+@{u}MINIMO@{uu}. Siccome dall'1.0 all'3.1 le librerie sono state modificate ed
+amplicate, diverse funzioni sono state aggiunte. Quindi è necessario,
+prima di compiere una chiamata ad una determinata funzione, assicurarsi
+che questa esista nella versione di libreria correntemente utilizzata.
+Specificando 0, come numero di versione, vuol dire che il nostro
+programma non necessita di particolari funzioni e che quindi va
+benissimo anche la libreria del 1.0. Se invece, avessimo bisogno, per
+esempio di una funzione presente solo dal 2.0 in su, allora avremmo
+dovuto specificare 37.
+
+In definitiva, questa funzione, ritorna il puntatore alla base della
+libreria, se ha avuto successo; NULL in caso contrario.
+Una volta aperta con successo la libreria, è possibile chiamare tutte
+le funzioni in essa contenute, ecco quindi la chiamata alla procedura
+Delay che richiede come parametro, il numero di 50mi di secondo per il
+quale sospendere il processo chiamante.
+Fatto questo, ecco la chiamata alla procedura di exec @{i}CloseLibrary@{ui}, che
+rilascia il puntatore della libreria.
+
+
+-------------------------------------------------------------------
+
+
+Apriamo una piccola digressione: in generale, le librerie principali,
+sono già aperte all'avvio del sistema (exec stessa non necessita di
+essere aperta: come chiamare la OpenLibrary, di exec, per aprire la
+libreria stessa?), l'apertura serve per permettere l'accesso al
+puntatore alla BASE della libreria per poi poter effettuare con questo
+puntatore i salti alle varie funzioni. La struttura infatti contiene i
+vari spiazzamenti che devono essere compiuti per ottenere l'indirizzo di
+una determinata funzione.
+Le uniche librerie che potrebbero non essere aperte, sono quelle su
+disco, che quindi necessitano di essere caricate in memoria.
+
+
+--------------------------------------------------------------------
+
+
+Altra piccola digressione, sui numeri di versione:
+
+33 - 1.2
+
+34 - 1.3
+
+35, 36 - beta interne, ovviamente non utilizzate
+
+37 - 2.0
+
+38 - 2.1 (mai visto in Italia)
+
+39 - 3.0
+
+40 - 3.1
+
+
+--------------------------------------------------------------------
+
+
+Altra piccola digressione sulla @{i}CloseLibrary@{ui}. Quando questa procedura,
+viene chiamata, non corrisponde quasi mai alla effettiva chiusura della
+libreria. Molto spesso, questa viene lascita in memoria per ottimizzare
+eventuali richieste successive. Nel caso in cui venga effettuata una
+richiesta di memoria, che il sistema non riesce a soddisfare, prima di
+ritornare negativamente, scandisce la memoria alla ricerca di librerie,
+device e resource, chiuse ed inutilizzate: se ne trova, queste vengono
+scaricate dalla memoria che torna ad essere libera. Questa operazione,
+può essere forzata con il comando 'avail flush' di AmigaDOS.
+
+
+
+
+@{JCENTER}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link amigados_lesson_2.guide}
+@ENDNODE                                                                                             

@@ -1,0 +1,195 @@
+             =============================================
+                 Amiga Parallel Port ZIP Drive Adaptor
+             =============================================
+
+              v0.8 By Bruce Abbott (bhabbott@inhb.co.nz)
+
+
+Introduction
+------------
+
+  The Iomega ZIP 100 drive is available with a choice of either a SCSI
+  or a parallel port interface. Unfortunately the parallel version could
+  not be used on an Amiga - until now!
+
+  This project consists of both hardware and software - a small interface
+  that connects to the Amiga's parallel and joystick ports, and a driver
+  file which causes the ZIP drive to operate like a standard SCSI device.
+
+
+
+History
+-------
+
+  v0.0 - Initial release
+
+  v0.1 - Corrected pin numbers on circuit diagram
+
+  v0.2 - Fixed bug in timedelay (was not freeing memory).
+
+       - Now obtaining joystick port legally, via gameport.device
+
+  v0.3 - Split large data transfers into 128K blocks, rather
+         than using MaxTransfer setting in mountlist. This
+         circumvents a bug in CrossDOSFileSystem v39.4 (which
+         corrupts files if _any_ Maxtransfer setting is used).
+
+
+  v0.4 - Using TEST_UNIT_READY and READ_SENSE commands to
+         determine if r/w error is actually 'no disk in drive'.
+
+       - Increased timeouts up to 3 seconds (greater than
+         maximum drive spinup time).
+
+       - Reduced Timer overhead. Now only opening timer.device
+         once, instead of on every time delay. Allocated ioreqs
+         static instead of using AllocMem.
+
+  v0.5 - Using 10 byte SCSI read/write commands. Can now do large
+         transfers (>128K) directly.
+
+       - Included circuit diagram with no 7407 buffer chip, as
+         buffering is not required in most cases.
+
+       - Included 'ZIPC' mountlist for peecee formatted disks.
+
+  v0.6 - Fixed bug in Autorequest - libray base in wrong
+         register would cause a Guru if parallel port or
+         joystick port was not available.
+
+       - Automatic Diskchange detection implemented.
+
+       - Asynchronous commands now always queued.
+
+
+ v0.7  - Now tries to avoid forcing the audio filter on.
+
+       - Better handling of resource allocation failure.
+
+ v0.8  - Added 10ms delay before reading data blocks.
+         This should reduce read errors caused by the
+         drive not being ready to perform a transfer.
+
+       - SCSIdirect implemented. Now you can use HDToolBox,
+         ZipTools etc.
+
+
+
+
+Building the Interface
+----------------------
+
+  You need:-
+
+   1 D25 plug
+   1 D25 socket
+   1 D9 plug
+   1 7407 TTL buffer chip (only if buffering is required)
+   1 capacitor 1uF  (only if buffering is required)
+   some wire to connect the bits together
+
+  A neat job can be done by starting with an RS232 jumper box, and
+  a cable robbed off an old joystick. Wire the circuit according
+  to the included diagram. Please check your connections carefully,
+  as incorrect wiring could fry your Amiga's CIA chips!
+
+  NOTE: You may not need to install the 7407 and capacitor. as
+        most ZIP drives can be driven directly from the Amiga.
+
+
+Installation
+------------
+
+  Plug the hardware interface into your Amiga's parallel port and
+  joystick (Game2) port, and attach your ZIP drive to its output.
+
+  Copy the driver 'ppazip.device' to your DEVS: drawer. If operating
+  WB2.1 or higher, copy the mountlist icons 'ZIP0' and 'ZIPC' to
+  wherever you want them (eg. Storage/DOSdrivers). If using WB2.0
+  or lower, append the file 'mountlist' to your DEVS:mountlist file.
+
+  If you have a Modem plugged in at the same time, make sure that its
+  Ring Indicator line (pin 22) is disconnected. Otherwise an incoming
+  call might interfere with the ZIP drive (this can also cause trouble
+  with printers, and is due to RI being connected to SEL in the Amiga).
+
+
+
+Performance
+-----------
+
+  It's not fast. However, the results are quite good for a parallel port
+  interface - much faster than Parnet for example.
+
+  Whilst the driver is necessarily CPU intensive, it does not disable
+  multitasking or block interrupts. No errors occured when downloading
+  using ZModem protocol, at 28800 baud directly to the ZIP drive.
+
+  Here's a DiskSpeed 3.1 report, from my A1200 with 68030/40MHz.
+
+    Device: ZIP0:
+
+    Test Intensity: Low   Performance Stress: None
+
+           13 Files/s Create
+           19 Files/s Open/Close
+           48 Files/s Scan
+           51 Files/s Delete
+
+          925 Seek/Read
+
+    Buffer Size     512            4096           32768          262144
+    -----------     ---------      ---------      ---------      ---------
+    Bytes/s Create      23831          89478         100312         108590
+    Bytes/s Write       24559          93433         105475         113599
+    Bytes/s Read        24646          93426         105323         113615
+
+
+
+Limitations
+-----------
+
+  The ZIP's printer passthrough doesn't work. This is due to the
+  control lines being routed to different pins by the adapter. Of
+  course you can't print while the driver is active anyway (since
+  the ZIP driver needs exclusive use of the parallel port).
+
+  Because the interface uses your joystick port, some games may
+  be unplayable.
+
+
+Bugs
+----
+
+  Occasionally the ZIP drive will corrupt read data. Usually this is
+  noticed by the driver, which will then retry and get good data. In
+  ppazip V0.8 this problem has been much reduced, however there is a
+  small chance of corrupted data slipping through without the drive
+  reporting any errors. Therefore I recommend storing critical files
+  in archived form (eg. lha), and not running applications directly
+  from the ZIP drive.
+
+  Apparently ppazip may not work properly on some accelerated Amigas
+  unless the CPU caches are disabled. If you get many errors on your
+  68040/060 accelerated system, try executing 'CPU nocache' while using
+  ppazip.
+
+  Note for 'legacy' Amiga users:- The original FastFileSystem supplied
+  for Workbench 1.2 is not fully compatible with ppazip. It does not
+  support automatic diskchanges and may crash if you attempt to format
+  a disk. FastFileSystem 36.104 is the earliest version known to work
+  properly.
+
+
+Legal
+-----
+
+  This project is Public Domain. Do with it as you wish, but don't
+  blame me if you damage your Amiga, ZIP drive or anything else! It
+  might trash files on your ZIP disks, so don't use it for anything
+  important unless you make backups first.
+
+
+
+                Bruce Abbott (bhabbott@inhb.co.nz)
+

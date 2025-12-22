@@ -1,0 +1,378 @@
+
+
+;PIC16C84 keybord controller for Amiga keybords
+;pressed keys are located in table and send in serial format (19200baud)
+;
+;Dirk Duesterberg duesterb@unixserv.rz.fh-hannover.de
+;                 http://linux.rz.fh-hannover.de/~duesterb
+
+
+	DEVICE PIC16C84,HS_OSC,WDT_OFF,PROTECT_OFF
+
+	
+
+
+ACLK	=	RA.0
+ADAT	=	RA.1
+
+TXD	=	RA.2
+
+
+count0	=	0Ch
+count1	=	0Dh
+
+Akeydat	=	0Eh
+serbuf	=	0fh
+
+	mov	!RA,#11111011b		;pin 2 is output (TXD)
+
+	mov	!RB,#0			;PortB is output
+
+	jmp	Reset
+
+
+
+rawkeys	mov	w,Akeydat
+	and	w,#7Fh			;clr bit 7 (make/break or pressed/unpressed)
+	jmp	pc+w
+
+
+; characters, numbers and spezial keys
+; $00-$3F
+
+	retw	00h			;00h
+	retw	00h			;01h
+	retw	00h			;02h
+	retw	00h			;03h
+	retw	00h			;04h
+	retw	00h			;05h
+	retw	00h			;06h
+	retw	00h			;07h
+
+	retw	00h			;08h
+	retw	00h			;09h
+	retw	00h			;0Ah
+	retw	00h			;0Bh
+	retw	00h			;0Ch
+	retw	00h			;0Dh
+	retw	00h			;0Eh	
+	retw	00h			;0Fh
+
+
+
+	retw	'q'			;10h
+	retw	'w'			;11h
+	retw	'e'			;12h
+	retw	'r'			;13h
+	retw	't'			;14h
+	retw	'z'			;15h
+	retw	'u'			;16h
+	retw	'i'			;17h
+
+	retw	'o'			;18h
+	retw	'p'			;19h
+	retw	'ü'			;1Ah
+	retw	'+'			;1Bh
+	retw	00h			;1Ch
+	retw	00h			;1Dh
+	retw	00h			;1Eh
+	retw	00h			;1Fh
+
+
+
+	retw	'a'			;20h
+	retw	's'			;21h
+	retw	'd'			;22h
+	retw	'f'			;23h
+	retw	'g'			;24h
+	retw	'h'			;25h
+	retw	'j'			;26h
+	retw	'k'			;27h
+
+	retw	'l'			;28h
+	retw	'ö'			;29h
+	retw	'ä'			;2Ah
+	retw	00h			;2Bh
+	retw	00h			;2Ch
+	retw	00h			;2Dh
+	retw	00h			;2Eh
+	retw	00h			;2Fh
+
+
+
+	retw	00h			;30h
+	retw	00h			;31h
+	retw	00h			;32h
+	retw	00h			;33h
+	retw	00h			;34h
+	retw	00h			;35h
+	retw	00h			;36h
+	retw	00h			;37h
+
+	retw	00h			;38h
+	retw	00h			;39h
+	retw	00h			;3Ah
+	retw	00h			;3Bh
+	retw	00h			;3Ch
+	retw	00h			;3Dh
+	retw	00h			;3Eh
+	retw	00h			;3Fh
+
+; other spezial keys (space, TAB, Return)
+; $40-$4F
+
+	retw	00h			;40h
+	retw	00h			;41h
+	retw	00h			;42h
+	retw	00h			;43h
+	retw	00h			;44h
+	retw	00h			;45h
+	retw	00h			;46h
+	retw	00h			;47h
+
+	retw	00h			;48h
+	retw	00h			;49h
+	retw	00h			;4Ah
+	retw	00h			;4Bh
+	retw	00h			;4Ch
+	retw	00h			;4Dh
+	retw	00h			;4Eh
+	retw	00h			;4Fh
+
+
+; Function keys, Help etc.
+; $50-$5F
+
+	retw	00h			;50h
+	retw	00h			;51h
+	retw	00h			;52h
+	retw	00h			;53h
+	retw	00h			;54h
+	retw	00h			;55h
+	retw	00h			;56h
+	retw	00h			;57h
+
+	retw	00h			;58h
+	retw	00h			;59h
+	retw	00h			;5Ah
+	retw	00h			;5Bh
+	retw	00h			;5Ch
+	retw	00h			;5Dh
+	retw	00h			;5Eh
+	retw	00h			;5Fh
+
+
+
+; shifting keys like shift, amiga, Alternate and Control
+; $60-6F
+	
+	retw	00h			;60h
+	retw	00h			;61h
+	retw	00h			;62h
+	retw	00h			;63h
+	retw	00h			;64h
+	retw	00h			;65h
+	retw	00h			;66h
+	retw	00h			;67h
+
+	retw	00h			;68h
+	retw	00h			;69h
+	retw	00h			;6Ah
+	retw	00h			;6Bh
+	retw	00h			;6Ch
+	retw	00h			;6Dh
+	retw	00h			;6Eh
+	retw	00h			;6Fh
+
+
+;spezial keybord commandos
+; $70-$7F
+
+	retw	00h			;70h	
+	retw	00h			;71h
+	retw	00h			;72h
+	retw	00h			;73h
+	retw	00h			;74h
+	retw	00h			;75h
+	retw	00h			;76h
+	retw	00h			;77h
+
+	retw	00h			;78h
+	retw	00h			;79h=F9h= letzter tasten code war fehlerhaft
+	retw	00h			;7Ah=FAh= tastenpuffer im keybord voll
+	retw	00h			;7Bh
+	retw	00h			;7Ch=FCh= selbsttest der tastatur war fehlerhaft
+	retw	00h			;7Dh=FDh= beginn der beim Einschalten gedrueckten Tasten
+	retw	00h			;7Eh=FEh= ende der beim Einschalten gedrueckten Tasten
+	retw	00h			;7Fh
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Reset	clr	Akeydat			;Akeydat is used as character counter
+
+check	csne	Akeydat,#11		;how many characters ?
+	jmp	ready
+	call	dat
+	mov	serbuf,w
+	call	sendb			;send letter
+	inc	Akeydat
+	jmp	check
+
+
+
+dat	mov	w,Akeydat		;letter to w routine
+	jmp	pc+w
+	retw	'mache RESET'
+
+
+
+
+
+
+
+ready	call	sync
+
+
+
+
+rcAdat	mov	count0,#7
+
+:loop	call	wACLK			;wait for Amiga CLK
+	rl	Akeydat			;rotate bits into register
+	djnz	count0,:loop		;format is x6543210
+
+
+	rl	Akeydat			;format is 6543210x
+	call	wACLK			;wait for Amiga CLK
+	rr	Akeydat			;format is 76543210, jippije
+	not	Akeydat			;data is inverted
+
+	mov	w,#5
+	call	wms			;wait 5 ms
+
+;	mov	serbuf,Akeydat
+;	call	sendb			;send raw data
+
+
+	call	rawkeys
+	mov	serbuf,w
+
+	sb	Akeydat.7		;no sending if key up flag is set
+	call	sendb			;send the in table found code
+
+	call	AHshake			;all data OK, do the Handshake
+	jmp	rcAdat			;receive next byte from keybord
+
+
+
+
+
+
+
+
+
+
+
+sync	call	wACLK			;wait for clock and do no Acknowledge
+	
+	mov	w,#250
+	call	wms			;wait 250 ms (we want the sync mode!)
+
+	call	wACLK			;wait for Amiga CLK for Handshake
+
+	mov	w,#1
+	call	wms			;wait 1 ms
+
+	call	AHshake			;now we do the shake!
+	ret
+
+
+ 
+
+
+
+wms	mov	count0,w
+:loop	mov	count1,#248
+:do_it	nop
+	djnz	count1,:do_it
+	djnz	count0,:loop
+	ret
+
+
+
+
+
+
+AHshake	mov	!RA,#11111001b		;bit1 = ADAT = output
+	clrb	ADAT			;clr Amiga data line
+	
+	mov	count0,#40		;40 * 3 = 120cycles = 120 µs (min 75µs)
+:do_it	djnz	count0,:do_it
+
+	mov	!RA,#11111011b		;bit1 = ADAT = input
+	ret
+
+
+
+
+
+
+wACLK	snb	ACLK			;wait for neg clock pulse
+	jmp	wACLK
+	movb	c,Adat			;mov the data to carry bit
+wACLK2	sb	ACLK			;wait for pos clock pulse
+	jmp	wACLK2
+	ret
+
+
+
+
+
+
+
+sendb	call	wbit			;this are stop bits from previous sending
+	call	wbit
+
+	setb	TXD			;send startbit
+	mov	count0,#8		;8 bits to send
+	not	serbuf			;invert serbuf
+
+s_it	call	wbit
+	rr	serbuf
+	movb	TXD,c
+	djnz	count0,s_it		;all bits send ? decrement the bitcounter
+
+	call	wbit
+	clrb	TXD			;clear TXD, stopbit, lenght is defined by 
+					;next sending
+	ret
+
+
+
+
+
+wbit	mov	count1,#13		;19200 at 4 Mhz
+:loop	djnz	count1,:loop
+	nop
+	ret

@@ -1,0 +1,302 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                14.Teil...
+
+So, nachdem wir wissen wie man sprites darstellt, wollen wir mal gucken ob
+wir sie auch bewegt kriegen. Das listing von letztens ist schon dafuer
+ausgelegt. So brauchen wir uns nur um die Routinen zu kuemmern, die die von
+uns erstellten Sinusdaten als Koordinaten in die Spritedatenlisten
+schreibt.
+
+Gleichzeitig werde ich auch noch das mit den Sternen durchgehen, denn es
+ist nicht besonders schwer, nur vielleicht ein bisschen viel zu schreiben.
+
+Also, was brauchen wir nur noch fuer unseren Sprite Flieger
+
+1.Eine Zeitbedingte endlosschleife, die im VB-Bereich, die neue
+Koordinaten in die Spritedatenlisten schreibt.
+
+2.Ein paar vernuenftige Sprites, obwohl ich meine garnicht mal so schlecht
+fand. Aber da von euch nur sehr wenige Jeff heissen solltet ihr euch schon
+mal drangeben und eigene Sprites zu entwerfen.
+
+3.Und dann brauchen wir nur noch eine Vernuenftige Kurve...Und da liegt
+dann auch das problem. Den Sinusmaker den ich benutzt habe, habe ich
+geloescht. Ich werde aber mal sehen ob ich ihn nochmals besorgen kann,
+werde ihn dann in die Tools oder Downloadbretter in den Jeweiligen Boxen
+pumpen. O.K
+
+Jut, das waere es, da mit der kurve kriegen wir schon irgendwie hin. Wir
+geben irgenwas ein, und dann schauen wir das sich die Sprites einigermassen
+sauber bewegen. Also versucht euch mal dran...es duerfte eigentlich kein
+Problem mehr fuer euch sein, deshalb werde ich mal dazu kein Listing
+schreiben....!
+
+Das einzige Problem ist das mit den Sternen....
+
+Wie kriegen wir einen ganzen Bildschirm voll Sterne, wenn wir nur acht zur
+verfuegung haben, acht Sterne sind nicht gerade viel, deshalb muessen wir
+da etwas anderes in augenschein nehmen. Schauen wir uns erstmal die beiden
+Kontrollworte am anfang der Datenliste an.
+
+z.b  $a080,$a800
+
+Da waere zuerst mal die $a0, sie ist die Vertikale position des Sprites. Die
+$80 ist die Horizontale Position, und die $a8 sagt aus wo der Sprite auf
+dem Bildschirm aufhoert.
+Dieses aufhoeren ist auch gleichzeitig die laenge der liste. Die DMA findet
+dann am ende der liste zwei Nullen, die ihr sagt das dieses Sprite zuende
+ist. Von der DMA wird in diesen Bildschirm aufbau nichts mehr aus dieser
+daten liste gelesen. So einfach ist das. Nun wenn wir aber nicht diese
+beiden Nullen schreiben liesst die DMA weiter aus dieser Datenliste, sie
+will aber nun neue Definitionen haben. Das ist unsere chance eine Neue
+Horizontale position einzugeben. Wenn wir also jede Zeile ende der
+Datenliste ohne nullen machen koennen wir sehr einfach mit einem Sprite
+einen Kompletten Sternen Himmel Zaubern. Wenn wir dann noch eine Kleine
+Routine Schreiben die die koordinaten noch unterschiedlich erhoeht, dann
+haben wir einen Dreidimensionalen Sternen Hintergrund gebaut.
+
+Ist doch eigentlich ganz einfach.
+Damit ihr die nicht die Komplette Datenliste erfinden muesst setze ich
+einen Sternenlisteneditor ins Tools Brett...Er ist relativ einfach zu
+benutzen, und erklaert sich selber.
+Ihr muesst dann nur noch die Abgespeicherte Datenliste in den SourceCode
+uebernehmen, alles Klor.
+
+So dann werde ich mal ein Kleines Listing bauen das eben diese sachen kann.
+
+Org $3e000
+Load $3e000
+
+execbase=       4
+openlibrary=    -408
+vposr=          $dff004
+intena=         $dff09a
+intenar=        $dff01c
+forbid=         -30-102
+permit=         -30-108
+cop1lc=         $dff080
+ciaapra=        $bfe001
+dmacon=         $dff096
+spr_anz=        128
+
+start:
+        move.l  execbase,a6             ; Multitasking aus
+        jsr     forbid(a6)
+        move.w  #$a000,intena           ; Interrupts sperren
+
+        bsr.l   initpointers
+        move.l  #copperliste,cop1lc     ; copperliste erstellen
+
+wait:   move.l  vposr,d0                ; Rasterpos holen
+        and.l   #$1ff00,d0              ; alles unwichtige ausmaskieren
+        cmp.l   #$1000,d0               ; Zeile 16 ($10) erreicht ?
+        bne.s   wait                    ; noe...
+        bsr.l   Move_stars
+        btst    #6,ciaapra
+        bne.s   wait
+
+ende:   move.l  execbase,a6             ; Multitasking an
+        jsr     permit(a6)
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$C000,intena
+        move.l  38(a6),cop1lc
+        moveq   #0,d0                   ; Keinen Dos-Returncode
+        rts
+
+copperliste:
+        dc.l    $00e00004
+        dc.l    $00e20000
+        dc.l    $008e1a64
+        dc.l    $009039d1
+        dc.l    $00920030
+        dc.l    $009400d8
+First:
+        dc.l    $01200003
+        dc.l    $01220000
+Second:
+        dc.l    $01240004
+        dc.l    $01260000
+Third:
+        dc.l    $01280004
+        dc.l    $012a0000
+Fourth:
+        dc.l    $012c0004
+        dc.l    $012e0000
+Fifth:
+        dc.l    $01300004
+        dc.l    $01320000
+Sixth:
+        dc.l    $01340004
+        dc.l    $01360000
+Seventh:
+        dc.l    $01380004
+        dc.l    $013a0000
+Last:
+        dc.l    $013c0004
+        dc.l    $013e0000
+
+        dc.l    $01a20888
+        dc.l    $01a40ccc
+        dc.l    $01a60fff
+        dc.l    $01001200
+        dc.l    $01800000
+        dc.l    $0182000a
+        dc.l    $fffffffe
+
+gfxname:
+        dc.b    "graphics.library",0
+
+even
+
+sprite1:
+        dc.l    $2A8C2B00,$80000000,$2CB02D00,$00008000
+        dc.l    $2E352F00,$80008000,$30973100,$80000000
+        dc.l    $32003300,$00008000,$34EA3500,$80008000
+        dc.l    $36A93700,$80000000,$38CA3900,$00008000
+        dc.l    $3ABD3B00,$80008000,$3C5F3D00,$80000000
+        dc.l    $3ED43F00,$00008000,$400E4100,$80008000
+        dc.l    $42C74300,$80000000,$44594500,$00008000
+        dc.l    $46564700,$80008000,$48964900,$80000000
+        dc.l    $4AD94B00,$00008000,$4CEF4D00,$80008000
+        dc.l    $4E484F00,$80000000,$50855100,$00008000
+        dc.l    $525B5300,$80008000,$545C5500,$80000000
+        dc.l    $563A5700,$00008000,$580B5900,$80008000
+        dc.l    $5A5B5B00,$80000000,$5C495D00,$00008000
+        dc.l    $5EE05F00,$80008000,$60746100,$80000000
+        dc.l    $62D36300,$00008000,$64D76500,$80008000
+        dc.l    $66BB6700,$80000000,$68B46900,$00008000
+        dc.l    $6A676B00,$80008000,$6C4B6D00,$80000000
+        dc.l    $6E576F00,$00008000,$70327100,$80008000
+        dc.l    $72A87300,$80000000,$74447500,$00008000
+        dc.l    $760F7700,$80008000,$78917900,$80000000
+        dc.l    $7AE07B00,$00008000,$7C847D00,$80008000
+        dc.l    $7E047F00,$80000000,$80A28100,$00008000
+        dc.l    $82F58300,$80008000,$84FE8500,$80000000
+        dc.l    $86FD8700,$00008000,$88EF8900,$80008000
+        dc.l    $8ACB8B00,$80000000,$8C998D00,$00008000
+        dc.l    $8E708F00,$80008000,$906F9100,$80000000
+        dc.l    $927E9300,$00008000,$94449500,$80008000
+        dc.l    $965D9700,$80000000,$98A09900,$00008000
+        dc.l    $9A539B00,$80008000,$9C459D00,$80000000
+        dc.l    $9EAD9F00,$00008000,$A068A100,$80008000
+        dc.l    $A257A300,$80000000,$A4ADA500,$00008000
+        dc.l    $A673A700,$80008000,$A891A900,$80000000
+        dc.l    $AA33AB00,$00008000,$AC9FAD00,$80008000
+        dc.l    $AEE9AF00,$80000000,$B0C0B100,$00008000
+        dc.l    $B2BDB300,$80008000,$B4A9B500,$80000000
+        dc.l    $B6DBB700,$00008000,$B8C3B900,$80008000
+        dc.l    $BAA9BB00,$80000000,$BCF8BD00,$00008000
+        dc.l    $BEC9BF00,$80008000,$C08AC100,$80000000
+        dc.l    $C21FC300,$00008000,$C407C500,$80008000
+        dc.l    $C65FC700,$80000000,$C852C900,$00008000
+        dc.l    $CA21CB00,$80008000,$CC95CD00,$80000000
+        dc.l    $CE7ECF00,$00008000,$D02DD100,$80008000
+        dc.l    $D29BD300,$80000000,$D4EBD500,$00008000
+        dc.l    $D649D700,$80008000,$D80AD900,$80000000
+        dc.l    $DAC4DB00,$00008000,$DCC2DD00,$80008000
+        dc.l    $DE33DF00,$80000000,$E0C5E100,$00008000
+        dc.l    $E276E300,$80008000,$E4DEE500,$80000000
+        dc.l    $E65EE700,$00008000,$E85BE900,$80008000
+        dc.l    $EA9EEB00,$80000000,$ECB1ED00,$00008000
+        dc.l    $EE6FEF00,$80008000,$F07AF100,$80000000
+        dc.l    $F295F300,$00008000,$F43DF500,$80008000
+        dc.l    $F676F700,$80000000,$F853F900,$00008000
+        dc.l    $FA25FB00,$80008000,$FC6BFD00,$80000000
+        dc.l    $FE79FF00,$00008000,$00320106,$80008000
+        dc.l    $027E0306,$80000000,$04E70506,$00008000
+        dc.l    $06B20706,$80008000,$08D60906,$80000000
+        dc.l    $0AB70B06,$00008000,$0CA40D06,$80008000
+        dc.l    $0ECA0F06,$80000000,$108B1106,$00008000
+        dc.l    $12711306,$80008000,$144A1506,$80000000
+        dc.l    $16751706,$00008000,$18AB1906,$80008000
+        dc.l    $1A5A1B06,$80000000,$1C4A1D06,$00008000
+        dc.l    $1E931F06,$80008000,$205B2106,$80000000
+        dc.l    $22322306,$00008000,$24712506,$80008000
+        dc.l    $00000000  ; Stars made with the TTST-STAR-ED !
+
+initpointers:
+        move.l  #sprite1,d0
+        move.w  d0,first+6
+        rts
+
+move_stars:
+        lea     sprite1,a0
+        move.w  #spr_anz,d7
+        moveq   #0,d0
+ms_loop:
+        addq    #1,d0
+        and.b   #$3,d0          ;3 Ebenen
+        bne.s   ms_cont
+        addq    #1,d0           ;um nulladdition zu verhindern
+ms_cont:
+        add.b   d0,1(a0)
+        addq    #8,a0           ;zum naechsten spr
+        dbra    d7,ms_loop
+        rts
+
+So, das ist es..Die Basis, das erste Sprite Listing ist nicht zu uebersehen,
+aber ist klar, das Grundprinzip ist bei allem was die Sprites angeht
+gleich, deshalb auch hier das grundschema.
+
+Fuer die Move_Stars routine moechte ich hiermit `Amadeus` danken, er hat sie
+mir zur verfuegung gestellt.
+
+Wichtig ist das ihr im Label `Spr_anz` die anzahl der sprites angebt, da
+die Moveroutine sich nach ihr richtet und nicht nach den Endmarkierungen.
+
+Falls Muell auf dem Bildschirm erscheint, daa tippt doch im
+Seka Kommandomodus `F` fuer Fill, und dann $40000 und $50000, dann fuellt
+er den Bereich der angezeigt wird. Den wiegesagt muss ich ja ein Komplettes
+Playfield eroeffnen damit man die Sprites sieht.
+
+Ein weiteres Schmankerl dieses Listings sehe ich gerade, es sind die
+bildschirmmasse fuer das Playfield. Sie entsprechen den Massen eines
+DeluxePaint Overscan Bildes..also wer so lieber arbeitet, ich arbeite nur
+in dem Modus, der kann das tun, es ist bis auf ganz bestimmte werte, auf
+die man aber kommen muss wenn man ein bisschen ueberlegt, fast dasselbe.
+Hier nochmal die Werte zum mitschreiben.
+
+Diwstrt $1a64
+Diwstop $39d1
+Ddfstrt $0030
+Ddfstop $00d8
+
+So, das war eigentlich alles was man zu den Sprites sagen kann, wer alles
+verstanden hat wird sicherlich einsehen, das sie sich eigentlich nur fuer
+Sterne eignen, deshalb werde ich sie auch nur noch dafuer benutzen. Also
+alles Klar.
+
+Wenn ihr meint das ich zuviel geschrieben habe fuer eine Sache die so
+schlecht zu benutzen ist wie die Sprites, dann will ich euch nur sagen das
+es halt auch dazu gehoert. Denn was meint ihr wenn ihr laut wie ein
+Rohrspatz irgendwo ueber sprites schimpft, und dann irgendeiner fragt
+`Warum sind die denn so scheisse`, dann koennt ihr nicht sagen...Tja, das
+hat der Jeff gesagt`, deshalb ist es schon ganz gut wenn ihr ein Bisschen
+hintergrundwissen habt.
+
+Den Star-ed lege ich gleich in die Bretter, ehrlich.
+
+Versucht doch mal alle bisher erklaerten effekte zu kombinieren. Also ein
+32 Farben Logo, das im Wasser bei Nacht im Wasser gespiegelt wird, so
+schwer ist es nicht. Wenn man sich ein Bisschen muehe gibt dann, sieht es
+schon einigermassen gut aus.
+
+Also machen wir fuer heute mal wieder schluss...Ich muss mir noch das
+Naechste Thema ausdenken. Ich schaetze aber es wird mal wieder etwas was
+nicht direkt mit Assembler zu tun hat...vielleicht `Packen`, und lauffaehig
+machen von effekten, ohne den Seka,oder so !
+Auf jeden Fall wird es wieder eine Interressante sache. Falls ihr sie noch
+nicht habt solltet ihr euch schonmal die Packer besorgen die ich
+vorgestellt habe...Ihr solltet euch auch schon mal den Bytekiller genau
+angucken, mit dem Arbeiten wir...so tolle Packer wie den Powerpacker
+koennen wir leider fuer unsere Zwecke nicht gebrauchen, also falls ihr den
+habt...vergesst ihn...er hat mit dem Was wir machen nicht das geringste zu
+tun....
+
+C.U.
+
+                Jeff Kandle

@@ -1,0 +1,166 @@
+/* translate Thinker links */
+arg str       /* get the link and assign to a variable */
+lngth = length(str)
+say str
+address "Thinker"  /* send unrecognized commands to Thinker */
+trace all      /* intermediate tracing when run from a shell */
+loc = 1      /* initialize the location variable */
+str1 = ""    /* initialize the string variables to null */
+str2 = ""
+str3 = ""
+
+call verse()
+
+if ch = ";" then pass() /* if in correct format, don't change */
+else if ch = "," then call verse()
+else if ch = "-" then call verse()
+else if datatype(ch,m) then call book()
+
+call chapter()
+
+call book()
+
+verse:
+    if datatype(nextch(),n) then do      /* if last char is a number */
+        str3 = ch                        /* start assigning the verse variable */
+        nextch()                         /* get 2nd from last char */
+        do while datatype(ch,n)          /* repeat loop while number */
+            str3 = ch || str3            /* add number to left of verse string */
+            nextch()
+            end
+    end
+    else pass()                          /* if link doesn't end in number, send back */
+return
+
+chapter:
+    if datatype(nextch(),n) then str2 = ch /* start chapter string */
+    nextch()
+    do while datatype(ch,n)     /* complete chapter string */
+        str2 = ch || str2
+        nextch()
+    end
+return
+
+book:
+    if datatype(ch,m) then str1 = ch   /* find end of book */
+    else if datatype(nextch(),m) then str1 = ch
+    do forever
+        nextch()
+        str1 = ch || str1
+    end
+return
+
+nextch:
+    ch = left(right(str,loc),1)
+    loc = loc + 1
+    if loc = lngth + 2 then finish()
+    else return ch
+
+pass:
+    jump label first str
+    exit
+
+finish:
+    if str1 ~= "" then do
+        call translatestr1()
+        if str2 = "" then do
+            str = str1 || ":," || str3
+            pass()
+            end
+        else do
+            str = str1 || ":," || str2 || ";" || str3
+            pass()
+            end
+    end
+    else if str2 = "" then do
+        str = str3
+        pass()
+    end
+    else str = str2 || ";" || str3
+    pass()
+return
+
+translatestr1:
+    select
+    when (str1 = "GENESIS") | (str1 = "GE") then str1 = "Gen"
+    when (str1 = "EXODUS") | (str1 = "EX") then str1 = "Exo"
+    when (str1 = "LEVITICUS") | (str1 = "LE") then str1 = "Lev"
+    when (str1 = "NUMBERS") | (str1 = "NU") then str1 = "Num"
+    when (str1 = "DEUTERONOMY") | (str1 = "DE") then str1 = "Deu"
+    when (str1 = "JOSHUA") | (str1 = "JOSH") then str1 = "Jos"
+    when (str1 = "JUDGES") | (str1 = "JUDG") then str1 = "Jug"
+    when (str1 = "RUTH") | (str1 = "RU") then str1 = "Rut"
+    when (str1 = "1SAMUEL") | (str1 = "ISAMUEL") | (str1 = "1SAM") | (str1 = "ISAM") | (str1 = "1 SAMUEL") | (str1 = "I SAMUEL") | (str1 = "1 SAM") | (str1 = "I SAM") | (str1 = "1 SA") | (str1 = "I SA") then str1 = "1Sa"
+    when (str1 = "2SAMUEL") | (str1 = "IISAMUEL") | (str1 = "2SAM") | (str1 = "IISAM") | (str1 = "2 SAMUEL") | (str1 = "II SAMUEL") | (str1 = "2 SAM") | (str1 = "II SAM") | (str1 = "2 SA") | (str1 = "II SA") then str1 = "2Sa"
+    when (str1 = "1KINGS") | (str1 = "IKINGS") | (str1 = "1KING") | (str1 = "IKING") | (str1 = "1KIN") | (str1 = "IKIN") | (str1 = "1 KINGS") | (str1 = "I KINGS") | (str1 = "1 KIN") | (str1 = "I KIN") | (str1 = "1 KI") | (str1 = "I KI"),
+        then str1 = "1Ki"
+    when (str1 = "2KINGS") | (str1 = "IIKINGS") | (str1 = "2KING") | (str1 = "IIKING") | (str1 = "2KIN") | (str1 = "IIKIN") | (str1 = "2 KINGS") | (str1 = "II KINGS") | (str1 = "2 KIN") | (str1 = "II KIN") | (str1 = "2 KI") | (str1 = "II KI"),
+        then str1 = "2Ki"
+    when (str1 = "1CHRONICLES") | (str1 = "ICHRONICLES") | (str1 = "1CHRON") | (str1 = "ICHRON") | (str1 = "1CHR") | (str1 = "ICHR") | (str1 = "1 CHRONICLES") | (str1 = "I CHRONICLES") | (str1 = "1 CHRON") | (str1 = "I CHRON"),
+        | (str1 = "1 CHR") | (str1 = "I CHR") | (str1 = "1 CH") | (str1 = "I CH") | (str1 = "ICH")
+        then str1 = "1Ch"
+    when (str1 = "2CHRONICLES") | (str1 = "IICHRONICLES") | (str1 = "2CHRON") | (str1 = "IICHRON") | (str1 = "2CHR") | (str1 = "IICHR") | (str1 = "2 CHRONICLES") | (str1 = "II CHRONICLES") | (str1 = "2 CHRON") | (str1 = "II CHRON"),
+        | (str1 = "2 CHR") | (str1 = "II CHR") | (str1 = "2 CH") | (str1 = "II CH") | (str1 = "IICH")
+        then str1 = "1Ch"
+    when (str1 = "EZRA") then str1 = "Ezr"
+    when (str1 = "NEHEMIAH") | (str1 = "NE") then str1 = "Neh"
+    when (str1 = "ESTER") | (str1 = "ES") then str1 = "Est"
+    when (str1 = "JOB") | (str1 = "JO") then str1 = "Job"
+    when (str1 = "PSALMS") | (str1 = "PS") | (str1 = "PSALM") then do
+        if str2 > 99 then str1 = "Psm"
+        else str1 = "Psa"
+        end
+    when (str1 = "PROVERBS") | (str1 = "PR") then str1 = "PRO"
+    when (str1 = "ECCLESIASTES") | (str1 = "EC") then str1 = "Ecc"
+    when (str1 = "SONGOFSOLOMAN") | (str1 = "SONG") | (str1 = "SONG OF SOLOMAN") then str1 = "Son"
+    when (str1 = "ISAIAH") | (str1 = "IS") then str1 = "Isa"
+    when (str1 = "JEREMIAH") | (str1 = "JE") then str1 = "Jer"
+    when (str1 = "LAMENTATIONS") | (str1 = "LA") then str1 = "Lam"
+    when (str1 = "EZEKIEL") | (str1 = "EZ") then str1 = "Eze"
+    when (str1 = "DANIEL") | (str1 = "DA") then str1 = "Dan"
+    when (str1 = "HOSEA") | (str1 = "HO") then str1 = "Hos"
+    when (str1 = "JOEL") then str1 = "Joe"
+    when (str1 = "AMOS") | (str1 = "AM") then str1 = "Amo"
+    when (str1 = "OBADIAH") | (str1 = "OB") then str1 = "Oba"
+    when (str1 = "JONAH") then str1 = "Jon"
+    when (str1 = "MICAH") | (str1 = "MI") then str1 = "Mic"
+    when (str1 = "NAHUM") | (str1 = "NA") then str1 = "Nah"
+    when (str1 = "HABAKKUK") then str1 = "Hab"
+    when (str1 = "ZEPHANIAH") | (str1 = "ZEPH") then str1 = "Zep"
+    when (str1 = "HAGGAI") then str1 = "Hag"
+    when (str1 = "ZECHARIAH") | (str1 = "ZECH") then str1 = "Zec"
+    when (str1 = "MALACHI") then str1 = "Mal"
+    when (str1 = "MATTHEW") | (str1 = "MATT") then str1 = "Mat"
+    when (str1 = "MARK") then str1 = "Mar"
+    when (str1 = "LUKE") | (str1 = "LU") then str1 = "Luk"
+    when (str1 = "JOHN") then str1 = "Joh"
+    when (str1 = "ACTS") | (str1 = "AC") then str1 = "Act"
+    when (str1 = "ROMANS") | (str1 = "RO") then str1 = "Rom"
+    when (str1 = "1CORINTHIANS") | (str1 = "ICORINTHIANS") | (str1 = "1COR") | (str1 = "ICOR") | (str1 = "1 CORINTHIANS") | (str1 = "I CORINTHIANS") | (str1 = "1 COR") | (str1 = "I COR") then str1 = "1Co"
+    when (str1 = "2CORINTHIANS") | (str1 = "IICORINTHIANS") | (str1 = "2COR") | (str1 = "IICOR") | (str1 = "2 CORINTHIANS") | (str1 = "II CORINTHIANS") | (str1 = "2 COR") | (str1 = "II COR") then str1 = "1Co"
+    when (str1 = "GALATIANS") | (str1 = "GA") then str1 = "Gal"
+    when (str1 = "EPHESIANS") | (str1 = "EP") then str1 = "Eph"
+    when (str1 = "PHILIPPIANS") | (str1 = "PHILIP") then str1 = "Php"
+    when (str1 = "COLOSSIANS") | (str1 = "CO") then str1 = "Col"
+    when (str1 = "1THESSALONIANS") | (str1 = "ITHESSALONIANS") | (str1 = "1THESS") | (str1 = "ITHESS") | (str1 = "1THES") | (str1 = "ITHES") | (str1 = "1 THESSALONIANS") | (str1 = "I THESSALONIANS") | (str1 = "1 THESS") | (str1 = "I THESS"),
+        | (str1 = "1 THES") | (str1 = "I THES") | (str1 = "1 TH") | (str1 = "I TH") | (str1 = "ITH")
+        then str1 = "1Th"
+    when (str1 = "2THESSALONIANS") | (str1 = "IITHESSALONIANS") | (str1 = "2THESS") | (str1 = "IITHESS") | (str1 = "2THES") | (str1 = "IITHES") | (str1 = "2 THESSALONIANS") | (str1 = "II THESSALONIANS") | (str1 = "2 THESS") | (str1 = "II THESS"),
+        | (str1 = "2 THES") | (str1 = "II THES") | (str1 = "2 TH") | (str1 = "II TH") | (str1 = "IITH")
+        then str1 = "2Th"
+    when (str1 = "1TIMOTHY") | (str1 = "ITIMOTHY") | (str1 = "1TIM") | (str1 = "ITIM") | (str1 = "1 TIMOTHY") | (str1 = "I TIMOTHY") | (str1 = "1 TIM") | (str1 = "I TIM") | (str1 = "1 TI") | (str1 = "I TI") | (str1 = "ITI") then str1 = "1Ti"
+    when (str1 = "2TIMOTHY") | (str1 = "IITIMOTHY") | (str1 = "2TIM") | (str1 = "IITIM") | (str1 = "2 TIMOTHY") | (str1 = "II TIMOTHY") | (str1 = "2 TIM") | (str1 = "II TIM") | (str1 = "2 TI") | (str1 = "II TI") | (str1 = "IITI") then str1 = "2Ti"
+    when (str1 = "TITUS") | (str1 = "TIT") then str1 = "Tis"
+    when (str1 = "PHILEMON") then str1 = "Phm"
+    when (str1 = "HEBREWS") | (str1 = "HE") then str1 = "Heb"
+    when (str1 = "JAMES") | (str1 = "JA") then str1 = "Jam"
+    when (str1 = "1PETER") | (str1 = "IPETER") | (str1 = "1PET") | (str1 = "IPET") | (str1 = "1 PETER") | (str1 = "I PETER") | (str1 = "1 PET") | (str1 = "I PET") | (str1 = "1 PE") | (str1 = "I PE") | (str1 = "IPE") then str1 = "1Pe"
+    when (str1 = "2PETER") | (str1 = "IIPETER") | (str1 = "2PET") | (str1 = "IIPET") | (str1 = "2 PETER") | (str1 = "II PETER") | (str1 = "2 PET") | (str1 = "II PET") | (str1 = "2 PE") | (str1 = "II PE") | (str1 = "IIPE") then str1 = "2Pe"
+    when (str1 = "1JOHN") | (str1 = "IJOHN") | (str1 = "1JOH") | (str1 = "IJOH") | (str1 = "1 JOHN") | (str1 = "I JOHN") | (str1 = "1 JOH") | (str1 = "I JOH") | (str1 = "1 JO") | (str1 = "I JO") | (str1 = "IJO") then str1 = "1Jo"
+    when (str1 = "2JOHN") | (str1 = "IIJOHN") | (str1 = "2JOH") | (str1 = "IIJOH") | (str1 = "2 JOHN") | (str1 = "II JOHN") | (str1 = "2 JOH") | (str1 = "II JOH") | (str1 = "2 JO") | (str1 = "II JO") | (str1 = "IIJO") then str1 = "2Jo"
+    when (str1 = "3JOHN") | (str1 = "IIIJOHN") | (str1 = "3JOH") | (str1 = "IIIJOH") | (str1 = "3 JOHN") | (str1 = "III JOHN") | (str1 = "3 JOH") | (str1 = "III JOH") | (str1 = "3 JO") | (str1 = "III JO") | (str1 = "IIIJO") then str1 = "3Jo"
+    when (str1 = "JUDE") then str1 = "Jue"
+    when (str1 = "REVELATION") | (str1 = "RE") then str1 = "Rev"
+    otherwise
+    end
+    return

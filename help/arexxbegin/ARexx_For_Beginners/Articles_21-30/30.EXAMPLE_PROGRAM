@@ -1,0 +1,951 @@
+@DATABASE "ARB30"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 30 - Example Program Using Arrays & Disk Files"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 30 - EXAMPLE PROGRAM USING ARRAYS AND DISK FILES
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" About The Program     " LINK "About"}
+@{" The Symbols Table     " LINK "Table"}
+@{" Check File On Disk    " LINK "Check"}
+@{" Load File From Disk   " LINK "Load"}
+@{" The Main Menu         " LINK "Menu"}
+@{" New People Addition   " LINK "NewPeople"}
+@{" Save File To Disk     " LINK "Save"}
+@{" Display Function      " LINK "Display"}
+@{" Press Return Function " LINK "PressReturn"}
+@{" The Quit Function     " LINK "Quit"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "About" "Article 30 - About The Files & Arrays Example Program"
+
+@{B}@{U}@{JCENTER}ABOUT THE FILES & ARRAYS EXAMPLE PROGRAM@{UB}@{UU}
+@{JLEFT}
+This is a rather simplistic data base program and is scarcely worth
+developing any further as there are plenty of other data base or
+address/telephone type programs out there in the Public Domain or
+Commercial world that do a far better job than we could ever hope to do
+with an ARexx program. The main purpose of writing this little data base is
+to demonstrate the use of Arrays and disk files. Because of this, the
+program will @{B}not@{UB} allow these things:-
+
+- A sort of people into alphabetical order.
+- Changes to be made to a person's details after they have been entered
+
+As the program has become quite a bit longer than other example programs
+to date, I will split it up into its various section in talking about
+it. However, if you want to see it all in one just @{"click here" LINK "ARB:Articles_21-30/Example30-1.rexx/MAIN"}.
+
+If you think that you can understand the workings of the program without
+reading my explanations then you can skip all of this article and just
+view the program by clicking above and then see it operating by RX'ing it.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Table" "Article 30 - Files & Arrays Example Program - Symbols Table"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - SYMBOLS TABLE@{UB}@{UU}
+@{JLEFT}
+ 1. cd = 'a'x /* cursor down one line */
+ 2. cl = 'c'x /* clear the screen */
+
+These two help control the output in the window by moving the cursor down
+to the start of the next line and clearing the window.
+
+ 3. itab = COPIES(' ',25)
+ 4. mtab = COPIES(' ',28)
+
+These two allow, respectively, 25 spaces or 28 spaces at the start of
+the various displays.
+
+ 5. Heading = cl||cd||CENTRE('MY PHONE BOOK',77)||cd
+
+The symbol "Heading" allows the same heading to be put at the top of each
+window display. It first uses the symbols "cl" and "cd" to clear the screen
+then put a blank line between the top of the window and the heading
+text.
+
+ 6. Item.1 = itab'Surname : '
+ 7. Item.2 = itab'Given Name : '
+ 8. Item.3 = itab'Phone Number : '
+ 9. Item.4 = itab'Comments : '
+
+Here we will use an array to set out the items in either @{"Line 79" LINK "NewPeople"54} of the
+"Input New People" section or @{"Line 119" LINK "Display"57} of the "Display People" section.
+The symbol "itab" (see above) allows each item to be started 25 spaces
+from the left edge of the window.
+
+10. Menu.1 = 'Enter New People'
+11. Menu.2 = 'Save File to Disk'
+12. Menu.3 = 'Display a Person'
+13. Menu.4 = 'Quit the Program'
+
+Another array to hold menu items. We will @{"see later" LINK "Menu"33} why we do not put
+the symbol "mtab" at the start of each symbol definition.
+
+14. Name.x.y = /* Compound Symbols to hold people's details where: */
+15.            /* x = Person's number */
+16.            /* y = Item number for person */
+
+This is an array of compound symbols to hold all the data for the people
+entered. Person 1 will have data held in:-
+
+       Surname       - Name.1.1
+       Given Name    - Name.1.2
+       Phone Number  - Name.1.3
+       Comments      - Name.1.4
+
+Similarly, Person 2 will have information stored in Name.2.1 to Name.2.4
+
+The program will use symbols such as "Number" and "Count" to put the number
+values into the compound symbols. For example:-
+
+       Name.Number.Count
+
+17. Again = /* Value tells if to repeat loop for input new people */
+
+"Again" will be used to allow the user to enter "Yes" or "No" at @{"Line 91" LINK "NewPeople"106}
+to tell the program whether or not to repeat the loop in the function
+"NewPeople:" which starts at @{"line 72" LINK "NewPeople"14}.
+
+18. Match = /* Value of Match indicates if a person has been found */
+
+"Match" is used to indicate whether a search has been successful, in which
+case it will hold the number of the person, or if it was unsuccessful,
+in which case it will hold zero. See Display Function @{"Lines 144-148" LINK "Display"205} and
+@{"Lines149-154" LINK "Display"234}.
+
+19. Count =  /* Loop counter */
+20. Number = /* Number of Person being Displayed */
+
+The above two symbols are used in various places to put values into the
+compound symbols "Name.Number.Count".
+
+For example, when Number = 2 and Count = 3 we would get the Phone Number
+for person 2.
+
+21. People = 0 /* Number of people in file */
+
+"People" is used to keep track of how many people have been entered into
+the data base.
+
+22. SaveFile = 0 /* Flag to show if file need saving 1=yes 0=no */
+
+We don't want to quit the file before any new data has been sent to disk
+so we need a "flag" to tell the program if there is new data that needs
+to be saved.
+
+It is set to 1 in @{"Line 94" LINK "NewPeople"115} at the end of the "NewPeople" and reset to 0
+in @{"Line 107" LINK "Save"43} in the "Save File" section.
+
+It is checked at @{"Line 161" LINK "Quit"} function to see if the file needs to be saved
+before quitting the program.
+
+23. Selection = /* Selection from a menu */
+
+"Selection" is used to record the keyboard entry at menus.
+
+24. Trash = /* Trash symbol to use and discard */
+
+"Trash" is simply a symbol to record miscellaneous keyboard entries that
+do not need to be kept so we can use it at various points such as asking
+for RETURN to be pressed before continuing without worrying if changing
+it will affect anything
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Check" "Article 30 - Files & Arrays Example Program - Check File Exists"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - CHECK FILE EXISTS@{UB}@{UU}
+@{JLEFT}
+25. DO WHILE EXISTS('PhoneBook.Data') = 0
+
+26.   SAY Heading
+27.   SAY 'Data File does not exists. Please select an option'
+28.   SAY cd'1. Create new File'
+29.   SAY cd'2. Replace with correct disk'
+30.   SAY cd'3. Abort Program'
+31.   PULL Selection
+
+32.   SELECT
+
+33.     WHEN Selection = 1 THEN DO
+34.       CALL OPEN('LogFile','PhoneBook.Data','W')
+35.       CALL WRITELN('LogFile',0)
+36.       CALL CLOSE('LogFile')
+37.     END
+
+38.     WHEN Selection = 2 THEN DO
+39.      SAY 'Place correct disk in drive then press RETURN'
+40.      CALL PressReturn
+41.     END
+
+42.     WHEN Selection = 3 THEN EXIT
+
+43.     OTHERWISE DO
+44.       SAY 'Wrong Selection - Try Again'
+45.       CALL PressReturn
+46.     END
+47.   END
+48. END
+
+This part of the program loops through lines 25 to 48 while the data file
+"PhoneBook.Data" does @{B}not@{UB} exist on disk. The program is assuming that
+the data file is in the current directory which is rather limiting. I
+have put in this section only to let you see how to handle a situation
+that occurs when a file is not found. If we were going to have a proper
+data base program then we would really need to allow the option of changing
+the current directory or allowing the user to input the path to the file.
+But this would make the example program too long.
+
+If the file is not there, the user has three options as set out in lines
+28-30.
+
+If a new file is to be created, then Lines 33-37 open it for writing,
+write a value of 0 (zero) to it (which will be the number of people in
+the file) then immediately close it.
+
+A value People = 0 will:-
+
+- Prevent the program trying to load a data file (See @{"Line 51" LINK "Load"}
+
+- Restrict the menu items to be shown in @{"Line 60" LINK "Menu"}
+
+- Prevent user entering menu selections 2 and 3 at @{"Lines 66-67" LINK "Menu"56}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Load" "Article 30 - Files & Arrays Example Program - Load File"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - LOAD FILE@{UB}@{UU}
+@{JLEFT}
+49. CALL OPEN('LogFile','PhoneBook.Data','R')
+
+50. People = READLN('LogFile')
+51. IF People > 0 THEN DO Number = 1 TO People
+52.   DO Count = 1 TO 4
+53.     Name.Number.Count = READLN('LogFile')
+54.   END
+55. END
+
+56. CALL CLOSE('LogFile')
+
+Now, knowing the file does exists, we can safely open it.
+
+First up we input from the disk file the number of People (which, when
+we get to the "SaveFile:" function, we will see was the first item written
+to the file.
+
+If the value of the symbol "People" is zero, then we know that it is a
+new file and so we skip Lines 52-55.
+
+If the value of People is @{B}greater than@{UB} zero, then we have some data and
+proceed to read it (Lines 51-55).
+
+When writing this sort of program, it is usually best to write the @{"Save File" LINK "Save"}
+section @{B}first@{UB} and this part afterwards. That way you can make sure that
+reading back from disk is in exactly the same order as writing to the
+disk. If you get them in different orders then your data, after reading,
+is @{B}valueless!@{UB}
+
+Note that there are two loops in this and the "Save File" coding:-
+
+- The outer loop (Number = 1 to People) counts of each person in turn.
+
+- The inner loop (Count = 1 TO 4) then gets the 4 bits of information for
+  each person.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Menu" "Article 30 - Files & Arrays Example Program - The Main Menu"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - THE MAIN MENU@{UB}@{UU}
+@{JLEFT}
+57. DO FOREVER
+58.   SAY Heading
+59.   DO Count = 1 TO 4
+60.     IF People = 0 & (Count = 2 | Count = 3) THEN ITERATE
+61.     SAY mtab||Count'.' Menu.Count
+62.   END
+63.   PULL Selection
+
+Line 57 sets up a "FOREVER" loop which ends at @{"Line 71" LINK "Menu"52}.
+
+Lines 59-62 display the menu items.
+
+Note that, when "People = 0", there is no use in the user selecting either
+"Save File to Disk" or "Display a Person" as there is no data in the file
+to be saved or looked at. By using ITERATE we skip these menu items
+when:-
+
+    People = 0 AND ( Count = 2 OR Count = 3 )
+
+and get a menu that looks like this:-
+
+                                MY PHONE BOOK
+
+                            1. Enter New People
+                            4. Quit the Program
+
+The symbol "mtab" puts 28 spaces in front of each item. By SAYing the
+"Count" variable before the "Menu.Count" we can get the program to show
+the number of the item as well as the item name.
+
+With the compound symbols "Item.1" to "Item.4" I put the "itab" symbol
+before the "Item." symbol definitions in @{"Lines 6-9" LINK "Table"22}. I did not add "mtab"
+to the elements of "Menu." in @{"Lines 10-13" LINK "Table"32} as, in @{"Line 61" LINK "Menu"3}, I wanted to
+use the value of "Count" to display the number of the menu item and thus
+indicate to the user the number to be pressed. If I had included "mtab"
+in the definition at lines 10-13 the menu would have looked like
+this:-
+
+                                MY PHONE BOOK
+
+1.                             Enter  New People
+2.                             Save File to Disk
+3.                             Display  a Person
+4.                             Quit  the Program
+
+
+instead of like this:-
+
+                                MY PHONE BOOK
+
+                            1. Enter New People
+                            2. Save File to Disk
+                            3. Display a Person
+                            4. Quit the Program
+
+64.   SELECT
+65.     WHEN Selection = 1 THEN CALL NewPeople
+66.     WHEN Selection = 2 & People > 0 THEN CALL SaveFile
+67.     WHEN Selection = 3 & People > 0 THEN CALL Display
+68.     WHEN Selection = 4 THEN CALL Quit
+69.     OTHERWISE NOP
+70.   END
+71. END
+
+Having shown the menu and, in @{"Line 63" LINK "Menu"10}, PULLed a number entered by the
+user into the symbol "Selection" we can now do something with the
+selection.
+
+I started a FOREVER loop at @{"Line 57" LINK "Menu"3}  which is ENDed at Line 71. Incorrect
+entries are trapped by the "OTHERWISE NOP" at Line 69 and the FOREVER
+loop operates again to redisplay the menu.
+
+An incorrect entry is other than 1-4 when People holds a number greater
+than zero.
+
+When People = 0 (i.e. NOT > 0) then the conditions relating to the WHENs
+at lines 66 and 67 are false and these lines cannot operate.
+
+After a function has been CALLed and has RETURNED the program jumps to
+the END at Line 70 (which is the SELECT's end) and then drops to the END
+at Line 71 which is the end of the FOREVER loop started at Line 57. Thus
+the menu is displayed again.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "NewPeople" "Article 30 - Files & Arrays Example Program - New People"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - NEW PEOPLE@{UB}@{UU}
+@{JLEFT}
+This is the first of our internal functions. It enables new people to
+be put into the data file.
+
+It can be called from the @{"Main Menu" LINK "Menu"51}.
+
+As this is merely an exercise in handling arrays and disk files, there
+is @{B}no scope for amending any wrong entries@{UB}.
+
+As it is rather a long sequence I will discuss it in pieces. @{"Click here" LINK "ARB:Articles_21-30/Example30-1.rexx/MAIN"112}
+to read it in one go.
+
+@{B}Line 72@{UB} starts of the internal function:-
+
+72. NewPeople:
+
+@{B}Line 73@{UB}:-
+
+73. DO WHILE Again ~= 'N'
+
+sets up a loop that keeps operating while ever the symbol "Again" does
+@{B}not@{UB} hold the value "N". At @{"Line 90" LINK "NewPeople"106} the user has the option of entering
+an option for entering more new people so if the user enters "N" the loop
+will END at @{"Line 92" LINK "NewPeople"105} and drop down to @{"Line 93" LINK "NewPeople"115}. Any other entry will cause
+the loop to be executed again. There is no real point in checking for
+an entry of "Y" or an incorrect entry as it does not really matter as
+long as "N" is only pressed when an exit is required.
+
+@{B}Lines74@{UB}:-
+
+74.   People = People + 1
+
+increments the "People" symbol by 1 so that we can keep track of the number
+of people in the file.
+
+@{B}Lines 75-77@{UB}:-
+
+75.   SAY Heading
+76.   SAY CENTRE('Enter details  for new person number' People,77)
+77.   SAY CENTRE('or RETURN at any BLANK prompt to abort an
+entry',77)||cd
+
+display the heading, ask for people details and tell the user to enter
+RETURN at any blank line to abort the entry. This will be detected by
+@{"Line 81" LINK "NewPeople"69}.
+
+@{B}Line 78@{UB}:-
+
+78.   DO Count = 1 TO 4
+
+sets up a loop to allow the entry of 4 items for each person.
+
+@{B}Line 79@{UB}:-
+
+79.     OPTIONS PROMPT Item.Count
+
+uses OPTIONS PROMPT with a symbol instead of a string as the "expression".
+Thus we can have each of the values of @{"Item.Count" LINK "Table"22} displayed in
+turn.
+
+@{B}Line 80@{UB}:-
+
+80.     PARSE PULL Name.People.Count
+
+uses PARSE PULL instead of a PULL so that we can get the case of characters
+entered.
+
+@{B}Line 81-88@{UB}:-
+
+81.     IF UPPER(Name.People.Count) = '' THEN DO
+82.       SAY cd||CENTRE('Aborting entry for Person number'People,77)
+83.       DO Count2 = 1 TO 4
+84.         DROP Name.People.Count2
+85.       END
+86.       People = People - 1
+87.       LEAVE Count
+88.     END
+
+This loop acts if RETURN is pressed at a blank line at @{B}Line 80@{UB}. This would
+give a null value for "Item.People.Count". Making it equal to '' means
+it has no value as @{B}nothing@{UB} is between the two quotes.
+
+@{B}Line 82@{UB} tells which person is being dropped.
+
+@{B}Lines 83-85@{UB} DROP all 4 entries for that person. It doesn't matter if they
+have not yet all been entered. DROPping a symbol that does not yet have
+a value is easier than trying to work out which parts have been given
+values and which have not.
+
+@{B}Line 86@{UB} reduces the count of people which was incremented at @{"Line 74" LINK "NewPeople"30}.
+We can't allow numbers floating around without any matching
+entries!
+
+@{B}Line 87@{UB} LEAVEs the count started at @{"Line 78" LINK "NewPeople"48} because the entry has been
+aborted.
+
+@{B}Line 89@{UB}:-
+
+89.   END
+
+is the end of the loop started at @{"Line 78" LINK "NewPeople"48} that allows the entry of 4 items
+per person.
+
+@{B}Line 90-92@{UB}:-
+
+90.   OPTIONS PROMPT cd||CENTRE('Any more new people? (Y/N)',77)
+91.   PULL Again
+92. END
+
+are reached after either completing an entry or aborting an entry. The
+options entered at Line 91 are discussed above under @{"Line 73" LINK "NewPeople"18}.
+
+@{B}Lines 93-95@{UB}:-
+
+93. DROP Again
+94. SaveFile = 1
+
+95. RETURN
+
+are reached only if "N" is entered at @{B}Line 91@{UB}. Any other entry causes
+the loop that ends at @{B}Line 92@{UB} to restart at @{"Line 73" LINK "NewPeople"18}.
+
+@{B}Line 93@{UB} DROPs the "N" value held by "Again". If we did not have this line,
+the second time a use selected "Enter New People" the function would be
+entered with "Again" having a value of "N" and the loop starting at Line
+73 would never be executed!!
+
+@{B}Line 94@{UB} sets the symbol "SaveFile" to a value of 1. This is used in @{"Line 161" LINK "Quit"}
+and acts as a "flag" to tell the program if the file needs to be saved
+to disk before the user exits the program
+
+@{B}Line 95@{UB} returns the program to @{"Line 70" LINK "Menu"51} to END the SELECT loop.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Save" "Article 30 - Files & Arrays Example Program - Save File"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - SAVE FILE@{UB}@{UU}
+@{JLEFT}
+This is the second of our internal functions. It enables the data to be
+saved to disk.
+
+It can be called from the @{"Main Menu" LINK "Menu"51} or from @{"Line 161" LINK "Quit"} of the "Quit"
+function.
+
+As it is rather a long sequence I will discuss it in pieces. @{"Click here" LINK "ARB:Articles_21-30/Example30-1.rexx/MAIN"144}
+to read it in one go.
+
+ 96. SaveFile:
+
+ 97. SAY Heading
+ 98. SAY CENTRE('Saving File to Disk',77)
+
+@{B}Line 99@{UB}:-
+
+ 99. CALL OPEN('LogFile','PhoneBook.Data','W')
+
+OPENs the data file for writing. The "W" option will cause any other version
+of the file to be deleted from the disk.
+
+@{B}Lines 100-105@{UB}:-
+
+100. CALL WRITELN('LogFile',People)
+
+101. DO Number = 1 TO People
+102.   DO Count = 1 TO 4
+103.     CALL WRITELN('LogFile',Name.Number.Count)
+104.   END
+105. END
+
+write the data to disk in the same order as that in which it is read back
+from disk at @{"Lines 50-55" LINK "Load"}.
+
+@{B}Line 106@{UB}:-
+
+106. CALL CLOSE('LogFile')
+
+closes off the file when the save is finished.
+
+@{B}Line 107@{UB}:-
+
+107. SaveFile = 0
+
+resets the symbol "SaveFile" back to zero so that the user can quit the
+program without being asked if the file is to be saved.
+
+@{B}Line 108@{UB}:-
+
+108. SAY cd||CENTRE('File has now been saved',77)
+
+simply tells the user the save is over.
+
+@{B}Lines 109-110@{UB}:-
+
+109. CALL PressReturn
+110. RETURN
+
+call the "PressReturn" function so that there is a pause in program flow
+while the user reads the message displayed by Line 108 and then returns
+the program to @{"Line 70" LINK "Menu"51} to END the SELECT loop.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Display" "Article 30 - Files & Arrays Example Program - Display Function"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - DISPLAY FUNCTION@{UB}@{UU}
+@{JLEFT}
+This is the third of our internal functions. It enables the data to be
+displayed on screen.
+
+It can be called from the @{"Main Menu" LINK "Menu"51}.
+
+As it is rather a long sequence I will discuss it in pieces. @{"Click here" LINK "ARB:Articles_21-30/Example30-1.rexx/MAIN"172}
+to read it in one go.
+
+I have marked the start and end of the main loops so you can easily see
+their limits. Other loops are short enough to see their ends without marking
+them.
+
+111. Display:
+
+112. SAY Heading
+
+@{B}Line 113@{UB}:-
+
+113. Number = 1
+
+sets the symbol "Number" to 1 so that the display will start with the
+first person.
+
+@{B}Line 114@{UB}:-
+
+/* Start Main Display Loop */
+
+114. DO FOREVER
+
+starts the main display loop which ends at @{"Line 155" LINK "Display"254}. This loop can only
+be left at @{"Line 130" LINK "Display"119} (RETURN to the main menu) or at @{"Line 131" LINK "Display"119} (CALL the
+Quit function).
+
+The main loop consists of two parts; the "Main Sub Loop" from @{B}Line 115@{UB}
+to @{B}Line 143@{UB} and then @{"Lines 144 to 155" LINK "Display"206}.
+
+@{B}Line 115@{UB} starts the main sub loop:-
+
+/* Start Main Sub Loop*/
+
+115.   DO FOREVER
+
+@{B}Lines 116-117@{UB}:-
+
+116.     SAY Heading
+117.     SAY CENTRE('Person number' Number 'of' People
+'people',77)||cd
+
+are informational only:- and display:-
+
+                                MY PHONE BOOK
+
+                         Person number 1 of 8 people
+
+@{B}Lines 118-120@{UB}:-
+
+118.     DO Count = 1 TO 4
+119.       SAY Item.Count Name.Number.Count
+120.     END
+
+first display the various items (Item.Count) then the person's details
+for that item (Name.Number.Count). It will look like this:-
+
+                         Surname      : Bloggs
+                         Given Name   : Jack
+                         Phone Number : 123 4567
+                         Comments     : Blah blah blah
+
+The first time, "Number" will be 1 (the first person) as set in @{"Line 113" LINK "Display"19}
+but the user will have the option to change the person viewed and "Number"
+will be anything from 1 to the value held by "People" which is the last
+person.
+
+@{B}Lines 121-128@{UB}:-
+
+121.     SAY
+122.     IF Number < People THEN SAY CENTRE('RETURN Advance one
+                                     person',75)
+123.     IF Number > 1 THEN SAY CENTRE('SPACE Go back one person',75)
+124.     SAY cd||CENTRE('F Jump to first name',75)
+125.     SAY CENTRE('L Jump to last name',75)
+126.     SAY CENTRE('M Go to Main Menu',75)
+127.     SAY CENTRE('Q Quit the Program',75)
+128.     OPTIONS PROMPT cd||CENTRE('Enter option OR new person''s name OR
+                         1st two or more characters of name',77)||cd"   "
+
+Display these options:-
+
+                        RETURN  Advance one person
+                        SPACE   Go back one person
+
+                           F  Jump to first name
+                           L  Jump to last  name
+                           M  Go  to  Main  Menu
+                           Q  Quit  the  Program
+
+   Enter option OR new person's name OR 1st two or more characters of name
+
+@{B}Line 122@{UB} will only give its message if "Number" is less than "People".
+If it is equal then we are at the last person and we can't go any further
+forward!
+
+@{B}Line 123@{UB} will only give its message if "Number" is more than 1. If it
+is equal we are at the first person and we can't go any further
+backwards!
+
+@{B}Line 128@{UB} tells the user to enter one of the options or a name. The name
+can be just the first two or more characters of a name. This will let
+the user enter "Sm" or "Smi" for "Smith".
+
+@{B}Line 129@{UB}:-
+
+129.     PULL Who
+
+allows the user to enter an option.
+
+@{B}Lines 130-133@{UB}:-
+
+130.     IF Who = 'M' THEN RETURN
+131.     IF Who = 'Q' THEN CALL Quit
+132.     IF Who = 'F' THEN Number = 1
+133.     IF Who = 'L' THEN Number = People
+
+handle the entry of some of the options.
+
+"M" will RETURN the program to @{"Line 70" LINK "Menu"51} to END the SELECT loop thus leaving
+the "Display:" function totally.
+
+"Q" will CALL the @{"Quit:" LINK "Quit"} function. However, "Quit:" has the option of
+returning here @{"(Line 169)" LINK "Quit"38} in case it was accidently selected.
+
+"F" resets "Number" to 1 so that the first person can be viewed.
+
+"L" resets "Number to be equal to "People" which is, in effect, the last
+person.
+
+@{B}Lines 134-135@{UB}:-
+
+134.     IF Who == '' THEN Number = Number + 1
+135.     IF Who == ' ' THEN Number = Number - 1
+
+handle the options not covered by @{"Lines 130-133" LINK "Display"119}.
+
+Note that @{"exact equality" LINK "ARB:Articles_11-20/11.Comparison_Operators/Exact"} is used in these because, with ordinary equality
+'' is equal to ' '.
+
+@{B}Line 134@{UB} operates if RETURN is pressed on its own. "Who" will have a null
+value ('') so the user wants to see the next person in the list. Thus
+we increment "Number" by 1.
+
+@{B}Line 135@{UB} operates if "Who" holds a space only (' '). This means that the
+user wants to go backwards and view the previous person so "Number" is
+reduced by 1.
+
+@{B}Lines 136-141@{UB}:-
+
+136.     IF Number < 1 | Number > People THEN DO
+137.       SAY cd||CENTRE('Sorry - No more people - Press Return',77)
+138.       OPTIONS ; PULL Trash
+139.       IF Number < 1 THEN Number = 1
+140.       IF Number > People THEN Number = People
+141.     END
+
+
+come into effect if @{"Lines 134-135" LINK "Display"139} take "Number" outside the range of 1
+to "People". If "Number" is reduced to below 1 or to more than "People"
+we tell the user "No more people" and reset "Number" to 1 if it is less
+than 1, or to "People" if it is more than "People".
+
+@{B}Line 142@{UB}:-
+
+142.     IF LENGTH(Who) >1 THEN LEAVE
+
+If the user has entered two or more characters then it is not an options
+selection but a person's name or part name and the "Main Sub Loop" is
+left and program flow goes to @{"Line 144" LINK "Display"205}.
+
+However, if @{B}Line 142@{UB} is reached and the user has only entered @{B}one@{UB} character,
+then program flow jumps back from @{B}Line 143@{UB} to the start of the loop at
+@{"Line 115" LINK "Display"39}.
+
+It is set up this way to enable single character letters only to be used
+for the options at @{"Lines 130-133" LINK "Display"119}
+
+At least two characters are required for a name search.
+
+@{B}Line 143@{UB}:-
+
+143.   END
+
+/* End Main Sub Loop*/
+
+is the end of the "Main Sub Loop" started at @{"Line 115" LINK "Display"39}. It is only reached
+if an incorrect one character entry is made at @{"Line 129" LINK "Display"113}. All that happens
+is that the current person and the options are redisplayed as the program
+hops back to @{"Line 115" LINK "Display"39}.
+
+This "Main Sub Loop" (Lines 115-143) loop can only be left at:-
+
+- @{"Lines 130-131" LINK "Display"119} if the user enters "M" or "Q", or
+- @{"Line 142" LINK "Display"172} if two or more characters are entered.
+
+@{B}Lines 144-148@{UB}:-
+
+144.   Len = LENGTH(Who) ; Match = 0
+145.   DO Count = 1 TO People
+146.     IF Who = LEFT(UPPER(Name.Count.1),Len) THEN DO
+147.     Match = Count ; LEAVE ; END
+148.   END
+
+handle an entry that should be a person's name or part name.
+
+@{B}Line 144@{UB} gets the length of the entry and sets the symbol "Match" to zero
+which is a "flag" to indicate that no match has been found in the data
+file.
+
+@{B}Line 145@{UB} allows a comparison of all people in the data base.
+
+@{B}Line 146@{UB} checks "Who" against the surname held in "Name.Count.1". As "Who"
+was entered using PULL, it will be in upper case so we make the comparison
+to the name converted to upper case with the UPPER() function. Also, we
+must make the comparison to the same number of characters in the Surname
+as are held by "Len" which is the length of "Who".
+
+@{B}Line 147@{UB} operates if a match occurs. "Match" is set to the current value
+of "Count" and thus becomes the number of the person whose name was entered.
+The program now LEAVEs the loop (Lines 145-148) and goes to Line 149.
+
+If no match is found by the time "Count" reaches a value equal to "People"
+then Line 147 is never executed and "Match" remains at zero.
+
+@{B}Lines 149-153@{UB}:-
+
+149.   IF Match = 0 THEN DO
+150.     SAY
+151.     SAY CENTRE('You entered' Who 'but there is no match in file',77)
+152.     CALL PressReturn
+153.   END
+
+operate if no match is found (Match = 0). A simple message telling the
+user so and then the "PressReturn:" function is called.
+
+@{B}Line 154@{UB}:-
+
+154.   ELSE Number = Match
+
+is the ELSE to go with the IF in @{B}Line 149@{UB}. It is only reached if "Match"
+is @{B}NOT@{UB} zero. "Number" is set to equal "Match" and the next iteration of
+the "Display:" function main loop will display the person corresponding
+with that number.
+
+@{B}Line 155@{UB}:-
+
+155. END
+
+/* End Main Display Loop */
+
+is reached no matter what value is held by "Match". It sends the program
+back to the start of the main display loop at @{"Line 115" LINK "Display"39}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "PressReturn" "Article 30 - Files & Arrays Example Program - Press Return"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - PRESS RETURN FUNCTION@{UB}@{UU}
+@{JLEFT}
+156. PressReturn:
+
+157. OPTIONS PROMPT cd||CENTRE('Press RETURN to continue',77)
+158. PULL Trash
+159. RETURN
+
+Nothing here really needs explaining.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Quit" "Article 30 - Files & Arrays Example Program - The QUIT Function"
+
+@{B}@{U}@{JCENTER}FILES & ARRAYS EXAMPLE PROGRAM - THE QUIT FUNCTION@{UB}@{UU}
+@{JLEFT}
+This is the fourth of our internal functions. It enables the user to quit
+the program but checks to see if data is to be saved first.
+
+It can be called from the @{"Main Menu" LINK "Menu"51} or from the @{"Display" LINK "Display"119} function.
+
+160. Quit:
+
+161. IF SaveFile = 1 THEN DO
+162.   SAY cd||CENTRE('File has been changed but has not been saved',77)
+163.   OPTIONS PROMPT cd||CENTRE('Do you want to save it before quitting?
+                                  (Y/N)',77)
+164.   PULL YesNo
+165.   IF YesNo ~= 'N' THEN CALL SaveFile
+166. END
+
+@{B}Lines 161-166@{UB} check to see if the file needs to be saved to disk (SaveFile
+= 1), asks the user if he/she wants to save it, and CALLs the "SaveFile:"
+function if this is @{B}true@{UB}:-
+
+   IF Yes/No ~= 'N'
+
+I could have used:-
+
+   IF Yes/No = 'Y'
+
+but, as I am only checking for one key press, with any other key press
+being taken to mean the other, then I am using a "Fail Safe"
+situation.
+
+If I used = 'Y' then @{B}any other key@{UB} (not just "N") would quit the program
+without the file being saved. It is better to be on the safe side and
+save the file if any other key except "N" is entered.
+
+167. OPTIONS PROMPT cd||CENTRE('Quitting Program - Are you sure? (Y/N)',77)
+168. PULL YesNo
+169. IF YesNo ~= 'Y' THEN RETURN
+
+170. EXIT
+
+@{B}Line 167@{UB} is reached either with or without a save of the file. It makes
+sure that the user really does want to quit. Note another "Fail Safe"
+option at @{B}Line 169@{UB}.
+
+The RETURN at the end of @{B}Line 169@{UB} goes back to whence "Quit:" was called,
+i.e. to the @{"Main Menu" LINK "Menu"51} or the @{"Display" LINK "Display"119} function.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE

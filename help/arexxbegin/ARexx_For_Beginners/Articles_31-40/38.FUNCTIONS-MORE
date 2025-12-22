@@ -1,0 +1,711 @@
+@DATABASE "ARB38"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 38 - More About Functions"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 38 - MORE ABOUT FUNCTIONS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" The SEARCH Procedure                " LINK "Search"}
+@{"    First  - Internal Functions      " LINK "Internal"}
+@{"    Second - Built In Functions      " LINK "BuiltIn"}
+@{"    Third  - The Library List        " LINK "LibraryList"}
+@{"       External Function Libraries   " LINK "Extlibs"}
+@{"       External Function Hosts       " LINK "Exthosts"}
+@{"    Fourth - External ARexx Programs " LINK "ARexxProgs"}
+@{" The SHOW('L') Function              " LINK "Show()"}
+@{" The ADDLIB() Function               " LINK "Addlib()"}
+@{"    Warning On Use Of ADDLIB()       " LINK "Warning"}
+@{"    More Notes On ADDLIB()           " LINK "More"}
+@{" The REMLIB() Function               " LINK "Remlib()"}
+@{" The RXLIB Command Utility           " LINK "Rxlib"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+
+@NODE "Search" "Article 38 - More About Functions - The SEARCH procedure"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE@{UB}@{UU}
+@{JLEFT}
+Before going on to look at more ways to deal with functions, it is necessary
+to have a look at how ARexx searches for a function when it is called.
+
+When you use something like:-
+
+  CALL xyz(...)
+
+ARexx does not know what @{"type of function" LINK "ARB:Misc/Glossary/Functions"} it is or where it is stored.
+So it needs to have a set procedure for searching for the function by
+name.
+
+It is quite conceivable that there could be two or more functions with
+the same name in two or more of these areas:-
+
+
+  Internal Functions
+  Built In Functions
+  External Function Libraries
+  External Function Hosts
+  Other ARexx Programs
+
+So, if there are more than one function with the same name, how does ARexx
+know which one to use? Where does it look first for the function you
+call?
+
+The order in which the search for the function is made is as
+follows:-
+
+  @{" First  - Internal Functions      " LINK "Internal"}
+  @{" Second - Built In Functions      " LINK "BuiltIn"}
+  @{" Third  - The Library List        " LINK "LibraryList"}
+  @{" Fourth - External ARexx Programs " LINK "ARexxProgs"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Internal" "Article 38 - The Search Procedure - First - Internal Functions"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - FIRST - INTERNAL FUNCTIONS@{UB}@{UU}
+@{JLEFT}
+These are the functions that you, the programmer, write into the program.
+These were discussed in @{"Article 16 - Internal Functions" LINK "ARB:Articles_11-20/16.Functions-Internal/MAIN"}.
+
+ARexx first looks for the called function in the program's own coding
+by looking for a label that is the same as the function name. The search
+is made from the @{B}start@{UB} of the program.
+
+As the names of such functions should @{B}not@{UB} be included in quotes, either
+when called or when used as the label, the case used does not matter as
+ARexx will convert them into upper case.
+
+You should note that, if there are two or more labels with the same name
+then only the first will be used. Subsequent ones cannot ever be
+reached!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "BuiltIn" "Article 38 - The Search Procedure - Second - Built In Functions"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - SECOND - BUILT IN FUNCTIONS@{UB}@{UU}
+@{JLEFT}
+These are the ones that are an integral part of the ARexx system They
+were discussed in @{"Article 17 - Built In Functions" LINK "ARB:Articles_11-20/17.Functions-Built_In/MAIN"}.
+
+If no match is made to an @{"Internal Function" LINK "Internal"}, then the list of Built In
+Functions is searched.
+
+All Built In Function names are recorded in upper case in the ARexx system.
+When called, the function name should @{B}not@{UB} be enclosed in quotes and will
+be converted to uppercase by ARexx. It therefore does not matter which
+case you use when you call the function.
+
+@{B}Note@{UB} that, if you use an @{B}Internal@{UB} Function name that is the same as a
+@{B}Built In@{UB} Function name, then the Built In Function will @{B}not@{UB} be available
+during the operation of the program as the Internal Function will be reached
+first during the search process.
+
+This can be demonstrated by this program:-
+
+  /* Example38-1 */
+
+  SAY 'The date is' DATE()
+  EXIT
+
+  Date:
+  RETURN 'Today of course!!'
+
+Normally, if you use:-
+
+  SAY 'The date is' DATE()
+
+you would get something like:-
+
+  The date is 16 Aug 1997
+
+But if you RX the above example you will get:-
+
+  The date is Today of course!!
+
+The Built In Function DATE() has @{B}not@{UB} been used because ARexx has found
+an @{B}Internal Function@{UB} of the same name and it is reached first in the search
+sequence.
+
+This raises the fact that, if you wish to have a Built In Function work
+in a different way, you could write your own Internal Function using the
+name of the Built In Function that you wish to replace.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "LibraryList" "Article 38 - The Search Procedure - Third - The Library List"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - THIRD - THE LIBRARY LIST@{UB}@{UU}
+@{JLEFT}
+The @{B}Library List@{UB} is a list of @{"External Function Libraries" LINK  "ExtLibs"} and
+@{"External Function Hosts" LINK "ExtHosts"} that is maintained by the ARexx system.
+
+@{B}Take note@{UB} that the loading of a library from the disk Libs: directory
+into the Amiga's memory resident library area in RAM @{B}does not@{UB} make it
+appear in ARexx's Library List. Function Libraries and Function Hosts
+@{B}must@{UB} have their names added to the @{B}ARexx@{UB} Library List with the @{"ADDLIB()" LINK "Addlib()"}
+Built In Function which is discussed next.
+
+The Library List is merely a list of names and other information consisting
+of:-
+
+   Library or Host name
+   Priority Number
+   Offset
+   Version Number
+
+The @{B}case@{UB} used for the Function Library or Function Host is @{B}critical.@{UB} You
+@{B}must@{UB} use the @{B}exact case@{UB} used in the library or host name and include it
+in quotes within the ADDLIB() function.
+
+When a function is called, and it is @{B}not@{UB} found in the @{"first" LINK "Internal"} or @{"second" LINK "BuiltIn"}
+areas, then the Function Libraries and Function Hosts named in the Library
+List are searched for the function name.
+
+The @{B}order of search@{UB} within this list is:-
+
+- The item with the highest priority is searched first. If the name is not
+  found, then the search continues down the list in order of priority.
+
+- If there is more than one item with the same priority, then the items
+  are searched in the order in which they were added to the list.
+
+For more about ADDLIB() see @{"The ADDLIB() Function" LINK "Addlib()"} in this article.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Extlibs" "Article 38 - The Search Procedure - External Function Libraries"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - EXTERNAL FUNCTION LIBRARIES@{UB}@{UU}
+@{JLEFT}
+These are library files that contain one or more functions that can be
+used by ARexx. One example of these is the @{B}"rexxsupport.library"@{UB} file
+that will be covered in the @{"next article" LINK "ARB:Articles_31-40/39.Support.Library/MAIN"}.
+
+Function Libraries are kept in LIBS: (either disk based or resident in
+Amiga memory) and must be written in such a way that enables ARexx to
+use the functions that they contain. They must also be organised in the
+same way as Amiga Shared Libraries.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Exthosts" "Article 38 - The Search Procedure - External Function Hosts"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - EXTERNAL FUNCTION HOSTS@{UB}@{UU}
+@{JLEFT}
+It is possible for other (non ARexx) programs to be set up with an ARexx
+port and with functions that can be called upon by an ARexx program.
+
+Included in this category is the accessing of computers on a network.
+
+Message passing procedures for function hosts is similar to those used
+for sending @{"commands" LINK "ARB:Misc/Glossary/commands"}.
+
+This is all beyond the scope of a @{B}beginners@{UB} guide to ARexx. If you want
+more information on this then I suggest that you read up the ARexx section
+of the manuals for the other programs that you wish to use.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "ARexxProgs" "Article 38 - The Search Procedure - Fourth - External ARexx Programs"
+
+@{B}@{U}@{JCENTER}THE SEARCH PROCEDURE - FOURTH - EXTERNAL PROGRAMS@{UB}@{UU}
+@{JLEFT}
+An ARexx program (Prog-2) can be called from another ARexx program (Prog-1).
+Prog-2 can then act in the same way as an internal function of Prog-1
+with arguments being passed to Prog-2 from Prog-1 and a RESULT variable
+value being RETURNed to Prog-1 from Prog-2.
+
+We had an example of this in @{"Article 16" LINK "ARB:Articles_11-20/16.Functions-Internal/Call"47}.
+
+If the name of the function called is not found in the @{"first" LINK "Internal"}, @{"second" LINK "BuiltIn"} or
+@{"third" LINK "LibraryList"} areas then ARexx looks for the function name amongst the disk based
+ARexx program files.
+
+The search for the name is @{B}not@{UB} case sensitive and so any case can be used
+when the program is called.
+
+ARexx will look for these programs in these directories:-
+
+- the current directory as recognised by the ARexx program calling the
+  function,
+
+- the assigned REXX: directory.
+
+If it is in any other directory, then you should either use @{"Pragma()" LINK "ARB:Articles_21-30/26.Pragma/MAIN"} to
+change the current directory or use the full path name as we did in
+@{"Example16-5" LINK "ARB:Articles_11-20/16.Functions-Internal/Call"47}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Show()" "Article 38 - More About Functions - The SHOW('L') Function"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - THE SHOW('L') FUNCTION@{UB}@{UU}
+@{JLEFT}
+You will recall that in Article 24 we looked at the @{"SHOW()" LINK "ARB:Articles_21-30/24.Talking-Programs-2/Show()"} function which,
+among other things, allows us to see which libraries were in ARexx's
+@{"Library List" LINK "LibraryList"}.
+
+(Note that @{"RXLIB" LINK "Rxlib"26} can also be used to show the list.)
+
+The format for SHOW() with the "Libraries" option is:-
+
+  SHOW('L'[,Name][,Pad])
+
+Where:-
+
+@{B}Name@{UB}, which is optional, is the name of an item in the @{"Library List" LINK "LibraryList"}
+
+@{B}Pad@{UB}, which is optional, is the name of the character used to space out
+the names in the Library List. The @{B}space@{UB} character is the default.
+
+An example of the use of SHOW('L') 38-2 is given in the section on @{"ADDLIB()" LINK "Addlib()"45}.
+
+@{B}If used without the optional "Name" and "Pad"@{UB} as follows:-
+
+  SHOW('L')
+
+then the names of all items in the library list are returned. For
+example:-
+
+  SAY SHOW('L')
+  --> REXX rexxsupport.library
+
+(This assumes that the @{"rexxsupport.library" LINK "ARB:Articles_31-40/39.Support.Library/MAIN"} has been added with the @{"ADDLIB()" LINK "Addlib()"}
+command.)
+
+@{B}If used with a "Name"@{UB} (but @{B}not@{UB} "Pad") then a @{"Booolean" LINK "ARB:Misc/Glossary/Boolean"} value is returned
+of:-
+
+  0 - if the name is @{B}not@{UB} in the library list,
+  1 - if the name @{B}is@{UB} in the library list.
+
+@{B}NOTE@{UB} that "Name" is @{B}case sensitive@{UB}!
+
+For example:-
+
+  SAY SHOW('L','REXX')
+  --> 1
+
+  (The REXX name is added to the list as soon as the REXXMAST process
+   is started up.)
+
+  SAY SHOW('L','rexxsupport.library')
+  --> 0
+
+  (This assumes that "rexxsupport.library" has @{B}not@{UB} been added.)
+
+@{B}If used with "Pad"@{UB} then you should @{B}NOT@{UB} us a "Name", However, the @{B}position@{UB}
+for the name @{B}MUST@{UB} be there represented by two commas, as in:-
+
+  SHOW('L',,'Pad')
+
+If you did @{B}NOT@{UB} use the two commas then ARexx would assume that "Pad" was
+the name of an item in the library list!
+
+For example:-
+
+  SAY SHOW('L',,';')
+  --> REXX;rexxsupport.library
+
+  SAY SHOW('L',,'a'x)
+  --> REXX
+      rexxsupport.library
+
+(The 'a'x is the line feed so that each name is on a new line.)
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Addlib()" "Article 38 - More About Functions - The ADDLIB() Function"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - THE ADDLIB() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This built in function is used to add Function Libraries and Function
+Hosts to ARexx's Library List.
+
+See also - @{" Warning On Use Of ADDLIB() " LINK "Warning"}
+         - @{" More Notes On ADDLIB()     " LINK "More"}
+
+(Note that @{"RXLIB" LINK "Rxlib"69} can also be used to add to the list.)
+
+Its format is:-
+
+  ADDLIB(Name,Priority [,Offset] [,Version]
+
+@{B}Name@{UB} is an essential. It is the name of the library file to be added.
+@{B}It is case sensitive!!@{UB} You @{B}must@{UB} match the file name's case exactly!
+
+@{B}Priority@{UB} is an essential. It is a number between -100 and +100. It is
+usual to use 0 for the @{"rexxsupport.library" LINK "ARB:Articles_31-40/39.Support.Library/MAIN"}.
+
+@{B}Offset@{UB} is an option. It is an integer number that is relative to the
+library's entry point. However, beginners do not need to worry about this.
+Just remember that, for the "rexxsupport.library", you use -30.
+
+@{B}Version@{UB} is an option. It is an integer number specifying the library's
+minimum version number that is acceptable to your program. Thus, if you
+do not want to use versions 33 and earlier, you would use 34 here. However,
+for the "rexxsupport.library" it is usual to use a value of 0 so that
+any version can be used.
+
+As adding Function Libraries and Function Hosts is not a really a subject
+for the ARexx beginner, I will only deal here with adding the
+"rexxsupport.library" file. The way to use ADDLIB() for "rexxsupport.library"
+is:-
+
+  ADDLIB('rexxsupport.library',0,-30,0)
+
+Note that the library name is @{B}all lower case.@{UB}
+
+ADDLIB() returns a @{"Boolean" LINK "ARB:Misc/Glossary/Boolean"} value of:-
+
+- 1 if the name is successfully added to the Library List,
+- 0 if the name is already in the Library List.
+
+The following program uses ADDLIB() and @{"SHOW()" LINK "Show()"} together:-
+
+  /* Example38-2.rexx */
+
+  SAY SHOW('L')
+  SAY ADDLIB('rexxsupport.library',0,-30,0)
+  SAY SHOW('L')
+  SAY ADDLIB('rexxsupport.library',0,-30,0)
+
+Provided that "rexxsupport.library" is @{B}not@{UB} already in the Library List,
+this should give this output:-
+
+  REXX
+  1
+  rexxsupport.library REXX
+  0
+
+The first line displays "REXX" as this is the port name of the ARexx process
+which is, in itself, a "Function Host". This name is automatically added
+when ARexx is started up with the REXXMAST program.
+
+The second line shows "1" to indicate that the "rexxsupport.library" has
+been successfully added to the Library List.
+
+The third line shows shows "rexxsupport.library" as well as "REXX"
+indicating that "rexxsupport.library" is really in the Library List.
+
+The fourth line shows "0" as the library has @{B}not@{UB} been added to the Library
+List a second time - it is already there.
+
+@{B}@{U}Another Example Of ADDLIB()@{UB}@{UU}
+
+A pratical example of using ADDLIB() is given in @{"Article 56" LINK "ARB:Articles_51-60/56.ARexx_With_AG&MV/StartingExARexx"}.
+
+@{B}@{U}Don't forget to read:-@{UB}@{UU}
+
+  @{" Warning On Use Of ADDLIB() " LINK "Warning"}
+  @{" More Notes On ADDLIB()     " LINK "More"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Warning" "Article 38 - More About Functions - Warning On ADDLIB()"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - WARNING ON USE OF ADDLIB() FUNCTION@{UB}@{UU}
+@{JLEFT}
+When you use @{"ADDLIB()" LINK "Addlib()"}, a name will be added to the list @{B}even if such a
+name does not exist@{UB} anywhere on disk or in the Amiga's memory resident
+libraries!!! Thus if you use something like:-
+
+  SAY ADDLIB('garbage.library',0,-30,0)
+  SAY SHOW('L')
+
+then, providing nothing else has been added to the list, you will get
+an output of:-
+
+  1
+  garbage.library REXX
+
+If you use something like this:-
+
+  SAY ADDLIB('RexxSupport.library',0,-30,0)
+  SAY SHOW('L')
+
+then, providing nothing else has been added to the list, you will get
+an output of:-
+
+  1
+  RexxSupport.library REXX
+
+@{B}Note@{UB} that this is the @{B}wrong case@{UB} for the name - it should all be in lower
+case. If you now try to use a function from the rexxsupport.library, you
+will be given this error message:-
+
+   Requested library not found
+
+ARexx has gone to the Library List and found there the name
+"RexxSupport.library". It has then tried to open this library but has not
+been able to find it anywhere as it is looking for an @{B}exact@{UB} match in
+the case of the letters in the name.
+
+Now let's say that you use the correct case:-
+
+  SAY ADDLIB('rexxSupport.library',0,-30,0)
+  SAY SHOW('L')
+
+the output will be:-
+
+  1
+  Rexxsupport.library rexxsupport.library REXX
+
+Note that there are now @{B}two@{UB} versions of the name in the list with the
+incorrect name first. However, using a function from the rexxsupport.library
+@{B}will still give the above error message!!@{UB}
+
+What happens is that ARexx examines the names in the Library List in the
+order in which they appear and, if it finds an incorrect name, or a name
+that does not exist, before it finds a correct existing name, then it
+will tell you that the incorrect or nonexistent name cannot be found.
+The program will then stop without going on to look at the other names
+in the list.
+
+@{B}You have been warned!! - Make sure you get the names correct!!@{UB}
+
+As mentioned above, the ADDLIB() function will return a value of "1" even
+if the library is @{B}not@{UB} in the Libs: directory!!.
+
+If you want to make sure that the library @{B}is@{UB} in the Libs: directory before
+trying to add it, then you could use something like:-
+
+  IF EXISTS('Libs:libraryname') = 0 THEN DO
+    SAY 'libraryname is not in your Libs: directory'
+    EXIT
+  END
+  ... rest of program
+
+However, as AmigaDOS file names are @{B}not@{UB} case sensitive, the EXISTS()
+function would return a value of 1 if you get the spelling right but the
+case wrong! So this does @{B}not@{UB} overcome the problem of getting the case
+correct!!
+
+The coding that I use for checking and adding a library is as
+follows:-
+
+  IF EXISTS('Libs:rexxsupport.library') = 0 THEN DO
+    SAY 'Libs: directory does not contain the rexxsupport.library
+file'
+    EXIT
+  END
+
+  IF SHOW('L','rexxsupport.library') = 0 THEN DO
+    CALL ADDLIB('rexxsupport.library',0,-30,0)
+  END
+
+But take note that the @{B}best@{UB} method of avoiding errors is to @{B}carefully
+check the case@{UB} of the library name!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "More" "Article 38 - More About Functions - More Notes On ADDLIB()"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - MORE NOTES ON ADDLIB()@{UB}@{UU}
+@{JLEFT}
+The Amiga's operating system loads a library from the disk based "Libs:"
+directory into the Amiga's memory resident library area in RAM when it
+is first called by a program. After a program finishes with it, the library
+@{B}stays resident in RAM@{UB} unless that program, or another program, takes
+specific steps to remove it from RAM. Thus frequently used libraries can
+be loaded from disk the first time they are called and then remain in RAM
+for other programs to use, thus saving loading time.
+
+This raises two important points.
+
+@{B}FIRSTLY@{UB}, the @{"ADDLIB()" LINK "Addlib()"} function @{B}does not@{UB} load the library from the disk
+based "Libs:" directory into the Amiga's library area in RAM. That is
+only done the first time the library is used in a program.
+
+@{B}SECONDLY@{UB}, as ADDLIB() does @{B}NOT@{UB} check to see if a "Name" exists anywhere
+on disk, a "Name" can be added to the list even if such a file does not
+exists anywhere (see @{"Warning" LINK "Warning"}).
+
+The ADDLIB() function makes the Function Library or Function Host available
+to @{B}all@{UB} ARexx programs which call on it after it is added to the list,
+@{B}not just@{UB} to the program that uses the ADDLIB() function.
+
+In other words, the Library List is a part of the resident REXXMAST process
+rather than a part of any individual ARexx program.
+
+The Library List remains intact even if no ARexx program at all is running
+provided that the REXXMAST process is still running.
+
+A Function Library or Function Host can only be removed from the Library
+List by the @{"REMLIB()" LINK "REmlib()"} Built In Function.
+
+The Library List ceases to exist once REXXMAST has been shut down either
+with the RXC Command Utility or by a reset or power down of the Amiga.
+
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Remlib()" "Article 38 - More About Functions - The REMLIB() Function"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - THE REMLIB() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Function Library and Library Host names can be removed from the @{"Library List" LINK "LibraryList"}
+by using REMLIB(). Its syntax is:-
+
+  REMLIB(Name)
+
+(Note that @{"RXLIB" LINK "Rxlib"44} can also be used to remove names from the list.)
+
+For example:-
+
+  REMLIB('rexxsupport.library')
+
+It returns a boolean value of:-
+
+- 0 if the name was not in the list
+
+- 1 to indicate the name was found in the list and removed
+
+The name used is case sensitive so, if "rexxsupport.library" is in the
+list, the use of "Rexxsupport.library" will @{B}not@{UB} remove it!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Rxlib" "Article 38 - More About Functions - The RXLIB Command Utility"
+
+@{B}@{U}@{JCENTER}MORE ABOUT FUNCTIONS - THE RXLIB COMMAND UTILITY@{UB}@{UU}
+@{JLEFT}
+The @{"command utility" LINK "ARB:Articles_01-10/03.Command_Utilities/Utilities"} RXLIB is not mentioned in either of the two ARexx
+manuals that I have. However, it is present in the RexxC directory of
+my copies of the workbench disks in V2.04 and V2.1 and V3.1. As it is
+undocumented, I can only make assumptions as to its usage and purpose.
+However, as with other matters relating to the @{"Library List" LINK "LibraryList"}, I have
+determined that the @{B}Names@{UB} used with RXLIB @{B}are case sensitivity.@{UB}
+
+As with other Command Utilities, it is used in a @{"Shell/CLI" LINK "ARB:Misc/Glossary/Using_CLI"} window.
+
+If you enter this in your Shell/CLI window:-
+
+  > RXLIB ?
+
+you will be shown its format as:-
+
+  Usage: RXLIB NAME PRIORITY [OFFSET] [VERSION]
+
+However, its format @{B}should be@{UB}
+
+  RXLIB [NAME] [PRIORITY] [OFFSET] [VERSION]
+
+because @{B}all@{UB} keywords are optional.
+
+@{B}Usage Without Keywords - Showing The List@{UB}
+
+When used on its own:-
+
+  > RXLIB
+
+it returns a list of names in the @{"Library List" LINK "LibraryList"}
+
+For example:-
+
+  > RXLIB
+  -->  rexxsupport.library (library)
+       REXX (host)
+
+This is similar to the return produced by @{"SHOW('L')" LINK "Show()"22} @{B}except that@{UB} the list
+indicates if the item is a @{B}library@{UB} or a @{B}host@{UB}, and each item is on a separate
+line.
+
+@{B}Usage With "Name" Only - Removing A Name From The List@{UB}
+
+When used like this:-
+
+  > RXLIB Name
+
+then the name is @{B}removed@{UB} from the list in the same way as @{"REMLIB()" LINK "Remlib()"}.
+
+For example:-
+
+  > RXLIB
+  -->  rexxsupport.library (library)
+       REXX (host)
+
+  > RXLIB rexxsupport.library
+  > RXLIB
+  --> REXX
+
+The first RXLIB (on its own) shows "rexxsupport.library" is in the list.
+After the use of "RXLIB Name" to remove it, the second RXLIB (on its own)
+shows that "rexxsupport.library" is no longer in the list.
+
+Note that there must be an @{B}exact match@{UB} of case for the name to be removed.
+
+@{B}Usage With All Keywords - Adding A Name To The List@{UB}
+
+This is similar to @{"ADDLIB()" LINK "Addlib()"31}. To add the "rexxsupport.library" you would
+use:-
+
+  > RXLIB rexxsupport.library 0 -30 0
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE

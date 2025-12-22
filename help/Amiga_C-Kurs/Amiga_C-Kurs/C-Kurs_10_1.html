@@ -1,0 +1,608 @@
+<html>
+<head>
+<title>Amiga C Kurs f&uuml;r Einsteiger</title>
+<META NAME="description" CONTENT="Amiga C Kurs f&uuml;r Einsteiger">
+<META NAME="keywords"    CONTENT="C, Amiga, Programmierung, Kurs, Einsteiger, StormC">
+<META NAME="author"      CONTENT="Norman Walter">
+
+<script language="JavaScript" src="JavaScript/C-Kurs_Kapitel.js" type="text/javascript">
+</script>
+
+</head>
+<body bgcolor="black" link="#DDDDDD" vlink="#BBBBBB">
+<center>
+<TABLE>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="140">
+<CENTER>
+<A HREF="index.html" NAME="Home"><IMG SRC="Home.png" ALT="Home" BORDER="0"></A><BR>
+<A HREF="download.html" NAME="Downloads"><IMG SRC="Download.png" ALT="Downloads" BORDER="0"></A><BR>
+<A HREF="Links.html" NAME="Links"><IMG SRC="Links.png" ALT="Links" BORDER="0"></A><BR>
+<a href="cgi-bin/GB_SHOW.cgi" method="POST"><img SRC="guestbook.png" BORDER=0 alt="Guestbook"></a>
+<p>
+<A HREF="http://www.norman-interactive.com/email_feedback.html">
+<IMG SRC="@.png" Border="0" Alt="e-mail"><BR><small>e-mail</small></A><BR>
+<p>
+
+<img src="C-Kurs/C-Kurs_sm.png" alt="Amiga C Kurs f&uuml;r Einsteiger" vspace="20"><BR>
+
+<NOSCRIPT>
+<font color="red">
+Diese Seite ben&ouml;tigt JavaScript.
+Entweder Ihr Browser unterst&uuml;tzt kein JavaScript, oder Sie haben es deaktiviert.
+</font>
+</NOSCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+
+  erzeuge_Kapitel(10);
+
+//-->
+</SCRIPT>
+
+<p>
+</CENTER>
+</TD>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="400" HEIGHT="600">
+<center>
+<p>
+<BR>
+<font color="white">
+
+<img src="C-Kurs/C-Kurs.png" alt="Amiga C Kurs f&uuml;r Einsteiger"><BR>
+</center>
+<p>
+<font color="gray"><H2>Der erste Button</H2></font><BR>
+<p>
+Der Amiga war einer der ersten Computer, die serienm&auml;&szlig;ig mit einem Betriebssystem ausgeliefert
+wurden, welches eine grafische Benutzeroberfl&auml;che, kurz GUI <i>(Graphical User Interface)</i>
+bietet. Zu solch einer Oberfl&auml;che geh&ouml;ren neben Fenster nat&uuml;rlich auch diverse Gadgets
+<i>(was soviel bedeutet wie "Dinger")</i>. Mit diesen "Dingern" sind GUI Elemente wie z.B.
+verschiedene Typen von Buttons, Schiebereglern, Texteingabefeldern, Pulldown-Men&uuml;s usw. gemeint.
+<p>
+Damit man es als Programmierer etwas einfacher hat, existieren auf Betriebssystemen mit grafischer
+Oberfl&auml;che sogenannte GUI Toolkits. Diese Toolkits stellen eine Auswahl verschiedener Gadgets,
+sowie Funktionen zu deren Handhabung bereit. Trotz dieser Hilfsmittel erfordert die Programmierung
+von grafischen Oberfl&auml;chen immernoch einen erheblichen Aufwand und wird von vielen als eine
+relativ schwere Disziplin angesehen.
+<p>
+Auf dem Amiga haben sich im Laufe der Zeit verschiedene GUI Toolkits entwickelt.
+Die bekanntesten sind neben GadTools MUI <i>(Magic User Interface)</i> und Reaction.
+GadTools ist das &auml;lteste davon und deshalb auch weder besonders h&uuml;bsch,
+noch besonders komfortabel zu handhaben. Allerdings ist ein Programm, welches GadTools benutzt auch
+noch auf &auml;lteren Amiga-Systemen ohne 3rd-Party Software lauff&auml;hig.
+<p>
+Wie so vieles andere auf dem Amiga auch, liegt GadTools in Form einer <a href="C-Kurs_7_1.html">Shared Library</a> -
+der <TT>gadtools.library</TT> - vor.
+<p>
+Auf der AmigaOS Developer CD befindet sich ein Beispielprogramm, welches einige Elemente
+von GadTools demonstriert:
+<p>
+<center>
+<img src="C-Kurs/GadToolsExample.png" alt="Fancy GadTools Demo"><BR>
+</center>
+<p>
+Links oben sehen wir einen einfachen Button, daneben ein ListView und direkt darunter
+ein Texteingabefeld. Der Button rechts oben mit dem Label "Month" ist ein Cycle Gadget.
+Direkt darunter sehen wir eine Reihe von Radio Buttons, darunter ein
+Read-Only Field. Das mit "Colors" beschriftete Ding ist ein Palette Button.
+Die zwei kleinen Buttons, von denen einer mit einem H&auml;ckchen versehen ist,
+sind vom Typ Checkbox. Au&szlig;erdem sehen wir ein Eingabefeld f&uuml;r Integer, einen
+Scroller und einen Slider.
+<p>
+Wir wollen jedoch erstmal klein anfangen und ein einfaches Programm schreiben,
+welches ein Fenster mit einem Button produziert und darauf reagiert, wenn der Benutzer
+diesen Button anklickt.
+<p>
+<center>
+<img src="C-Kurs/ErsterButton.png" alt="Der erste Button"><BR>
+</center>
+<p>
+Um ein neues Gadget zu erzeugen, m&uuml;ssen wir zun&auml;chst eine <a href="C-Kurs_3_3.html">Struktur</a>
+vom Typ <TT>NewGadget</TT> ausf&uuml;llen. Die <TT>NewGadget</TT> Struktur ist in der
+Include-Datei <TT>libraries/gadtools.h</TT> wie folgt definiert:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">NewGadget</font><br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;WORD&nbsp;ng_LeftEdge,&nbsp;ng_TopEdge;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;gadget&nbsp;position&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;WORD&nbsp;ng_Width,&nbsp;ng_Height;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;gadget&nbsp;size&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;UBYTE&nbsp;*ng_GadgetText;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;gadget&nbsp;label&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;TextAttr&nbsp;*ng_TextAttr;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;desired&nbsp;font&nbsp;for&nbsp;gadget&nbsp;label&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;UWORD&nbsp;ng_GadgetID;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;gadget&nbsp;ID&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ULONG&nbsp;ng_Flags;&nbsp;<font color="#FFFFFF">/*&nbsp;see&nbsp;below&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;APTR&nbsp;ng_VisualInfo;&nbsp;<font color="#FFFFFF">/*&nbsp;Set&nbsp;to&nbsp;retval&nbsp;of&nbsp;GetVisualInfo()&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;APTR&nbsp;ng_UserData;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;gadget&nbsp;UserData&nbsp;*/<br></font>
+};<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Eine solche <TT>NewGadget</TT> Struktur enth&auml;lt die Eigenschaften des Gadgets, das
+der Gadgetliste hinzugef&uuml;gt werden soll.
+F&uuml;r unseren Button tragen wir folgende Werte ein:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;NewGadget&nbsp;Struktur&nbsp;ausf&uuml;llen&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_TextAttr&nbsp;=&nbsp;&ta;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schriftart<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_LeftEdge&nbsp;=&nbsp;(WIDTH/2)-50;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_TopEdge&nbsp;=&nbsp;80&nbsp;+&nbsp;topborder;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Width&nbsp;=&nbsp;120;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Height&nbsp;=&nbsp;18;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_GadgetText&nbsp;=&nbsp;<font color="#EEDD05">"Klick&nbsp;mich!"</font>;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Text<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_GadgetID&nbsp;=&nbsp;KNOPF_1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Nummer&nbsp;zur&nbsp;Identifizierung<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Flags&nbsp;=&nbsp;0;<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Der Komponente <TT>ng_TextAttr</TT> wird die <a href="C-Kurs_4_1.html">Adresse</a> einer <a href="C-Kurs_8_7.html"><TT>TextAttr</TT> Struktur</a>
+zugewiesen. Damit legen wir fest, welche Schriftart das Gadget verwenden soll.
+Es folgen Angaben zur Gr&ouml;&szlig;e und Position des Gadgets, sowie der Text.
+Die Angabe der Koordinaten erfolgt dabei immer relativ zum Ursprung des Koordinatensystem des Fensters,
+in welches das Gadget eingetragen werden soll.
+<TT>ng.GadgetID</TT> enth&auml;lt einen Zahlenwert zur Identifizierung des Gadgets.
+Das wird ben&ouml;tigt, um herauszufinden, welches Gadget denn nun angeklickt wurde -
+sofern man mehrere verwendet. Hier benutzt man hier lieber <a href="C-Kurs_2_1.html">symbolische Konstanten</a>
+anstatt Zahlenwerte, da man sich Texte einfacher merken kann als Zahlen.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<br>
+#define&nbsp;KNOPF_1&nbsp;1&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstante&nbsp;f&uuml;r&nbsp;unseren&nbsp;Button<br></b></font>
+<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+In diesem Beispiel wird der <a href="C-Kurs_2_1.html">symbolischen Konstanten</a>
+<TT>KNOPF_1</TT> der Ersatztext <TT>1</TT> zugewiesen. Es k&ouml;nnen beliebige ganze Zahlen
+verwendet werden, aber jede Zahl darf nur einmal vorkommen.
+<p>
+GadTools speichert alle Gadgets in Listen, &auml;hnlich derer,
+die wir in der Lektion <a href="C-Kurs_9_1.html">"Verkettete Listen"</a>
+aus Kapitel 9 kennengelernt haben. Der in der Include-Datei <TT>intuition/intuition.h</TT>
+definierte <a href="C-Kurs_3_3.html">Strukturtyp</a> <TT>Gadget</TT> stellt dabei einen Knoten einer solchen Liste dar.
+<p>
+Wir tragen unser Gadget mit <TT>CreateGadget</TT> in die Gadgetliste ein:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Jetzt&nbsp;wird&nbsp;das&nbsp;Gadget&nbsp;erzeugt&nbsp;und&nbsp;in&nbsp;die&nbsp;Gadget&nbsp;Liste&nbsp;eingetragen.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;BUTTON_KIND&nbsp;bezeichnet&nbsp;den&nbsp;Typ&nbsp;des&nbsp;Gadgets.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;gad&nbsp;=&nbsp;<font color="#FFFFAA">CreateGadget</font>(BUTTON_KIND,&nbsp;gad,&nbsp;&ng,&nbsp;TAG_DONE);<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Die Funktion <TT>CreateGadget</TT> erwartet ein <TT>TagItem</TT>.
+Mit <TT>BUTTON_KIND</TT> geben wir an, von welchem Typ unser Gadget sein soll -
+hier ein einfacher Button. Der zweite Parameter ist die Liste, in die wir unser
+Gadget eintragen wollen. Der letzte Parameter die <a href="C-Kurs_4_1.html">Adresse</a> der
+<TT>NewGadget</TT> Struktur, die die Daten unseres Gadgets, das wir einf&uuml;gen
+wollen enth&auml;lt.
+<p>
+All dies fassen wir in einer <a href="C-Kurs_1_10.html">Funktion</a> Namens <TT>ErzeugeGadgets</TT> zusammen,
+damit das Programm etwas &uuml;bersichtlicher wird.
+<p>
+Das &Ouml;ffnen des Fensters erfolgt wie gehabt mittels <a href="C-Kurs_7_2.html"><TT>OpenWindowTags</TT></a>.
+Allerdings gibt es diesmal eine Besonderheit: Zu den TagItems kommt
+ein neues hinzu: <TT>WA_Gadgets, glist</TT>. Damit sagen wir, da&szlig; zu dem Fenster
+eine Gadgetliste Namens <TT>glist</TT> geh&ouml;rt. So bekommt unser Fenster alle
+Gadgets, die wir zuvor in die Gadgetliste eingetragen haben.
+Mit den IDCMP Flags <TT>IDCMP_CLOSEWINDOW | IDCMP_GADGETUP | BUTTONIDCMP</TT> aktivieren
+wir die zugeh&ouml;rigen <a href="C-Kurs_7_4.html">Message Ports</a>.
+&Uuml;ber diese <a href="C-Kurs_7_4.html">Message Ports</a> bekommt unser Programm
+dann eine Nachricht, wenn ein Gadget angeklickt wurde.
+<p>
+Die Auswertung dieser Nachrichten erfolgt &auml;hnlich wie in der Lektion
+<a href="C-Kurs_7_4.html">"Nachricht von Intuition"</a> besprochen.
+Diesmal holen wir unsere Nachricht mit Hilfe der GadTools Funktion <TT>GT_GetIMsg</TT>
+vom <a href="C-Kurs_7_4.html">Message Port</a> ab.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+&nbsp;/*&nbsp;Unser&nbsp;Port&nbsp;ist&nbsp;der&nbsp;UserPort&nbsp;unseres&nbsp;Fensters&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Port&nbsp;=&nbsp;Fenster->UserPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Schleife&nbsp;l&auml;uft&nbsp;so&nbsp;lange,&nbsp;bis&nbsp;das&nbsp;Programm<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;durch&nbsp;Anklicken&nbsp;des&nbsp;Close-Gadgets&nbsp;beedet&nbsp;wird.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(!Ende)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Auf&nbsp;ankommende&nbsp;Nachricht&nbsp;warten&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WaitPort</font>(Port);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Schleife&nbsp;l&auml;uft&nbsp;bis&nbsp;alle&nbsp;Ereignisse<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;abgearbeitet&nbsp;sind.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(Nachricht&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuiMessage</font>&nbsp;*)&nbsp;<font color="#FFFFAA">GT_GetIMsg</font>(Port))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Buttons l&ouml;sen beim Anklicken immer ein <TT>GADGETUP</TT> Event aus.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Buttons&nbsp;l&ouml;sen&nbsp;GADGETUP&nbsp;aus&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;GADGETUP:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Ereignis&nbsp;GADGETUP&nbsp;ist&nbsp;eingetreten.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BehandleEvent(gad,code);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Wenn also ein solches <TT>GADGETUP</TT> Event eingetreten ist, m&ouml;chten wir
+auch wissen, welches Gadget dieses Ereignis ausgel&ouml;st hat. In unserem kleinen
+Beispielprogramm gibt es nur eines. Bei mehreren Gadgets w&auml;ren diverse
+Fallunterscheidungen notwendig, um das herauszubekommen. Um den Code &uuml;bersichtlich
+zu gestalten ist es deshalb zweckm&auml;&szlig;ig, f&uuml;r diese Fallunterscheidungen eine
+extra <a href="C-Kurs_1_10.html">Funktion</a> zu schreiben, wie hier die Funktion <TT>BehandleEreignis</TT>.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>void</b></font>&nbsp;BehandleEvent(&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*gad,&nbsp;<font color="#45FF65">UWORD</font>&nbsp;code)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>&nbsp;(gad->GadgetID)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;KNOPF_1:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Button&nbsp;\"Klick&nbsp;mich!\"&nbsp;wurde&nbsp;angeklickt.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;switch&nbsp;Verzweigung<br></b></font>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Hier kommen wieder unsere Gadget IDs ins Spiel: Anhand der IDs, die wir mit
+Hilfe von <a href="C-Kurs_2_1.html">symbolischen Konstanten</a> festgelegt haben,
+kann man nun herausfinden, welches Gadget das Ereignis ausgel&ouml;st hat.
+Das ist wichtig, denn man will ja in einem richtigen Programm jedem Gadget
+eine bestimmte Funktion zuweisen.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Listing&nbsp;10.1.1<br>
+&nbsp;*&nbsp;&nbsp;Der&nbsp;erste&nbsp;Button<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;stdio.h&gt;<br>
+<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+#include&nbsp;&lt;exec/memory.h&gt;<br>
+#include&nbsp;&lt;intuition/intuition.h&gt;<br>
+#include&nbsp;&lt;intuition/gadgetclass.h&gt;<br>
+#include&nbsp;&lt;utility/tagitem.h&gt;<br>
+#include&nbsp;&lt;graphics/gfx.h&gt;<br>
+#include&nbsp;&lt;graphics/text.h&gt;<br>
+#include&nbsp;&lt;libraries/gadtools.h&gt;<br>
+<br>
+#include&nbsp;&lt;proto/intuition.h&gt;<br>
+#include&nbsp;&lt;proto/dos.h&gt;<br>
+#include&nbsp;&lt;proto/exec.h&gt;<br>
+#include&nbsp;&lt;proto/graphics.h&gt;<br>
+#include&nbsp;&lt;proto/diskfont.h&gt;<br>
+#include&nbsp;&lt;proto/gadtools.h&gt;<br>
+<br>
+<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstanten<br></b></font>
+#define&nbsp;WIDTH&nbsp;300&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite&nbsp;des&nbsp;Fensters<br></b></font>
+#define&nbsp;HEIGHT&nbsp;200&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fensters<br></b></font>
+<br>
+#define&nbsp;KNOPF_1&nbsp;1&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstante&nbsp;f&uuml;r&nbsp;unseren&nbsp;Button<br></b></font>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;Funktionsprototypen&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ShutDown(<font color="#AA00FF"><b>int</b></font>&nbsp;code,&nbsp;<font color="#45FF65">STRPTR</font>&nbsp;error);<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*ErzeugeGadgets(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;**glistptr,&nbsp;<font color="#45FF65">UWORD</font>&nbsp;topborder);<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;BehandleEvent(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*gad,&nbsp;<font color="#45FF65">UWORD</font>&nbsp;code);<br>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Window</font>&nbsp;*Fenster;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Window-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*<font color="#45FF65">IntuitionBase</font>;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;IntuitionBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>extern</b></font>&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*GadToolsBase;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*textfont;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;TextFont<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*glist&nbsp;=&nbsp;NULL;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Screen</font>&nbsp;*mysc&nbsp;=&nbsp;NULL;<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextAttr</font>&nbsp;ta;<br>
+<br>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Variablen&nbsp;zur&nbsp;Message-Bearbeitung&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">MsgPort</font>&nbsp;*Port;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Message&nbsp;Port&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuiMessage</font>&nbsp;*Nachricht;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Intuition&nbsp;Message&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*gad;<br>
+&nbsp;&nbsp;<font color="#45FF65">ULONG</font>&nbsp;&nbsp;klasse;<br>
+&nbsp;&nbsp;<font color="#45FF65">UWORD</font>&nbsp;&nbsp;code;<br>
+&nbsp;&nbsp;<font color="#45FF65">UWORD</font>&nbsp;topborder;<br>
+<br>
+&nbsp;&nbsp;<font color="#45FF65">BOOL</font>&nbsp;Ende&nbsp;=&nbsp;FALSE;&nbsp;<font color="#008822"><b>//&nbsp;Boolsche&nbsp;Variable:&nbsp;Programmende?<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Intuition&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"intuition.library"</font>,37L);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;==&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ShutDown(20,<font color="#EEDD05">"Konnte&nbsp;intuition.library&nbsp;37&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;GadToolsBase&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"gadtools.library"</font>,&nbsp;36L);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(GadToolsBase&nbsp;==&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ShutDown(20,<font color="#EEDD05">"Konnte&nbsp;gadtools.library&nbsp;36&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+&nbsp;&nbsp;}<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"topaz.font"</font>;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;TOPAZ_EIGHTY;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_ROMFONT;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;ROM-Font<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Font&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;textfont&nbsp;=&nbsp;<font color="#FFFFAA">OpenFont</font>(&ta);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(!textfont)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ShutDown(20,<font color="#EEDD05">"Konnte&nbsp;topaz.font&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;mysc&nbsp;=&nbsp;<font color="#FFFFAA">LockPubScreen</font>(NULL);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Oberer&nbsp;Rand&nbsp;des&nbsp;Fensters&nbsp;*/<br></font>
+&nbsp;&nbsp;topborder&nbsp;=&nbsp;mysc->WBorTop&nbsp;+&nbsp;(mysc->Font->ta_YSize&nbsp;+&nbsp;1);<br>
+<br>
+&nbsp;&nbsp;ErzeugeGadgets(&glist,&nbsp;topborder);<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;mittels&nbsp;Tags&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;Fenster&nbsp;=&nbsp;<font color="#FFFFAA">OpenWindowTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Left,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Top,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Width,&nbsp;WIDTH,&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Height,&nbsp;HEIGHT,&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Title,&nbsp;<font color="#EEDD05">"Der&nbsp;erste&nbsp;Button"</font>,&nbsp;<font color="#008822"><b>//&nbsp;Fenstertitel<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_CloseGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Close-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DragBar,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ziehleiste<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DepthGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Depth-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Gadgets,&nbsp;glist,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Gadget&nbsp;Liste<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_IDCMP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;IDCMP&nbsp;Flags<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IDCMP_CLOSEWINDOW&nbsp;|&nbsp;IDCMP_GADGETUP&nbsp;|&nbsp;BUTTONIDCMP,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Activate,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;aktivieren<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Nachdem&nbsp;das&nbsp;Fenster&nbsp;ge&ouml;ffnet&nbsp;wurde,&nbsp;m&uuml;ssen&nbsp;wir&nbsp;die<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;GadTools&nbsp;Refresh&nbsp;Funktion&nbsp;aufrufen.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">GT_RefreshWindow</font>(Fenster,&nbsp;NULL);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Unser&nbsp;Port&nbsp;ist&nbsp;der&nbsp;UserPort&nbsp;unseres&nbsp;Fensters&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Port&nbsp;=&nbsp;Fenster->UserPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Schleife&nbsp;l&auml;uft&nbsp;so&nbsp;lange,&nbsp;bis&nbsp;das&nbsp;Programm<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;durch&nbsp;Anklicken&nbsp;des&nbsp;Close-Gadgets&nbsp;beedet&nbsp;wird.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(!Ende)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Auf&nbsp;ankommende&nbsp;Nachricht&nbsp;warten&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WaitPort</font>(Port);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Schleife&nbsp;l&auml;uft&nbsp;bis&nbsp;alle&nbsp;Ereignisse<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;abgearbeitet&nbsp;sind.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(Nachricht&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuiMessage</font>&nbsp;*)&nbsp;<font color="#FFFFAA">GT_GetIMsg</font>(Port))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;klasse&nbsp;=&nbsp;Nachricht->Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;=&nbsp;&nbsp;Nachricht->Code;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gad&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*)Nachricht->IAddress;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Welches&nbsp;Ereignis&nbsp;ist&nbsp;eingetreten?&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>(klasse)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;CLOSEWINDOW&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Closegadget&nbsp;wurde&nbsp;angeklickt\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ende&nbsp;=&nbsp;TRUE;&nbsp;<font color="#008822"><b>//&nbsp;Programmende<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Buttons&nbsp;l&ouml;sen&nbsp;GADGETUP&nbsp;aus&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;GADGETUP:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Ereignis&nbsp;GADGETUP&nbsp;ist&nbsp;eingetreten.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BehandleEvent(gad,code);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;switch-Verzweigung<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Wir&nbsp;sind&nbsp;mit&nbsp;der&nbsp;Bearbeitung&nbsp;fertig<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;und&nbsp;beantworten&nbsp;die&nbsp;Nachricht.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">GT_ReplyIMsg</font>(Nachricht);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;inneren&nbsp;while-Schleife<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;&auml;u&szlig;eren&nbsp;while-Schleife<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseWindow</font>(Fenster);&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;ShutDown(0,&nbsp;NULL);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Aufr&auml;umen<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+<br>
+}<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;Resourcen&nbsp;freigeben&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ShutDown(<font color="#AA00FF"><b>int</b></font>&nbsp;code,&nbsp;<font color="#45FF65">STRPTR</font>&nbsp;error)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(GadToolsBase&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">FreeGadgets</font>(glist);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)GadToolsBase);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(mysc)&nbsp;<font color="#FFFFAA">UnlockPubScreen</font>(NULL,&nbsp;mysc);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont)&nbsp;<font color="#FFFFAA">CloseFont</font>(textfont);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">IntuitionBase</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(error)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler:&nbsp;%s\n"</font>,&nbsp;error);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<font color="#852608"><b>exit</b></font>(code);<br>
+<br>
+}<br>
+<br>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*ErzeugeGadgets(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;**glistptr,&nbsp;<font color="#45FF65">UWORD</font>&nbsp;topborder)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">NewGadget</font>&nbsp;ng;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Eine&nbsp;NewGadget&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*gad;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ein&nbsp;Zeiger&nbsp;auf&nbsp;die&nbsp;Gadget&nbsp;Liste<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Der&nbsp;folgende&nbsp;Funktionsaufruf&nbsp;wird&nbsp;bei&nbsp;allen&nbsp;Programmen&nbsp;ben&ouml;tigt,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;welche&nbsp;die&nbsp;GadTools&nbsp;Library&nbsp;benutzen.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;gad&nbsp;=&nbsp;<font color="#FFFFAA">CreateContext</font>(glistptr);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;NewGadget&nbsp;Struktur&nbsp;ausf&uuml;llen&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_TextAttr&nbsp;=&nbsp;&ta;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schriftart<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_LeftEdge&nbsp;=&nbsp;(WIDTH/2)-50;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_TopEdge&nbsp;=&nbsp;80&nbsp;+&nbsp;topborder;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Width&nbsp;=&nbsp;120;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Height&nbsp;=&nbsp;18;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_GadgetText&nbsp;=&nbsp;<font color="#EEDD05">"Klick&nbsp;mich!"</font>;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Text<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_GadgetID&nbsp;=&nbsp;KNOPF_1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Nummer&nbsp;zur&nbsp;Identifizierung<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;ng.ng_Flags&nbsp;=&nbsp;0;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;&nbsp;Jetzt&nbsp;wird&nbsp;das&nbsp;Gadget&nbsp;erzeugt&nbsp;und&nbsp;in&nbsp;die&nbsp;Gadget&nbsp;Liste&nbsp;eingetragen.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;BUTTON_KIND&nbsp;bezeichnet&nbsp;den&nbsp;Typ&nbsp;des&nbsp;Gadgets.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;gad&nbsp;=&nbsp;<font color="#FFFFAA">CreateGadget</font>(BUTTON_KIND,&nbsp;gad,&nbsp;&ng,&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>(gad);<br>
+}<br>
+<br>
+<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;BehandleEvent(&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Gadget</font>&nbsp;*gad,&nbsp;<font color="#45FF65">UWORD</font>&nbsp;code)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>&nbsp;(gad->GadgetID)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;KNOPF_1:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Button&nbsp;\"Klick&nbsp;mich!\"&nbsp;wurde&nbsp;angeklickt.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;switch&nbsp;Verzweigung<br></b></font>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+F&uuml;r die verschiedenen GUI Toolkits existieren zwar auch Programme,
+wie z.B. GadToolsBox, MUI Builder oder ReActor, mit denen man grafische Oberfl&auml;chen
+einfach per Mausklick zusammenbasteln kann, aber man sollte sich bevor man
+ein solches Programm verwendet, schon ein wenig mit den Grundlagen der
+GUI Programmierung vertraut machen. Andernfalls kann man mit dem von
+diesen Programmen generierten Code wenig anfangen.
+<p>
+</font>
+</center>
+</TD>
+</TABLE>
+
+</body>
+</html>

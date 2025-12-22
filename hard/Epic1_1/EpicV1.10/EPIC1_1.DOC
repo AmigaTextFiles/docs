@@ -1,0 +1,246 @@
+
+               Epic V1.1  PIC16C84 Microcontroller Programmer
+               ----------------------------------------------
+
+COPYRIGHT
+---------
+
+Copyright © 1996 Stephen Marsden
+
+This software is subject to the "Standard Amiga FD-Software Copyright Note"
+It is MAILWARE as defined in paragraph 4b.  If you use this software then
+please mail the author with bug-reports or suggestions for the next
+release of this program. 
+For more information please read "AFD-COPYRIGHT" (Version 1 or higher).
+
+Please also remember that no commercial usage is permitted without
+written permission from the author.
+
+
+INTRODUCTION
+------------
+
+Firstly, it must be made clear that the software provided in this
+distribution only allows the actual programming of microcontrollers.
+It does not contain a cross-assembler such as MPASM or a simulator for
+debugging.
+
+Why release it then?  Well, there are a number of freely distributable
+object files that have already been assembled and tested, such as those
+that appear in electronic magazines.  Epic will allow you to write
+these programs into the EEPROM memory of a PIC16C84.
+
+In addition, using a software emulator such as PCTASK or TRANSFORMER,
+you can run a PC cross-assembler as a task making PIC development
+on the Amiga easy.
+
+
+INSTALLATION
+------------
+
+Requirements:       AmigaOS version 2.04 +
+                    Floppy or Hard Drive
+
+Libraries Used:     Asl.library
+                    Gadtools.library
+
+To install the software on a hard-drive just drag the icons into the
+directory you wish to use.
+
+
+HARDWARE         (see shematic.iff)
+--------
+
+The design of the hardware is my own, and I have tried to make it as
+simple as possible.  Values of components are not critical so don't
+be afraid to substitute them for handier values.  Try not to use
+values of less than 1K for the resistors as they protect the CIA port
+from overcurrent.
+
+The circuit is small enough to fit inside the hood of a 25-way D-plug,
+but should you use a cable between the plug and circuit, then ensure
+it is screened correctly.  My own programmer is housed in a neat little
+box with a connector for a remote PSU and terminal block outputs for
+the 13 I/O lines (i.e. RAx & RBx) for in-circuit testing.
+
+You may wish to modify the circuit by including some LEDS to give
+indication of voltage levels or activity.  Feel free to experiment.
+
+Finally, if you don't have a 12V regulated PSU handy, then you could
+easily use the Amiga's disk-drive port which supplies +5V and +12V
+on pins 12 and 23 (see your manual for details).  Don't use the
+parallel port's +5V as it is limited to just 10mA.
+
+Most of the components required for this project are readily available
+in any country.  Here in the UK, Maplin and Cirkit provide a very good
+service from their shops and through mail-order. 
+
+
+USAGE
+-----
+
+To use the software simply follow the sequence below:
+
+    1. Load PIC program file from disk using requester.
+    2. Write program file to chip.
+    3. Verify program file.
+    4. Write configuration to chip (blow fuses).
+
+If you are also writing to the data memory then the sequence is:
+
+    1. Load PIC program file from disk using requester.
+    2. Load PIC data file from disk using requester.
+    3. Write program file to chip.
+    4. Verify program file.
+    5. Write data file to chip.
+    6. Verify data file.
+    7. Write configuration to chip (blow fuses).
+
+Writing of the configuration should always be the last thing you do as
+selecting the 'protect code' option could prevent you from verifying
+the EEPROM contents.  It should also be made clear that 'blowing the
+fuses' does not permanently configure the fuses, they can be changed
+as often as you wish.
+
+Unused program memory locations are filled with NOP's, and unsed
+data locations contain $01's.
+
+The options available are pretty self-explanatory if you have read the
+data sheets from MICROCHIP.  This short doc file will not cover the
+details as the data sheets are essential reading anyway.
+
+NB. Clicking the 'Write Program Mem' gadget will firstly disable
+    code-protection before writing the program memory.  However, all
+    data within the program memory and data memory will be erased.
+    Therefore always write the program memory before the data memory.
+
+
+TURBO MODE
+----------
+
+The program defaults to using 'normal' mode.  This uses the Amiga's
+timer.device to ensure that timing values are correct no matter how
+fast your CPU is.  The writing routines also follow MICROCHIP's 
+guidelines correctly.
+
+'Turbo' mode is based on the assumption that the CIA chips in all Amigas
+to date are 1MHz devices.  Therefore the timing values are inherently
+controlled by the speed of the CIA chips and the timer.device is not
+used.  This may cause some problems on certain machines but it works
+reliably for me.  A big speed-up is also gained due to the removal of
+the read cycle in the programming routine.
+
+To fully write & verify in 'Normal' mode will take 4.5 minutes.  'Turbo'
+mode will do it in 30 seconds.  Guess which one I use.
+
+
+DATA EEPROM
+-----------
+
+EPIC will load files containing embedded data and fuse info such as
+those produced by the PARALLAX compiler.  Simply load the .OBJ file
+as you would load a normal .HEX program file.  The data string gadget
+will say '***Data Embedded In Program File***' if any data is found.
+
+The MPASM compiler does not support embedded data as far as I know.
+However, it is simple enough to produce a separate data file by 
+compiling the following:
+
+                LIST    P=16C84
+                org     0x0
+        start
+                data    1,2,3,4,5,6
+                data    'H','e','l','l','o'     ; keep chars separate
+                end
+
+Each data element is compiled as a 16-bit word but the upper byte is
+not used.  Therefore, don't use strings such as "Hello" because the
+characters are stored 2 per word meaning one will be lost.
+
+To include fuse information within a MPASM hex file use something
+similar to:
+
+                LIST     P=16C84
+        #INCLUDE        "P16C84.INC"
+                __FUSES  _CP_OFF & _WDT_OFF & _XT_OSC & _PWRTE_OFF
+
+The relevant fuse gadgets on the gui panel are automatically updated
+when the file is loaded.
+
+
+DEVELOPMENT
+-----------
+
+Epic was developed and tested using the following configuration:
+
+            A1200 with  2MB CHIP
+                        ViperII 28MHz MMU
+                        4MB FAST
+                        CEDpro (coverdisk)
+                        Amiga E V3.2 (registered)
+
+
+PROBLEMS
+--------
+
+If you multitask heavily during the write & verify operations you may
+suffer some write errors.  This is due to the timing being upset by
+other tasks.  To lessen the problem I have made Epic run at a priority
+of +2.  I could disable multitasking using Forbid() and Permit() but I
+would like to find a more OS friendly way of doing this.
+
+
+BUGS
+----
+
+Should you have any bug-reports or ideas then please write to me at
+the address below.
+
+
+HISTORY
+------
+
+Version:
+    
+    1.0 - Original release.
+    
+    1.1 - Fixed repeating 'Unexpected EOF' requester.
+        - CROSSDOS no longer causes translation problems when loading.
+        - Program files containing fuse information and embedded data
+          are now supported.
+
+
+TO DO
+-----
+
+    o   Abort gadget
+    o   Read and save hex files
+    o   Support for other processors?
+    o   Software checking to make sure PIC is inserted (in TURBO mode)
+    o   Prevent other tasks from upsetting the programming routine
+    o   Use the printer.device instead of 'hitting the hardware'
+
+
+THE FUTURE
+----------
+
+I am currently building a 16C5x programmer but it may be a number of
+months before I get it finished due to work commitments.  I would
+also like to write a cross-assembler and simulator as well as a
+hundred other programs which I have ideas for.  Don't hold your
+breath for future releases but I will always be programming for the
+best computer ever.
+
+
+AUTHOR
+------
+
+If you want to contact the author of this program then please write
+to the following address:
+
+        Stephen Marsden
+        9 Lumley Road
+        Redcar
+        Cleveland
+        TS10 2BD
+        ENGLAND

@@ -1,0 +1,287 @@
+
+              CpuBlit V1.00 -- Uses CPU to perform blitter functions
+
+           (c) Copyright Eddy Carroll, April 1991. Freely Distributable.
+
+
+GETTING STARTED
+
+    In brief, CpuBlit makes your 68020/68030-equipped Amiga scroll text
+    about twice as fast as before. You can quickly try it out as follows.
+    Run CpuBlit (make sure you have the cache enabled). Now try Typing a
+    file in a CLI window. Look at the speed. Change the text colour to
+    colour 3. Type the file again. Look at the lack of flicker on the text
+    as it scrolls. Nice, eh?
+    
+    If you have Workbench 2.0, you can install CpuBlit permanently by
+    simply dragging its icon into your WBStartup drawer. Otherwise, you
+    need to call CpuBlit from your Startup-Sequence. I recommend using the
+    -2 or -s options for general use, though you may like to experiment
+    with the others.
+
+    Now read on for a more detailed description.
+
+
+INTRODUCTION
+
+    After upgrading from an A1000 to an A3000 a while ago, I was in Amiga
+    heaven. The display was great, the disk performance much improved, and
+    the speed awesome (at least compared to the A1000). But there was one
+    blemish on this otherwise perfect scene: the speed of text scrolling
+    in CLI windows. On a 704 x 560 screen, a snail wouldn't have much trouble
+    keeping up with a full size CLI window.
+
+    Thus was born CpuBlit. It replaces the standard system BltBitMap routine
+    with a version that uses the 68030 where practical. The 68030 can
+    comfortably outrun the blitter for simple tasks like scrolling, although
+    the blitter still wins out if the data has to be bit shifted as well
+    (for example when scrolling sideways). Another benefit of using the CPU
+    is that it isn't constrained to operating on one bitplane at a time; it
+    can do them all simultaneously. So, the infamous "flicker" effect when
+    coloured text is scrolling disappears. This is particularly useful when
+    you're logged onto a bulletin board with colour ANSI menus.
+
+    At this stage, I imagine some of you are getting ready to jump up and
+    complain about system throughput suffering, and how overall, the blitter
+    plus the CPU is faster than the CPU on its own. I certainly wouldn't
+    argue with that. So, CpuBlit can be setup to only use the CPU if no
+    other tasks are ready to use it. That way, you get improved performance
+    when you are single tasking, yet multiple tasks operate at full
+    efficiency.
+
+    There is one caveat. CpuBlit will probably only be of use to you if you
+    have at least a 68020 installed in your Amiga; using the standard 68000
+    doesn't give any noticeable speed increase. In fact, even a standard
+    68020 Amiga may not give much speed increase since it only has a 16 bit
+    datapath into chip RAM. The A3000 on the other hand can access chip ram
+    32 bits at a time and CpuBlit takes advantage of this. The easiest way to
+    find out is to give it a try and see if you notice any other difference.
+    A3000 owners will certainly notice a difference -- an A3000-25 performs
+    blits about 2.8 times faster than the blitter, which results in text
+    scrolling at about twice the normal speed (actually displaying the text
+    to be scrolled takes a constant amount of time, regardless of what method
+    you use to scroll it).
+
+    To get the best speed increase, use a non-overscanned screen of not
+    more than four colours, and ensure you have the CPU cache enabled (it
+    is disabled by default under Workbench 1.3 -- use SetCPU by Dave Haynie
+    to enable it). Both overscan and 8 or 16 colour screens will decrease
+    CpuBlit's efficiency, since the custom chips access CHIP ram more
+    frequently, leaving less time available for the CPU. Even with these
+    restrictions, you should still find CpuBlit about 50% faster than the
+    blitter on the A3000.
+
+
+USAGE
+
+    You can start CpuBlit from either the CLI or the Workbench. There are
+    a number of parameters you can change, to alter CpuBlit's operation.
+    When you start CpuBlit, it automatically detaches itself from the CLI
+    window. Any combination of the following options can be given on the
+    command line or as Workbench ToolTypes. Note that each options has
+    two ways of specifying it. You can use whichever way you like best.
+
+    BLITMODE=ALWAYS
+    -a
+    	This is the default setting, so you normally don't need to give it
+        specifically. In this mode, CpuBlit always use the CPU where
+	possible. If you tend to only do one thing on your Amiga at a time,
+	this is probably the best option to use.
+
+    BLITMODE=ONE
+    -1
+    	In this mode, CpuBlit will only use the CPU for blits if there are
+        no other tasks ready to run at that time. The blitter is used at all
+	other times. Hence, you get fast blits whenever the CPU would be
+	otherwise idle, and normal processing speed when running multiple
+	tasks.
+
+	There is one catch. When displaying text via the console device,
+	the program displaying the text is considered to be still running,
+	even though it's the console device that actually outputs the text.
+	For those interested, this is because the console device runs at
+	a higher priority than user applications and so preempts the task
+	before it has a chance to go to sleep. Hence, CpuBlit will think the
+	program is waiting to do work, and won't use the CPU for blitting.
+
+	This means that the -1 option will only speed up scrolling when a
+	task scrolls the text directly, rather than indirectly via the
+	console device. Comms packages and text editors are the most likely
+	candidates for this. Standard CLI windows won't show any improvement.
+
+    BLITMODE=2
+    -2
+    	In this mode, CpuBlit will only use the CPU for blits if there is
+        at most one other task waiting to run. This results in everything
+	being speeded up (both applications and CLI output) but isn't quite
+	as system friendly as using -1. It should be more than adequate for
+	most people however.
+
+    BROKEN=[YES|NO]
+    -b
+    	Some programs don't initialise bitmap structures properly. By
+        default, CpuBlit passes such bitmaps on to the blitter and doesn't
+	attempt to handle them. Using this option tells CpuBlit to bypass the
+	validation checks it normally performs on bitmaps, and so may allow
+	broken programs like this to gain the benefits of faster blitting;
+	it may also cause problems. If you have a program that you think
+	should be sped up by CpuBlit and it seems to be showing no noticeable
+	change, then give this option a try; else, leave it alone.
+
+    SINGLE=[YES|NO]
+    -o
+    	This option tells CpuBlit to only handle blits where the source and
+        destination bitmaps are the same. Typically, this only happens when
+	a text window is scrolling. Normally you should not need to use this
+	option as CpuBlit should co-exist happily with every program that
+	uses the blitter. However, if CpuBlit seems to be incompatible with
+	some particular application, specifying `-o' will allow you to
+	continue using it. Don't forget to notify me about the problem, so
+	that it can be fixed! 
+
+    MINTASKPRI=N
+    -pN
+    	If you like to keep a program running in the background (like a
+	Mandelbrot generator) then you may find it counteracts the -1 and -2
+	options (since it is always ready to run). You can tell CpuBlit
+	to ignore all such tasks using this option; any task with a priority
+	less than N will not be considered ready to run.
+	
+	Normally, CpuBlit will ignore any tasks with a priority less than
+	zero, which is perfectly adequate for most cases. You can override
+	this with a different setting if you like. For example, setting
+	MINTASKPRI=-5 will cause your Mandelbrot program at priority -1 to
+	be considered, but not your CPU monitor at priority -20.
+
+    BLITMODE=SHARE
+    -s
+    	In this mode, CpuBlit attempts to share blits between the CPU and the
+	blitter. The CPU will be used for blits by default, but if a task
+	tries to blit some data while another task is already using the CPU
+	to blit data, the blitter is used for the former. The result is
+	better overall throughput.
+	
+	If you try experimenting with two CLI windows to see this effect in
+	action, you won't notice anything; this is because the console.device
+	used for scrolling CLI windows is single threaded and waits for a
+	blit in one window to finish before starting another. Hence, both
+	windows are scrolled using the CPU. It works fine in the case of
+	a CLI window and a program that bypasses the console device (such as
+	a comms package).
+
+    HELP
+    -h
+    	Prints out a brief help message, listing the valid options. In fact,
+        giving any invalid option will cause this message to be printed.
+
+    QUIT
+    -q
+    	This option asks any copy of CpuBlit already installed to remove
+        itself. If another program has patched BltBitMap since CpuBlit was
+	started, you'll get a message asking you to terminate that program
+	and then try again.
+
+    If you run CpuBlit with no options, it behaves as if you had typed:
+
+    	CPUBLIT  BLITMODE=ALWAYS  SINGLE=NO  BROKEN=NO  MINTASKPRI=0
+
+    You can pick a different mode of operation at any time by simply running
+    CpuBlit again with new options; it's not necessary to remove the previous
+    copy first. You can use -a to cancel the effect of the -b and -o options.
+    Note that only one of -a, -1, -2 and -s can be in effect at a time. Also,
+    the BROKEN and SINGLE options default to YES if you use them without
+    specifying a YES/NO value.
+
+
+WORKBENCH
+
+    As mentioned above, CpuBlit can be started from Workbench. It doesn't
+    return to Workbench until it quits, so if you are starting it from your
+    WBStartup drawer (under 2.0) one of the tooltypes must be DONOTWAIT.
+    in the icon.
+
+    When CpuBlit starts up, it parses all the ToolTypes in its own icon,
+    followed by the tooltypes in any project icons you specified. This
+    can be handy if you have several configurations of CpuBlit that you
+    like to switch between. Simply create a project icon for each one,
+    and set the appropriate tooltypes. Then set the default tool for each
+    icon to CpuBlit. Now, clicking on any of the icons will set the
+    corresponding CpuBlit options.
+
+    To remove CpuBlit from Workbench, you need to start it from an icon
+    which has a QUIT tooltype. The standard CpuBlit distribution includes
+    such an icon that you can use. If CpuBlit cannot remove itself (perhaps
+    because someone else has patched into the BltBitMap routine ahead of
+    CpuBlit) then the screen will flash. You can type CpuBlit QUIT in
+    a CLI window for a more detailed explanation.
+
+
+IMPLEMENTATION
+
+    This section gives a brief description of how CpuBlit works. It's not
+    necessary to read this to use CpuBlit, it's included merely for those
+    interested.
+
+    CpuBlit only handles blits with a very specific set of characteristics.
+    First of all, the source and destination bitmaps must be aligned on the
+    same bit boundary within a longword. For example, a blit from 0,0 to
+    128,100 would be okay whereas a blit from 0,0 to 100,100 would fail.
+    In addition, only blitter functions of the form $Cx are supported
+    (i.e. plain replace operation). Also, the source and destination rows
+    must be different; if they are the same, a sideways blit is being
+    performed, and this is not supported.
+
+    Assuming the blit fulfills all these criteria, CpuBlit then checks
+    system activity to see whether or not it is appropriate to use the
+    CPU at all. Exactly what is checked depends on the option selected
+    when CpuBlit was installed.
+
+    Assuming everything is still okay, CpuBlit then works out how many
+    bitplanes there are in the bitmap, and calls one of four routines to
+    handle the actual scrolling. It also handles any bitplane pointers of
+    $FFFFFFFF or $00000000 at this time (new for Workbench 2.0, these
+    values are legal for bitplane pointers, and act as if they pointed to
+    either a solid or empty bitplane). If there are more than four
+    bitplanes, the blit is split into two operations; the first four planes
+    are moved, followed by the remaining planes. While this results in a
+    bit of colour flicker for deep bitmaps, it is still not as bad as when
+    the bitplanes are moved separately.
+
+    The actual bitmap copying is done using optimised 68000 code. The bulk
+    of the data on each row is copied using a MOVE.L/DBF loop, and the uneven
+    bits at the sides are copied separately. No non-68000 instructions are
+    used (there wouldn't be any advantage to it anyway) so CpuBlit will still
+    run on a 68000 Amiga (not that there's much point). Due to a lack of
+    CPU registers (only 16 ... how DO people manage on Intel chips with a
+    mere 8 registers? :-) the routines for copying three and four bitplanes
+    aren't quite as efficient as those for copying one and two bitplanes.
+    However, they are still quite a bit faster than the blitter itself, and
+    the removal of colour flicker is more than worth the small loss in speed.
+
+
+ACKNOWLEDGEMENTS
+
+    Thanks to Andy Mowatt for encouraging me to change CpuBlit from an idea
+    into a program. Thanks also to the following people who provided useful
+    feedback and bug reports for beta versions of CpuBlit: Steve Tibbett,
+    David Joiner, Mike Sinz, Dan Ten Ton, Robert Jenks, LeRoy Hutzenbiler,
+    Jim Biggs, Mike Meyer, Urban Mueller, Jamie Clark, Marc Jacobs and
+    Albert-Jan Brouwer. Their help is greatly appreciated.
+
+
+AUTHOR
+
+    Eddy Carroll
+
+    Email:     ecarroll@maths.tcd.ie
+    Phone:     +353-1-287-4540
+    Snailmail: The Old Rectory, Delgany, Co. Wicklow, Ireland.
+
+
+DISTRIBUTION
+
+    CpuBlit may be freely distributed, as long as no charge is made other
+    than to cover time and copying costs. If you want to include CpuBlit
+    as part of a commercial package, contact the author listed above. Fred
+    Fish is specifically given permission to include CpuBlit in his fine
+    disk library.

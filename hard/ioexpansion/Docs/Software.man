@@ -1,0 +1,236 @@
+16 March 1991
+
+                       Software Installation Manual
+
+                     For the Amiga I/O Expansion Board
+
+                   Copyright ©1990,91 The Puzzle Factory
+
+
+Hardware is next to useless without  software  to  drive  it.   This  section
+describes  the  software  available for the I/O Expansion Board.  Please note
+that  although  every  effort  has  been  made  to  ensure  completeness  and
+compatibility,  this  is a Public Domain project.  All of the people who have
+created hardware or software for this project have done  so  in  their  spare
+time  without remuneration other than glory.  If you experience problems with
+the software, try to smile a lot and consider helping  to  write  an  updated
+version.   In  any  case,  please  contact  us  if   you   find   any   major
+incompatibilities or bugs.
+
+*****************************************************************************
+* Note well that all of this material, although freely  redistributable, is *
+* copyrighted.  All rights are  reserved, and none of these programs may be *
+* used commercially without prior written permission from the author(s).    *
+*****************************************************************************
+
+In the following sections, "###" in the leftmost columns is used to  indicate
+some  action  that  must  be  taken  to  achieve  a  particular goal.  Unless
+otherwise noted, all programs herein MUST be run from the CLI!   Do  not  use
+with Workbench, or attempt to create icons!
+
+All mention of units in this document refer to  physical  units.   The  first
+physical  ACIA is Unit 1, for example.  This corresponds to logical Unit 0 of
+the newser.device.
+
+
+THE SERIAL DRIVER
+=================
+Almost all programs written for the Amiga that use the serial port (with  the
+notable  exception of some MIDI software) access it indirectly via a standard
+software module called "serial.device".  As a result, most existing  software
+will work fine with the I/O Board given a suitable driver, and we supply one,
+named  "newser.device".
+
+The newser.device supports 15 standard baud rates, from 50  to  38,400  baud,
+plus  MIDI (31,250 baud).  It also supports full hardware handshaking.  Up to
+four units may be open at one time, although the cpu may not be able to  keep
+up with all four units running above 2400 baud.
+
+### Copy newser.device to your "DEVS:" directory and you're in business.
+
+NOTES:
+1. In order to use the MIDI baud rate, all three of the following things must
+   be done for MIDI to function properly.:
+
+   a) The MIDI clock on the I/O Expansion Board must be installed.
+   b) The jumper, either J1 or J2 depending on the unit, must be in the MIDI
+      position.
+   c) The baud rate must be set to MIDI, corresponding to %xxxx1111 in the
+      appropriate control register.
+
+2. In order to use the serial ports in 3-wire mode, one of two things must be
+   done:
+
+   a) Install R1 and R2, 1K 1/4W resistors on the Serial Interface Board.
+   b) Connect CTS to RTS.
+
+   Either fix is used to pull up CTS, and is only necessary if  you  will  be
+   connecting  the  serial  port  to  a device that does not assert CTS.  The
+   65C52 will not transmit if CTS is not asserted.  This  is  implemented  in
+   hardware and must be addressed in hardware.
+
+THE PARALLEL DRIVER
+===================
+The four parallel ports on the I/O Expansion  Board  are  controlled  by  the
+eightbit.device.   There are no known differences between this device and the
+V1.3  parallel.device.   Applications  should  not  experience  any  problems
+communicating with the eightbit.device on the device level.
+
+### Copy eightbit.device to your "DEVS:" directory and you're ready to go.
+
+
+DOS-LEVEL SUPPORT
+=================
+"DOS-level support" refers to the ability to get and send data via the serial
+and parallel ports with standard AmigaDOS commands, such as TYPE or LIST,  or
+with  any  program that does serial or parallel I/O via AmigaDOS, rather than
+directly via the Exec-level "newser.device"  or  "eightbit.device".  Although
+this  sort  of  capability  is not frequently used, it is useful from time to
+time.
+
+In a perfect world,  DOS-level  support  would  mean  nothing  more  than  an
+appropriate  MountList  entry, specifying a driver name of "newser.device" or
+"eightbit.device", and some unit number of your choosing, corresponding to  a
+DOS  name  such  as  "SER1:" or "PAR2:".  Unfortunately, Commodore supplied a
+version of the Port-Handler and Aux-Handler with Workbench V1.3 that  doesn't
+permit  this;  rather,  they're  hard-coded  to use either "serial.device" or
+"parallel.device".  The printer.device suffers from a similar limitation.  At
+the time of this writing, we don't have a solution to the  problem  with  the
+printer  driver,  other  than  using  IOpatch.
+
+We do have a port handler, however.  It's named "ioexp-handler".
+
+### Copy ioexp-handler to your "L:"  directory.
+### Copy the supplied mountlist to "DEVS:".
+
+Now you can do things like:
+
+  1> Type <MyFile> to SER1:
+  1> Copy <MyFile> to PAR2:
+
+The handlers in Workbench V2.0 have the capability  to  use  any  device  and
+unit, so this whole problem becomes non-existent under V2.0 of the OS.
+
+NOTES:
+1. The  names  in  the  current  port  handler  are  hardcoded  (sorry).  The
+   MountList entries must be named "SER1:", "SER2", "PAR3:",  etc.   We  will
+   release an update for this when and if this problem is resolved.
+
+
+SUPPORT PROGRAMS
+================
+Several programs are available for use with the I/O Expansion Board.
+
+SERprefs
+--------
+SERprefs  functions  much  the same as the serial section of Preferences, but
+allows  you   to   set  and  save  parameters  for  all  four  units  of  the
+newser.device.  These are saved in "S:Serial-Preferences".
+
+### Copy SERprefs to C: or somewhere in your execution path.
+
+IOpatch
+-------
+Many programs allow you to specify the device name and unit number,  so  that
+using  an alternate device driver is no problem.  For those applications that
+insist on using a particular device, we  have  written  a  nice  little  hack
+called  IOpatch.   This program SetFunction()s the exec OpenDevice call.  The
+user puts this program in his  startup-sequence,  or  otherwise  invokes  it,
+before  he runs his application program.  This patch will make a small window
+appear, whenever OpenDevice() is called, with a choice of units; 0-4.  Unit 0
+will select the internal serial or parallel port, and units 1-4  will  select
+one  of  the  newser.device  or  eightbit.device units.  Please note that the
+names of both drivers have been selected to be the same length as  the  names
+of  the original devices.  This has been done to facilitate file-zapping as a
+last resort.  Of course, software may be written that names the newser.device
+or eightbit.device specifically.
+
+### Copy IOpatch to C: or somewhere in your execution path.
+
+From the command line, simply type:
+
+  1> IOpatch
+
+There is no need to RUN, because IOpatch copies itself  to  ram;  no  seglist
+splitting either!  Once installed, IOpatch will check all calls to OpenDevice
+to  see  if  the  device is the serial or parallel device.  IOpatch takes the
+following command line arguments:
+
+  1> IOpatch       ;Check OpenDevice() calls for serial & parallel device
+  1> IOpatch -a    ;Check OpenDevice() calls for serial & parallel device
+  1> IOpatch -s    ;Check OpenDevice() calls for serial device only
+  1> IOpatch -p    ;Check OpenDevice() calls for parallel device only
+  1> IOpatch -q    ;Replaces previous vector for OpenDevice() calls.
+  1> IOpatch ?     ;Prints these instructions
+
+Now, every time a program wants to use the serial  or  parallel  device,  you
+will  be presented with a little window to select which unit you wish to use.
+IOpatch will always open on the application's screen.  Select Unit 0  to  use
+the  internal  serial  or  parallel  device.   Select  Unit  1-4  to  use the
+newser.device or eightbit.device.  Now you can do things like:
+
+  1> Copy <MyFile> to SER:   ;Click on Unit 1 selects newser.device Unit 1.
+  1> Type <MyFile> to PAR:   ;Click on Unit 2 selects eightbit.device Unit 2.
+  1> List >PRT: <MyDir>      ;Click on Unit 3 selects eightbit.device Unit 3.
+
+These examples assume that you select other than Unit 0.
+
+NOTES:
+
+1. IOpatch and the eightbit.device have been verified using Deluxe Paint III.
+   under V1.3 of the OS.  A 640x768 file was printed to a Panasonic KX-P1092i
+   with good results.
+
+
+Test
+----
+A suite of simple test programs to check the I/O Expansion Board Hardware can
+save you hours of hardware debugging time.
+
+IOSetup writes recognizable bit patterns into the registers so that  you  may
+        verify that they are, in fact, addressable and  working.   The  chips
+        are set up as follows:
+
+        VIA0:  Both ports=outputs, ORB=$12, ORA=$34
+        VIA1:  Both ports=outputs, ORB=$56, ORA=$78
+        ACIA1: 2400 baud, 8 bit word, 1 stop bit, no parity, DTR hi, TDR=$0D
+
+IOPrint prints the contents of the registers for all 8 units on the  console.
+        If you are not planning to add Unit 3-4, it would be a good  idea  to
+        reassemble the program to print registers for Unit 1-2 only.
+
+IOTest is actually 9 tests in 1 program.  Selected by command line  argument,
+        tests 1-8 generate chip selects and read/write signals as follows:
+
+        1 = Read  VIA0   3 = Read  VIA1   5 = Read  ACIA0   7 = Read  ACIA1
+        2 = Write VIA0   4 = Write VIA1   6 = Write ACIA0   8 = Write ACIA1
+
+        Test 9 simulates a very simple  character-oriented  terminal  program
+        for checking the operation of ACIA0.
+
+PARtest tests the 65C22.  This program takes a filespec as its only argument,
+        and stuffs the file out parallel  Port  3  (VIA  #1,  Port  A)  to  a
+        printer.   No  devices are involved; this goes right to the hardware.
+        Also, in this version, interrupts  are  not  used  -  handshaking  is
+        accomplished by hardware polling.
+
+Time  is  a  nice  little  program to drive a real-time clock-calendar.  Time
+        takes one command line argument:
+
+        1> Time S=SET     ;Sets clock from system date.
+        1> Time R=READ    ;Sets system date from clock.
+
+### Copy Time to C: or somewhere in your execution path.
+
+       The clock hardware, based on the  OKI  MSM5832,  is  also  capable  of
+       generating interrupts at 1024 hz, once per second, once per minute, or
+       hourly.   This feature can be very useful, as no software counters are
+       required to generate  long  delays.   A  must  for  real-time  control
+       programs.
+
+       If the clock does not physically exist, you will likely get a  message
+       from  the program: "Can't convert to DateStamp".  This generally means
+       that the date string  returned  from  the  non-existant  hardware  was
+       garbage.
+
+=eof=

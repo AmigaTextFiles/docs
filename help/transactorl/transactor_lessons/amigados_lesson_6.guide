@@ -1,0 +1,358 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "Assembler Sesta Lezione"
+
+@{JLEFT}
+@{b}Sesta Lezione: Gestione del FileSystem@{ub}
+
+
+
+eccoci dunque arrivati a trattare le procedure/funzioni che interagiscono con
+il file system, ovvero che ci permetto nella fattispecie di
+creare/scrivere/leggere/cancellare un file.
+
+Bisogna ricordare, che il tipo del puntatore alla struttura che descrive un
+file, sotto @{b}AmigaDOS@{ub} è un @{u}BPTR@{uu} (e non come potrebbe pensare qualcuno
+@{u}FILE *@{uu}), ovvero una @{u}longword@{uu}.
+Perchè  essendo un tempo programmato in @{b}BCPL@{ub}, tutti i puntatori dovevano
+essere lw.
+
+
+Vediamo dunque le procedure/funzioni che vedremo in questa puntata:
+
+
+@{i}   BPTR Open( STRPTR name, long accessMode );
+
+   LONG Close( BPTR file );
+
+   LONG Read( BPTR file, APTR buffer, long length );
+
+   LONG Write( BPTR file, APTR buffer, long length );
+
+   BPTR Input( void );
+
+   BPTR Output( void );
+
+   LONG Seek( BPTR file, long position, long offset );
+
+   LONG DeleteFile( STRPTR name );
+
+   LONG Rename( STRPTR oldName, STRPTR newName );
+
+   BPTR Lock( STRPTR name, long type );
+
+   void UnLock( BPTR lock );
+
+   BPTR DupLock( BPTR lock );
+
+   LONG Info( BPTR lock, struct InfoData *parameterBlock );
+
+   BPTR CreateDir( STRPTR name );
+
+   BPTR CurrentDir( BPTR lock );
+
+   LONG IoErr( void );
+
+   BPTR ParentDir( BPTR lock );@{ui}
+
+
+     -- Buffered File IO --
+
+
+   @{i}BPTR SelectInput( BPTR fh );
+
+   BPTR SelectOutput( BPTR fh );
+
+   LONG FGetC( BPTR fh );
+
+   LONG FPutC( BPTR fh, long ch );
+
+   LONG FRead( BPTR fh, APTR block, unsigned long blocklen,
+
+   unsigned long number );
+
+   LONG FWrite( BPTR fh, APTR block, unsigned long blocklen,
+
+   unsigned long number );
+
+   STRPTR FGets( BPTR fh, STRPTR buf, unsigned long buflen );
+
+   LONG FPuts( BPTR fh, STRPTR str );
+
+   LONG Flush( BPTR fh );@{ui}
+
+
+Il primo blocco, sono funzioni non bufferizzate, il secondo blocco, sono
+funzioni bufferizzate.
+
+
+Vediamole con ordine. Prima di tutto la @{i}Open@{ui}, che ovviamente richiede il nome
+del file da aprire e la modalità  di accesso. Notare che un file, una volta
+aperto può  indifferentemente letto o scritto a piacimento. Le varie modalità
+sono:
+
+
+  @{i}MODE_OLDFILE@{ui}   Apre un file esistente posizionandosi all'inizio
+
+  @{i}MODE_NEWFILE@{ui}   Crea un file (cancellando quello vecchio) con lock esclusivo
+
+  @{i}MODE_READWRITE@{ui} Apre un file esistente con un lock condiviso. Crea il file se non esiste.
+
+
+Una volta aperto un file, possiamo leggerlo con la @{i}Read@{ui}, scriverlo con la
+@{i}Write@{ui} e chiuderlo con la @{i}Close@{ui}. Possiamo anche utilizzare le procedure
+bufferizzate, a seconda dei nostri scopi.
+
+Vediamo uno stralcio di programma:
+
+
+#include <exec/types.h>
+
+#include <exec/libraries.h>
+
+#include <dos/dos.h>
+
+#include <proto/exec.h>
+
+#include <proto/dos.h>
+
+struct DosLibrary *DOSBase;
+
+void main(void)
+
+{
+
+    BPTR file;
+
+    struct Mia
+
+    {
+
+        int ver;
+
+        char data[6];
+
+    }mia;
+
+
+
+    if((DOSBase = (struct DosLibrary *)OpenLibrary("dos.library",0)))
+
+    {
+
+        if((file = Open("RAM:temp",MODE_NEWFILE)))
+
+        {
+
+            mia.uno = 56;
+
+            strcpy(mia.due,"290798");
+
+            if(Write(file,&mia,sizeof(struct Mia) == -1)
+
+                PrintFault(IoErr(),"Impossibile scrivere sul file RAM:temp perchè ");
+
+
+
+            Delay(50);
+
+
+
+            if(Read(file,&mia,sizeof(struct Mia) == -1)
+
+                PrintFault(IoErr(),"Impossibile leggere dal file RAM:temp perchè ");
+
+            else
+
+            {
+
+                LONG param[2];
+
+                param[0] = (LONG)mia.ver;
+
+                param[1] = (long)mia.data;
+
+                VPrintf("Ho letto %ld e %s\n",param);
+
+            }
+
+            /* Se la versione e >= 36 possiamo controllare anche il valore di */
+
+            /* ritorno della Close */
+
+            if(DOSBase -> dl_lib.lib_Version >= 36)
+
+            {
+
+                if(!Close(file))
+
+                    PrintFault(IoErr(),"Impossibile chiudere il file RAM:temp perchè ");
+
+            }
+
+            else
+
+                Close(file);
+
+        }
+
+        else
+
+        {
+
+            PrintFault(IoErr(),"Impossibile aprire il file RAM:temp perchè ");
+
+        }
+
+        CloseLibrary(struct Library *)DOSBase);
+
+    }
+
+}
+
+
+Se invece della @{i}Read@{ui} e della @{i}Write@{ui}, avessi usato la @{i}FRead@{ui}
+e la @{i}FWrite@{ui}, avrei
+ottenuto una versione bufferizzata del programma. Non ci vuole molto a
+cambiare la struttura del programma, per usare le varie funzioni di
+lettura/scrittura al posto di @{i}Read@{ui} e @{i}Write@{ui}.
+Per esempio per scrivere/leggere una stringa, può  essere comodo usare
+@{i}FPuts/FGets@{ui}.
+
+Una nota merita la funzione @{i}Flush@{ui}, che un pÓ  come il comando 'sync' di unix
+forza la scrittura dei buffer accodati.
+
+
+La funzione @{i}Seek@{ui}, è  molto utile con i file di record, per saltare ad un
+determinato record ed eseguire quindi un accesso non sequenziale al file.
+Per esempio, se il nostro file @{i}RAM:temp@{ui}, contenesse dieci strutture di tipo
+Mia, per leggere la 5 basterebbe:
+
+
+    [...]
+
+    Seek(file,sizeof(struct Mia) * 4,OFFSET_BEGINNING);
+
+
+Ovviamente, 4 e non 5 perchè  con il valore zero si torna all'inizio del file.
+Il terzo parametro può  assumere i seguenti valori (come la fseek di unix):
+
+
+    @{i}OFFSET_BEGINNING@{ui}  spiazzamento relativo all'inizio del file
+
+    @{i}OFFSET_CURRENT@{ui}    spiazzamento relativo alla posizione attuale
+
+    @{i}OFFSET_END@{ui}        spiazzamento relativo alla fine del file
+
+
+In questo modo possiamo saltare al terz'ultimo record di un file, oppure
+saltare ai prossimi cinque record, ai tre precedenti o altro, specificando anche valori
+negativi (che fanno tornare indietro il puntatore alla posizione).
+Inutile dire che questi spiazzamenti devo essere fatti tutti all'interno del
+file, altrimenti non funzioneranno e saremo piazzati o all'inizio o alla fine
+del file.
+
+
+Le funzioni @{i}Input@{ui}, @{i}Output@{ui}, @{i}SelectInput@{ui} e
+@{i}SelectOutput@{ui}, servono le prime due
+per ricevere il puntatore al file di standard input e standard output e le
+seconde due per impostarli su file di nostro interesse.
+Per esempio, se nel nostro programma, avessimo chiamato:
+
+
+      [...]
+
+    BPTR old_fh;
+
+      [...]
+
+    old_fh = SelectOutput(file);
+
+      [...]
+
+    SelectOutput(old_fh);
+
+      [...]
+
+
+avremmo rediretto l'output del nostro programma sul file @{i}RAM:temp@{ui}.
+Una cosa del genere, può  essere utile per creare file di log, per esempio.
+
+
+Le funzioni @{i}DeleteFile@{ui} e @{i}Rename@{ui} servono per cancellare un file od una
+directory (a patto che sia vuota) e per rinominare un file od una directory.
+
+
+Le funzioni @{i}Lock@{ui} e la sua corrispettiva @{i}UnLock@{ui}, servono per bloccare e
+sbloccare l'accesso ad altri processi ad un file che stiamo manipolando.
+Le modalità  accettate dalla @{i}Lock@{ui} sono:
+
+
+    @{i}ACCESS_READ@{ui}    crea un lock condiviso (altri processi possono leggere)
+
+    @{i}ACCESS_WRITE@{ui}   crea un lock esclusivo (nessun processo può  accedere)
+
+
+La funzione @{i}DupLock@{ui}, serve per ottenere una copia di un lock (solo quelli
+condivisi). Può  essere utile in un sistema di produttori/consumatori.
+
+
+La funzione @{i}Info@{ui}, molto semplicemente restituisce una struttura
+
+
+        /* returned by Info(), must be on a 4 byte boundary */
+
+  struct InfoData {
+
+    LONG    id_NumSoftErrors; /* number of soft errors on disk       */
+
+    LONG    id_UnitNumber;    /* Which unit disk is (was) mounted on */
+
+    LONG    id_DiskState;     /* See defines below                   */
+
+    LONG    id_NumBlocks;     /* Number of blocks on disk            */
+
+    LONG    id_NumBlocksUsed; /* Number of block in use              */
+
+    LONG    id_BytesPerBlock;
+
+    LONG    id_DiskType;      /* Disk Type code                      */
+
+    BPTR    id_VolumeNode;    /* BCPL pointer to volume node         */
+
+    LONG    id_InUse;         /* Flag, zero if not in use            */
+
+  }; /* InfoData */
+
+
+riempita con i valori del dispositivo che contiene il file passatole (il
+BPTR).
+
+
+La funzione @{i}CreateDir@{ui} serve per creare un cassetto.
+
+
+Le funzioni @{i}CurrentDir@{ui} e @{i}ParentDir@{ui}, servono per ottenere la directory
+contenente il lock passato o il cassetto genitore.
+
+
+Bene, nella settima puntata vedremo altre procedure della dos.library e nella
+ottava, cominceremo a vedere intuition. Ovviamente, se avete qualcosa da chiedermi,
+sono a vostra disposizione.
+
+
+
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link amigados_lesson_5.guide}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link amigados_lesson_7.guide}
+@ENDNODE                                                                                             

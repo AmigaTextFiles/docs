@@ -1,0 +1,965 @@
+The NComm V3.0 script language
+==============================
+
+A scriptfile is an ASCII textfile that consists of different commands,
+separated by  one or more  linefeeds.  Edit the  scriptfiles with your
+favourite  editor.  Only  one  command is  allowed per line, but blank
+lines are also OK. A line can consist of blanks before the command and
+between parameters.  Comments can be added by entering a semicolon.  A
+label is marked with a colon as its last character, e.g. "quit:".  The
+script  commands  are case independent,  but strings within quotes are
+not.
+
+Scripts  are mainly used to automate logons, or to companion you while
+you  are  online.   Scripts  can also perform more advanced functions,
+like  grabbing  mail  and perhaps posting it on another board (or even
+printing it!).  You set the limits...
+
+NComm  scripts  can be started from the menu or from the phonebook (at
+CONNECT).  You may also Shift-Select a script when starting NComm.
+
+One example  script and  one  Host-Mode script have been included with
+the NComm package.  Take a look at them if you don't understand how to
+use the commands.
+
+Important:   The  filenames  specified in a scriptfile are relative to
+the   current   directory,   NOT   the  default  upload  and  download
+directories!
+
+Quick-Index (strings within brackets are optional)
+--------------------------------------------------
+
+ASCSEND "filename"         : Send a file to the serial port
+AUTODOWN ON|OFF            : Turn Zmodem auto-download on or off
+AUTOUP ON|OFF              : Turn Zmodem auto-upload on or off
+AUTOXFER ON|OFF            : Turn G&R commands on or off
+BEEP                       : Make an audible/visible/screentofront beep
+BREAK                      : Send a break to the host machine
+CAPTURE "filename"         : Capture serial input to a file
+CD "directory"             : Change current directory for "CLI" commands
+CHAIN "filename"           : Start another script
+CLEARVARS                  : Clear all variables
+CLI "command"              : Execute external command
+CLRSTACK                   : Clear the RETURN stack
+CONFIG "filename"          : Load another configuration file
+CONVERSE "in" "out"        : Wait for input, send output
+DELAY seconds              : Wait for specified number of seconds
+DIAL "boardname"[,"next"]  : Dial one or more entries in phonebook
+DIAL# "number"[,"next"]    : Dial one or more telephone numbers
+DLWHEN                     : Delete last WHEN command
+DORX "filename"            : Execute an ARexx command/script
+DOWNLOAD "filename"[,P]    : Download file [with protocol P]
+DTENTHS tenthseconds       : Delay for specified number of tenthseconds
+DUMP ["filename"]          : Dump list of variables [to optional file]
+DWHEN "string"             : Delete WHEN checking for "string"
+DWHENS                     : Delete all WHEN statements
+ECHO ON|OFF                : Enable/disable INPUT/ASCSEND/MSGSEND cmd echo
+END                        : Stop execution of script
+GOSUB subroutine           : Call a subroutine
+GOTO label                 : Jump to a label
+HANGUP                     : Hang up the phone
+IF <exp> THEN <command>    : Execute command if expression is TRUE
+INPUT $variable "stopchar" : Put serial-port input in variable, until stopchar
+LOADKEYS "filename"        : Load a new set of macrokeys
+LOADPHONE "filename"       : Load a new phonebook
+MENUSELECT menu item sub   : Select an item/subitem from the menu
+MESSAGE "message"          : Display a message on the terminal
+MSGSEND "filename"         : Send a message to the serial port
+NCOMMTOFRONT               : Brings the NComm screen to front
+PADLINES ON|OFF            : Turn padding of blank lines off/on
+PALETTE                    : Open the palette requester
+PRINTER ON|OFF             : Turn the printer on or off
+QUIT                       : Exit NComm
+READVAR $variable          : Read a line from VARFILE into $variable
+REPEAT<->UNTIL <expression>: Perform a loop until expression is TRUE
+REDIAL ON|OFF              : Turn redial on or off
+REQUEST ON|OFF             : Turn system/NComm requesters on/off
+RESUME ON|OFF              : Turn Zmodem resume on or off
+RETURN                     : Returns from a sub-routine (see GOSUB)
+SEND "string"              : Send a string to the serial port
+SET $variable = "value"    : Assign value to $variable
+SIMPLEREQ "string"         : Display string in a simple requester
+STRPART out pos len in     : Places parts of the in string in the out string
+TIMEOUT seconds [command]  : Sets timeout to seconds [and command at timeout]
+UPLOAD "filename"[,P]      : Upload file [with protocol P]
+VARFILE "filename"|CLOSE   : Open file for input/close file (see READVAR)
+WAIT "string"              : Waits for string to be received (see TIMEOUT)
+WHILE <exp> DO...ENDWHILE  : Perform loop if expression is TRUE (check first)
+WHEN "string" command      : Execute command when string is received
+WRITE "filename" "string"  : Write string to file
+
+Summary of Script commands
+--------------------------
+
+        ASCSEND
+Starts ASCII text send of the filename given. Example:
+
+ASCSEND "df1:text/msg"
+
+The  TIMEOUT command also concerns ASCSEND.  If ASCSEND is halted by a
+^S  and  no  ^Q  has  been  received within the timelimit specified by
+TIMEOUT,  the  script  will  go on with the next command.  XON will be
+turned on before ASCSEND.
+
+----------------------------------------------------------------------
+
+        AUTODOWN
+Turns Zmodem auto-download ON or OFF.
+
+Example:
+
+AUTODOWN ON      ;Turns Zmodem auto-download on
+AUTODOWN OFF     ;Turns Zmodem auto-download off
+
+----------------------------------------------------------------------
+
+        AUTOUP
+Turns Zmodem auto-upload ON or OFF.
+
+Example:
+
+AUTOUP ON      ;Turns Zmodem auto-upload on
+AUTOUP OFF     ;Turns Zmodem auto-upload off
+
+----------------------------------------------------------------------
+
+        AUTOXFER
+Turns G&R commands ON or OFF.
+
+Example:
+
+AUTOXFER ON      ;Turns G&R commands on
+AUTOXFER OFF     ;Turns G&R commands off
+
+----------------------------------------------------------------------
+
+        BEEP
+Will  cause  an audible 'beep' of the terminal and / or will flash the
+screen  and / or will bring the screen to front, depending on what you
+have  configured  in  the  SCREEN  menu.   Nothing is sent through the
+serial port.
+
+----------------------------------------------------------------------
+
+        BREAK
+Sends a break to the host machine. Equivalent to SEND "\l".
+
+----------------------------------------------------------------------
+
+        CAPTURE
+Toggles ASCII capture on/off. Examples:
+
+CAPTURE "filename"
+Will  open the capture file and turn on capture.  It will be opened in
+'append mode' if the file exists...
+
+CAPTURE SUS
+Will suspend capture.  Capture can be turned on again with the command
+CAPTURE ON
+
+CAPTURE OFF
+Will  turn  capture off and close the file.  The file cannot be opened
+again with the CAPTURE ON command.
+
+----------------------------------------------------------------------
+
+        CD
+Problems  occur  when  the "CD" command is used with the CLI function.
+The  "CD"  command  has  therefore  been  made a special function.  It
+simply  changes  the directory that is to be used for commands started
+with the "CLI" function.
+
+Example:
+
+CD "RAM:"       ;Will change the current working directory to 'RAM:'
+
+----------------------------------------------------------------------
+
+        CHAIN
+Will start a new script.  The control will never return to the calling
+script.   This  is  useful  when  you need extremely long scripts that
+won't fit in memory.
+
+Example:
+
+CHAIN "NComm:ReadNews.script"
+
+Note:   Variables  will  not  be deleted when using the CHAIN command.
+Use the command CLEARVARS if you want to delete all variables.
+
+----------------------------------------------------------------------
+
+	CLEARVARS
+This command deletes all variables.
+
+----------------------------------------------------------------------
+
+        CLI
+Will  execute  a program or a command.  The output from these programs
+and  commands  will  occur  in the NComm window.  This command will be
+relative to the directory you were standing in when you started NComm.
+
+Please  note;  Current  Directory can not be set with the CLI command,
+probably  due  to  problems with the Amiga operating system.  The "CD"
+function must therefore be used for this purpose.
+
+Examples:
+
+CLI "dir dh0:comms"
+CLI "type ram:foo.bar"
+CLI "pkax ram:grabfile.arc"
+
+----------------------------------------------------------------------
+
+        CLRSTACK
+This  command  clears  the  RETURN  stack,  i.e.   it  forgets  active
+subroutine  calls (gosubs).  The command is handy at error situations,
+when  you  wish to "jump out" of the program and start over again, for
+example in conjunction with TIMEOUT or WHEN commands.
+
+----------------------------------------------------------------------
+
+        CONFIG
+Will read a new configuration file.  Example:
+
+CONFIG "NComm:MBBS.config"
+
+----------------------------------------------------------------------
+
+        CONVERSE
+Will wait for a prompt from the host machine and answer it.
+
+Examples:
+
+CONVERSE "Enter your name:" "Name\n"   ;Waits for 'Enter your name:'
+CONVERSE "enter your password:" "\p\n" ;Sends phonebook password + CR
+CONVERSE "Command:" "G\n"              ;Sends 'G' and newline
+
+----------------------------------------------------------------------
+
+        DELAY
+The  script  program  will take a break.  The program will function as
+normal.
+
+Examples:
+
+DELAY 5                 ;Wait 5 seconds
+DELAY UNTIL 12:00       ;Wait until 12 o'clock.
+
+----------------------------------------------------------------------
+
+        DIAL
+Will  dial  one  or  more  phonenumbers.  Can also dial entries in the
+phonebook.   If  you  choose  to  dial  phonenumbers,  use the command
+'DIAL#'.   The  numbers must be placed within quotation marks.  If you
+choose to dial more than one number, the numbers can be separated by a
+comma.
+
+Examples:
+
+DIAL# "454143"
+DIAL# "380949", "416588", "454143"
+
+Named  entries  in  the  phonebook  can  be  dialled by specifying the
+boardname within quotation marks.  You only have to specify the number
+of  letters  required  to  separate  the  board  from the others.  The
+name is not case sensitive.
+
+Examples:
+
+DIAL "AmigaBBS"
+DIAL "rode", "Mike's", "media"
+DIAL "Rodeløkka (M)BBS"
+
+----------------------------------------------------------------------
+
+        DLWHEN
+Deletes  the last defined WHEN command.  Repeated usage will succesive
+delete the "previous" WHEN command.  See:  WHEN.
+
+----------------------------------------------------------------------
+
+	DORX
+This command executes an ARexx command/script.
+
+Example: DORX "ncomm:test_rx.ncomm"
+
+----------------------------------------------------------------------
+
+        DOWNLOAD
+Will download a file from the host machine.  The protocol specified in
+the  TRANSFER  menu will be used as long as nothing else is specified.
+If you want to specify another protocol, enter a comma and a letter.
+The filename is "dummy" when using Zmodem.
+
+X == Xmodem, Y == Ymodem, B == Ymodem-B, G == Ymodem-G, Z == Zmodem,
+K == Kermit, E == External XPR (as defined in config file),
+I == Bimodem, P == BModem Plus, J == Jmodem, Q == QuickB,
+V == VMS, U == Uue-Ascii
+
+Examples:
+
+DOWNLOAD "df1:junk"             ;Will use the default protocol
+DOWNLOAD "df0:trash",X          ;Will always use Xmodem
+
+----------------------------------------------------------------------
+
+        DTENTHS
+This  is  a much more precise delay command, but only use this command
+when  this  accuracy is needed, since it will lock up the system.  The
+DTENTHS parameter is the number of tenth seconds to wait.
+
+Examples:
+
+DTENTHS 2       ;Wait 0.2 seconds
+DTENTHS 16      ;Wait 1.6 seconds
+
+----------------------------------------------------------------------
+
+        DUMP
+Command  for debugging a script.  It dumps a list of all variables and
+what  they contain, on screen.  If you specify a filename, output will
+be appended to the file instead, and will not be shown on screen.
+
+Example: DUMP "t:debug_info"
+
+----------------------------------------------------------------------
+        DWHENS
+Deletes a specific WHEN command. It should be followed by the string
+that you used for activating the WHEN command.
+
+Example:
+	WHEN "abc" GOTO abc
+        WHEN "bcd" GOTO bcd
+        [...]
+        DWHEN "abc" ;remove "abc" when checking
+
+----------------------------------------------------------------------
+
+        DWHENS
+Will disable all previously used WHEN commands. See: WHEN.
+
+----------------------------------------------------------------------
+
+        ECHO
+This  command defines if characters read by the INPUT command shall be
+echoed.   ECHO ON should be used when input is read from a user in the
+other  end. ECHO OFF should be used when input is read from a Bulletin
+Board  System, or when the user is not supposed to see what he writes.
+
+ECHO  should  be  turned  ON  if the functions ASCSEND and MSGSEND are
+supposed  to  echo text locally.  The output from the CLI command will
+be sent to the serial port if ECHO has been turned on.
+
+----------------------------------------------------------------------
+
+        END
+Will  stop  the  execution  of the script.  This command is especially
+useful in front of subroutines.
+
+Example:
+
+WHEN "Read>" GOSUB next
+WAIT "No more unread."
+END
+
+Next: SEND "\n"
+      MESSAGE "(Skipping to next unread)\n"
+      RETURN
+
+----------------------------------------------------------------------
+
+        GOSUB
+Will  call  a  named subroutine.  Useful when you want to use the same
+command  many  times  within  a  script, or in connection with WHEN or
+TIMEOUT.   The  subroutine  is ended with 'RETURN', and the control is
+passed to the line following the GOSUB afterwards.
+
+Example:
+
+GOSUB myRoutine
+END
+
+MyRoutine: MESSAGE "Fooo\n"
+           BEEP
+           RETURN
+
+----------------------------------------------------------------------
+
+        GOTO
+Ever heard of this? Will jump to a named place in the script.
+
+Example:
+
+GOTO quit
+...
+quit: CAPTURE OFF
+      HANGUP
+      END
+
+Numeric example that counts from 1 to 100:
+
+SET $sum="0"
+
+SUM: SET $sum = $sum+"1"#
+     MESSAGE "Number: "$sum"\n"
+     IF !$sum == "100" THEN GOTO SUM
+
+NOTE:   Don't  use "LABEL:  GOTO LABEL" if you want an "endless" wait.
+This  will  steal  most  of  your machine's CPU.  Use the DELAY or WAIT
+commands instead.
+
+----------------------------------------------------------------------
+
+        HANGUP
+Will send the hangup string to the modem (or lower DTR if you have
+selected DTR hangup).
+
+----------------------------------------------------------------------
+
+        IF <expression> THEN <operation>
+
+It  should be obvious what this command does.  A valid expression can
+be either a comparison of two strings or a check for a file.  The
+exclamation mark ('!') works as a boolean 'NOT' operator.
+
+String comparisons are performed with the "==" operator, which tests for
+case independent equality, i.e.  "foo" == "FOO" is TRUE;
+!"bar" == "yum" is TRUE (because of the '!' (NOT) operator)
+
+EXISTS  checks  if a file exists.  The following are examples on valid
+IF commands:
+
+SELECTFALSE  opens  up  a "Yes / No" requester and is TRUE if the user
+selected "No".
+
+RING checks for a (hardware) RING signal.
+
+CARRIER checks for (hardware) CARRIER detect.
+
+        IF $password == "abcdef" THEN MESSAGE "Access granted\n"
+        IF !$password == "xyz" THEN GOTO KillUser
+        IF EXISTS "NComm:host.config" THEN CONFIG "NComm:host.config"
+        IF !EXISTS $file THEN SEND "File not found!\n"
+
+        IF !SELECTFALSE "Slow modem?" THEN SET $baud = "300"
+
+        Loop: DELAY 1
+              IF RING THEN GOSUB Send_ATA
+              IF CARRIER THEN GOTO Connect
+              GOTO Loop
+
+The whole command must be placed on a single line, including the 'THEN'
+part...
+
+SEE ALSO: SET
+
+----------------------------------------------------------------------
+
+        INPUT
+This  command  reads  input  from  the  serial port and places it in a
+variable  until  a  specific string has been received.  ^H (backspace)
+deletes  the  last  character,  ^U  deletes  the  whole  string.   The
+searchstring  will  not  be added to the variable.  Control characters
+will not be added.  Example:
+
+        SEND "Enter your first name: "
+        INPUT $name "\r" ;Input will be placed in the variable 'name'
+                         ;until carriage return is received.
+
+The  TIMEOUT  command  also  concerns  the INPUT command.  The timeout
+defines  how long INPUT shall wait for the terminating string ("\r" in
+the mentioned example).  Example:
+
+        TIMEOUT 180 Goto BiBi
+        SEND "Enter a command: "
+        INPUT $cmd "\r"
+        ...
+
+BiBi:   SEND "\n\nLooks like you fell asleep!!  Bye-bye!\n"
+        HANGUP
+        END
+
+It is also possible to read a single character without having to
+wait for ENTER or other strings:
+
+        INPUT $char ""
+
+INPUT  can  both  be  used for reading input from a user in connection
+with  "Host  Mode",  or  grabbing pieces of text from a Bulletin Board
+System;
+
+        WAIT "Bulletins have been updated: "
+        INPUT $bull " "
+
+----------------------------------------------------------------------
+
+        LOADKEYS
+Will read a new macrokeys file.
+
+Example:
+
+LOADKEYS "NComm:dec.Keys"
+
+----------------------------------------------------------------------
+
+        LOADPHONE
+Will read a new phonebook file.
+
+Example:
+
+LOADPHONE "NComm:dialdir.phone"
+
+----------------------------------------------------------------------
+
+	MENUSELECT
+This command selects a function from the menu.
+
+Example:
+	MENUSELECT SYSTEM 0     ;Open About Window
+        MENUSELECT TRANSFER 6 2 ;Selects KERMIT Change Directory
+
+----------------------------------------------------------------------
+
+        MESSAGE
+Will  write  a  message  on  the  screen.  Nothing is sent through the
+serial port.  You may use all the conventions that are valid for
+macrokeys. Please refer to the NComm.doc.
+
+Example:
+
+MESSAGE "\fReading mail...\n"
+MESSAGE "Storing mail in file \"DF1:Mail.txt\"\n"
+
+SET $var = 5
+MESSAGE "1"+$var-"2"#"\n"  ;The result will be 4 ((1+5)-2)
+
+----------------------------------------------------------------------
+
+        MSGSEND
+Same  as the "message send" function in the TRANSFER menu, will upload
+a message.
+
+Example:
+
+MSGSEND "DF1:tekst/msg"
+
+
+----------------------------------------------------------------------
+
+        NCOMMTOFRONT
+Brings the current NComm screen to front.
+
+Example:
+
+NCOMMTOFRONT
+
+----------------------------------------------------------------------
+
+        PADLINES
+Turns padding of blank lines ON or OFF.
+
+Example:
+
+PADLINES ON      ;Will turn on padding of blank lines
+PADLINES OFF     ;Will turn off padding of blank lines
+
+----------------------------------------------------------------------
+
+        PALETTE
+Will open the palette requester.
+
+----------------------------------------------------------------------
+
+        PRINTER
+Turns the printer ON or OFF.
+
+Example:
+
+PRINTER ON      ;Will turn on the printer
+PRINTER OFF     ;Will turn off the printer
+
+----------------------------------------------------------------------
+
+        QUIT
+Exits NComm.
+
+----------------------------------------------------------------------
+
+	READVAR
+This command reads a line from the file defined by VARFILE and places
+the input in the variable name that follows. Please refer to VARFILE.
+
+The variable will contain "EOF" after the read if the function hits an
+end of file mark...
+
+----------------------------------------------------------------------
+
+        REDIAL
+Turns redial ON or OFF.
+
+Example:
+
+REDIAL ON      ;Will turn redial on
+REDIAL OFF     ;Will turn redial off
+
+----------------------------------------------------------------------
+
+        REPEAT<->UNTIL <expression> ...
+This  command  performs what is situated between REPEAT and UNTIL.  If
+the  expression  is  FALSE/TRUE,  the procedure will be repeated.  See
+"IF...THEN" for a discussion of valid expressions. The command has the
+same restrictions as WHILE/ENDWHILE.
+
+Example:
+
+REPEAT
+        SEND "Enter command: "
+        INPUT $cmd "\r"
+        GOSUB DoCommand
+UNTIL $cmd == "quit"
+
+Numeric example that counts from 1 to 100:
+
+REPEAT
+    SET $sum = $sum+"1"#
+    MESSAGE "Number: "$sum"\n"
+UNTIL $sum == "100"
+
+----------------------------------------------------------------------
+
+        REQUEST
+This  function  is  used  when  the  scriptfile  is  run without human
+presence.   It  will  then  be  unpreferable  that  AmigaDOS puts up a
+requester  if  problems  occur (disk full, read / write error etc.) By
+turning request OFF, this is disabled.  Note: NComm will automatically
+overwrite existing files if request has been turned off
+
+Example:
+
+REQUEST OFF     ;Turns requesters off
+REQUEST ON      ;Will turn the requesters back on again
+
+----------------------------------------------------------------------
+
+        RESUME
+Turns Zmodem resume ON or OFF.
+
+Example:
+
+RESUME ON      ;Turns Zmodem resume on
+RESUME OFF     ;Turns Zmodem resume off
+
+----------------------------------------------------------------------
+
+        RETURN
+Returns from a subroutine. See GOSUB.
+
+----------------------------------------------------------------------
+
+        SEND
+Sends a string to the host machine. You may use all the conventions
+that are valid for macrokeys. Please refer to the NComm.doc
+
+Examples:
+
+SEND "\n"       ;Linefeed
+SEND "Read\n"   ;'Read' plus a CR
+SEND "\m1^z"    ;Macro #1 plus a 'Control-Z'
+SEND "\p\n"     ;The password stored in the phonebook plus a CR
+
+----------------------------------------------------------------------
+
+        SET
+This  command  is  used  for assigning values to variables.  Variables
+have  name  in  the form $name where 'name' starts with a letter.  The
+value  must be of type string, either a literal (with quotation marks)
+or  another  variable.  A number is assigned to a variable by entering
+the number as a string.
+
+Examples:
+
+        SET $name = "Daniel"
+        SEND $name
+
+        SET $filename = "RAM:foo"
+        CAPTURE $filename
+
+        SET $UserName = $name
+
+        SET $Number1 = "13"
+        SET $Number2 = "5"
+        SET $Sum = $Number1+$Number2# ; Set Sum = Number1 + Number2 (18)
+        SET $Sum = $Sum+"1"#          ; Set Sum = Sum + 1
+        MESSAGE $Sum"\n"	      ; Output the result (19)
+
+The last example needs a bit of explanation. NComm threats string and
+numeric variables exactly the same way. The only difference is when
+you want to do some sort of calculation.
+
+To specify that this line should perform a calculation, place a '#'
+character after the arithmetic expression. You may add strings or
+string variables after the arithmetic expression if necessary:
+
+    MESSAGE "1"+"1"#"\n" ; Outputs '2' plus a linefeed.
+
+Numbers always have priority from left to right. The following
+result will therefore be (1+5)*2 == 12, not 1+(5*2) == 11:
+
+   SET $var = "1"+"5"*"2"#
+   MESSAGE $var"\n"
+
+Negative variables are also accepted:
+
+   SET $sum ="-1"+"-3"#"\n" ; The result is -4
+
+The following arithmetic types are supported:
+
+   '+': Addition              '/': Division
+   '-': Subtraction           '%': Modulo
+   '*': Multiplication        '^': Power
+
+Variables  can  be  used everywhere where strings are expected.  There
+are a few pre-defined variables available:
+
+   $date contains the current date and time (READ ONLY).
+   $ncomm contains the current version number (READ ONLY).
+   $baud contains the current baud rate (Read/Write).
+   $length contains the current data length (Read/Write).
+   $parity contains the current parity (Read/Write).
+   $stopbits contains the current number of stopbits (Read/Write)
+   $charset contains the current character set (Read/Write).
+   $filereq opens up a filereq and returns the filename (READ ONLY).
+   $stringreq opens up a textreq and returns the string (READ ONLY).
+   $rand gives you a random number between 0 and 65535 (READ ONLY).
+   $boardname contains the current board name (READ ONLY).
+   $boardnum contains the current board phone number (READ ONLY).
+   $logtime contains the current logon time (READ ONLY).
+   $dldir contains the current download dir (READ ONLY).
+   $uldir contains the current upload dir (READ ONLY).
+
+Example that generates a random number between 0 and 15:
+
+    set $range = "15"	;Generate a random number between 0 and 15
+                        ;Actual result will be placed in the $newrand variable
+    main:
+	gosub rand
+	message "Your lucky number is: "$newrand"\n"
+	end
+
+    rand:		;To generate a new random number, gosub to this routine
+	set $newrange = $range+"1"#
+        set $newrand = $rand*$newrange/"65536"#
+        return
+
+It is also possible to concatenate several variables and/or literals;
+
+        SEND $name"\n"
+        SET $directory = "NComm:files/"
+        INPUT $filename "\r"
+        UPLOAD $directory$filename
+
+        SET $baud = "300" ;sets baud-rate to 300 baud
+        SEND $date"\n"    ;print current date and time
+
+        SET $length = "7" ;7 data bits
+        SET $parity = "E" ;even parity
+        SET $charset = "IBN" ;set IBN character set
+
+        SET $var1 = "10"
+        SET $var2 = "10"
+        SET $var3 = $var1+$var2/"4"# ; Set $Var3 = ((10 + 10) / 4) == 5
+        MESSAGE $var3+"5"#"\n"       ; Display with linefeed: $Var3 + 5 == 10
+
+It is not valid referring to variables having no value assigned.
+
+NOTE: You may use the pre-defined variable $FILEREQ for obtaining
+a filename.
+
+Example:
+      SET $filename = $FILEREQ ;open filereq, put name in $filename
+      IF $filename != "" CONFIG $filename ;use the filename
+
+Use the pre-defined variable $STRINGREQ if you want the user to
+type in a string.
+
+Example:
+      SET $baud = $STRINGREQ ;set baud-rate to number entered by user
+
+----------------------------------------------------------------------
+
+	SIMPLEREQ
+Use this command if you want to display text in a seperate requester.
+
+Example: SIMPLEREQ "You selected: "$filename"\n"
+
+----------------------------------------------------------------------
+
+	STRLEN
+This function returns the length of a string.
+
+Example: SET $foobar = "foobar"
+         STRLEN $len $foobar
+         MESSAGE $len"\n"
+
+This example will output 6. You may also specify the text directly
+like this: STRLEN $len "foobar"
+
+----------------------------------------------------------------------
+
+	STRPART
+This function copies parts of a string, starting at a specific position,
+into another string.
+
+Example:
+         SET $varin = "foobar"
+         STRPART $varout 3 2 $varin
+         MESSAGE $varout"\n"
+
+This example will output the string "ba" (startpos 3, length 2).
+
+----------------------------------------------------------------------
+
+        TIMEOUT
+This  command lets you configure how long NComm should wait in a WAIT,
+CONVERSE  or INPUT command.  Default timeout is 'forever', but this is
+not  preferable if the script is running without human assistance.  If
+the  host machine does not answer, it is reasonable to believe that it
+has  hung,  and a scriptfile should then automatically disconnect from
+the system.  The TIMEOUT command can be used in many ways.
+
+Examples:
+
+TIMEOUT 10
+Means  that  NComm shall wait a maximum of 10 seconds.  If no text has
+been  received  within  the  timelimit, NComm will go on with the next
+command.
+
+TIMEOUT 10 SEND "\n"
+Specifies  that NComm is to wait a maximum of 10 seconds for each WAIT
+or  CONVERSE  command.   If  the  specified text has not been received
+within  10 seconds, NComm will send a linefeed to the host machine and
+will  continue  waiting  for  the  text.   NComm will continue sending
+linefeeds every 10th second until the host machine has answered.
+
+TIMEOUT 0
+NComm is to go back to the default mode, i.e. wait forever.
+
+Example of typical usage:
+
+TIMEOUT 30 GOTO quit
+CONVERSE "Enter your name:" "Daniel Bloch\n"
+CONVERSE "Enter your password:" "gruff\n"
+CONVERSE "Command:" "GRAB\n"
+...
+...
+END
+
+quit: MESSAGE "\n\nThe board has hung, call the SysOp!!!\n"
+      BEEP
+      HANGUP ;Hang up so that we won't get a shock when
+      END    ;the next phonebill arrives!
+
+----------------------------------------------------------------------
+
+        UPLOAD
+Uploads  a  file to the host machine.  See the 'DOWNLOAD' function for
+the correct syntax.
+
+----------------------------------------------------------------------
+
+	VARFILE
+This command opens a file for input. The file may later on be used
+for reading text into variables via the command READVAR.
+
+Example:
+	VARFILE "ncomm:host/users/"$user ;open input file for reading
+        READVAR $passwd ;place first line of file in variable $passwd
+        READVAR $laston ;place second line of file in variable $laston
+        VARFILE CLOSE ;closes the input file
+
+        MESSAGE "Hello "$user"! You were last on at "$laston"\n"
+
+----------------------------------------------------------------------
+
+        WAIT
+Waits  for  a  special  text to be received.  Will wait forever if the
+TIMEOUT command has not been used.
+
+Examples:
+
+WAIT ""         ;Wait for 'anything'
+WAIT "\n"       ;Wait for a linefeed
+WAIT "Command:" ;Wait for 'Command:'
+
+----------------------------------------------------------------------
+
+        WHILE <expression> DO ... ENDWHILE
+This  function  performs what is situated within DO and ENDWHILE until
+the expression is TRUE/FALSE.
+
+Example:
+
+SET $cmd = ""
+WHILE !$cmd == "quit" DO
+        SEND "Enter command: "
+        INPUT $cmd "\r"
+        GOSUB DoCommand
+ENDWHILE
+
+Numeric example that counts from 1 to 100:
+
+SET $sum="0"
+
+WHILE !$sum == "100" DO
+    SET $sum = $sum+"1"#
+    MESSAGE "Number: "$sum"\n"
+ENDWHILE
+
+It  is  not  valid  jumping out of a WHILE/ENDWHILE loop using GOTO or
+RETURN.   It  is  still  possible  to exit the loop using GOTO and the
+command   CLRSTACK.
+
+----------------------------------------------------------------------
+
+        WHEN
+Defines what to do when a special text is received. The command is
+case sensitive.
+
+Typical example:
+
+WHEN "--more--" SEND " "
+
+This  command  will  make  NComm  send  a  'blank'  line every time it
+receives the 'more' prompt from the host machine.  This is independent
+of  where  in the script  you reside.  It is possible to specify up to
+twenty such textstrings.
+
+Example:
+
+WHEN "--more--" SEND " "
+WHEN "NO CARRIER" END
+WHEN "Sysop is coming online!" GOSUB ShutUp
+WHEN "No more unread" GOTO Quit
+
+Loop: CONVERSE "Command:" "\n"
+      GOTO loop
+
+Quit: SEND "G;Y\n"
+      END
+
+ShutUp: SEND "I'm not at home! You are chatting with a scriptfile!\n"
+        SEND "Send BIBI at the speed of light!!!\n\n"
+        RETURN
+
+----------------------------------------------------------------------
+
+        WRITE
+This command writes a textstring to a file. If the file exists, the
+string will be appended to the file. Example:
+
+        WRITE "NComm:host/log" "Logged in: "$username"\n"
+              |                |
+              Name of file     String
+
+----------------------------------------------------------------------

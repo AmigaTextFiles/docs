@@ -1,0 +1,43 @@
+/******************************************************************
+*                                                                 *
+*  Macro to change all occurrences of '  ' to ' '                 *
+*                                                                 *
+*    Also illustrates a way to visit every statement in the       *
+*    hierachy of statements.  REPBLK might be some other          *
+*    suitable processing of each statement                        *
+*                                                                 *
+******************************************************************/
+trace off
+options results
+
+get origin                                  /* start here */
+repblk(result)                              /* strip out blanks */
+ do forever                     /* end condition detected within */
+	position save 1             /* save good position */
+	get down                    /* get subordinate statement */
+	if rc ~= 0 then do          /*  opps no more down (at bottom) */
+		postion restore 1       /* restore last good postion */
+		get succeeding          /* get successor from there */
+		if rc ~= 0 then do      /*  opps no more, must go UP */
+			do forever              /* start walking up */
+				position restore 1  /* restore last good postion */
+				get up              /* get UP from there */
+				if rc ~= 0 then exit 0  /* NO UP. Then at very end */
+				position save 1     /* yes, save this as good postion */
+				get succeeding      /* get successor from UP */
+				if rc=0 then leave  /* if good then continue, else */
+									/* continue UP till find one */
+			end
+		end
+	 end
+	 repblk(result)                 /* have a statement */
+ end
+end
+/********************************************************************
+  procedure to strip redundant blanks from a statement and update
+********************************************************************/
+repblk: procedure
+	parse arg str
+	update current space(str,1)
+	return 0
+end

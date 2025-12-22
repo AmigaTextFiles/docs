@@ -1,0 +1,250 @@
+@node Pipe
+@section The PIPE: queue-handler
+@cindex PIPE:
+@cindex Queue-handler
+In the AmigaOS release 2.04, a new handler for passing data between
+programs was introduced. This handler is called @file{L:Queue-Handler},
+better known as the @file{PIPE:} device.
+
+@file{PIPE:} implements a true @code{pipe} familiar from UNIX systems.
+Its function is to pass the output of one program to another program as
+input. You can chain several programs together using multiple pipes.
+
+The advantages of using pipes are:
+@enumerate
+@item No need for a lot of RAM to keep the temporary files, or, no need
+to slow things down by storing temporary files on the HD.
+@item Faster operation since the intermediate data doesn't need to be
+stored anywhere between programs.
+@end enumerate
+
+The @file{PIPE:} device differs from the UNIX pipes in two important
+respects:
+@enumerate
+@item It is a device, so the input and output of the programs doesn't
+need to be a redirected standard output, although that is the
+general case. You can also use @file{PIPE:} instead of files, with two
+restrictions; you can not read a directory from @file{PIPE:}, and the
+@file{PIPE:} `file' can not be `seeked' in.
+@item It does not support a flush operation. If all of the data written
+in a @file{PIPE:} device is not read out, it will stay there,
+buffered. Thus you must always `empty' a pipe before closing it.
+@item Because of the above, if unread data exceeds the size of the
+@file{PIPE:} internal buffer, the program writing to the pipe will
+`block' (that is, suspend operation) until the data is read. See
+below on how to manually flush a pipe.
+@end enumerate
+
+The PIPE: handler name syntax is @file{PIPE:name/bufsize/bufnum}, where
+@file{name} is the name for the pipe channel. Using names you can have
+several simultaneous pipe operations. The optional arguments
+@code{bufsize}and @code{bufnum} specify the size and number of the
+buffers used by @file{PIPE:}. Normally, you would just use
+@file{PIPE:name}.
+
+The default buffer size of @file{PIPE:} is 4096 bytes, and the number of
+buffers (ie. channels) is unlimited.
+
+@menu
+* Shellpipe:: Using PIPE: in a standard AmigaShell environment
+* Pipe command:: The Pipe command
+* Pipe support:: Pipe command support in AmigaShell
+* Quick usage:: Quick usage guide
+* _mchar:: Related things
+* Troubleshooting:: Troubleshooting
+@end menu
+
+Osma Ahvenlampi (Osma.Ahvenlampi@@hut.fi)
+
+@node Shellpipe
+@subsection Using PIPE: in a standard AmigaShell environment
+First, make sure @file{PIPE:} is mounted. You can do this by giving the
+command
+@example
+    1> Mount PIPE:
+@end example
+@noindent
+in a Shell window. On an AmigaOS 2.1+ system, @file{PIPE:} is normally
+mounted on startup by placing the mount entry file @file{PIPE} in the
+drawer @file{DEVS:DosDrivers}.
+
+In an AmigaShell window, give the commands:
+@example
+    1> Run List SYS: >PIPE:Listoutput
+    1> More <PIPE:Listoutput
+@end example
+@noindent
+@footnote{Note that @samp{1>} is the prompt AmigaShell gives when it
+is waiting for a command. The number varies, and the prompt can be
+customised to look completely different. It is not a part of the command.}
+
+These two commands list the contents of the @file{SYS:} volume to a pipe
+and then type it in the Shell window. You could also use:
+@example
+    1> Run List SYS: NOHEAD >PIPE:Listoutput
+    1> Run Sort PIPE:Listoutput PIPE:Sortedoutput
+    1> More <PIPE:Sortedoutput
+@end example
+@noindent
+Notice that you need to `Run' all the programs except for the last
+one. This is so that you can get them all running simultaneously. You
+could also use several Shell windows, or any other way of running all
+the programs at the same time. Also this might not work if @file{More}
+isn't the standard Commodore AmigaOS 2.04+ More found in
+@file{SYS:Utilities}.
+
+In case you need to manually flush a pipe, for example because the
+program that was reading from it aborts prematurely, it can be done
+with the command:
+@example
+    1> Type PIPE:name TO NIL:
+@end example
+
+
+@node Pipe command
+@subsection The Pipe command
+@cindex Pipe (command)
+@cindex _pchar
+As you can see, this is a somewhat difficult way of using pipes,
+needing a lot of typing especially compared to the UNIX pipes. There
+is a solution for that.
+
+Andy Finkel, a former Commodore software engineer wrote a command
+called @code{Pipe} (not to be confused with @file{PIPE:}) that
+simplifies the use of the @file{PIPE:} device. Unfortunately, this
+command did not make it into the 2.04 release. However, Commodore
+has given the permission to distribute this, and a few other
+commands, freely. (Sources: Fish disk 673, Aminet,
+@file{util/cli/finkelshelltools.lha})
+
+For some reason Commodore did not include these commands in the later
+OS releases, although they work fine even with OS 3.1 (V40). Thus all
+users are required to get them from the above sources if they wish to
+use them.
+
+The Pipe command usage is simple. The commands to be run with their
+inputs and outputs piped together are given as arguments to the
+command, separated by the @key{|} (vertical bar) character:
+
+@example
+    1> Pipe List SYS: | More
+        or
+    1> Pipe List: SYS: NOHEAD | Sort IN: OUT: | More
+@end example
+@noindent
+Notice how Sort needs @file{IN:} and @file{OUT:}. These devices
+don't actually exist, but the Pipe command simulates them with
+the PIPE:. This is necessary because C:Sort can not use the
+`standard IO', but insists on files.
+
+The separator character @key{|} can be configured to be something else
+with the local variable @var{__pchar}.
+
+
+@node Pipe support
+@subsection Pipe command support in AmigaShell
+There is a little known and quite useful undocumented feature built in
+the 2.04+ AmigaShell, that is, AmigaShell knows about the @code{Pipe}
+command. By setting the local variable @var{_pchar}, you can use pipes
+without even entering the Pipe command. AmigaShell will prepend it on
+the command line automatically if it sees the pipe separator command
+specified by _pchar on the command line.
+
+Thus, after the command:
+@example
+    1> Set _pchar "|"
+@end example
+@noindent
+@footnote{The quotes around the vertical bar are important,
+to avoid AmigaShell interpreting the command as an attempt to use PIPE:,
+if @var{_pchar} is already set (for example if the Shell is started from
+within another one).}
+
+the above examples can be used like this:
+@example
+    1> List SYS: | More
+        or
+    1> List SYS: NOHEAD | Sort IN: OUT: | More
+@end example
+
+Those familiar with the UNIX pipes will notice how the usage is very
+similar to the UNIX pipe usage.
+
+@node Quick usage
+@subsection Quick usage guide
+@enumerate
+@item Get the ShellTools archive from the Fish disk 673, or from Aminet,
+@file{util/cli/hacks204.lha}.
+@item Install the commands in this archive in your Shell search path,
+preferably C:.
+@item Put the command @samp{Set _pchar |} in your @file{S:Shell-Startup}
+file.
+@item Restart your AmigaShell so that it reads the
+@file{S:Shell-Startup}.
+@item Try @samp{List SYS: | More}
+@item Read the ShellTools documentation and experiment.
+@end enumerate
+
+
+@node _mchar
+@subsection Related things
+@cindex _mchar
+The variable _mchar is used to separate one command from another in a shell line.
+So, after the command:
+@example
+    1> Set _mchar ";"
+@end example
+you can put more shell commands into the same line,
+separated from each other by @code{;}.
+
+
+@node Troubleshooting
+@subsection Troubleshooting
+@table @strong
+@item Q:
+When I try the command @samp{List SYS: | More} I get an error
+@example
+    PIPE: Unknown command
+@end example
+@noindent
+I have @file{PIPE:} mounted, what's wrong?
+@item A:
+AmigaShell is referring to the command @code{Pipe} in the error, not the
+@file{PIPE:} device. You haven't installed the commands in the ShellTools
+archive.
+
+@item Q:
+I get a requester that says
+@example
+    Please insert volume PIPE: in any drive
+@end example
+@noindent
+when I try any of the command examples.
+@item A:
+@file{PIPE:} is not mounted. Try @samp{Mount PIPE:}. If that doesn't work,
+refer to your AmigaDOS manual or a friend that knows how to mount
+devices.
+
+@item Q:
+When I try any of the examples the More window pops up but nothing
+is shown/I get an error afterwards/More pops up a file requester.
+@item A:
+You are not using the standard AmigaOS @code{More} command. Either use
+another name or install a command that supports pipes.
+Possibilities are the C= More, Less, or Most for example.
+
+@item Q:
+With use of PIPE:, sometimes characters get lost. What happened?
+@item A:
+Up to OS 3.1, the queue-handler has some bugs which don't allow
+a really foolproof transmission of data.
+A compatible replacement for the queue-handler can be founbd on
+Aminet, @file{util/sys/HWGQueue.lha}.
+
+@item Q:
+None of these happen but it still doesn't work as you described.
+@item A:
+Are you using OS 2.04 later? Are you using the standard AmigaShell?
+Try with all extras disabled.
+@end table
+

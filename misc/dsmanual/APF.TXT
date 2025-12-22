@@ -1,0 +1,663 @@
+                    APPENDIX F.  MODEM TESTING
+
+      
+
+      Testing is available with the &T command
+      or Register S16.  All loopback testing
+      conforms to CCITT Recommendation V.54.
+      Earlier USRobotics high speed modems,
+      however, did not perform the &T test
+      repertoire.
+
+      NOTE:  Only one test can be performed at
+      a given time.  If you send a test
+      command while the modem is in test mode,
+      you'll receive an ERROR message.
+
+
+TESTING WITH &T
+
+      The tests supported through the &T
+      command include analog loopback, digital
+      loopback and remote digital loopback.
+      Users can key in their own data during
+      testing, or use the modem's internal
+      test pattern and error detector.
+
+      In all cases, disable error control
+      before testing.  If the modem is
+      detecting errors and retransmitting the
+      affected data, your results will be
+      invalid.
+
+      During testing, the MR status light
+      flashes.
+
+
+Ending a TestÍ&T0, S18
+
+      Issuing the &T0 command terminates a
+      test.  Alternatively, set Register S18
+      to a specified number of seconds, for
+      example, S18=10.  When the 10 seconds
+      are up, the modem automatically ends the
+      test and returns to Command mode.  If
+      the test was Analog Loopback, the &T0
+      command hangs the modem up.  If the test
+      was Digital or Remote Digital Loopback,
+      issue an ATH command to hang up the
+      modem, or an ATZ command to hang up the
+      modem and reset it to its defaults.
+
+      NOTE:  If you use the S18 test timer,
+      but in the process of testing you issue
+      an ATZ command, S18 resets to zero and
+      the timer is disabled.  You cannot store
+      a value for S18 in nonvolatile memory:
+      its power-on and reset default is always
+      zero.
+ANALOG LOOPBACKÍ&T1, &T8
+
+      This test checks the operation of the
+      modem's transmitter and receiver.  Data
+      flow is shown in Figure F-1.
+
+
+
+
+
+
+
+
+
+
+   Figure F-1.  Data Flow During Analog Loopback
+
+
+      There are two analog loopback options.
+      The first, &T1, involves your typing
+      data that you can verify at your screen.
+
+      The second option, &T8, is an internal
+      self-test that does not involve the
+      keyboard or screen.  It isolates the
+      modem from the computer interface to
+      give you a more specific result.
+
+      NOTE:  HST or Dual Standard modems must
+      be tested at 2400 bps or lower to avoid
+      asymmetrical modulation at higher
+      speeds.
+
+   &T1
+
+      1. If you are testing an HST or Dual
+         Standard modem, set your terminal or
+         software to 2400 bps.
+
+      2. The modem must be in Command mode.
+         If you wish, set Register S18 as a
+         test timer, as explained earlier.
+      3. Send the modem the following command.
+
+             AT &M0 &T1 <Enter>
+
+         The modem disables error control,
+         enters analog loopback (AL) mode, and
+         sends a CONNECT message.  The MR
+         status light flashes.
+
+      4. Type recognizable data so that you
+         can verify it when it is looped back
+         to the screen.
+
+      5. End the test.  If you set S18, the
+         modem automatically stops the test at
+         the timeout, exits AL mode and
+         responds OK.
+         If you didn't set Register S18, wait
+         one second and type +++ to bring the
+         modem back to Command mode.  If DIP
+         switch 9 is UP, the modem also hangs
+         up and ends the test.
+
+         If DIP switch 9 is DOWN, type AT&T0
+         to end the test.  Or send either ATH
+         or the command that resets the modem,
+         ATZ.  The latter two commands end the
+         test and hang up the modem.  The
+         modem responds OK.  If the modem
+         sends an ERROR message, you have
+         issued an invalid command.
+
+      6. If there were no errors, reset the
+         modem to &M4, for error control,
+         unless you've issued the ATZ reset
+         command.
+
+         NOTE:  If the modem is in online-
+         command mode, that is, still
+         connected to a remote modem, and you
+         send it an &T1 or &T8 command, it
+         drops the call, enters AL mode, sends
+         a CONNECT result and waits for
+         loopback characters.
+
+   &T8
+
+      This AL option causes the modem to send
+      an internal test pattern to its
+      transmitter and loop it back to the
+      receiver.  An internal error detector
+      counts any errors and, when the test is
+      ended, sends the number of errors or 000
+      (no errors) to the screen.
+
+      Since you don't type anything during
+      this test, and the modem does not send
+      anything to the screen, this option
+      verifies only the modem.  If there are
+      no errors but your problem continues, it
+      may be at the computer interface.
+
+      1. If you are testing an HST or Dual
+         Standard modem, set your terminal or
+         software to 2400 bps.
+
+      2. The modem must be in Command mode.
+         If you wish, set Register S18 as a
+         test timer, as explained earlier.
+
+      3. Send the modem the following command:
+
+             AT &M0 &T8 <Enter>
+
+         The modem disables error control and
+         enters AL mode.  The MR status light
+         flashes.  The modem sends its
+         internal test pattern to the trans-
+         mitter, and loops the pattern back to
+         the receiver.  You will not see any
+         data on your screen.
+
+      4. End the test.  If you set S18, the
+         modem automatically stops the test at
+         the timeout.  If you didn't set
+         Register S18, type AT&T0 to end the
+         test.  Or use ATH or the command that
+         resets the modem, ATZ.  Both of the
+         latter end the test and hang up the
+         modem.
+
+         The modem hangs up and returns a
+         three-digit code, followed by OK.  A
+         code of 000 indicates no errors were
+         found.  A code of 255 indicates 255
+         or more errors.  An ERROR message
+         indicates that you issued an invalid
+         command.
+
+      5. If there were no errors, reset the
+         modem to &M4 for error control unless
+         you issued the ATZ command.
+
+&T2
+
+      This option is reserved.
+
+
+DIGITAL LOOPBACKÍ&T3
+
+      If your modem has passed the AL test,
+      this test can help you locate a problem
+      with a remote modem or the telephone
+      channel.  Figure F-2 shows the data flow
+      during DL testing.
+
+      
+
+      
+
+      
+
+      
+
+      
+
+Figure F-2.  Data Flow During Digital Loopback
+
+
+      NOTE:  This test requires the modem to
+      establish a connection and return to
+      online-command mode in response to the
+      +++ escape code.  DIP switch 9 must be
+      set DOWN so that the modem does not hang
+      up on receipt of the escape code.  After
+      you change the switch, issue ATZ to the
+      modem to initiate the new setting.
+
+      As with AL testing, HST and Dual
+      Standard modems should be tested at 2400
+      bps or lower.
+
+      1. Set the modem to &M0, to disable
+         error control.   HST and Dual
+         Standard modems should be set to 2400
+         bps or lower to avoid asymmetrical
+         modulation at higher speeds.
+         Establish a connection with the
+         remote modem.
+
+      2. Bring the modem back to Command mode
+         with the +++ escape code.  Then send
+         it the AT&T3 command.  The modem
+         enters DL mode and the MR status
+         light flashes.
+
+      3. The remote user should type a short
+         message.  It will be looped back by
+         your modem's transmitter for
+         verification on the remote screen.
+         You will not see the message or any
+         other data.
+
+      4. When the remote user has completed
+         the test,  issue the AT&T0 command to
+         end the test.  Or send either ATH or
+         the command that resets the modem,
+         ATZ.  The latter two commands end the
+         test and hang up the modem.  The
+         modem responds OK.  If the modem
+         sends an ERROR message, you have
+         issued an invalid command.
+
+      5. Reset DIP switch 9 UP if you normally
+         use the factory default.  Reset the
+         modem to &M4 unless you used the
+         reset command, ATZ.
+
+
+&T4, &T5
+
+      The &T4 option causes the modem to grant
+      a remote modem's request for a Remote
+      Digital Loopback test.
+
+      The &T5 option cancels &T4, and the
+      modem fails to recognize such a request.
+      This is the default so that your modem
+      isn't subject to another user calling
+      and tying up your modem without your
+      permission.
+
+
+REMOTE DIGITAL LOOPBACKÍ&T6, &T7
+
+      This test, like the local digital
+      loopback test, verifies the condition of
+      both modems and the phone link.  Data
+      flow is shown in Figure F-3.
+
+      
+
+      
+
+      
+
+      
+
+      
+
+ Figure F-3.  Data Flow During Remote Digital
+                   Loopback
+
+
+      The request for and granting of Remote
+      Digital Loopback testing requires that
+      both modems use CCITT V.22 standard
+      signaling.  The test must be performed
+      at 2400 bps or lower.  If the remote
+      modem does not have the capability or is
+      not set to respond, you will get an
+      ERROR result code.
+
+      As with Analog Loopback, there are two
+      Remote Digital Loopback options.  If you
+      select &T6, you send keyboard data to
+      the modem and verify it when it is
+      returned over the phone lines and to
+      your screen.  If you select &T7, the
+      modem sends its internal test pattern
+      and returns an error count to your
+      screen.
+
+      NOTE:  Both test options require the
+      modem to establish a connection and
+      return to online-command mode in
+      response to the +++ escape code.  DIP
+      switch 9 must be set DOWN so that the
+      modem does not hang up on receipt of the
+      escape code.  If necessary, set the
+      switch DOWN and then issue the ATZ
+      command to the modem to initiate the new
+      switch setting.
+
+   &T6
+
+      1. Set the software to 2400 bps or
+         lower.  Set the modem to &M0.  If you
+         wish, set the S18 timer.
+
+         Establish a connection with the
+         remote modem.  If you haven't already
+         done so, arrange with the remote user
+         to cooperate with your testing and,
+         if necessary, set the remote modem to
+         acknowledge the RDL request.  For
+         example, older USRobotics high speed
+         modems need to be set to S16=8.
+
+      2. Bring the Modem back to Command mode
+         with the +++ escape code.  Send it
+         the AT&T6 command.  The modem enters
+         RDL mode and the MR status light
+         flashes.
+
+      3. Type a short message.  It will be
+         looped back to your modem by the
+         remote modem and to your screen for
+         verification.  (The remote user will
+         not see your data.)
+
+      4. End the test.  If you set Register
+         S18 the modem automatically ends the
+         test when the test timeout is
+         reached.  If you didn't set S18, type
+         AT&T0 to end the test.  Or send
+         either ATH or the command that resets
+         the modem, ATZ.  The latter two
+         commands end the test and hang up the
+         modem.  The modem responds OK.  If
+         you issue an invalid command, the
+         modem sends an ERROR message.
+
+         Data errors indicate a problem with
+         the remote modem or the phone link.
+         If you have not performed analog
+         loopback testing with your modem, the
+         problem may also lie with your modem.
+
+      5. Reset DIP switch 9 UP unless you
+         normally set that switch DOWN, and
+         issue ATZ to the modem to initiate
+         the new setting.  Reset the modem to
+         &M4 unless you used the reset
+         command, ATZ.
+
+   &T7
+
+      This test option causes the modem to
+      send an internal test pattern through
+      the Remote Digital Loopback.  An
+      internal error detector counts any
+      errors and, when the test is ended,
+      sends the number of errors or 000 (no
+      errors) to the screen.
+
+      You don't need to type anything during
+      this test.  The modem sends only its
+      final error count to your screen.
+
+      1. Set the software to 2400 bps or
+         lower.  Set the modem to &M0.  If you
+         wish, set the S18 timer.
+
+         Establish a connection with the
+         remote modem.  If you haven't already
+         done so, arrange with the remote user
+         to cooperate with your testing and,
+         if necessary, set the remote modem to
+         acknowledge the RDL request.  For
+         example, older USRobotics high speed
+         modems need to be set to S16=8.
+
+      2. Bring the modem back to Command mode
+         with the +++ escape code.  Then send
+         it the AT&T7 command.  The modem
+         enters RDL mode and the MR status
+         light flashes.
+
+         The modem sends its internal test
+         pattern to the remote modem, which
+         loops it back to your modem.  You
+         will not see the data on your screen.
+
+      3. End the test.  If you set S18, the
+         modem automatically stops the test
+         when the timer times out.  If you
+         didn't set Register S18, type AT&T0
+         to end the test.  Or send either ATH
+         or the command that resets the modem,
+         ATZ.  The latter two commands end the
+         test and hang up the modem.  The
+         modem responds OK.  If you issue an
+         invalid command, the modem sends an
+         ERROR message.
+
+         When you terminate the test, the
+         modem returns a three-digit code,
+         followed by OK.  A code of 000
+         indicates no errors were found.  A
+         code of 255 indicates 255 or more
+         errors.
+
+         If you've performed an Analog
+         Loopback and know your modem is
+         working properly, errors indicate a
+         problem with either the phone
+         connection or the remote modem.
+      4. Reset DIP switch 9 UP unless you
+         normally operate with it DOWN.  Issue
+         an ATZ command to initiate the new
+         switch setting.  Reset the modem to
+         &M4 unless you've sent it the ATZ
+         reset command.
+
+
+TESTING WITH REGISTER S16
+
+      Register S16 is a bit mapped register
+      with the following bit functions:
+
+      Bit Value Function
+       0   1    Analog Loopback (AL)
+       1   2    Dial Test
+       2   4    Test Pattern
+       3   8    Remote Digital Loopback (RDL)
+      
+      NOTE:  Earlier USRobotics modems require
+      bit 3 to be enabled in order to grant
+      RDL to a remote modem.  The modem now
+      requires its default &T4 setting
+      instead.  To perform RDL with a
+      USRobotics modem that does not use the
+      &T test repertoire, that modem should be
+      set to S16=8 before it can grant RDL
+      testing.
+
+
+ANALOG LOOPBACK (AL)ÍS16=1D
+
+      As with the &T AL test, do not attempt
+      this test under error control.  HST and
+      Dual Standard modems should be tested at
+      2400 bps or lower, to avoid asymmetrical
+      modulation at higher speeds.
+
+      To use the modem's Test Pattern (S16,
+      bit 2) instead of typing your own data,
+      see Test PatternÍS16=4 later in this
+      appendix.
+      1. To initiate testing, type
+         AT&M0S16=1D.  The modem disables
+         error control, enters AL mode and
+         sends a CONNECT result code.  The MR
+         status light flashes.
+
+      2. Type data to the modem for the modem
+         to transmit, loop to its receiver,
+         and output to the screen.  An
+         alternative is to use the Test
+         Pattern, described later.
+
+      3. End the test by not typing anything
+         for one second, then typing three
+         pluses (+++), and waiting another
+         second.  This forces the modem back
+         to command mode.  If DIP switch 9 is
+         UP, the modem exits AL mode and
+         returns to Command mode.  If DIP
+         switch 9 is DOWN, the modem maintains
+         the connection when it receives the
+         +++ escape code.  Issue the ATH
+         command to end AL mode.
+
+      4. Reset the modem to Data mode, S16=0,
+         and error control (&M4), or issue the
+         ATZ (reset) command.
+
+
+DIAL TESTÍS16=2
+
+      The Dial Test is used for factory
+      testing the frequencies of Touch-Tone
+      values.  When S-Register 16 is set to 2
+      and a single Touch-Tone is dialed (e.g.,
+      ATD7 <Enter>), the modem continues to
+      transmit that tone until you type
+      another Carriage Return.
+
+TEST PATTERNÍS16=4
+
+      The test pattern can be used instead of
+      your typed data during Analog Loopback
+      (AL) or Remote Digital Loopback (RDL),
+      using &T commands or S16.  The test
+      pattern is available at all speeds.  At
+      300 bps, the modem's DTE rate must be
+      fixed (&B1) and the link rate fixed at
+      300 bps (&N1).  At rates over 9600 bps,
+      just set the modem for a fixed DTE rate
+      (&B1).
+
+      To use the test pattern during AL
+      testing with S16, type the following
+      command.  The test pattern is sent
+      through the loopback.
+
+             AT&M0S16=5D
+
+      To use the test pattern during RDL
+      testing with S16, type the following
+      command.
+
+             AT&M0S16=12
+
+      To use the test pattern with the &T AL
+      or RDL tests, insert the test pattern
+      command, S16=4, before issuing the test
+      command.  The first of the following
+      commands initiates AL, the second RDL:
+
+             ATS16=4&T1
+             ATS16=4&T6
+      The test pattern alone (ATS16=4) is used
+      for testing equipment and the phone
+      line.  When S16 is set to 4, the modem
+      transmits the test pattern upon connec-
+      tion with a remote modem.
+
+   Ending Testing with the Test Pattern
+
+      Pressing any character key cancels all
+      test pattern tests and hangs up the
+      modem.  If you used Register S16, be
+      sure to reset Register S16 to Data mode
+      when you reset the modem to its error
+      control defaults, for example, ATZ or
+      AT&M4S16=0.
+
+
+REMOTE DIGITAL LOOPBACKÍS16=8
+
+   Responding Modem
+
+      The responding modem must be ready to
+      act on the Courier's RDL request.
+      USRobotics high speed modems should be
+      set to &T4.  If they do not have &T
+      testing capability, they should be set
+      to S16=8.
+
+   Initiating Modem
+
+      1. If DIP switch 9 is UP, set it DOWN so
+         that it does not hang up on receipt
+         of the +++ escape code.  Issue an ATZ
+         command to initiate the new switch
+         setting.
+
+      2. Set the software to 2400 or 1200 bps.
+         The CCITT-specified RDL signals are
+         defined only for connections at 2400
+         or 1200 bps.
+      3. Disable error control by setting the
+         modem to &M0.  Then establish a
+         connection with the remote modem.
+
+      4. Bring the modem back to Command mode
+         by sending it the escape code:  one
+         second of no data, three pluses
+         (+++), and another second of no data.
+
+      5. When the OK result code appears, send
+         the modem the following command.
+
+               ATS16=8 O
+
+         The modem enters RDL mode (S16=8),
+         the MR status light flashes, and the
+         modem goes back online (O command).
+         Then it transmits the CCITT-defined
+         RDL signals, causing the remote modem
+         to enter RDL mode.
+
+      6. Type any data at the keyboard.  (Or
+         send the test pattern.)
+      7. To end the test, send the modem the
+         +++ escape code again to bring it
+         back to Command mode.
+
+      8. When the modem sends the OK result,
+         reset the modem to Data mode with the
+         following command.
+
+               ATS16=0
+
+         The modem signals the responding
+         modem that RDL testing is over.
+         Terminate the call as you normally
+         would, and reset the modem to its
+         normal error control setting, &M4 or
+         &M5.
+
+         Or, if you wish to resume data
+         transmission with the remote modem,
+         add the O command to the ATS16=0
+         string to return the modem online.
+         Keep in mind, however, that error
+         control is disabled.  Because error
+         control is negotiated during the con-
+         nection sequence, its status cannot
+         be changed until the modem is back on
+         hook and in Command mode.

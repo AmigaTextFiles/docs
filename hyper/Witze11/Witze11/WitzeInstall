@@ -1,0 +1,693 @@
+;$VER: WitzeInstall 1.1 (20.12.94)
+;Installerscript für den WitzeManger, © by Mr. McG
+
+;****************** MAINLOOP ***************
+
+(procedure WASNLOS
+ (set was
+  (askchoice
+   (prompt "\nNa, was soll denn nu installiert werden?\n")
+   (choices "WitzeManager" "Neue Sprachen" "Tschaubisdann...")
+   (help witzhelp sprahelp "Tschaubisdann...:\nInstaller verlassen.\n\n" @askchoice-help)
+   (if (= witzinst 0)
+    (default 0)
+    (if (= sprainst 0)
+     (default 1)
+     (default 2)
+    )
+   )
+  )
+ )
+ (if (= was 0)
+  (
+   (set locdir "")
+   (if (= witzinst 0)
+    (WITZE)
+    (if
+     (askbool
+      (prompt "\n\n\nDie Witze sind doch schon installiert...")
+      (help hilfe)
+      (choices "Nochmal!" "OK, dann nich.")
+     )
+     (WITZE)
+     (WASNLOS)
+    )
+   )
+  )
+ )
+ (if (= was 1)
+  (if (= sprainst 0)
+   (SPRACHEN)
+   (if
+    (askbool
+     (prompt "\n\n\nDie Sprachen sind doch schon installiert...")
+     (help hilfe)
+     (choices "Nochmal!" "OK, dann nich.")
+    )
+    (SPRACHEN)
+    (WASNLOS)
+   )
+  )
+ )
+ (if (= was 2)
+  (if
+   (askbool
+    (prompt "\n\n\nWas? Du willst wirklich schon gehen?")
+    (help hilfe)
+    (choices "Klar, tschüß!" "Nee...")
+   )
+   (
+    (if (= witzinst 0)
+     (if (= sprainst 0)
+      (abort "\n\n\nHey, Du hast ja garnix installiert!")
+      (exit "Schau Dir die Witze gefälligst auch mal an...")
+     )
+     (if (= sprainst 0)
+      (exit "Aber denk' dran, die Sprachen auch noch auszuprobieren...")
+     )
+    )
+    (exit "Tschaubisdann...\nMr. McG\n(sprich: Mista MäcDschie)\nInternet: grimm@pips01.informatik.uni-mannheim.de")
+   )
+   (WASNLOS)
+  )
+ )
+ (if
+  (askbool
+   (prompt "\n\n\nSoll sonst nochetwas installiert werden?")
+   (help hilfe)
+   (choices "Äh, ja..." "Nee, tschüß!")
+  )
+  (WASNLOS)
+  (exit)
+ )
+)
+
+;****************** WITZE ***************
+
+(procedure GETLOCDIR
+ (set locdir
+  (askdir
+   (prompt "Wohin soll die WitzeManager-Schublade kopiert werden?")
+   (help "Hier wird angegeben, wo sich das komplette Witze-Paket später befinden soll. In dem angegebenen Verzeichnis wird ein Verzeichnis namens \"Witze\" erstellt und alle nötigen Daten hineinkopiert.\n\n" @askdir-help)
+   (default "SYS:Utilities")
+  )
+ )
+ (if (EXISTS (tackon locdir "Witze"))
+  (
+   (if
+    (askbool
+     (prompt "\n\n\nIn \""locdir"\" wurden schonmal Witze installiert. Soll die frühere Installation gelöscht werden?")
+     (help "Achtung:\nWenn gelöscht werden soll, gehen sämtliche Daten im Verzeichnis\n     \""locdir"/Witze\"\nverloren!")
+     (choices "Warum nicht..." "Nein, bloß nicht!")
+    )
+    (run (cat "Delete QUIET ALL " (tackon locdir "Witze")))
+    (GETLOCDIR)
+   )
+  )
+ )
+)
+
+(procedure WITZE
+ (set witzinst 1)
+ (if (= sprainst 1)
+  (complete 52)
+  (complete 2)
+ )
+ (GETLOCDIR)
+ (set @default-dest (tackon locdir "Witze"))
+ (makedir @default-dest)
+ (if (= sprainst 1)
+  (complete 55)
+  (complete 5)
+ )
+ (copyfiles
+  (source "/Witze11")
+  (pattern "Witze.#?")
+  (dest @default-dest)
+ )
+ (if (= sprainst 1)
+  (complete 65)
+  (complete 15)
+ )
+ (copyfiles
+  (source "/Witze11")
+  (pattern "#?.iff")
+  (dest @default-dest)
+ )
+ (if (= sprainst 1)
+  (complete 75)
+  (complete 25)
+ )
+ (if (= sprainst 1)
+  (complete 80)
+  (complete 30)
+ )
+ (if (< kickver 39)
+  (
+   (copyfiles
+    (source (tackon @default-dest "WitzeLogo5.iff"))
+    (dest (tackon @default-dest "WitzeLogo.iff"))
+   )
+   (copyfiles
+    (source (tackon @default-dest "WitzeLogoH5.iff"))
+    (dest (tackon @default-dest "WitzeLogoH.iff"))
+   )
+  )
+  (
+   (delete (tackon @default-dest "WitzeLogo5.iff"))
+   (delete (tackon @default-dest "WitzeLogoH5.iff"))
+  )
+ )
+ (if (= sprainst 1)
+  (complete 85)
+  (complete 35)
+ )
+ (if
+  (askbool
+   (prompt "\n\n\nSollen die MagicWB-Icons installiert werden?")
+   (help mwbhelp)
+   (choices "Na klar!" "Nee...")
+  )
+  (
+   (run (cat "Copy QUIET WitzeManager.info \"" (tackon @default-dest "WitzeManager.info") "\""))
+   (run (cat "Copy QUIET MWBdrw.inf \""(tackon locdir "Witze.info") "\""))
+  )
+  (
+   (run (cat "Copy QUIET WM.inf \"" (tackon @default-dest "WitzeManager.info") "\""))
+   (run (cat "Copy QUIET drw.inf \"" (tackon locdir "Witze.info") "\""))
+  )
+ )
+ (if (= sprainst 1)
+  (complete 90)
+  (complete 40)
+ )
+ (if (<> (EXISTS "SYS:Utilities/MultiView") 0)
+  (set mvloc "SYS:Utilities/MultiView")
+  (if (<> (EXISTS "SYS:Utilities/AmigaGuide") 0)
+   (set mvloc "SYS:Utilities/AmigaGuide")
+   (if (<> (EXISTS "SYS:Utilities/Hyper") 0)
+    (set mvloc "SYS:Utilities/Hyper")
+    (set mvloc
+     (askfile
+      (prompt "Wo befindet sich \"MultiView\" bzw. \"AmigaGuide\"?")
+      (help "Hier muß das Programm angegeben werden, mit dem normalerweise \
+AmigaGuide®-Dateien dargestellt werden.\nBei AMIGAs mit Workbench 2.x is\
+t das im Normalfall AmigaGuide oder HyperText, wenn der Computer schon e\
+twas älter ist. Ab Workbench 3.x wird MultiView verwendet. Im Normalfall\
+befinden sich diese Programme im Verzeichnis SYS:Utilities.\n\n" @askfile-help)
+      (default "SYS:Utilities/MultiView")
+     )
+    )
+   )
+  )
+ )
+ (if (= sprainst 1)
+  (complete 92)
+  (complete 42)
+ )
+ (set pvs mvloc)
+ (set pvloc mvloc)
+ (if (<> (EXISTS "SYS:Utilities/Display") 0)
+  (
+   (set pvloc "SYS:Utilities/Display")
+   (set pvs (cat pvs", "pvloc))
+  )
+ )
+ (if (<> (EXISTS "SYS:Utilities/ViewTek") 0)
+  (
+   (set pvloc "SYS:Utilities/ViewTek")
+   (set pvs (cat pvs", "pvloc))
+  )
+ )
+ (if (<> (EXISTS "SYS:Utilities/VT") 0)
+  (
+   (set pvloc "SYS:Utilities/VT")
+   (set pvs (cat pvs", "pvloc))
+  )
+ )
+ (if (<> (EXISTS "C:ShowIFF") 0)
+  (
+   (set pvloc "C:ShowIFF")
+   (set pvs (cat pvs", "pvloc))
+  )
+ )
+ (set pvs (cat pvs"."))
+ (set pvloc
+  (askfile
+   (prompt "Existiert ein Lieblings-Bilderaneiger?")
+   (help "Hier muß das Programm angegeben werden, mit dem normalerweise IFF-B\
+ilder dargestellt werden.\nMögliche Programme auf diesem System wären:\n\n\
+"pvs"\n\nEs können jedoch unmöglich alle Bilderanzeiger berücksichtigt werden, \
+vor Allem, wenn sie sich in einem anderen Pfad als dem Standardpfad befinden.\
+ Im Zweifelsfall einfach das gleiche Programm angeben, das vorhin auch angege\
+ben wurde.\n\n" @askfile-help)
+   (default pvloc)
+  )
+ )
+ (if (= sprainst 1)
+  (complete 95)
+  (complete 45)
+ )
+ (run (cat "Echo >\"" (tackon @default-dest "WitzeManager") "\" \".key FILE,SCREEN/S\""))
+ (run (cat "Echo >>\"" (tackon @default-dest "WitzeManager") "\" \"If NOT <FILE>\""))
+ (run (cat "Echo >>\"" (tackon @default-dest "WitzeManager") "\" \" " mvloc " Witze.guide\""))
+ (run (cat "Echo >>\"" (tackon @default-dest "WitzeManager") "\" \" EndCLI\""))
+ (run (cat "Echo >>\"" (tackon @default-dest "WitzeManager") "\" \"EndIf\""))
+ (run (cat "Echo >>\"" (tackon @default-dest "WitzeManager") "\" \"" pvloc " >NIL: <FILE> <SCREEN>\""))
+ (if (= sprainst 0)
+  (
+   (complete 50)
+   (if
+    (askbool
+     (prompt "\n\n\nSollen die neuen Sprachen auch gleich installiert werden?")
+     (help sprahelp)
+     (choices "Klar!" "Nee, noch nich...")
+    )
+    (SPRACHEN)
+    (WASNLOS)
+   )
+  )
+  (complete 100)
+ )
+ (WASNLOS)
+)
+
+;****************** SPRACHEN ***************
+
+(procedure SPRACHEN
+ (set sprainst 1)
+ (if (< kickver 38)
+  (
+   (message "\n\n\n\nAlso, soweit ich das sehe, hast Du DOS 2.0.\nDie neuen Sprachen machen aber erst ab 2.1 Sinn.\nAm besten, Du besorgst Dir die neue Version und versuchst es dann nochmal.")
+   (set sprainst 1)
+   (WASNLOS)
+  )
+ )
+ (if (= witzinst 1)
+  (complete 52)
+  (complete 2)
+ )
+ (set was
+  (askoptions
+   (prompt "\nWelche Sprachen sollens denn sein?\n")
+   (choices "Bayrisch" "Beamten" "Hessisch" "DFÜSlang" "Philosophisch" "Neuer AmigaGuide.catalog"
+	    "Preferenzen dazu" "Magic-WB-Icons")
+   (help "Hier kann man aussuchen, welche Sprachen installiert werden sol\
+len. Der neue AmigaGuide-Katalog ist eine Verbesserte Version zu dem, der\
+ von Commodore mitgeliefert wird. (Nähere Erläuterungen im Witze.Guide.) \
+\nDie Knöpfe 'Preferenzen' und 'MagicWB' sind optional. Bei Ersterem werd\
+en zu den angewählten Sprachen Preferenz-Dateien mitkopiert, über die die\
+neuen Sprachen gestartet werden können. Ist die zweite Box aktiv, dann we\
+rden die zu den Preferenzen gehörigen MagicWB-Icons mitkopiert.\n\n\n" @askoptions-help)
+  )
+ )
+ (if (<> 0 (BITAND was 63))
+  (
+   (if (= witzinst 1)
+    (complete 53)
+    (complete 3)
+   )
+   (set locdir "SYS:Locale")
+   (COPYLANG)
+   (if (= fail 1)
+    (
+     (set locdir "LOCALE:")
+     (COPYLANG)
+     (if (= fail 1)
+      (
+       (set locdir "PROGDIR:")
+       (COPYLANG)
+       (if (= fail 1)
+        (
+         (message "\n\nDas Verzeichnis \"LOCALE:\" bzw. \"PROGDIR:\" ist nicht zu finden.\nIst überhaupt DOS 2.1 oder 3.x korrekt installiert?")
+         (WASNLOS)
+        )
+       )
+      )
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 64))
+    (
+     (if (= witzinst 1)
+      (complete 80)
+      (complete 30)
+     )
+     (set locdir "SYS:Prefs/Presets")
+     (COPYPREF)
+     (if (= fail 1)
+      (
+       (set locdir
+        (askdir
+         (prompt "Konnte \"SYS:Prefs/Presets\" nicht finden. Wohin sollen die Prefernezen kopiert werden?")
+         (help "\"SYS:Prefs/Presets\" ist normalerweise die Schublade, in die diverse Voreinstellungen kopiert werden. Diese Schublade ist hier nicht vorhanden. Falls eine Schublade mit diesem Zweck existiert, ist diese hier anzugeben.\n\n" @askdir-help)
+         (default "SYS:Prefs/Presets")
+        )
+       )
+       (COPYPREF)
+      )
+     )
+    )
+   )
+   (if (= witzinst 1)
+    (complete 95)
+    (complete 45)
+   )
+   (set was
+    (askchoice
+     (prompt "\nSoll eine Sprache gleich aktiviert werden?\n")
+     (choices "Bayrisch" "Beamten" "Hessisch" "DFÜSlang" "Philosophisch" "Nöö, laß ma...")
+     (help "Die angewählte Sprache wird gleich automatisch aktiviert und ist auch nach einem Neustart des Systems noch vorhanden. Um nachträglich die Sprache zu ändern einfach auf das entsprechende Icon doppelklicken oder im Locale-Voreinsteller die gewünschte Sprache bei den \"Bevorzugten Sprachen\" als erste einstellen.\n\n" @askchoice-help)
+     (default 3)
+    )
+   )
+   (if (= was 0)
+    (
+     (run (cat "Copy QUIET Bayrisch.prefs ENVARC:Sys/locale.prefs"))
+     (run (cat "Copy QUIET Bayrisch.prefs ENV:Sys/locale.prefs"))
+    )
+   )
+   (if (= was 1)
+    (
+     (run (cat "Copy QUIET Beamten.prefs ENVARC:Sys/locale.prefs"))
+     (run (cat "Copy QUIET Beamten.prefs ENV:Sys/locale.prefs"))
+    )
+   )
+   (if (= was 2)
+    (
+     (run (cat "Copy QUIET Hessisch.prefs ENVARC:Sys/locale.prefs"))
+     (run (cat "Copy QUIET Hessisch.prefs ENV:Sys/locale.prefs"))
+    )
+   )
+   (if (= was 3)
+    (
+     (run (cat "Copy QUIET DFUeSlang.prefs ENVARC:Sys/locale.prefs"))
+     (run (cat "Copy QUIET DFUeSlang.prefs ENV:Sys/locale.prefs"))
+    )
+   )
+   (if (= was 4)
+    (
+     (run (cat "Copy QUIET Philosoph.prefs ENVARC:Sys/locale.prefs"))
+     (run (cat "Copy QUIET Philosoph.prefs ENV:Sys/locale.prefs"))
+    )
+   )
+   (message msg"\nZum Aktiviren der neuen Sprachen einfach auf das entsprechende Icon doppelklicken oder im Locale-Voreinsteller die gewünschte Sprache bei den \"Bevorzugten Sprachen\" als erste einstellen.\nAchtung: Es wurden von uns nicht alle Kataloge in die neuen Sprachen übersetzt. (Kommt vielleicht noch...) Damit also plötzlich nicht alles außer der Workbench auf englisch erscheint, sollte man als zweite Sprache Deutsch wählen (oder was vorher eingestellt war).")
+  )
+  (if
+   (askbool
+    (prompt "\n\n\nWas? Wirklich nichts an Sprachen installieren?")
+    (help "Es wurden keine Sprache angewählt. Um Prefs oder Icons zu installieren, muß man auch die entsprechende Sprache selektieren.")
+    (choices "Äh, doch." "Ach, nee... Laß mal.")
+   )
+   (SPRACHEN)
+   (set sprainst 0)
+  )
+ )
+ (if (= witzinst 0)
+  (
+   (if (= sprainst 1)
+    (complete 50)
+    (complete 1)
+   )
+   (if
+    (askbool
+     (prompt "\n\n\nSoll der WitzeManager auch gleich installiert werden?")
+     (help witzhelp)
+     (choices "Klar!" "Nee, noch nich...")
+    )
+    (WITZE)
+    (WASNLOS)
+   )
+  )
+  (if (= sprainst 1)
+   (complete 100)
+   (complete 50)
+  )
+ )
+ (WASNLOS)
+)
+
+;****************** COPYLANG ***************
+
+(procedure COPYLANG
+ (set fail 0)
+ (if (exists locdir)
+  (
+   (if (<> 0 (BITAND was 1))
+    (
+     (copyfiles
+      (source "Locale/Languages/Bayrisch.language")
+      (dest (tackon locdir "Languages"))
+     )
+     (makedir (tackon locdir "Catalogs/Bayrisch"))
+     (makedir (tackon locdir "Catalogs/Bayrisch/sys"))
+     (copyfiles
+      (source "Locale/Catalogs/Bayrisch/sys")
+      (dest (tackon locdir "Catalogs/Bayrisch/sys"))
+      (all)
+     )
+     (if (= witzinst 1)
+      (complete 58)
+      (complete 8)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 2))
+    (
+     (copyfiles
+      (source "Locale/Languages/Beamten.language")
+      (dest (tackon locdir "Languages"))
+     )
+     (makedir (tackon locdir "Catalogs/Beamten"))
+     (makedir (tackon locdir "Catalogs/Beamten/sys"))
+     (copyfiles
+      (source "Locale/Catalogs/Beamten/sys")
+      (dest (tackon locdir "Catalogs/Beamten/sys"))
+      (all)
+     )
+     (if (= witzinst 1)
+      (complete 61)
+      (complete 11)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 4))
+    (
+     (copyfiles
+      (source "Locale/Languages/Hessisch.language")
+      (dest (tackon locdir "Languages"))
+     )
+     (makedir (tackon locdir "Catalogs/Hessisch"))
+     (makedir (tackon locdir "Catalogs/Hessisch/sys"))
+     (copyfiles
+      (source "Locale/Catalogs/Hessisch/sys")
+      (dest (tackon locdir "Catalogs/Hessisch/sys"))
+      (all)
+     )
+     (if (= witzinst 1)
+      (complete 64)
+      (complete 14)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 8))
+    (
+     (copyfiles
+      (source "Locale/Languages/DFUeSlang.language")
+      (dest (tackon locdir "Languages"))
+     )
+     (makedir (tackon locdir "Catalogs/DFUeSlang"))
+     (makedir (tackon locdir "Catalogs/DFUeSlang/sys"))
+     (copyfiles
+      (source "Locale/Catalogs/DFUeSlang/sys")
+      (dest (tackon locdir "Catalogs/DFUeSlang/sys"))
+      (all)
+     )
+     (if (= witzinst 1)
+      (complete 67)
+      (complete 17)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 16))
+    (
+     (copyfiles
+      (source "Locale/Languages/Philosoph.language")
+      (dest (tackon locdir "Languages"))
+     )
+     (makedir (tackon locdir "Catalogs/Philosoph"))
+     (makedir (tackon locdir "Catalogs/Philosoph/sys"))
+     (copyfiles
+      (source "Locale/Catalogs/Philosoph/sys")
+      (dest (tackon locdir "Catalogs/Philosoph/sys"))
+      (all)
+     )
+     (if (= witzinst 1)
+      (complete 70)
+      (complete 20)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 32))
+    (
+     (copyfiles
+      (source "Locale/Catalogs/deutsch/sys/amigaguide.catalog")
+      (dest (tackon locdir "Catalogs/deutsch/sys"))
+     )
+     (if (= witzinst 1)
+      (complete 76)
+      (complete 26)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 31))
+    (set msg "\n Soo, die Sprachen wären kopiert.\n")
+   )
+  )
+  (set fail 1)
+ )
+)
+
+;****************** COPYPREF ***************
+
+(procedure COPYPREF
+ (set fail 0)
+ (if (exists locdir)
+  (
+   (if (<> 0 (BITAND was 1))
+    (
+     (copyfiles
+      (source "Bayrisch.prefs")
+      (dest locdir)
+     )
+     (if (= witzinst 1)
+      (complete 85)
+      (complete 35)
+     )
+     (if (<> 0 (BITAND was 128))
+      (run (cat "Copy QUIET MWBPrefs.inf \"" (tackon locdir "Bayrisch.prefs.info") "\""))
+      (run (cat "Copy QUIET Prefs.inf \"" (tackon locdir "Bayrisch.prefs.info") "\""))
+     )
+     (if (= witzinst 1)
+      (complete 86)
+      (complete 36)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 2))
+    (
+     (copyfiles
+      (source "Beamten.prefs")
+      (dest locdir)
+     )
+     (if (= witzinst 1)
+      (complete 87)
+      (complete 37)
+     )
+     (if (<> 0 (BITAND was 128))
+      (run (cat "Copy QUIET MWBPrefs.inf \"" (tackon locdir "Beamten.prefs.info") "\""))
+      (run (cat "Copy QUIET Prefs.inf \"" (tackon locdir "Beamten.prefs.info") "\""))
+     )
+     (if (= witzinst 1)
+      (complete 88)
+      (complete 38)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 4))
+    (
+     (copyfiles
+      (source "Hessisch.prefs")
+      (dest locdir)
+     )
+     (if (= witzinst 1)
+      (complete 89)
+      (complete 39)
+     )
+     (if (<> 0 (BITAND was 128))
+      (run (cat "Copy QUIET MWBPrefs.inf \"" (tackon locdir "Hessisch.prefs.info") "\""))
+      (run (cat "Copy QUIET Prefs.inf \"" (tackon locdir "Hessisch.prefs.info") "\""))
+     )
+     (if (= witzinst 1)
+      (complete 90)
+      (complete 40)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 8))
+    (
+     (copyfiles
+      (source "DFUeSlang.prefs")
+      (dest locdir)
+     )
+     (if (= witzinst 1)
+      (complete 92)
+      (complete 42)
+     )
+     (if (<> 0 (BITAND was 128))
+      (run (cat "Copy QUIET MWBPrefs.inf \"" (tackon locdir "DFUeSlang.prefs.info") "\""))
+      (run (cat "Copy QUIET Prefs.inf \"" (tackon locdir "DFUeSlang.prefs.info") "\""))
+     )
+     (if (= witzinst 1)
+      (complete 93)
+      (complete 43)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 16))
+    (
+     (copyfiles
+      (source "Philosoph.prefs")
+      (dest locdir)
+     )
+     (if (= witzinst 1)
+      (complete 94)
+      (complete 44)
+     )
+     (if (<> 0 (BITAND was 128))
+      (run (cat "Copy QUIET MWBPrefs.inf \"" (tackon locdir "Philosoph.prefs.info") "\""))
+      (run (cat "Copy QUIET Prefs.inf \"" (tackon locdir "Philosoph.prefs.info") "\""))
+     )
+     (if (= witzinst 1)
+      (complete 95)
+      (complete 45)
+     )
+    )
+   )
+   (if (<> 0 (BITAND was 31))
+    (set msg (cat msg"\nPreferenzen nach \""locdir"\" kopiert.\n"))
+   )
+  )
+  (set fail 1)
+ )
+)
+
+(procedure TERMINATE
+ (message "\n\n\nHeee, Siiieee! Warum so eilig???")
+)
+
+;****************** ROOT ***************
+
+(onerror (TERMINATE))
+(complete 0)
+(set kickver (/ (getversion) 65536))
+(if (< kickver 37) (abort "Nanana! Kleiner Kick2.0 läuft nix... Eigentlich noch nicht mal das Installer-Script hier... :-?"))
+(set witzinst 0)
+(set sprainst 0)
+(set hilfe "Na, dürfte doch wohl klar sein, was gemeint ist...")
+(set witzhelp "WitzeManager:\nDas komplette Witze-Paket wird installiert\n\n")
+(set sprahelp "Neue Sprachen:\nDie neuen Sprachen wie Bayrisch oder Hessisch werden installiert, sofern mindestens Workbench 2.1 vorhanden ist.\n\n")
+(set mwbhelp (cat "Es folgt nun etwas Werbung:\n\nMagicWB V2.0:\nDer definitiv"
+"e WB-Enhancer, der auf keinem AMIGA fehlen darf. MagicWB ist ein komplett"
+"er Ersatz für die grafische Benutzeroberfläche der WB und hat sich zum St"
+"andard auf dem AMIGA etabliert! MagicWB 2.0 wurde auf ein neues Farballok"
+"ierungssystem komplett umstrukturiert. Dadurch ist sie nun mehr als doppe"
+"lt so schnell wie alle bisherigen Versionen und benötigt nur noch weniger"
+" als ein Drittel des Chip-RAM, hat eine stark verbesserte Farbpalette und"
+" bietet noch nie dagewesene Image-Schubladen, um Ihre WB noch abwechslung"
+"sreicher zu gestalten. Mehr Icons, Dock-Images, ein Dutzend neue Patterns"
+", Fonts und ein AGA-Support runden die neue MagicWB 2.0 ab.\n\n   (Aus der Datei \"Über MagicWB2.0\" aus dem MagicWB-\n    2.0d-Paket von Martin Huttenloher)"))
+(message "\nTach.\n\nJa, das isses nu.\n Der Installer zum ultimativen WitzeManager in der aktuellen Version 1.1\n\"Wie? Was? Installieren? Oh, Gott, vieeel zu kompliziert!!!\" werden jetzt manche vielleicht sagen. Aber keine Panik, alles läuft vollkommen einsteigerfreundlich ab. (dank Commodores Installer!)")
+(welcome)
+(complete 1)
+(WASNLOS)

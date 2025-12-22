@@ -1,0 +1,72 @@
+.KEY FILE/A
+.BRA {
+.KET }
+
+; $VER: Del 3.6 (27.01.95) © by Thorsten Willert
+; DELETE (Lösch)-Befehl mit Sicherheitsabfrage und gleichzeitigem löschen des Icons.
+
+FailAt 21
+
+IF EXISTS {FILE}
+  ASK "*N*E[1m{FILE} wirklich löschen?*E[0m (Y/N)"
+  IF WARN
+    DELETE >ENV:Meldung{$$} {FILE} {FILE}.info
+    GET RESULT2 >ENV:Fehler{$$}
+      IF $Fehler{$$} EQ 216
+       SKIP 1
+      ENDIF
+      IF $Fehler{$$} EQ 222
+       SKIP 1
+      ENDIF
+      IF $Fehler{$$} GT 1
+       SKIP 2
+      ENDIF
+      IF RC GE 5
+       SKIP 3
+      ENDIF
+  ELSE
+   ECHO "{FILE} wurde nicht gelöscht:"
+   ECHO "Benutzer Abbruch."
+   SET ERR 0
+  ENDIF
+  SKIP Ende
+ELSE
+ ECHO "*N*E[1m{FILE} existiert nicht!*E[0m*N"
+QUIT 5
+
+LAB 1
+  ECHO "{FILE} wurde nicht gelöscht:"
+  FAULT $Fehler{$$}
+  ASK "*N*E[1m{FILE} trotzdem löschen?*E[0m (Y/N)"
+IF WARN
+ DELETE >ENV:Meldung{$$} {FILE} {FILE}.info FORCE ALL
+ GET RESULT2 >ENV:Fehler{$$}
+   IF $Fehler{$$} GT 1
+    SKIP 2
+   ENDIF
+   IF RC GE 5
+    SKIP 3
+   ENDIF
+ELSE
+ ECHO "{FILE} wurde nicht gelöscht:"
+ ECHO "Benutzer Abbruch."
+ SET ERR 0
+ENDIF
+SKIP Ende
+
+LAB 2
+ECHO "{FILE} wurde nicht gelöscht:"
+FAULT $Fehler{$$}
+SET ERR 20
+SKIP Ende
+
+LAB 3
+ECHO $Meldung{$$}
+SET ERR 5
+SKIP Ende
+
+LAB Ende
+UnSetENV Fehler{$$}
+UnSetENV Meldung{$$}
+ECHO ""
+QUIT $ERR

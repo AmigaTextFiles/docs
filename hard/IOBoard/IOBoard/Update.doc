@@ -1,0 +1,146 @@
+Newser.device update information
+--------------------------------
+
+V2.10 --- June 27, 1991
+
+This version is very similar to V2.00. It adds a routine for
+controlling the RTS and DTR control lines directly. The method is
+compatible with that of ASDG's Dual Serial Board. See the source
+code for more information. A couple of potential problems were
+fixed as well.
+
+This will likely be the final "official" version of newser,
+except perhaps for minor bug fixes. HAVE FUN!
+
+Documentation for V2.00:
+
+Please read this completely, since it contains information you'll
+probably need to know sometime...
+
+The time has come for another update to the serial device driver
+for the I/O expansion board. Previous versions basically worked,
+but had various shortcomings. This, the third release, tries to
+finally do everything right...(and seems to succeed!!)
+
+What's new?
+-----------
+
+* Better performance. The last version increased read performance
+to the max; this version addresses write performance as well.
+Context-switching overhead has been reduced to a minimum to make
+writing much faster than the previous version, and faster than
+the regular serial.device too. The overall performance of the
+driver is now extremely satisfying!
+
+* CTS handshaking now works. This is a major fix. Previous
+versions would mysteriously hang if CTS was ever deasserted. (The
+serial chip documentation was inadequate...). It is now safe (and
+recommended) to turn on CTS handshaking. Actually there is no way
+to turn off CTS handshaking (a limitation of the serial chip) but
+if you specify no CTS handshaking, the driver will check the
+status of CTS before starting a write operation: if CTS is not
+asserted, the write is aborted. On the other hand, if CTS
+handshaking is turned on, and CTS is not asserted (e.g. the modem
+is turned off), the driver will wait forever for CTS to be
+asserted; expect this. Terminal software is supposed to provide a
+time-out to avoid "hanging" in this case, but I doubt the
+authors' of these programs bothered to do it.
+
+* The "random lock-up" bug reported by some users is fixed.
+
+* IOPatch received a small update: It now calls CacheClearU after
+duplicating itself, when running under kickstart 2.0. Also the
+gadget text was changed to be slightly more intuitive.
+
+One bug report remains an unsolved mystery. A user reported total
+failure when using the I/O board in a system with a GVP Series-II
+controller; when the controller was removed, the board functioned
+normally. I have checked the driver very carefully and don't
+believe that it could be responsible for such a drastic failure.
+Instead it's probably a hardware problem. First suggestion: add a
+pull-up resister on the reset line, as specified in the assembly
+manual.
+
+Tips for using newser.device
+----------------------------
+
+* Turn off XON/XOFF handshaking unless you really really really
+need it (you probably don't). If XON/XOFF is on, the driver can't
+use its "RAD_BOOGIE" mode to speed up reads; instead of doing a
+fast bulk copy, the driver is forced to check each byte for
+XON/XOFF...this is extremely slow!!!!
+
+* If you are communicating with a modem at a speed higher than
+the connect rate, CTS handshaking MUST be turned on for ZModem
+transfers to work properly.
+
+* Higher numbered serial "units" have higher interrupt
+priorities. If, for example, you are using two ports, one at
+19,200bps and the other at 2400bps, then a good arrangement is to
+connect the 19,200bps line to unit 1, and the other to unit 0.
+The other way around will give poor results.
+
+Compatibility
+-------------
+
+This version of the serial driver was tested with the following
+programs:
+
+* JRComm 1.02
+* Handshake 2.12a/2.20c
+* Ncomm 1.9
+* C-Net 1.95t (BBS software)
+
+Special thanks go to John Hoyt for his beta-testing and
+encouragement. Call his excellent C-Net BBS at 213-633-5002.
+
+
+Important notice to all I/O board users!
+----------------------------------------
+
+Due to the longer cable length that the moved CIA must drive,
+many of you are experiencing erratic floppy operation, even after
+grounding the I/O board as recommended. Fortunately I seem to
+have run into the cure! It turns out that this problem is highly
+dependent on the CIA revision. The CIAs that came with my A2000,
+labeled 8520A-1, worked absolutely horribly, BUT when I replaced
+it with an 8520R2 from my old A1000, the erratic floppy problem
+COMPLETELY disappeared even when the board had no extra
+ground/power attachments. If you are having this problem, trade
+CIAs around!  Note: New Amigas are being shipped with a CIA
+revision that promises much better drive characteristics.
+However, this new version is not a perfect replacement, requiring
+some additional pull-up resisters. The bottom line is this. If
+you have the latest CIA revision, you are probably not having any
+problems. If you have an old CIA revision, you can't substitute
+the latest revision without some hacking; instead, try swapping
+with an old A1000 like I did. (The 1000 won't know the
+difference).
+
+
+The Future
+----------
+
+I'm still interested in a Zorro-II version of the I/O board,
+maybe even with a 6502 on board...(or am I dreaming?). I talked
+to one person who expressed interest in designing such a board,
+but I haven't contacted him in several months. Don't be shy; give
+me a call and get started!!
+
+----------------------------------------------------------------
+
+Since I put so much time into this upgrade (unpaid of course), I
+would appreciate receiving a few disks in the mail...I especially
+like programmers tools/utilities, megademos, and anything fun.
+Thank you for your support!!!
+
+My address...
+
+P.O. Box 1532
+Southgate, MI  48195
+USA
+
+Phone: (313)-479-1056
+Internet: dxb132@psuvm.psu.edu
+Bix: danbabcock
+

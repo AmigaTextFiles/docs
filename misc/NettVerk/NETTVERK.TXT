@@ -1,0 +1,139 @@
+En nettbrukers erfaring.
+
+Nå har jeg koblet 2 Amigaer i nett over SCSI'interface. Vertsmaskinen er min
+gode gamle Amiga 1000, koblet opp med min gode gamle 150Mb WRENIII disk,
+over en CLtd. SCSI kontroller. HD'en er koblet direkte på boardet på CLtd.
+SCSI, og direkte til boardet via 50pinskontakten på SCSI device-kontrolleren
+på WRENIII. Dette gir meg en ledig ekstern 25pins kontakt på CLtd. (Host)
+SCSI. Denne 25pins kontakten er den ordinære SCSI-utgangen som brukes av
+CLtd. sine harddisker, og kalles for Apple-Pseudo SCSI.
+
+Maskin nummer to er en Amiga 500 med 1Mb. RAM og en CLtd. SCSI kontroller
+laget for 500'en. Denne er på samme måte som ovenfor koblet over boardet mot
+en ditto harddisk på 33Mb. Denne harddisken kan kobles enten internt via
+50pinskontaken eller ekstern via en Apple-Pseudo kontakt. Den eksterne
+kontakten er laget i T-form, beregnet for å kunne lenke denne sammen med
+andre devicer. Kontrolleren på Amigaen har m.a.o. ledig ekstern 25pins
+kontakt på denne også.
+
+Så til genistreken!
+Først teori: En ekte SCSI kontroller kan adressere 8 devicer i kjede. Dette
+skjer ved å gi hver device et logisk UNIT# nummer. CLtd. sine kontrollere er
+konstruert som intelligente Host/Device-kontrollere. Dette vil si at hver
+kontroller både kan fungere som device/UNIT#, og også som HOST (HOST =
+vert). I SCSI terminologien vil den siste kontrolleren i en kjede måtte
+termineres/avsluttes, dette gjøres med en resistor/motstand. I CLtd.
+kontrolleren aktiviseres resistoren via software, i mountlist filen på
+:/devs katalogen.
+
+Tilbake til praksis:
+Først satte jeg opp maskin A, min gode A1000 som siste ledd i kjeden, ved å
+gi den UNIT#7 i mountlist, denne verdien fant jeg ved å kalkulere FLAGS=n
+som enkelt gjøres enkelt med et HD-Calc program som fulgte med CLtd.
+kontrolleren. Det neste jeg gjorde var å gi maskin B, den nye A500, til
+UNIT#6, altså nest sist (numrene kalkuleres fra 0 - 7). Deretter var resten
+"a piece of cake". WRENIII fikk UNIT#0 og 33MB'en UNIT#1, hvilket gir meg 4
+UNIT# numre for fremtidig utvidelse. Eks. en WORM disk på 800MB ?.....
+Deretter ble CLtd. SCSI kontrollerne på begge maskiner lenket sammen over de
+eksterne D25 kontaktene med en vanlig modemkabel (med D25 male i begge
+ender).
+
+
+
+Deretter var det bare å sette opp partisjoner på begge harddiskene, felles
+programkatalog (read only), separate datakataloger for UNIT#6 og #7
+(read/write), og separate programkataloger for UNIT#6 og #7 (read/write).
+Alt dette ble gjort ved å formattere harddiskene i egne partisjoner og
+deretter skrive startup-sequence for hver maskin med korrekt mount/assign
+til gyldige kataloger/partisjoner på harddiskene.
+
+Hvordan virker så systemet?
+
+Jo, etter aller først å ha slått på begge harddiskene, kan jeg slå på
+hvilken som helst av Amigaene. Etter å ha gått gjennom den nødvendige
+startup-sequence hvor den starter opp programkataloger og datakataloger, kan
+jeg bare begynne å jobbe. Starter jeg opp den andre Amiga'en skjer det
+samme. Eksempel; jeg starter opp begge to, henter WP og begynner
+bearbeidelsen av et dokument (f.eks. dette) på Amiga A. På Amiga B sitter en
+annen person, som gjerne også vil bearbeide dette dokumentet. Han forsøker å
+hente inn dokumentet mens jeg jobber med det, men får beskjed om 'file in
+use'. Når jeg er ferdig og har lagret dokumentet, gjør maskin B et nytt
+forsøk, og denne gangen går det greit. Han bearbeider dokumentet, og skal
+lagre det; beskjeden 'disk is write protected' er svaret han får. Han endrer
+lagringskatalogen til sin personlige datakatalog, og vips, filen blir
+lagret.
+Dette er helt nødvendig, siden Amigados henter kataloginformasjonen som
+bitmapistruktur, som blir lagret/endret i RAM. Hvis maskin A ikke har vært
+på katalogen etter at maskin B har lagret/endret informasjon der, vil
+bitmapstrukturen i RAM på maskin A være annerledes en bitmapstrukturen på
+disken med et katastrofalt resultat som følge dersom A skriver på disken,
+uten å ha innhentet endringen på bitmap som B har gjort. Dette kan forøvrig
+omgås med brutal makt, ved at maskin A bruker 'diskchange' for å oppdatere
+RAM før den skriver, men er ikke ønskelig p.g.a. faren for å glemme dette.
+
+Derfor er det svært viktig at ikke begge maskiner kan lese/skrive til samme
+katalog!
+Du kan altså la inntil 7 Amigaer dele 1 harddisk med ovenstående oppsett,
+samt at de samme maskinene kan dele samme programmet samtidig. Begrensninger
+foreløpig er å la en maskin åpne et vindu i en annen maskin, men dette
+kommer snart! Et oppsett med 2 Amigaer som deler samme program/harddisk og
+samtidig snakker sammen over serieporten (doubletalk) går imidlertid flott! 
+
+Hva trengs så av utstyr/software for å oppnå dette?
+
+Jo, harddisk med SCSI interface, fortrinnsvis stor. Videre 2 Amigaer, hver
+med sin CLtd. SCSI kontroller og kabler. Dessuten trenger du en device-
+driver som heter SCSI.device fra CLtd. OG - ovenstående opplysninger om
+måten konfigureringen settes på.
+
+Prisen for denne nettverksløsning er imidlertid utrolig lav: 2600.- for et
+SCSIkort fra CLTD. Softwaren følger med uten ekstra kostnad! Registrerte
+kjøpere av kortene får gratis oppdatering av software, inkludert en ny
+driver som er på trappene, som kommer til å tillate fjernåpning av vinduer.
+Hastigheten på nettet er upåklagelig, ca 100kb/sek. og skulle derfor være
+mer enn godt nok for tilknytning av inntil 8 maskiner. Potensielle brukere
+er f.eks. reklamebyråer, videoprodusenter, brukergrupper, mindre og
+mellomstore firmaer samt programutvikere. 
+Totalkostnaden for hver arbeidsstasjon vil da bli:
+
+	- 1 -	Amiga 500				4990.-
+	- 2 -	CLtd. SCSIkontroller	2600.-
+	-----------------------------------------
+	Totalt						8500.-
+	-----------------------------------------
+
+I tillegg kommer utgiften for en harddisk, fra kr 6500.- og oppover,
+avhengig av størrelsen og behov. Lagringskapasiteten kan videre utbygges,
+fordi SCSIkontrolleren m/software kan styre inntil 32 enheter! De eneste
+kjente (foreløpige) begrensingene er at du ikke kan ha over 8 Amigaer
+tilkoblet på en gang, og ikke over 32 enheter tilknyttet SCSIkontrolleren
+samtidig. Videre kan du ikke foreløpig åpne et vindu i maskin B fra maskin
+A. Den samlede lengden på nettet kan ikke være over 30 feet, eller ca. 12
+meter, uten at du har signalforsterker på nettet. Potensialet er i hvertfall
+enormt: Siden SCSIkontrolleren er intelligent, kan du bruke den både som
+HOSTkontroller og DEVICEkontroller, hvilket muliggjør bruk av opptil 32
+enheter på hver enkelt CLtd. SCSIkontroller i nettet! Altså; med 8 enheter i
+nettet, kan hver kontroller styre et SUB-nett på hver sine 32 enheter! Disse
+enhetene kan bestå av harddisker, laserskrivere, scannere, WORM disker eller
+hvilken som helst annen device som supporter ANSII SCSI standarden. (Og det
+er ikke få!)
+
+Machintosh + IBM + Atari, gå tilbake til tegnebordet!
+						
+PS.
+Min spesielle oppkobling med å koble meg rett på printkortene, fungerer
+upåklagelig. Denne koblingen tillater meg å bruke devicer beregnet på VAX
+maskiner uten videre. For å lenke meg videre måtte jeg imidlertid bygge en
+50pinskontakt med T-kobling. Dette virker perfekt; det eneste hensynet jeg
+har måttet ta, er den totale lengden av systemet, som ikke måtte overskride
+12 meter. Dette hensynet kunne jeg med letthet ha bygget meg rundt med en
+dertil egnet signalforsterker. 
+DS.
+
+Bare kontakt meg dersom du vil vite mer.
+
+Dag Nilsen
+Synnes
+6040 VIGRA
+
+Desverre, har ikke telefon.

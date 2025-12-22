@@ -1,0 +1,433 @@
+Article 1617 of comp.sys.amiga.applications:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nntp.uio.no!nntp-oslo.uninett.no!ffi.no!peh
+From: peh@ffi.no (Per Espen Hagen)
+Newsgroups: comp.sys.amiga.applications
+Subject: Re: Trouble with "copy" command on WB 3.0?
+Date: 15 Dec 1993 08:24:22 GMT
+Organization: Forsvarets forskningsinstitutt, Kjeller, Norge
+Lines: 34
+Distribution: world
+Message-ID: <2emhjm$d39@ratatosk.uninett.no>
+References: <1993Dec14.214502.18949@ac.dal.ca>
+NNTP-Posting-Host: globus.ffi.no
+
+In article <1993Dec14.214502.18949@ac.dal.ca>, mcasey@ac.dal.ca writes:
+> 
+> I've got a rather strange bug I'm wondering if anybody else has run into.
+
+You bet they have!
+
+> It has to do with the copy command in WB3.0.  Just about every time I use it
+> to copy a large file (>130k), it tends to  corrupt the files.  Needless to
+> say, this causes a bit of grief with installing things on the hard drive.
+> After the installation script has run, I have to go  back and recopy the
+> larger files using DirWork, which, of course doesn't use the standard copy
+> command. I only noticed this this last week when I finally got a hard drive,
+> and started using installation scripts.  Before then, I always used DirWork,
+> so I never noticed.
+
+Another FAQ...
+
+The error is not with AmigaDOS, but in the firmware (ROM) of the IDE drive!
+Most IDEs only support file writes of less than ~128k.
+
+The workaround for this bug is to change the MaxTransfer value of each
+partition of the disk to 0x1fe00 (=255x512). This can be done with the
+software you used to prep the drive. There's usually an "Advanced Mode"
+or an "Advanced Settings Page" where the MaxTransfer setting can be
+modified. If you do it right, you will not have to reformat or re-install
+your HD.
+
+
+-- 
+Per Espen Hagen       per.e.hagen@ffi.no     Tel: +47 63807653     //
+Senior Scientist    Image Processing Group      NDRE, Norway     \X/
+
+Any resemblance between the above views and the views of my employer,
+     myself, or the view out of my window, is non-deterministic.
+
+
+Article 7426 of comp.sys.amiga.hardware:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!MathWorks.Com!noc.near.net!news.delphi.com!BIX.com!microbotics1
+From: microbotics1@BIX.com (microbotics1 on BIX)
+Newsgroups: comp.sys.amiga.hardware
+Subject: Re: Maxtransfer
+Date: 31 Jan 94 19:00:23 GMT
+Organization: Delphi Internet Services Corporation
+Lines: 39
+Message-ID: <microbotics1.760042823@BIX.com>
+References: <2iio3n$jdd@barney.cs.city.ac.uk> <2iisoc$frh@nz12.rz.uni-karlsruhe.de>
+NNTP-Posting-Host: bix.com
+
+uj1g@rzstud1.rz.uni-karlsruhe.de (Marek Tomczyk) writes:
+
+>In article <2iio3n$jdd@barney.cs.city.ac.uk>,
+>Lionel Tun <lionel@cs.city.ac.uk> wrote:
+>>What is maxtransfer and to what should it be set for a 
+>>Seagate 40M IDE drive in an A1200? Thanks.
+>>
+>>The default was 0xffffff, I think. I added an extra f for
+>>good measure. Was this the right thing to do?
+
+>I don't think so. I've had big problems with the 0xffffff setting on my
+>IDE HD. Files bigger than app. 100KB got corrupted when writing to the 
+>drive. After reducing the Maxtransfer down to 0xffff all problems 
+>dissapeared. I've been told that AT/IDE drives can't handle chunks of data
+>bigger than 64KB, therefore one should set the maxtransfer to this value.
+
+On a 1200, MaxTransfer should be 130560 (0xfffe00), or if that gives
+problems, 65024 (0xfe00).  Since this is the maximum size for any
+transfer, it should be a multiple of 512 (the block size).
+
+IDE drives are supposed to be able to transfer 128k bytes in one chunk,
+but because IBM-style disk interfaces don't transfer more than 64k at
+a time, some drives have never been tested to more than 64k.  Also, some
+drives have problems with an even 128k or 64k, so the suggestions above knock
+one extra block off.
+
+>BTW: What does the Memory-Mask mean? Can you change the default value?
+>Does it depend on the amount of RAM installed?
+
+The Mask value tells the FileSystem what RAM can be used and how buffers
+should be aligned in memory.  It should generally not be changed from
+the default of 0x7ffffffe (or 0x00fffffe for an A500/2000 DMA card).
+
+---------------------+-----------------------+--------------------------
+Mike Pinson          | Paravision, Inc.      |     NEW PHONE NUMBER!
+Product Specialist   | 1251 American Parkway |     +1 (214) 644-0043
+microbotics1@bix.com | Richardson, Tx 75081  | 0900 to 1730 Central Time
+---------------------+-----------------------+--------------------------
+  Usenet too chatty? Internet too huge?  Ask 'info@bix.com' about BIX!
+
+
+Article 7462 of comp.sys.amiga.hardware:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!usc!elroy.jpl.nasa.gov!decwrl!tribune.usask.ca!canopus.cc.umanitoba.ca!umking21
+From: umking21@cc.umanitoba.ca (Brian D. King)
+Newsgroups: comp.sys.amiga.hardware
+Subject: Re: Maxtransfer
+Date: 1 Feb 1994 03:13:19 GMT
+Organization: The University of Manitoba
+Lines: 14
+Message-ID: <2ikhcf$4m6@canopus.cc.umanitoba.ca>
+References: <2iio3n$jdd@barney.cs.city.ac.uk> <2iisoc$frh@nz12.rz.uni-karlsruhe.de> <microbotics1.760042823@BIX.com>
+NNTP-Posting-Host: castor.cc.umanitoba.ca
+
+In <microbotics1.760042823@BIX.com> microbotics1@BIX.com (microbotics1 on BIX) writes:
+>On a 1200, MaxTransfer should be 130560 (0xfffe00), or if that gives
+>problems, 65024 (0xfe00).  Since this is the maximum size for any
+>transfer, it should be a multiple of 512 (the block size).
+
+NOTE: I think you meant 0x1fe00 for 130560... NOT 0xfffe00 as stated above!
+
+>microbotics1@bix.com | Richardson, Tx 75081  | 0900 to 1730 Central Time
+
+-- 
++------------------------------+----------------------------------///-----+
+|Brian D. King, Product Design |Certified Amiga Developer.       ///A1200 |
+|Fourth Dimension Software     |Specializing in Amiga PCMCIA \\\///030/882|
+|umking21@CC.UManitoba.CA      |products and development.     \\X/  50MHz |
+
+
+Article 7506 of comp.sys.amiga.hardware:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!agate!news.Brown.EDU!noc.near.net!news.delphi.com!BIX.com!microbotics1
+From: microbotics1@BIX.com (microbotics1 on BIX)
+Newsgroups: comp.sys.amiga.hardware
+Subject: Re: Maxtransfer
+Date: 1 Feb 94 16:33:06 GMT
+Organization: Delphi Internet Services Corporation
+Lines: 25
+Message-ID: <microbotics1.760120386@BIX.com>
+References: <2iio3n$jdd@barney.cs.city.ac.uk> <2iisoc$frh@nz12.rz.uni-karlsruhe.de> <microbotics1.760042823@BIX.com> <jdow.760094685@BIX.com>
+NNTP-Posting-Host: bix.com
+
+jdow@BIX.com (jdow on BIX) writes:
+
+>microbotics1@BIX.com (microbotics1 on BIX) writes:
+
+>>uj1g@rzstud1.rz.uni-karlsruhe.de (Marek Tomczyk) writes:
+>>On a 1200, MaxTransfer should be 130560 (0xfffe00), or if that gives
+>>problems, 65024 (0xfe00).  Since this is the maximum size for any
+>>transfer, it should be a multiple of 512 (the block size).
+
+>Mike, I think you mean 0x1ffe00 == 130560, doncha? {^_-}
+
+>{^_^}	Joanne Dow, Editor Amiga Exchange, BIX
+>	jdow@bix.com
+
+Nope, I meant 130560 == 0x1fe00.  I'm sorry if anyone saw my response
+without seeing the others.
+
+Ah, well.  I guess I hadn't had enough caffiene yet that morning...
+
+---------------------+-----------------------+--------------------------
+Mike Pinson          | Paravision, Inc.      |     NEW PHONE NUMBER!
+Product Specialist   | 1251 American Parkway |     +1 (214) 644-0043
+microbotics1@bix.com | Richardson, Tx 75081  | 0900 to 1730 Central Time
+---------------------+-----------------------+--------------------------
+  Usenet too chatty? Internet too huge?  Ask 'info@bix.com' about BIX!
+
+
+Article 9354 of comp.sys.amiga.hardware:
+Newsgroups: comp.sys.amiga.hardware
+Path: dd.chalmers.se!news.chalmers.se!news.gu.se!cl3polof
+From: cl3polof@cling.gu.se (Per Olofsson)
+Subject: Re: Amiga 4000: What SIMMs ??
+In-Reply-To: s693650@kub.nl's message of Mon, 28 Feb 94 10:54:06 GMT
+Message-ID: <CL3POLOF.94Feb28194012@gus.cling.gu.se>
+Sender: news@news.gu.se (USENET News System)
+Nntp-Posting-Host: gus.cling.gu.se
+Organization: Computational Linguistics, Univ. of Gothenburg
+References: <1994Feb28.104916.12838@kub.nl> <1994Feb28.105406.13241@kub.nl>
+Date: Mon, 28 Feb 1994 18:40:12 GMT
+Lines: 21
+
+In article <1994Feb28.105406.13241@kub.nl> s693650@kub.nl (Hans Luyten) writes:
+> I'm planning to buy me an 4000/030,.. an article I read talked about
+> upgrading RAM with SIMMs,.. with either 1 or 4Mb SIMMs,...
+> What speed and which (8 or 9) Simms should this be,.. ??
+> 
+> I have two 1 Mb Simms (80ns) and want to use them in my A4000/030 (which
+> I still have to buy :)...
+> Would this be possible ??/ Is the Speed right ??
+
+You should use 72-pin, 32-bit wide SIMMs. It needs 80ns to operate at zero
+waitstates (60 and 70 can be used, but these cost more for no additional
+benefit).
+
+
+      Per Olofsson           |     -One day, lad, all this will be yours!
+  cl3polof@cling.gu.se       |     -What, the curtains?
+ http://hal.cling.gu.se      |            / Monty Python & the Holy Grail
+--
+
+
+Article 9407 of comp.sys.amiga.hardware:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!pipex!bnr.co.uk!stc!ppfm
+From: ppfm@bnr.co.uk (Peter Mitchell)
+Newsgroups: comp.sys.amiga.hardware
+Subject: Re: Amiga 4000: What SIMMs ??
+Date: 1 Mar 1994 11:08:55 GMT
+Organization: BNR Europe, New Southgate, London.
+Lines: 31
+Message-ID: <2kv7o7$k56@bnsgd245.bnr.co.uk>
+References: <1994Feb28.104916.12838@kub.nl> <1994Feb28.105406.13241@kub.nl> <CL3POLOF.94Feb28194012@gus.cling.gu.se>
+Reply-To: ppfm@bnr.co.uk
+NNTP-Posting-Host: bnsgs201.bnr.co.uk
+
+In article <CL3POLOF.94Feb28194012@gus.cling.gu.se>,
+Per Olofsson <cl3polof@cling.gu.se> wrote:
+>In article <1994Feb28.105406.13241@kub.nl> s693650@kub.nl (Hans Luyten) writes:
+>> I'm planning to buy me an 4000/030,.. an article I read talked about
+>> upgrading RAM with SIMMs,.. with either 1 or 4Mb SIMMs,...
+>> What speed and which (8 or 9) Simms should this be,.. ??
+>> 
+>> I have two 1 Mb Simms (80ns) and want to use them in my A4000/030 (which
+>> I still have to buy :)...
+>> Would this be possible ??/ Is the Speed right ??
+>
+>You should use 72-pin, 32-bit wide SIMMs. It needs 80ns to operate at zero
+>waitstates (60 and 70 can be used, but these cost more for no additional
+>benefit).
+>
+>
+
+I'd recommend getting 60nS SIMMS - so you can set Ramsey to run in skip
+mode. This will give you an instant 10% speed increase. Whether this is
+worth the extra cost will depend on the price of the SIMMS, but this is
+definately cheape than buying a faster processor card.
+
+Note: to run in skip mode you really need all SIMM's to be 60nS so you
+would need to remove the existing 1Mb SIMM, however you will probably want
+to fit 4 Meg SIMM's so you have to take out the 1 M SIMM anyway.
+
+-- 
+Peter Mitchell - Senior Design Engineer.   |   Amiga 4000/040  - 25/120/6
+Dept. GM21, BNR Europe , London England.   |   Amiga 500/68000 - 07/120/3
+email: ppfm@bnr.co.uk                      <- new Address (prefered)
+       peter.mitchell@lon40.nt.com         <- old address
+
+
+Article: 1357 of alt.sources.amiga
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!spool.mu.edu!nigel.msen.com!zib-berlin.de!informatik.tu-muenchen.de!stieber
+From: stieber@Informatik.TU-Muenchen.DE (Christian Stieber)
+Newsgroups: alt.sources.amiga
+Subject: Re: NoClick?
+Date: 19 May 1994 15:24:08 GMT
+Organization: Technische Universitaet Muenchen, Germany
+Lines: 29
+Distribution: world
+Message-ID: <2rg0ao$69r@hpsystem1.informatik.tu-muenchen.de>
+References: <Cq08z4.LCI@si.hhs.nl> <Cq1K9C.62G@si.hhs.nl> <2rfmum$noq@bmerha64.bnr.ca>
+NNTP-Posting-Host: hphalle8e.informatik.tu-muenchen.de
+X-Newsreader: TIN [version 1.2 PL2]
+
+Frank Meijer (meijer@bnr.ca) wrote:
+
+> : Noclick, lets the drive make a step back, in stead of making a step
+> : forward when looking for a disk, it therefore prevents the drive from
+> : clicking all the time.
+
+> I never understood why such a program is required.
+> Why was the driver implemented in a way that makes
+> the drive click in the first place?
+
+Because diskchanges are only detected when the head moves (i.e. the drive
+receives a STEP pulse). Many drives will not step past track 0, so you can
+move the head to track 0 and step towards track -1, but the drive will
+stay at track 0 (this is what NoClick activates). However, some drives
+will happily move to track -1, possibly causing damage (if you do it all
+the time), therefore the default-setting for NoClick is OFF. It is pretty
+difficult to get a drive that is on track -1 back to "normal".
+
+Christian
+
+
+--
+     //   Christian Stieber     | EMail: stieber@informatik.tu-muenchen.de
+    //    Seitzstr. 6 / Zi 306  | Phone: (Germany) (0)89-292732
+\\ //     D-80538 Muenchen      |
+ \X/      (Germany)             |   Only Amiga used to make it possible
+--------------------------------+-----------------------------------------
+    "Life starts at '030, fun starts at '040, impotence starts at '86"
+              keyboard not connected -- press F1 to continue
+
+
+Article: 1384 of alt.sources.amiga
+Path: news.chalmers.se!sunic!EU.net!uunet!zib-berlin.de!informatik.tu-muenchen.de!stieber
+From: stieber@Informatik.TU-Muenchen.DE (Christian Stieber)
+Newsgroups: alt.sources.amiga
+Subject: Re: NoClick?
+Date: 25 May 1994 16:06:30 GMT
+Organization: Technische Universitaet Muenchen, Germany
+Lines: 40
+Distribution: world
+Message-ID: <2rvt26$2gu@hpsystem1.informatik.tu-muenchen.de>
+References: <Cq08z4.LCI@si.hhs.nl> <Cq1K9C.62G@si.hhs.nl> <2rfmum$noq@bmerha64.bnr.ca> <2rg0ao$69r@hpsystem1.informatik.tu-muenchen.de> <2rvo1j$6f7@bmerha64.bnr.ca>
+NNTP-Posting-Host: hphalle9i.informatik.tu-muenchen.de
+X-Newsreader: TIN [version 1.2 PL2]
+
+Frank Meijer (meijer@bnr.ca) wrote:
+> Christian Stieber (stieber@Informatik.TU-Muenchen.DE) wrote:
+
+> : Because diskchanges are only detected when the head moves (i.e. the drive
+> : receives a STEP pulse). Many drives will not step past track 0, so you can
+> : move the head to track 0 and step towards track -1, but the drive will
+> : stay at track 0 (this is what NoClick activates). However, some drives
+> : will happily move to track -1, possibly causing damage (if you do it all
+> : the time), therefore the default-setting for NoClick is OFF. It is pretty
+> : difficult to get a drive that is on track -1 back to "normal".
+
+> : Christian
+
+
+> So how do I know if it's safe to use NoClick with my drive(s)?
+
+Try it. There are probably only a few drives that have problems. None
+of the Commodore-supplied drives should have problems, and I've never
+heard about any NoClick-problems. I just happen to know that there are
+drives that can't noclick, since I have one -:(
+
+If use NoClick, and your drive starts making "ugly noises" (i.e. the
+clicking sounds ugly), you're out of luck. To get the drive back
+in shape, turn off the HD and insert a bootable disk and reboot --- if it
+doesn't work, take out the disk, reset, wait until the drives clicks once,
+insert disk. If it doesn't work, try again, maybe waiting two clicks
+instead of one... after a few tries, it's probably okay. If you can't
+get it to work, open the case and move the head manually.
+
+Christian
+
+
+Article: 1806 of swnet.sys.amiga
+Path: news.chalmers.se!sunic!news.kth.se!news.kth.se!tomasa
+From: tomasa@dront.nada.kth.se (Tomas Arvidsson)
+Newsgroups: swnet.sys.amiga
+Subject: Re: Vad var det haer foor fel nuigen ?
+Date: 7 Jun 94 02:34:41
+Organization: Royal Institute of Technology, Stockholm, Sweden
+Lines: 33
+Distribution: swnet
+Message-ID: <TOMASA.94Jun7023441@dront.nada.kth.se>
+References: <2st2j8$18en@columba.udac.uu.se> <2sumh1$m1g@news.kth.se>
+NNTP-Posting-Host: dront.nada.kth.se
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+In-reply-to: ludde@zambesi.nada.kth.se's message of 6 Jun 1994 08:25:05 GMT
+
+
+> > In <2st2j8$18en@columba.udac.uu.se> d92mkv@Minsk.docs.uu.se (Markus
+> > Kvisth) writes:
+
+> In <2sumh1$m1g@news.kth.se> ludde@zambesi.nada.kth.se (Erik Lundevall)
+> writes:
+
+> >Jag tycker mig minnas att jag laest vilket fel detta indikerar
+> >men vet inte vart, aer det naagon annan som vet ?
+
+> Blinkningarna ska komma i perioder för övrigt, antalet blinkningar i varje
+> period anger vad det är för fel.
+
+En blinkning: 	  ROM checksum failure 
+Två blinkningar:  RAM test failed
+Tre blinkningar:  Watchdog timer test failure
+Fyra blinkningar: En kortslutning mellan två rader av tangenter.
+
+Blinkningarna är ca en sekund långa med en något längre paus mellan
+perioderna. Observera att det rör sig om hårdvara som sitter i
+tangentbordet och att testerna med eventuella felindikationer inte har
+med själva datorn att göra.
+
+--
+Tomas Arvidson			 			     ///
+d91tar@csd.uu.se,					    ///
+tomasa@nada.kth.se, tomasa@sprawl.adsp.sub.org   	\\\///
+Expressed opinions are mine unless stated otherwise      \XX/
+--
+Tomas Arvidson			 			     ///
+d91tar@csd.uu.se,					    ///
+tomasa@nada.kth.se, tomasa@sprawl.adsp.sub.org   	\\\///
+Expressed opinions are mine unless stated otherwise      \XX/
+
+
+Article 14988 of comp.sys.amiga.hardware:
+Newsgroups: comp.sys.amiga.hardware
+Path: dd.chalmers.se!news.chalmers.se!sunic!liuida!d91magho
+From: d91magho@odalix.ida.liu.se (Magnus Holmgren)
+Subject: Re: Overclocking A Amiga 4000/040
+Message-ID: <1994May21.122013.10398@ida.liu.se>
+Sender: news@ida.liu.se
+Organization: CIS Dept, Univ of Linkoping, Sweden
+References: <mediap.030f@channelx.hacktic.nl>
+Date: Sat, 21 May 1994 12:20:13 GMT
+Lines: 27
+
+mediap@channelx.hacktic.nl (Pascal Eeftinck) writes:
+
+>In a message of 18 May 94 Henry Norman wrote to All:
+
+> HN> math@asterix.rz.tu-clausthal.de (Torsten Hiddessen) writes:
+
+> TH>> otherwise it will overheat after 20 minutes of heavy load.
+
+> HN> Question from a hardware-illiterate programmer:  Is a CPU chip really
+> HN> getting hotter with a "heavy load" than when idle?  Isn't the CPU always
+> HN> 100% "busy" (in some kind of "idle loop" if nothing else to do)?
+
+>Yes, you're right. THE CPU IS ALWAYS VERY BUSY, especially on an Amiga. Due to
+>the multitasking the processor can't stay on-cache even when no process takes
+>any processing-time, so it always has to go off-chip for memory-accesses. I
+>don't know really if the chip would 'cool-off' if it doesn't have to go off chip
+>for memory accesses, but in the Amiga it certainly doesn't.
+
+Nope, he isn't right. When there is nothing to do for the CPU in an Amiga,
+Exec issues the STOP instruction. That one stops the CPU from fetching and
+executing instructions. Only an external interrupt will wake it up again. It
+seems reasonable that the power-usage is lower during this time (although I'm
+not sure about this).
+--
+---
+ Magnus Holmgren | Email: cmh@lysator.liu.se, cmh@augs.se | FIDO: 2:204/404.6
+Comp. Science & Engineering student, Linkoping Institute of Technology, Sweden
+
+

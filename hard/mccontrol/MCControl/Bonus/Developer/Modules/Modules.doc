@@ -1,0 +1,337 @@
+;----------------------------------------------------------------------------
+; $VER: MCControlModule.Doc 1.40 (19.02.2000)
+;----------------------------------------------------------------------------
+;This is not an documentation how to use the .mcm modules in your own
+;software! Its an documentation about how to write modules for other
+;card reader.
+;----------------------------------------------------------------------------
+TABLE OF CONTENTS
+
+MCControlModule/General
+MCControlModule/Module_Info
+MCControlModule/Module_Open
+MCControlModule/Module_Close
+MCControlModule/Module_AccessDirectFrame
+MCControlModule/Module_AccessDirectPage
+MCControlModule/Module_AccessRawFrame
+MCControlModule/Module_AccessRawPage
+;----------------------------------------------------------------------------
+
+First the main structure:
+
+Module_Identifier       = "MCCM"
+Module_VersionNumber    = 1
+        RSRESET
+Module_Code                 rs.w 1 ;MUST $4e75 (RTS)
+Module_Version              rs.w 1 ;Must be Module_VersionNumber
+Module_ID                   rs.l 1 ;Must be "MCCM"
+Module_Flags                rs.l 1 ;see below (unused flags must be zero)
+Module_Exec_Base            rs.l 1 ;Filled by MCControl
+Module_Dos_Base             rs.l 1 ;Filled by MCControl
+Module_Intuition_Base       rs.l 1 ;Filled by MCControl
+;--- Card Data
+Module_Reserved1            rs.l 14 ;Reserved (must be ZERO)
+;--- Jump Table
+Module_Info                 rs.w 3
+Module_Open                 rs.w 3
+Module_Close                rs.w 3
+Module_ReservedFunctions2   rs.w 3*7 ;Reserved
+Module_AccessDirectFrame    rs.w 3
+Module_AccessDirectPage     rs.w 3
+Module_AccessRawFrame       rs.w 3
+Module_AccessRawPage        rs.w 3
+Module_ReservedFunctions3   rs.w 3*6 ;reserved
+Module_SIZEOF               rs.b 0
+;----------------------------------------------------------------------------
+;--- Enable transfer routines:
+ BITDEF Module,AccessDirectFrame,3  ;Driver supports DirectFrameAccess
+ BITDEF Module,AccessDirectPage,7   ;Driver supports DirectPageAccess
+ BITDEF Module,AccessRawFrame,6     ;Driver supports RawFrameAccess
+ BITDEF Module,AccessRawPage,8      ;Driver supports RawPageAccess
+;--- Enable gadgets within the settings window:
+ BITDEF Module,ConfigMultiPage,5    ;Driver requires MultiPage setup
+ BITDEF Module,Reserved2,0          ;Must be Zero
+ BITDEF Module,ConfigDevice,1       ;Driver requires an Device/Unit selector
+;--- Enable special functions:
+ BITDEF Module,EnableMultiPage,2    ;Turn on MultiPage support
+ BITDEF Module,EnableMultiSlot,4    ;Turn on MultiSlot support
+ BITDEF Module,EnableModuleInfo,9   ;Turn on ModuleInfo support
+;----------------------------------------------------------------------------
+Module_Error_NoError       = 0
+Module_Error_OpenDevice    = 1 ;Opening the given device fails!
+Module_Error_NotCompatible = 2 ;If hardware supports identification!
+Module_Error_NoTimerDevice = 3 ;If you need the timer.device and opening fails
+Module_Error_NoParallelPort= 4 ;No ParallelPort resource
+Module_Error_NoResources   = 5 ;Use for missing signals, CIA Interrupts,...
+Module_Error_OutOfMemory   = 20
+;----------------------------------------------------------------------------
+;--- For AccessDirectFrame (Mode)
+Module_AccessDirect_Read    = 0
+Module_AccessDirect_Write   = 1
+;--- For AccessDirectPage (Mode)
+Module_AccessDirect_Up      = 0
+Module_AccessDirect_Down    = 1
+;----------------------------------------------------------------------------
+;----------------------------------------------------------------------------
+
+ NOTES 
+
+   The exec, dos and intuition  bases  are  for  free  usage.  This  saves
+   memory,  time and of cource code size. The card data is for free usage,
+   too.
+
+   Beside the arguments delivered for  each  function  you´ll  receive  an
+   pointer on the module itself in register A4!
+
+   Make sure to backup a2-a5 and d2-d7 just like the Amiga-OS is doing!
+
+   You must implement port and device allocation! Don´t try to  play  with
+   the  hardware without owning the right to do so. If possible try to use
+   parallel.device or serial.device. (The  user  defined  device  will  be
+   given during Module_Open().
+       
+   It´s not required to create an real  jumptable,  by  using  JMPs.  Feel
+   free, to use an BRA followed by an NOP. (See RamCard.mcm)
+       
+   Implement the code as fast as possible, because its used for many times
+   during reading and writing memory cards. Try to avoid overhead by using
+   Module_Open.
+
+   If you need help then ask me and I´am telling you what to  do.  If  you
+   don´t  know how to code a driver then send me your information and I´ll
+   do my very best.
+
+;----------------------------------------------------------------------------
+;----------------------------------------------------------------------------
+MCControlModule/Module_Info
+
+   NAME
+                 Module_Info -- open and inits the module
+
+   SYNOPSIS
+                 Error   = Module_Info(Buffer, BufferSize)
+                 D0                    a0,     d0
+
+                 (ULONG) = Module_Open(*UBYTE, ULONG)
+
+   FUNCTION
+                 Give MCControl special information about your driver,
+                 the hardware version detected or something like that.
+
+   INPUTS
+                 Buffer:     Destination buffer for your message
+                 BufferSize: Size of the destinaton buffer! Make sure you
+                             don´t write more than these numbe of bytes!
+
+   RESULT
+                  0 = No Error
+
+                 Other results are currently not allowed!!
+
+   NOTES
+                 Please support this routine! Even if there isn´t any
+                 important to say, then just report the version strings
+                 like shown in the example sources.
+
+                 Buffer is garanted to be 100 bytes at minimum. If you are
+                 not sure your routine may create longer strings, then use
+                 BufferSize to not step over boundaries. The visible gadget
+                 space isn´t very big, so take an eye on this, too!
+
+                 This function requires the flag: ModuleF_EnableModuleInfo!
+                 Otherwise MCControl is ignoring this routine.
+
+   SEE ALSO
+                 Module_Close()
+;----------------------------------------------------------------------------
+MCControlModule/Module_Open
+
+   NAME
+                 Module_Open -- open and inits the module
+
+   SYNOPSIS
+                 Error   = Module_Open(Device, Unit)
+                 D0                    a0,     d0
+
+                 (ULONG) = Module_Open(*UBYTE,ULONG)
+
+   FUNCTION
+                 Open the required device and alloc additional memory
+                 if needed.
+
+   INPUTS
+                 Device: Pointer on device name (STRING IS READ ONLY!!!)
+                 Unit:   Unit of the given device
+
+   RESULT
+                  0 = No Error
+                  1 = Open device error
+                  2 = Not compatible
+                  3 = time.device open error
+                  4 = No parallel resource
+                  5 = No resources (no signals, CIA interrupts)
+                 20 = Out of memory
+
+                 Other results are currently not allowed!!
+
+   NOTES
+                 Device and Unit are only valid if the ModuleF_ConfigDevice
+                 flag within the module structure (Module_Flags) is set.
+
+   SEE ALSO
+                 Module_Close()
+;----------------------------------------------------------------------------
+MCControlModule/Module_Close
+
+   NAME
+                 Module_Close -- free all data and close all devices.
+
+   SYNOPSIS
+                 Module_Close()
+
+   FUNCTION
+                 Close all devices and free all allocated memory .
+
+   NOTES
+                 Module_Close must be save to be called more than
+                 one time. This means you must detect an closing of
+                 an just closed module. In this case you must return
+                 without any action.
+
+   SEE ALSO
+                 Module_Open()
+;----------------------------------------------------------------------------
+MCControlModule/Module_AccessDirectFrame
+
+   NAME
+                 Module_AccessDirectFrame -- Handles a comlete frame at once
+
+   SYNOPSIS
+                 Error   = Module_AccessDirectFrame(Frame,Mode,Data,Slot)
+                 D0                                 D0,   D1,  A0  ,A1
+
+                 (LONG)  = Module_AccessDirectFrame(WORD, LONG,*Byte,WORD)
+
+   INPUTS
+                 Frame: Frame number to read or write!
+                 Mode:  Module_AccessDirect_Read or Module_AccessDirect_Write
+                 Data:  Pointer on Buffer!
+                 Slot:  Number of card slot (0-x)
+
+   RESULT
+                  0 = Ok
+                 -1 = ERROR
+
+                 Other results are currently not allowed!!
+
+   FUNCTION
+                 Read or write the given frame (128 bytes)!
+
+   NOTE
+                 Data must be 128 bytes long!
+                 This function requires the flag: ModuleF_AccessDirectFrame!
+                 Otherwise MCControl is ignoring this routine.
+;----------------------------------------------------------------------------
+MCControlModule/Module_AccessDirectPage
+
+   NAME
+                 Module_AccessDirectPage -- Handle page swapping
+
+   SYNOPSIS
+                 Error   = AccessModule_DirectPage(Offset,Mode,Slot)
+                 D0                                D0,    D1  ,A1
+
+                 (LONG)  = Module_AccessDDirectPage(WORD, LONG, WORD)
+
+   INPUTS
+                 Offset: Number of pages to jump!
+                 Mode:   Module_AccessDirect_Next or Module_AccessDirect_Prev
+                 Slot:   Number of card slot (0-x)
+
+   RESULT
+                  0 = Ok
+                 -1 = ERROR
+
+                 Other results are currently not allowed!!
+
+   FUNCTION
+                 Change the active card page of an multipage MemoryCard!
+
+   NOTE
+                 This function requires the flag: ModuleF_AccessDirectPage!
+                 Otherwise MCControl is ignoring this routine.
+
+;----------------------------------------------------------------------------
+MCControlModule/Module_AccessRawFrame
+
+   NAME
+                 Module_AccessRawFrame -- Raw handling of frame access
+
+   SYNOPSIS
+                 Error   = Module_AccessRawFrame(Data ,Size,Flags,Slot)
+                 D0                              a0   ,D0  ,D1   ,A1
+
+                 (LONG)  = Module_AccessRawFrame(*Byte,LONG,LONG,WORD)
+
+   INPUTS
+                 Data:     Pointer on raw buffer
+                 Size:     Number of bytes in buffer
+                 Flags:    Currently always NULL
+                 Slot:     Number of card slot (0-x)
+
+   RESULT
+                  0 = Ok
+                 -1 = ERROR
+
+                 Other results are currently not allowed!!
+
+   FUNCTION
+                 You´ll get a real playstation message for direct raw
+                 card access. Just take the first byte, put it to your
+                 reader and store the result where the source byte came
+                 from. Do this for each byte (size times). Thats all!
+                 MCControl handles the error checking for you!
+   NOTE
+                 This function requires the flag: ModuleF_AccessRawFrame
+                 Otherwise MCControl is ignoring this routine.
+;----------------------------------------------------------------------------
+MCControlModule/Module_AccessRawPage
+
+   NAME
+                 Module_AccessRawPage -- Raw handling of page access
+
+   SYNOPSIS
+                 Error   = Module_AccessRawPage(Data ,Size,Flags,Slot)
+                 D0                             a0   ,D0  ,D1   ,A1
+
+                 (LONG)  = Module_AccessRawPage(*Byte,LONG,LONG,WORD)
+
+   INPUTS
+                 Data:     Pointer on raw buffer
+                 Size:     Number of bytes in buffer
+                 Flags:    Currently always NULL
+                 Slot:     Number of card slot (0-x)
+
+   RESULT
+                  0 = Ok
+                 -1 = ERROR
+
+                 Other results are currently not allowed!!
+
+   FUNCTION
+                 You´ll get two messages mixed together. Your job is to
+                 put the first byte via CMD line into the card an the
+                 second byte at the same transfer via DAT. As you can see
+                 its required to output both information lines, so there
+                 is no need to store any result. The card is thinking its
+                 hearing an PSX and an PSX-Controller talking and browses
+                 through the pages. Size (Size) delivers the total number
+                 of bytes in buffer and you transfer 2 bytes at the same
+                 time, so just half this value to get the number of loop
+                 required for transfer.
+
+   NOTE
+                 This function requires the flag: ModuleF_AccessRawPage
+                 Otherwise MCControl is ignoring this routine.
+;----------------------------------------------------------------------------
+

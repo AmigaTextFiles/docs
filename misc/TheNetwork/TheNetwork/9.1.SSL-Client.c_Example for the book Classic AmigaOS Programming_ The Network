@@ -1,0 +1,383 @@
+/**********************************************************************************
+;
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;
+***********************************************************************************/
+
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+
+#include <proto/exec.h>
+#include <proto/dos.h>
+#include <proto/amissl.h>
+#include <proto/amisslmaster.h>
+
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <proto/socket.h>
+
+#include <amissl/amissl.h>
+#include <libraries/amisslmaster.h>
+#include <libraries/amissl.h>
+
+// /opt/amiga/bin/m68k-amigaos-gcc SSLClient.c -noixemul -Os -o SSLClient
+
+// ---------------------------------------------------------------------------
+// Ensure that AmigaOS gives us enough stack
+
+#ifdef __VBCC__
+	__entry char StackCookie[] = "$STACK:20480";
+#endif
+#ifdef __GNUC__
+	__attribute__((used)) char StackCookie[] = "$STACK:20480";
+#endif
+
+// ---------------------------------------------------------------------------
+
+// The SocketBase is only required by GCC.
+#ifdef __GNUC__
+	struct Library * SocketBase = NULL;
+#endif
+
+// Library bases of the AmiSSL libraries.
+struct Library *AmiSSLMasterBase, *AmiSSLBase, *AmiSSLExtBase;
+
+// The variables used to store the socket error codes
+static long ErrNo=0;
+static long HErrNo=0;
+
+
+// ---------------------------------------------------------------------------
+// - Ensure the error number is within the expected range.
+// - Get the human readable string and print it after the provided message.
+
+void Error( char * pMsg )
+{
+	long Error = ErrNo;
+	
+	if ( Error < 0 ) Error = -Error;
+	if ( Error > 10000 ) Error -= 10000;
+	
+	struct TagItem tags[2];
+	tags[0].ti_Tag= SBTM_GETVAL(SBTC_ERRNOSTRPTR);
+	tags[0].ti_Data= Error;
+	tags[1].ti_Tag= TAG_END;
+	
+	if ( SocketBaseTagList( tags ) != 0 )
+	{
+		printf( "%s Unkown error: %ld\n", pMsg, ErrNo );
+	}
+	else
+	{
+		char * pErrStr = (char *)tags[0].ti_Data;
+		printf( "%s Error: %ld (%s)\n", pMsg, ErrNo, pErrStr );
+	}
+}
+
+
+// --------------------------------------------------------------------------
+// Get the human readable string and print it after the provided message.
+
+void SSLError( const char * pMsg )
+{
+	char Buffer[ 256 ];
+	ERR_error_string_n( ERR_get_error(), Buffer, 255 );
+	
+	printf( "%s: %s\n", pMsg, Buffer );
+}
+
+
+// ---------------------------------------------------------------------------
+// - Try to resolve the hostname into an IP address.
+// - Return the address as a 32 bits number.
+
+ULONG GetIPAddress( char * pName )
+{
+	struct hostent * pHE = gethostbyname( pName );
+	if ( !pHE )
+	{
+		printf( "GetIPAddress: Unable to resolve hostname! Error: %ld\n", HErrNo );
+		return 0;
+	}
+	
+	ULONG Addr = 0;
+	memcpy( (char *)&Addr, pHE->h_addr, pHE->h_length );
+	
+	return Addr;
+}
+
+
+// --------------------------------------------------------------------------
+// Print the subject and issuer of the certificate
+
+void PrintCertificateInfo( X509 * pCert )
+{
+	char * pStr = X509_NAME_oneline( X509_get_subject_name( pCert ), 0, 0 );
+	if ( pStr )
+	{
+		printf( "\tSubject: %s\n", pStr );
+		OPENSSL_free( pStr );
+	}
+	else
+	{
+		printf( "PrintCertificateInfo: Unable to get certificate subject!\n");
+	}
+	
+	pStr = X509_NAME_oneline( X509_get_issuer_name( pCert ), 0, 0 );
+	if ( pStr )
+	{
+		printf( "\tIssuer: %s\n", pStr );
+		OPENSSL_free( pStr );
+	}
+	else
+	{
+		printf( "PrintCertificateInfo: Unable to get certificate issuer!\n");
+	}
+}
+
+
+// --------------------------------------------------------------------------
+// This callback will be called for every certificate in the chain.
+
+static int verify_cb( int PreverifyOK, X509_STORE_CTX * pStoreCtx )
+{
+	if ( !PreverifyOK )
+	{
+		int Err = X509_STORE_CTX_get_error( pStoreCtx );
+		if ( Err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT )
+		{
+			printf( "WARNING: Allowing self-signed certificate!\n" );
+			PreverifyOK = 1;
+		}
+		else
+		{
+			const char * pStr = X509_verify_cert_error_string( Err );
+			printf( "Certificate verification failed (%s)\n", pStr );
+		}
+	}
+	else
+	{
+		printf( "Certificate verification successful!\n" );
+		
+		X509 * pCert = X509_STORE_CTX_get_current_cert( pStoreCtx );
+		if ( pCert )
+		{
+			PrintCertificateInfo( pCert );
+			X509_free( pCert );
+		}
+	}
+	
+	return PreverifyOK;
+}
+
+
+// --------------------------------------------------------------------------
+
+void Main( char * pName )
+{
+	// Resolve the domain name into an IP address
+	ULONG Addr = GetIPAddress( pName );
+	if ( !Addr )
+	{
+		return;
+	}
+	
+	printf( "Address: %s\n", Inet_NtoA( Addr ) );
+	
+	// Create a TCP socket.
+	int Socket = socket( AF_INET, SOCK_STREAM, 0 );
+	if ( Socket < 0 )
+	{
+		Error( "PrepareSocket: Unable to open socket!" );
+		return;
+	}
+	
+	printf( "Socket open..\n" );
+	
+	// Get the context for a client
+	SSL_CTX * pCtx = SSL_CTX_new( TLS_client_method() );
+	if ( !pCtx )
+	{
+		printf( "Unable to get Ctx object!\n" );
+		CloseSocket( Socket );
+		return;
+	}
+	
+	// Use the defaults on the context and specify the verification callback function
+	SSL_CTX_set_default_verify_paths( pCtx );
+	SSL_CTX_set_verify( pCtx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_cb );
+	
+	// Get the SSL object to use for the connection
+	SSL * pSSL = SSL_new( pCtx );
+	if ( !pSSL )
+	{
+		printf( "Unable to get SSL object!\n" );
+		SSL_CTX_free( pCtx );
+		CloseSocket( Socket );
+		return;
+	}
+	
+	// Use the socket for the SSL connection
+	SSL_set_fd( pSSL, Socket );
+	
+	// Specify the host name for hosts serving multiple domains
+	SSL_set_tlsext_host_name( pSSL, pName );
+	
+	// Do any renegotiation in the background
+	SSL_set_mode( pSSL, SSL_MODE_AUTO_RETRY );
+	
+	
+	// Begin connection to port 443 on the IP address
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = 443;
+	SockAddr.sin_addr.s_addr = Addr;
+	
+	int Result = connect( Socket, (struct sockaddr *)&SockAddr, sizeof( SockAddr ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to connect socket!" );
+	}
+	else
+	{
+		printf( "Socket connected!\n" );
+		
+		// Start SSL handshake
+		Result = SSL_connect( pSSL );
+		if ( Result < 0 )
+		{
+			SSLError( "SSL: Unable to connect!" );
+		}
+		else
+		{
+			printf( "SSL handshake done. Using %s\n", SSL_get_cipher( pSSL ) );
+			
+			// Get the certificate sent by the server
+			X509 * pCert = SSL_get1_peer_certificate( pSSL );
+			if ( !pCert )
+			{
+				printf( "Unable to get server certificate!\n" );
+			}
+			else
+			{
+				Printf( "Server certificate:\n" );
+				
+				PrintCertificateInfo( pCert );
+				
+				X509_free( pCert );
+			}
+			
+			// Send a simple HTTP GET request to the server
+			char RequestStr[ 250 ];
+			sprintf( RequestStr, "GET / HTTP/1.0\r\nhost: %s\r\n\r\n", pName );
+			int BytesDone = SSL_write( pSSL, RequestStr, strlen( RequestStr ) );
+			if ( BytesDone < 0 )
+			{
+				SSLError( "SSL: Unable to write data!" );
+			}
+			else
+			{
+				printf( "Bytes written: %d\n", BytesDone );
+				
+				// Keep receiving until there is no more data
+				char Buffer[ 2048 ];
+				int BytesRead = 0;
+				while ( (BytesRead = SSL_read( pSSL, Buffer, 2047 )) > 0 )
+				{
+					printf( "Bytes read: %d\n", BytesRead );
+					Buffer[ BytesRead ] = '\0';
+					//printf( Buffer );
+				}
+			}
+			
+			// Initiate the shutdown handshake
+			SSL_shutdown( pSSL );
+		}
+	}
+	
+	CloseSocket( Socket );
+	SSL_free( pSSL );
+	SSL_CTX_free( pCtx );
+}
+
+
+// --------------------------------------------------------------------------
+
+int main( int argc, char *argv[] )
+{
+	if ( argc <= 1 )
+	{
+		printf( "Need hostname or IP address as argument!\n" );
+		return 0;
+	}
+	
+	#ifdef __GNUC__
+	SocketBase = OpenLibrary( "bsdsocket.library", 4 );
+	if ( !SocketBase )
+	{
+		printf( "Unable to open bsdsocket.library!\n" );
+		return 0;
+	}
+	#endif
+	
+	AmiSSLMasterBase = OpenLibrary( "amisslmaster.library", AMISSLMASTER_MIN_VERSION );
+	if ( !AmiSSLMasterBase )
+	{
+		printf( "Unable to open amisslmaster.library\n" );
+		#ifdef __GNUC__
+		CloseLibrary( SocketBase );
+		#endif
+		return 0;
+	}
+	
+	// Specify the variables that will receive socket library error codes
+	SocketBaseTags( SBTM_SETVAL(SBTC_ERRNOLONGPTR), (int)&ErrNo,
+					SBTM_SETVAL(SBTC_HERRNOLONGPTR), (int)&HErrNo,
+					TAG_END );
+	
+	// Setup the AmiSSL libraries for use with the bsdsocket.library
+	OpenAmiSSLTags( AMISSL_CURRENT_VERSION,
+					AmiSSL_UsesOpenSSLStructs, FALSE,
+					AmiSSL_GetAmiSSLBase, (int)&AmiSSLBase,
+					AmiSSL_GetAmiSSLExtBase, (int)&AmiSSLExtBase,
+					AmiSSL_SocketBase, (int)SocketBase,
+					AmiSSL_ErrNoPtr, (int)&ErrNo,
+					TAG_END );
+	
+	// Do what we came here for
+	Main( argv[1] );
+	
+	
+	CloseAmiSSL();
+	CloseLibrary( AmiSSLMasterBase );
+	
+	#ifdef __GNUC__
+	CloseLibrary( SocketBase );
+	#endif
+	
+	
+	return 0;
+}

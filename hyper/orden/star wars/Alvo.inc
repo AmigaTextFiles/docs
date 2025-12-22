@@ -1,0 +1,39 @@
+@DATABASE Alvo.inc
+@NODE "Alvo"
+
+Die folgende Beschreibung kann z.B. für das Star Wars-
+Rollenspielsystem genutzt werden.
+
+
+Der Orden der Macht
+===================
+Vor tausenden von Jahren, als es die ersten Jedi-Ritter gab, 
+entstand auch eine Sekte, die diese Jedis als Propheten 
+verehrten. Die Jedis mochten diese Vergötterung nicht, da sie 
+ganz im Widerspruch stand zu allem was sie mit Hilfe der
+Macht gelernt haben. Doch trotz vieler Versuche ihrerseits 
+ließ sich die Sekte nicht von ihrem Glauben abbringen, im 
+Gegenteil der Orden gewann schnell an Mitgliedern und 
+politischer Macht. Einer ihrer Hauptanliegen wurde die 
+Konzentration auf die Propheten. Dabei beschränkten sie sich 
+nicht nur auf sich, sondern auf die ganze Bevölkerung. Mit
+militärischer Stärke wurden ganze Planeten bekehrt. Nach der 
+Eroberung wird dann die moderne Technik zerstört, so daß alle 
+ihre Planeten auf einer einheitlichen niedrigen 
+Evolutionsstufen standen, mit Außnahme der Heimat Alvo, hier 
+war das spirituelle und militärische Zentrum der Sekte. Von 
+einem Großteil der erbeuteten Vermögens wurde hier auch ein 
+riesiger Tempel errichtet. 
+Mit der Machtergreifung des Imperiums in der Galaxis wurden 
+neben den Jedi-Rittern auch der "Orden der Macht" nahezu 
+ausgelöscht und die Bauten auf dem Planeten Alvo zerstört. 
+Heute erinnern nur noch Ruinen an diese Zeit. Doch einige
+wenige haben sich wieder als Ziel gesetzt, die Sekte wieder zu 
+der Stärke zu führen, die sie früher mal inne gehabt hatte.
+
+
+@ENDNODE
+
+
+
+

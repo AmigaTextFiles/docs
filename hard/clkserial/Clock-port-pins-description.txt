@@ -1,0 +1,141 @@
+Signal Descriptions for the Amiga A1200 'Clock Port'
+
+Other notes
+
+
+Because the A1200 implements only a 16 M-byte address space and the software currently 
+implements only the Zorro-Il auto-configuration protocol, memory expansion devices are limited 
+to the 4/8 M-bytes allocated to "Zorro Space" memory expansion in the address map. There are 
+4-Mbytes available if a PCMCIA card is inserted, 8M-bytes if no card is inserted or the interface 
+is disabled by software.
+
+Memory/expansion device design is similar to that of Zorro bus peripherals, with the exception 
+that the devices should run off the 14MHz processor clock and most memory devices will use 
+the _OVR signal to disable the default Gayle cycle termination and aasert their own _DSACK for 
+32-bit termination.
+
+All devices should implement the Zorro-Il auto-configuration protocol, since this provides for 
+automatic address assignment and device driver linkage.  There is a pin on the expansion 
+connector that is defined to be the start of the auto-config chain, currently this is just a ground, 
+but future systems are may put some auto-config resources on the main board and implement 
+this as an output.
+
+There are some fixed decodes implemented for specific devices, (UART, network and RTC) 
+however these should be avoided except for the most trivial devices since system software may 
+assume the presence of specific (but currently undefined) devices at those decodes.
+
+	Various address ranges are decoded and generate "Intel/PC" style memory 
+read/write (_OE/_WE) and I/O read/write (_IORD/_IOWR) strobe signals, insert 
+default wait-states for peripheral timing and obey the _WAIT signal to add additional 
+wait states.
+
+Note the above is from the A1200 system spec, the _WAIT signal is not present on the 
+clock port header.
+
+Unless stated overwise, all signals are TTL compatible and have the following characteristics
+
+Logic 0		<=0.8V for an input, <= 0.4V for an output, 3.2 mA drive.
+Logic 1		>=2.0V for an input, >= 2.4V for an output, 400 microamp (uA) drive.  
+
+DRD0-DRD31
+
+32 bit DRAM Data bus.
+
+Budgie provides these signals. 
+Essentially the 68020 Data bus buffered/relayed via Budgie.
+Budgie segregates the 68020 from the Chip Ram. The 68020 access chip
+RAM and the custom chips over this bus, via Budgie.
+ 
+This bus can not be used for Add on peripherals, it is only for the onboard
+chip ram.
+
+
+_RTC_CS 
+
+Chip select for the real time clock that was never fitted.
+It decodes/selects a 64K memory space from $DC0000 to DCFFFF.
+There are 3 Wait states on a read and 4 on a write to ports using 
+this address strobe.
+Active low.
+
+_IORD
+
+An Intel/PC style I/O Read signal.
+Active low.
+Used for Read strobes on a device connected to the clock port.
+The IORD signal is also used by the IDE interface.
+
+Signal sourced from Gayle. 
+
+_IOWR
+
+An Intel/PC style I/O Write signal.
+Active low.
+Used for write strobes to devices connected to the clock port.
+Also used by the IDE interface.
+
+Signal sourced from Gayle. 
+
+_RESET & PWR_BAD
+
+The RESET line appears to come from the RESET line by the keyboard micro?
+
+PWR_BAD is a power up reset signal, as far as I can tell.
+
+The KB_RESET signal is used to Warm Reboot the Amiga and this signal comes from the 
+keyboard array by using the 3 finger salute!
+
+_INT6
+
+A level 6 interrupt which goes to Paula. Paula feeds this to the 68020's IPL 
+(Interrupt Priority Level) lines. Can be used by add on peripherals
+
+_RTC_CS
+
+One of 2 chip selects available on the clock port.
+
+Was originally intended for the optional clock!
+
+It is active low for any address access in the range of $DC0000 to $DCFFFF
+
+_SPARE_CS
+
+The second of the chip selects.
+
+It is active low for any address access in the range of $D80000 to $D8FFFF
+
+D23-D16
+
+8 bits of the 68020 Data bus.
+
+These are the only data bus lines available for add on peripherals.
+
+These lines connect directly to the 68020 so bear in mind their limited drive 
+capability, 400 uA for a logic 1, and 3.2 mA for a logic 0.
+
+Timing in relation to IORD and IOWR is detailed later.
+
+A5-A2
+
+4 bits of the 68020 Address bus.
+
+DC drive capabilities as above for the Data bus.
+
+Timing info to be added later.
+
+VCC
+
+A +5V supply pin.
+
+No idea of current limits, depends on PCB tracking. 
+Limit to 200 mA to play safe.
+
+GND
+
+2 0VL (0V logic) pins.
+
+The End
+
+by Ian Stedman
+
+Finished on the 4th July 2001.

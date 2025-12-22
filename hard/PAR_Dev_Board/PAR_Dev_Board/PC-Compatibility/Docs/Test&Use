@@ -1,0 +1,235 @@
+============================================================================
+
+                          PC Compatibility Tests.
+                          -----------------------
+
+(Apologies for any typos, 16-06-2008. :)
+(I am always one for doing the ~impossible~... :)
+
+(AN A1200(HD) IS ASSUMED TO BE THE COMPUTER TESTBED.)
+
+Basic +5 Volt Usage Only For The Time Being:-
+---------------------------------------------
+
+  1) Read the WARNING section at the end of this text file.
+  2) Do a final check of your wiring and construction!!! IF you are happy
+     then continue to 3) otherwise STOP at this point.
+  3) Ensure jumpers LK18B, (Black), and LK19B, (Red), are fitted.
+  4) Connect the GREY flylead to TP3 as shown in the photographs.
+  5) Connect a PP3 battery to the terminals and the red LED should light
+     up.
+  6) Using a Voltmeter check the voltages from TP2 to TP4, TP3 to TP4,
+     TP5 to TP4 and TP6 to TP4 and check that they correspond roughly to
+     the ~Specifications~ file.
+  7) IF you get these values within practical limits then go to Part 9).
+  8) IF NOT then go back to Part 1).
+  9) Ensure the AMIGA is switched off, (powered down).
+ 10) Connect the PAR_Dev_Board to the parallel port.
+ 11) Remove the red jumper LK19B completely and put in a safe place.
+ 12) Reconnect the flylead to any one of the 2, (3), terminals of LK19B.
+     !!! DO NOT CONNECT IT TO LK19A AT ALL !!!
+ 13) Connect a wire from OUTPUT terminal 11 to OUTPUT terminal 18.
+     These are the ~BUSY~ and ~GND~ lines respectively.
+ 14) Remove the black jumper from LK18B and replace it onto LK18A.
+ 15) Switch on the AMIGA and boot into Workbench.
+ 16) Open up a CLI/Shell and enter:-
+
+              Echo > PAR: "This is a test."<RETURN/ENTER>
+
+ 17) The command line cursor should almost immediately return. Try this
+     a few times. IF this result occurs then go to Part 19). DO NOT
+     close down the CLI/Shell.
+ 18) IF it does NOT return, but hangs instead, SWITCH OFF the AMIGA,
+     disconnect the PAR_Dev_Board and re-check ALL of your work!!!
+     Go back to Part 1).
+ 19) There is no further use for the built-in low power PSU for the
+     time being but it will be used later in the series.
+ 20) REMEMBER!!! The AMIGA is still powered up so VERY carefully remove
+     the flylead from the terminal of LK19B and replace it onto TP3 as
+     shown in the photographs.
+ 21) Replace the red jumper back to LK19B.
+ 22) Replace the black jumper back to LK18B.
+ 23) The AMIGAs 5 Volt rail should now be disconnected from the clock
+     and the clock disabled also via LK18B.
+ 24) You can now carry on with........
+
+Direct Parallel Port Access Using ARexx:-
+-----------------------------------------
+
+  1) The CLI/Shell should still be open.
+  2) IF RexxMast is NOT running, type the following:-
+
+                    SYS:System/RexxMast<RETURN/ENTER>
+
+  3) This is the default install location of RexxMast on a standard A1200.
+  4) Go to the drawer for this stage only called ~Test-SW~.
+  5) Type in the following:-
+
+                RX Parallel-Port-Access.rexx<RETURN/ENTER>
+
+  6) Follow the on screen information.
+  7) Place the SW into READ mode and short any OUTPUT terminal from 2 and 9
+     inclusive to OUTPUT terminal 18. The data input terminals to GND.
+     The number displayed will change. There should NOT be any ~build~
+     errors as this should have been catered for earlier in the series.
+  8) Remove any shorting wires used in Part 7) above and exit READ mode.
+  9) Now place the SW into WRITE mode. The SW will toggle the parallel
+     port from 85, (0x55), decimal to 170, (0xAA), decimal at about once
+     a second.
+ 10) Use a voltmeter and check that the lines are being toggled. Again
+     there should NOT be any ~build~ errors as before.
+ 11) You now have DIRECT access to the parallel port using nothing but
+     ARexx. Once you are happy with the board so far........
+ 12) Switch off the AMIGA and disconnect all of the attached hardware to
+     the parallel port.
+
+----------------------------------------------------------------------------
+
+(HAS ANYONE FOUND THE FLAW YET WHEN USING PAR: AS A VOLUME IN EITHER READ
+OR WRITE MODES?)
+
+There is no need to extract this code as it is in the Test-SW drawer ready
+for use. This code has the flaw above catered for so you should now have
+something to help you find out what it is... :)
+
+(The code is best run using standard ~topaz 8~ fonts.)
+
+----------------------------------------------------------------------------
+
+ARexx ~DMA~ Code:-
+------------------
+
+/* --------------------------------------------------- */
+/* Parallel-Port-Access.rexx, (C)2008 B.Walker, G0LCU. */
+/* --------------------------------------------------- */
+
+/* Direct parallel port programming using AREXX. */
+
+/* Set up any constants or variables. */
+  mousetrap=1
+  portvalue=0
+  number='0'
+  copyright='     $VER: Parallel-Port-Access.rexx_Version_0.5.00_17-06-2008_(C)G0LCU.'
+
+/* Use ECHO for ordinary printing to the screen and SAY for printing results. */
+  DO FOREVER
+    ECHO 'c'x
+    SAY copyright
+    ECHO 'a'x'd'x'9'x'9'x'9'x'1) Read from the parallel port.'
+    ECHO '9'x'9'x'9'x'2) Write to the parallel port.'
+    ECHO 'a'x'd'x'9'x'9'x'9'x'3) Quit this program.'
+    ECHO 'a'x'd'x'9'x'9'x'Type in a number and then press ENTER/RETURN:-'
+    PULL number
+    IF number='1' THEN CALL readparallelport
+    IF number='2' THEN CALL writeparallelport
+    IF number='3' THEN CALL getout
+  END
+
+/* Set up the parallel port screen. */
+parallelportsetup:
+  ECHO 'c'x
+  ECHO '9'x'9'x'Open the parallel port for access...'
+  ECHO 'a'x'd'x'9'x'9'x'Data direction address is at $BFE301...'
+/* Click mouse button to exit. */
+  ECHO 'a'x'd'x'9'x'9'x'Click left mouse button to exit...'
+/* Access the parallel port directly. */
+  ECHO 'a'x'a'x'd'x'9'x'9'x'Data transfer address is at $BFE101...'
+  ECHO
+  RETURN
+
+/* Set the parallel port for read only. */
+readparallelport:
+  CALL parallelportsetup
+/* Set prarllel port data lines to read. */
+  EXPORT('00BFE301'x,'00'x,1)
+  portvalue=IMPORT('00BFE101'x,1)
+/* Read initial value from parallel port. */
+  SAY '9'x'9'x'Value at the port is:- '||C2D(portvalue)||'.   '
+/* Parallel port reading. */
+  DO FOREVER
+    portvalue=IMPORT('00BFE101'x,1)
+    SAY 'b'x'9'x'9'x'Value at the port is:- '||C2D(portvalue)||'.   '
+/* Click left mouse button to exit. */
+    DO FOR 250
+      mousetrap=IMPORT('00BFE001'x,1)
+      IF BITTST(mousetrap,6)=0 THEN RETURN
+    END
+  END
+
+/* Set the parallel port to write only. */
+writeparallelport:
+  CALL parallelportsetup
+/* Set prarllel port data lines to write. */
+  EXPORT('00BFE301'x,'FF'x,1)
+  ECHO '9'x'9'x'Value at the port is:- FFH.'
+/* Write to the parallel port. */
+  DO FOREVER
+/* Write the value 85 decimal, (55 Hexadecimal), to the port. */
+    ECHO 'b'x'9'x'9'x'Value at the port is:- 55H.'
+    DO FOR 10
+      EXPORT('00BFE101'x,'55'x,1)
+/* Click left mouse button to exit. */
+      mousetrap=IMPORT('00BFE001'x,1)
+      IF BITTST(mousetrap,6)=0 THEN RETURN
+    END
+/* Write the value 170 decimal, (AA Hexadecimal), to the port. */
+    ECHO 'b'x'9'x'9'x'Value at the port is:- AAH.'
+    DO FOR 10
+      EXPORT('00BFE101'x,'AA'x,1)
+/* Click left mouse button to exit. */
+      mousetrap=IMPORT('00BFE001'x,1)
+      IF BITTST(mousetrap,6)=0 THEN RETURN
+    END
+  END
+
+
+/* Exit the program safely. */
+getout:
+  EXPORT('00BFE301'x,'FF'x,1)
+  EXPORT('00BFE101'x,'FF'x,1)
+  ECHO 'c'x
+  SAY copyright
+  ECHO 'a'x'a'x'a'x'd'x'7'x'9'x'9'x'9'x'Click on CLOSE gadget to Quit.'
+  EXIT(0)
+
+----------------------------------------------------------------------------
+
+The next part will be PWM, (Pulse Width Modulated), DAC, (Digital to
+Analogue Converter). One part of this stage will include a simple built in,
+pseudo-self testing ~Logic Probe~ so that you can test the lines that are
+high or low on the fly.
+
+Enjoy finding simple solutions to often difficult problems. :)
+
+============================================================================
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+    Mr Barry Walker,
+    70 King George Road,
+    Loughborough,
+    Leicestershire,
+    LE11 2PA,
+    England.
+
+    Email to:-
+
+    wisecracker@tesco.net
+
+    BYE.....
+
+============================================================================

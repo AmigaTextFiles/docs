@@ -1,0 +1,88 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQg.texinfo on 24 October 1995 -->
+
+<TITLE>Amiga-FAQ - WindowPtr</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQg_30.html">Lokalisierung</A>
+&gt;&gt; <A HREF="AmigaFAQg_32.html">Pragmas</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX74"></A>
+<A NAME="IDX75"></A>
+<H2><A NAME="SEC31" HREF="AmigaFAQg_toc.html#SEC31">Wie erh&auml;lt man einen Zeiger auf das Fenster einer Konsole?</A></H2>
+Die folgende Funktion liefert den Window-Zeiger eines CON-Fensters. Sie kann
+unter allen Versionen des Amiga-OS ausgef&uuml;hrt werden.
+<P>
+<PRE>
+  struct Window *getConWindowPtr(BPTR fh)
+  {
+    struct Window *w;
+    struct FileHandle *cfh;
+    struct StandardPacket *sp;
+    struct InfoData *id;
+    struct MsgPort *mp;
+
+    w = NULL;
+
+    if ((cfh = BADDR(fh))-&#62;fh_Type != NULL) {
+      if (sp = AllocMem(sizeof (struct StandardPacket),
+                       MEMF_PUBLIC | MEMF_CLEAR)) {
+        if (id = AllocMem(sizeof (struct InfoData),
+                         MEMF_PUBLIC | MEMF_CLEAR)) {
+          if (mp = CreatePort(NULL, 0)) {
+            sp-&#62;sp_Msg.mn_Node.ln_Name = (char *) &#38;sp-&#62;sp_Pkt;
+            sp-&#62;sp_Pkt.dp_Link         = &#38;sp-&#62;sp_Msg;
+            sp-&#62;sp_Pkt.dp_Port         = mp;
+            sp-&#62;sp_Pkt.dp_Type         = ACTION_DISK_INFO;
+            sp-&#62;sp_Pkt.dp_Arg1         = MKBADDR(id);
+
+            PutMsg(cfh-&#62;fh_Type, &#38;sp-&#62;sp_Msg);
+            (void) WaitPort(mp);
+            (void) GetMsg(mp);
+
+            if (sp-&#62;sp_Pkt.dp_Res1)
+              w = (struct Window *) id-&#62;id_VolumeNode;
+
+            DeletePort(mp);
+          }
+          FreeMem(id, sizeof (struct InfoData));
+        }
+        FreeMem(sp, sizeof (struct StandardPacket));
+      }
+    }
+
+    return w;
+  }
+</PRE>
+<P>
+Anmerkungen:
+<UL>
+<LI>Auf ein CON-Fenster direkt zuzugreifen kann Konflikte mit Aktionen des
+CON-Handlers hervorrufen. Seien Sie vorsichtig!
+<LI>Um den Window-Zeiger einer CLI-Konsole zu erhalten, &uuml;bergibt man
+ein durch Open("*", MODE_OLDFILE) gewonnenes FileHandle an obige
+Funktion.
+<LI>Das Ergebnis der obigen Funktion kann sehr wohl NULL sein, etwa im
+Falle eines AUX-Handlers oder falls ein AUTO-CON-Handler sein
+Fenster nicht &ouml;ffnen kann.
+<LI>Schickt man ein ACTION_DISK_INFO-Paket an einen AUTO-CON-Handler (2.0+),
+so verliert dessen Fenster seine speziellen AUTO-Eigenschaften (es
+kann also nicht mehr durch das Bet&auml;tigen des Close-Gadgets
+geschlossen werden), weil der in id_VolumeNode gelieferte
+Window-Zeiger g&uuml;ltig bleiben mu&szlig;.
+<LI>Alles in allem: Verwenden Sie diese Funktion nicht. :-)
+</UL>
+<P>
+Weitere Informationen finden Sie auf den Seiten 273, 276, 435,
+463, 485 und 629 im "Amiga Guru Book" (siehe Abschnitt <A HREF="AmigaFAQg_23.html#SEC23">Was ist die beste Dokumentation f&uuml;r Programmierer?</A>).
+<P>
+Ralph Babel, rbabel@babylon.pfm-mainz.de
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQg_30.html">Lokalisierung</A>
+&gt;&gt; <A HREF="AmigaFAQg_32.html">Pragmas</A>
+</I></PRE>

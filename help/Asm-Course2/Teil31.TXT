@@ -1,0 +1,282 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1991
+
+                                31.Teil...
+
+So, vor einigen Kapiteln habe ich euch ja schon vom VBI erzaehlt, und
+seinen Aufbau und seine Aufgaben erzaehlt. Damit habe ich es dann belassen,
+weil ich meinte das man ihn zu dem Zeitpunkt noch nicht brauchen wuerde.
+
+Das ist jetzt anders - Wir stehen vor dem Ersten Intro, und da koennen wir
+den VBI schon sehr gut gebrauchen, finde ich.
+
+Nochmal kurz zur Erinnerung:
+Den VBI fuehrt der Amiga jedesmal auf, wenn der Prozessor das entsprechende
+Signal auf seine Leitung bekommt. Das bekommt er jedesmal wenn der
+Elektronenstrahl das Vertical Blanking erreicht. Das Vertical Blanking
+heisst so, weil dann wenn der Elektronenstrahl diesen Bereich durchquert
+nciths auf dem Bildschirm dargestellt wird. Die Bitplane und Sprite DMA ist
+dort gesperrt, was dem Prozessor schneller macht. Schon deshalb bietet sich
+der VBI gut fuer Zeitaufwendige Routinen an.
+Desweiteren spielt das Timing eine Rolle. Der Vorteil der Timingschleife
+die wir bis jetzt benutzt haben liegt eindeutig in ihrer kuerze, deswegen
+werde ich sie auch weiterhin als beste loesung benutzen. Aber wir gehen die
+Schleife ja mit dem Prozessor durch. Wenn wir also in der Schleife noch
+eine Menge andere taetigkeiten ausfuehren lassen, dann kann es sehr schnell
+vorkommen das diese taetigkeiten, in der Prozessorzeit laenger brauchen als
+wie der Elektronenstrahl eine Rasterzeile aufbaut. Das heisst weiter das
+der Prozessor abundzu mal eine Zeile nicht `Mitbekommt`. Die Konsequenz
+waere dann das es vorkomen koennte das er mal fuer eine 50stel sekunde mit
+dem intro nicht weiter macht, und das merkt man schon sehr wohl im
+Introgenuss. Beim VBI ist das ja etwas anders, dort kann der Prozessor
+seiner aufgetragenen Arbeit folgen, und wird dann von VBI-Signal
+unterbrochen.
+Er springt dann ueber den Vector der bei $0000006c indirekt an seine
+VBI-IRQ-Routine.
+Das ist dann der Punkt an den wir uns `Einhaengen` koennen. Das koennen wir
+in zwei arten tun.
+Wenn wir Taetigkeiten ausfuehren wollen die neben dem normalen
+`Amiga-Arbeitstag` erledigt werden sollen, dann muessen wir uns den Wert
+der bei $6c liegt merken, den Vector auf unsere Routine verbiegen, und nach
+abarbeitung unserer Routine das IRQ-Programm durch einen Sprung, dahin
+wohin der Vector zeigte, fortsetzen.
+Die zweite Art ist die, die uns interessiert. Dabei merken wir uns
+naemlich den Wert der in $6c steht, schreiben die Adresse unserer Routine
+dort hin, und lassen es so. Nachdem das Intro/Demo beendet wird, stellen
+wir einfach den Vectoor wieder auf den alten Wert, und alles ist wie
+vorher.
+
+Hier jetzt mal alle schritte die zur Initialisierung eines eigenen VBI und
+der Re-Initialisierung des alten VBI noetig waeren.
+
+Diese Routine ist fuer beide beschriebene Verwendungen tauglich, das sie
+die Eingangswerte Dmacon, Intena und den VBI-Vector ($6c) Buffert, und nach
+dem Mausclick umrechnen und wieder zurueckschreiben.
+
+
+Dmacon=         $DFF096
+Dmaconr=        $DFF002
+Intreq=         $DFF09C
+Intena=         $DFF09A
+Intenar=        $DFF01C
+Ciaapra=        $BFE001
+
+        Move.w  Intenar,Intenabuffer    ; Inhalt von Intena sichern
+        Move.w  Dmaconr,Dmaconbuffer    ; Inhalt von Dmacon sichern
+        Move.w  #$7fff,Intena           ; Intena loeschen
+        Move.w  #$7fff,Dmacon           ; Dmacon loeschen
+        Move.l  $006c.w,Oldirq          ; Alten IRQ Vector nach Oldirq
+                                        ; retten
+        Move.l  #Newirq,$006c.w         ; Adresse von Newirq aus dem Source
+                                        ; in den Zeiger schreiben.
+        Move.w  #$87e0,Dmacon           ; Alle DMA-Kanaele wieder oeffnen
+        Move.w  #$c020,Intena           ; VBI anschalten
+
+; Der VBI ist jetzt Initialisiert und laeuft sofort nach dem Zugriff auf
+; Intena.
+; Jetzt koennen die Restlichen einstellungen die nichts mit dem VBI zu tun
+; haben, erledigt werden.
+
+Wait:                                   ; Auf Maustaste warten (gaehn)
+        Btst    #6,Ciaapra
+        Bne.s   Wait
+
+; Bevor alle anderen Einstellungen des Intro/Demo geloescht oder auf
+; Default zurueckgestellt werden, sollte mit dieser Routine der VBI wieder
+; auf den Urspruenglichen Wert zurueckgesetzt werden
+
+        Or.w    #$8000,Intenabuffer     ; Wert im Intenabuffer auf
+                                        ; schreibzugriff umformatieren
+        Or.w    #$8000,dmaconbuffer     ; Dasselbe !
+        Move.w  #$7fff,Intena           ; Intena loeschen
+        Move.w  #$07e0,Dmacon           ; Dmacon loeschen
+        Move.l  Oldirq,$006c.w          ; Alten Vector von Oldirq nach $6c
+        Move.w  Dmaconbuffer,Dmacon     ; Alten Dmaconwert setzen
+        Move.w  Intenabuffer,Intena     ; Alten Intenawert setzen
+        Moveq   #0,D0                   ; Zur sicherheit (Cli)
+        Rts                             ; Auf Wiedersehen!
+
+; Ab hier beginnt die Routine die im VBI ausgefuehrt werden soll
+; Die vier Zeilen die dort schon stehen, sollten in jede Routine eingebaut
+; werden. Sie garantieren einen Reibungslosen ablauf.
+
+Newirq:
+        Move.w  #$0020,Intreq           ; VBI bestaetigen
+        Movem.l d0-d7/a0-a6,-(sp)       ; Register auf den Stack retten
+
+; So, hier kann das eigene Programm ablaufen.
+
+        Movem.l (sp)+,d0-d7/a0-a6       ; Register wieder vom Stack holen
+        Rte                             ; RTE - Return from Exeption
+
+Oldirq:         dc.l    0
+Dmaconbuffer:   dc.w    0
+Intenabuffer:   dc.w    0
+
+
+So, so schwer ist das doch wirklich nicht, oder?
+Programmiermaessig kann man damit genauso arbeiten wie mit der
+Endlosschleife die wir bis jetzt immer benutzt haben. Allerdings ist sie
+halt bei groesseren Intro/Demo-projekten vorzuziehen, da halt alles ein
+ganz kleines bisschen schneller geht (nich viel!).
+Wichtig ist auch das ihr das RTE am ende nicht mit RTS vertauscht, denn
+sonst laeuft das ganze nicht.
+Das letzte was ich noch sagen koennte, wisst ihr aber schon. Waehrend des
+VBI, der ja eine normale Exeption (Ausnahmezustand) ist, seit ihr im
+Supervisor-Modus des Prozessors...Bringt aber bei der
+Intro/Demo-Programmiererei nicht viele Vorteile..Ehrlich gesagt kenne ich
+gar keine...Hmmh, ich kenn ja auch den Supervisor-Modus nicht so gut..Aber
+das ginge auch etwas weit glaube ich.
+
+Am besten probiert ihr mal ein bisschen damit rum, damit ihr ein bisschen
+gefuehl fuer die Sache bekommt. Ihr muesst allerdings darauf achten das
+ihre den Wert der fuer diese Routine nach Intena und Dmacon geschrieben
+wird, eurer Anwendung gerecht sein sollte, da er nicht nur fuer den VBI
+gilt, sondern fuer den ganzen Amiga.
+Desweiteren muesst ihr aufpassen, damit meine Ich jetzt die, die sich noch
+weiter mit anderen Interrupts(Exeptions) befassen wollen, das diese
+Routine, da nur fuer den vBI, sehr kurz gehalten werden kann. Eine Routine
+die mehrere Interrupts auswerten und durchfuehren kann, wird ungleich
+groesser, da jeder Interrupt seine besonderheiten hat, und auch die Zeiten
+in denen er auftritt meisst unterschiedlich sind. Ich denke da nur an die
+Sprite-Sprite Kollision oder den Diskready Interrupt, sie brauchen genau
+wie der VBI die richtigen adressen um ordnungsgemaess arbeiten zu koenen,
+sonst laeuft nichts.
+
+Ihr koennt diese Routine auch fuer die Zeitmessung einiger Routinen
+benutzen, von der ich im zusammenhang der Optimalen Zeitausnutzung im
+letzen Teil gesprochen habe. Ihr muesst dazu einfach die Auszumessende(n)
+Routine(n) in den VBI einsetzen, und vor jeder Routine die Bildschirmfarbe
+aendern oder eine bestimmte Farbe zuweisen. Dann koennt ihr mit dem
+Millimetermass die Zeit in Millimeter (toll, wa) messen. Falls einige von
+euch noch mit einem Fernseher oder mit einen schlechten Monitor mit grossem
+Bildschirmpumpen habt, dann solltet ihr nicht zu hellen farben verwenden,
+oder die Kontraste zwischen den Farben nicht zu gross waehlen, da sonst das
+sowieso schon ungenaue Ergebniss nicht noch weiter verschlechtert wird.
+
+So, da dieser Kursteil zwar schon fertig ist, aber noch nicht lang genug
+ist zum abschicken, setze ich noch eine Beschreibung des MC 68000 in den
+Teil. Sie erklaert die Pin-belegung und eroertert einige Fragen.
+
+
+                            Der 68000 er
+
+                       ---------------------
+                   D4 |1      |      |    64| D5
+                   D3 |2      --------    63| D6
+                   D2 |3                  62| D7
+                   D1 |4                  61| D8
+                   D0 |5                  60| D9
+                   AS |6                  59| D10
+                 -UDS |7                  58| D11
+                 -LDS |8                  57| D12
+                 R/-W |9                  56| D13
+               -DTACK |10                 55| D14
+                  -BG |11                 54| D15
+               -BGACK |12                 53| GND
+                  -BR |13                 52| A23
+                  VCC |14                 51| A22
+                  CLK |15                 50| A21
+                 -GND |16                 49| VCC
+                -HALT |17                 48| A20
+               -RESET |18                 47| A19
+                 -VMA |19                 46| A18
+                    E |20                 45| A17
+                 -VPA |21                 44| A16
+                -BERR |22                 43| A15
+                -IPL2 |23                 42| A14
+                -IPL1 |24                 41| A13
+                -IPL0 |25                 40| A12
+                  FC2 |26                 39| A11
+                  FC1 |27                 38| A10
+                  FC0 |28                 37| A9
+                   A1 |29                 36| A8
+                   A2 |30                 35| A7
+                   A3 |31                 34| A6
+                   A4 |32                 33| A5
+                       ---------------------
+
+Die Stromversorgung: VCC + GND
+
+Der 68000 arbeitet mit einer einfachen Versorgungssnung von 5 Volt.
+Die Anschluesse sind doppelt ausgelegt und zentral gelegen,um durch kurze
+Leitungswege im Gehaeuse die Stromverluste minimal zu halten.
+
+
+Der Takteingang: CLK
+
+Der 68000 benoetigt lediglich einen einfachen Takt.
+Die Frequenz haengt von der gewaehlten Prozessorversion ab.
+Im Amiga betraegt die Taktfrequenz 7.16 Mhz.
+
+
+Der Datenbuss: D0 - D15
+
+Der Datenbuss ist als 16-Bit Buss ausgelegt und kann somit ein Wort (16 Bit)
+auf einmal uebertragen.Beim Transfer einzelner Bytes ist jeweils nur eine
+Haelfte der Leitungen an der Uebertragung beteiligt.
+Entweder wird das Byte ueber die unteren 8 Bit oder ueber die oberen 8 Bit
+gelesen bzw. geschrieben.
+
+
+Der Adressbuss: A1 - A23
+
+Der Adressbus kann mit seinen 23 Leitungen 8 Megaworte Speicher ansprechen.
+Da er kein A0 besitzt kann er diesen Speicher nur wortweise adressieren.
+
+
+Bussteuerleitungen im asynchronen Modus: AS,R/-W,UDS,LDS,DTACK
+
+Der 68000 kann seine Speicherzugriffe grundsaetzlich in zwei verschiedenen
+Modi ausfuehren. Im asynchronen Modus signalisiert der Prozessor mit AS
+(Adress Strobe/Adresse gueltig) dass eine gueltige Adresse am
+Adressbus anliegt.Gleichzeitig bestimmt er mit der R/-W (Read-Write/
+Lesen-Schreiben) ob ein Byte/Wort gelesen oder geschrieben werden soll.
+Die Wahl zwischen Wort oder Byte treffen die Leitungen UDS und LDS.
+Da der Speicher immer wortweise adressiert wird,uebertraegt der Prozessor
+bei einem Bytezugriff einfach nur die oberen oder die unteren 8 Bits des
+Datenbusses.
+Dies signalisiert er durch UDS und LDS.Bei einem Wortzugriff legt er beide
+Leitungen auf 0.Will er dagegen auf ein Byte zugreifen,legt er entweder
+UDS oder LDS auf 0,die andere Leitung auf 1.
+Hat der Prozessor jetzt mit AS,R/-W,UDS und LDS den ihm gewuenschten Zugriff
+signalisiert,wartet er,bis der Speicher ihm mitteilt,dass die gewuenschten
+Daten bereit sind. Dazu verwendet er die Leitung DTACK,die er auf 0 legt
+sobald er die Daten bereitgelegt hat.Schreibt der Prozessor die Daten,teilt
+ihm der Speicher durch DTACK mit,dass er die Daten uebernommen hat.
+Im asynchronen Modus passt sich der Prozessor also immer an die Geschwindigkeit
+
+des Speichers an.
+
+
+Bussteuersignale im asynchronen Modus: E,VPA,VMA
+
+Um den Sinn dieser Signale besser verstehen zu koennen, muss man die Situation
+zum Zeitpunkt der Markteinfuehrung des 68000 kennen. Es waren damals keine
+eigenen Periepheriechips fuer den 68000 verfuegbar. Die vorhandenen Chips
+von Motorola die ja fuer die 6800-Serie(von der auch der 6502 abstammt)
+gedacht waren konnten nicht ohne zusaetzliche Schaltungen in die
+asynchrone Bussteuerung eingepasst werden.Also versah man den 68000 bei
+Motorola noch mit einem Synchronen Bussmodus,wie man ihn von den 8-Bit
+Prozessoren wie dem 6800 oder 6502 kennt.
+An der Leitung E liegt staendig ein durch den Faktor 10 geteilter Prozessortakt
+
+an,der den Peripheriechips als Takt dient.
+Er wird mit dem Phi-2-Eingang des Chips verbunden.
+Die Umschaltung von asynchronem Modus in den synchronen erfolgt ueber den
+Eingang VPA (Valid Periphial Adress/Gueltige Peripherieadresse).
+Dieser Eingang muss von einem externen Adressdcoder auf 0 gelegt werden,
+sobald dieser die Adresse eines Peripheriechips erkennt.Der Prozessor
+antwortet darauf indem er die Leitung VMA (Valid Memory Adress/Gueltige
+Speiher Adresse) ebenfalls auf 0 legt. Der entsprechende Peripherie-
+chip muss jetzt innerhalb eines Taktzyklus von E die Daten uebernehmen
+bzw. bereitstellen. Danach verlaesst der 68000 automatisch wieder den
+synchronen Modus,bis das VPA Signal erneut aktiv wird.
+
+Dies bedeutet also,dass der Peripheriechip im synchronen Modus
+gezwungen ist,die Daten an einem bestimmten Zeitpunkt bereitzustellen bzw. zu
+uebernehmen.
+
+
+bis demnaechst
+
+                Jeff Kandle

@@ -1,0 +1,552 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "AmigaDOS Settima Lezione"
+
+@{JLEFT}
+@{b}Settima Lezione: dos.library@{ub}
+                                           
+
+
+Come avevo annunciato nella lezione precedente, in questa lezione continuiamo
+l'excursus sulle procedure/funzioni più importanti messe
+a disposizione dalla libreria @{i}dos.library@{ui}.
+
+Ecco dunque le funzioni di oggi:
+
+
+  @{i}LONG Examine( BPTR lock, struct FileInfoBlock *fileInfoBlock );
+
+  LONG ExNext( BPTR lock, struct FileInfoBlock *fileInfoBlock );
+
+  LONG SetComment( STRPTR name, STRPTR comment );
+
+  LONG SetProtection( STRPTR name, long protect );@{ui}
+
+
+    /* DOS Object Management */
+
+
+  @{i}BPTR OpenFromLock( BPTR lock );
+
+  LONG NameFromLock( BPTR lock, STRPTR buffer, long len );
+
+  LONG SetFileDate( STRPTR name, struct DateStamp *date );@{ui}
+
+    /* Error Handling */
+
+
+  @{i}LONG IoErr( void );
+
+  LONG SetIoErr( long result );
+
+  BOOL Fault( long code, STRPTR header, STRPTR buffer, long len );
+
+  BOOL PrintFault( long code, STRPTR header );@{ui}
+
+
+    /* Date, Time Routines */
+
+
+  @{i}struct DateStamp *DateStamp( struct DateStamp *date );
+
+  LONG CompareDates( struct DateStamp *date1, struct DateStamp *date2 );
+
+  LONG DateToStr( struct DateTime *datetime );
+
+  LONG StrToDate( struct DateTime *datetime );@{ui}
+
+
+    /* Environment Variable functions */
+
+
+  @{i}BOOL SetVar( STRPTR name, STRPTR buffer, long size, long flags );
+
+  LONG GetVar( STRPTR name, STRPTR buffer, long size, long flags );
+
+  LONG DeleteVar( STRPTR name, unsigned long flags );
+
+  struct LocalVar *FindVar( STRPTR name, unsigned long type );@{ui}
+
+
+Cominciamo a vedere le strutture utilizzate dalle procedure/funzioni
+precedentemente elencate:
+
+
+  struct DateStamp {
+
+    LONG   ds_Days;         /* Number of days since Jan. 1, 1978 */
+
+    LONG   ds_Minute;       /* Number of minutes past midnight   */
+
+    LONG   ds_Tick;         /* Number of ticks past minute       */
+
+  }; /* DateStamp */
+
+
+       /*--------- String/Date structures etc */
+
+
+  struct DateTime {
+
+    struct DateStamp dat_Stamp;   /* DOS DateStamp */
+
+    UBYTE dat_Format;     /* controls appearance of dat_StrDate */
+
+    UBYTE dat_Flags;      /* see BITDEF's below                 */
+
+    UBYTE *dat_StrDay;    /* day of the week string             */
+
+    UBYTE *dat_StrDate;   /* date string                        */
+
+    UBYTE *dat_StrTime;   /* time string                        */
+
+  };
+
+
+  /* Returned by Examine() and ExNext(), must be on a 4 byte boundary */
+
+
+  struct FileInfoBlock {
+
+    LONG    fib_DiskKey;
+
+    LONG    fib_DirEntryType;  /* Type of Directory. If < 0, then a plainfile. *
+
+                                * If > 0 a directory                           */
+
+    char    fib_FileName[108]; /* Null terminated. Max 30 chars used for now   */
+
+    LONG    fib_Protection;    /* bit mask of protection, rwxd are 3-0.        */
+
+    LONG    fib_EntryType;
+
+    LONG    fib_Size;          /* Number of bytes in file                      */
+
+    LONG    fib_NumBlocks;     /* Number of blocks in file                     */
+
+    struct DateStamp fib_Date; /* Date file last changed                       */
+
+    char    fib_Comment[80];   /* Null terminated comment associated with file */
+
+
+    /* Note: the following fields are not supported by all filesystems.        */
+
+    /* They should be initialized to 0 sending an ACTION_EXAMINE packet.       */
+
+    /* When Examine() is called, these are set to 0 for you.                   */
+
+    /* AllocDosObject() also initializes them to 0.                            */
+
+    UWORD  fib_OwnerUID;       /* owner's UID                                  */
+
+    UWORD  fib_OwnerGID;       /* owner's GID                                  */
+
+    char    fib_Reserved[32];
+
+  }; /* FileInfoBlock */
+
+
+Cominciamo quindi dalle varie funzioni che manipolano la data: la DateStamp
+serve per ottenere la data attuale. è sufficente il seguente codice:
+
+
+     [...]
+
+  struct DateStamp oggi;
+
+     [...]
+
+  DateStamp(&oggi);
+
+  printf("Giorni dal 01/01/78: %ld Minuti dalla mezzanotte: %ld Ticks: %ld\\n ",
+
+               oggi.ds_Days,oggi.ds_Minute,oggi.ds_Tick);
+
+
+Se però vogliamo avere una stampa della data in maniera comprensibile, ci
+viene
+incontro la funzione @{i}DateToStr@{ui} che con una struttura @{i}DateTime@{ui} opportunamente
+inizializzata converte il formato di data interno in una versione a noi più
+comprensibile. Vediamo come:
+
+
+     [...]
+
+  struct DateTime oggi;
+
+  UBYTE giorno[LEN_DATSTRING],data[LEN_DATSTRING],ora[LEN_DATSTRING];
+
+     [...]
+
+  oggi.dat_StrDay = giorno;
+
+  oggi.dat_StrDate = data;
+
+  oggi.dat_StrTime = ora;
+
+  oggi.dat_Format = FORMAT_DOS;
+
+  DateStamp(&oggi.dat_Stamp);
+
+  if(DateToStr(&oggi))
+
+    printf("%s %s %s\\n ",oggi.dat_StrDay,oggi.dat_StrDate,oggi.dat_StrTime);
+
+  else printf("Impossibile convertire la data!\\n ");
+
+
+è possibile specificare diversi formati di data:
+
+
+  /*
+
+   * date format values
+
+   */
+
+
+  #define FORMAT_DOS   0     /* dd-mmm-yy */
+
+  #define FORMAT_INT   1     /* yy-mm-dd  */
+
+  #define FORMAT_USA   2     /* mm-dd-yy  */
+
+  #define FORMAT_CDN   3     /* dd-mm-yy  */
+
+  #define FORMAT_MAX   FORMAT_CDN
+
+
+ed è possibile sostituire la data con Oggi, Ieri, Domani impostando il campo
+@{i}dat_Flags@{ui} a @{i}DTF_SUBST@{ui}.
+
+Se invece volessimo convertire una data "umana" in formato AmigaDOS, ecco che
+la funzione @{i}StrToDate@{ui} svolge il lavoro richiesto. Valorizzando la struttura
+@{i}DateTime@{ui} nel modo seguente:
+
+
+  dat_Stamp   - ignorato
+
+  dat_Format  - specifica il formato in cui è  espressa la data in dat_StrDate
+
+  dat_Flags   - se viene impostato a DTF_FUTURE, indica che la stringa memorizzata
+
+                in dat_StrData, ad esempio "Luned=EC" si riferisce al prossimo lunedì
+
+                Altrimenti, la stringa "Lunedì" fa riferimento all'ultimo lunedì.
+
+  dat_StrDay  - ignorato
+
+  dat_StrDate - la data, ad esempio gg-mmm-aa oppure aa-mmm-gg
+
+  dat_StrTime - se = =  NULL i campi ds_Minute e ds_Tick non vengono modificati
+
+
+Quindi la funzione restituirà zero se non è possibile effettuare la
+conversione o
+non-zero se il campo dat_Stamp contiene la conversione.
+In poche parole:
+
+
+      [...]
+
+  struct DateTime oggi;
+
+  UBYTE data[LEN_DATSTRING] = "06-Set-98",ora[LEN_DATSTRING] = "11:36:00";
+
+      [...]
+
+  oggi.dat_Format =  FORMAT_DOS;
+
+  oggi.dat_StrDate =  data;
+
+  oggi.dat_StrTime =  ora;
+
+  if(StrToDate(&oggi))
+
+    printf("Il 6-Set-98 è il %ld giorno dal 1-Gen-78\\n ",oggi.dat_Stamp.ds_Days);
+
+  else printf("Formato data impossibile da convertire!\\n ");
+
+
+A questo punto il significato delle altre due funzioni diventa semplice:
+la funzione @{i}CompareDates@{ui} confronta due date restituendo un numero negativo se
+la prima data è più vecchia della seconda, zero se sono uguali e un numero
+positivo se la seconda data è più vecchia della prima.
+Mentre la funzione @{i}SetFileDate@{ui} permette di cambiare la data di un file
+specificando
+il nome del file da modificare e la data composta nel modo precedentemente
+spiegato. Per esempio (supponendo l'esistenza del file):
+
+
+     [...]
+
+  struct DateTime oggi;
+
+  UBYTE data[LEN_DATSTRING] =  "06-Set-98",ora[LEN_DATSTRING] =  "11:36:00";
+
+     [...]
+
+  oggi.dat_Format =  FORMAT_DOS;
+
+  oggi.dat_StrDate =  data;
+
+  oggi.dat_StrTime =  ora;
+
+  if(StrToDate(&oggi)) {
+
+    if(!SetFileDate("DH1:T/pippo",&oggi.dat_Stamp))
+
+      printf("Non è  stato possibile cambiare la data al file DH1:T/pippo!\\n ");
+
+  } else
+
+    printf("Formato data impossibile da convertire!\\n ");
+
+
+A questo punto possiamo vedere le funzioni che gestiscono gli errori.
+La funzione @{i}IoErr@{ui}, restituisce (per quelle funzioni che lo prevedono) la
+causa
+dell'ultimo errore verificatosi. Per esempio, se fallisce una Write chiamando
+questa funzione potremo capire se il disco è protetto, è pieno ecc.
+Se quindi vogliamo comunicare all'utente l'errore, possiamo avvalerci di due
+funzioni:
+la @{i}PrintFault@{ui} e la @{i}Fault@{ui}. La prima semplicemente stampa sulla console dalla
+quale è
+stato lanciato il programma (se è stato lanciato da una shell) la stringa di
+errore
+preceduta da un header da noi specificato. Ad esempio:
+
+
+            PrintFault(IoErr(),"Si è  verificato l'errore");
+
+
+stamperà la stringa:
+
+
+            Si è verificato l'errore: disco pieno
+
+
+Quindi, se vogliamo gestire noi l'output di errore (mostrando ad esempio
+un requester con delle opzioni di scelta), la funzione Fault è  qu=EC per
+questo.
+
+       [...]
+
+  STRPTR buffer[100];
+
+       [...]
+
+  Fault(IoErr(),"Si è verificato l'errore",buffer,100);
+
+
+La stringa buffer, conterrà il messaggio di errore, pronto ad essere
+utilizzato per i
+nostri scopi.
+Infine, se vogliamo, possiamo stabilire noi che valore far restituire alla
+@{i}IoErr@{ui} chiamando la @{i}SetIoErr@{ui} con il valore opportuno. Questo
+può essere utile
+per far sì che se il nostro programma (eseguito da una shell) fallisce ad
+esempio per mancanza di memoria, il comando 'why' della shell visualizzi il
+messaggio di errore
+l'ultimo comando è fallito perché: memoria insufficente
+Una lista dei codici di errore è presente nel file @{i}dos/dos.h@{ui}
+
+
+Le funzioni @{i}OpenFromLock@{ui} e @{i}NameFromLock@{ui}, sono utili per aprire un file od
+ottenerne il nome utilizzando il suo lock restituito con la funzione @{i}Lock@{ui}.
+Ad esempio, in un sistema client/server, uno dei due processi potrebbe passare
+all'altro il lock di un suo file e questi potrebbe a sua volta aprirlo con la
+@{i}OpenFromLock@{ui} oppure ottenere il nome con la @{i}NameFromLock@{ui} (sarebbe un pÓ
+stupido, chiamare la @{i}NameFromLock@{ui} dallo stesso processo che ha chiamato la
+@{i}Lock@{ui}).
+
+
+     [...]
+
+  BPTR lock;
+
+  STRPTR buffer[108];
+
+     [...]
+
+  if(NameFromLock(lock,buffer,108))
+
+    printf("Il file si chiama %s\\n ",buffer);
+
+
+Molto semplice anche la funzione @{i}SetComment@{ui}, che modifica o imposta un
+commento al file specificato. Per esempio:
+
+
+  if(!SetComment("Work:T/pippo","Sono il file di prova pippo"))
+
+      printf("Impossibile impostare il commento al file Work:T/pippo!\\n ");
+
+
+La funzione SetProtection, serve per modificare i bit di protezione di un file
+o di una directory. I bit sono: @{b}HSPARWED@{ub}: @{i}Hide, Script, Pure, Archive, Read,
+Write, Execute e Delete@{ui}. I bit @{i}Script@{ui}, @{i}Pure@{ui} ed @{i}Execute@{ui} vengono utilizzati solo
+dalla shell, mentre i bit @{i}Read@{ui}, @{i}Write@{ui} e @{i}Delete@{ui} dal filesystem. Il bit Archive
+viene solitamente utilizzato da programmi di backup o simili ed il bit Hide,
+credo proprio che non sia utilizzato. Infatti nel file @{i}dos/dos.h@{ui} dove sono
+definiti, non c'è. Anche se è supportato da utility tipo Filer e Opus, @{i}Script@{ui}
+indica che il file è uno script e può essere eseguito. @{i}Pure@{ui}, indica che
+il programma è rientrante e può essere rieseguito più volte (usato dal comando
+Resident).
+Il bit @{i}Archive@{ui} viene azzerato quando il file viene modificato. @{i}Read@{ui} indica che
+il file si può leggere, @{i}Write@{ui} che si può scrivere, @{i}Execute@{ui} che può essere
+eseguito e @{i}Delete@{ui} che può essere cancellato.
+
+
+Occupiamoci adesso delle funzioni inerenti alla variabili di ambiente:
+
+La funzione @{i}SetVar@{ui}, serve per modificare il valore di una variabile di
+ambiente.
+Per esempio @{i}SetVar("Language","italiano",-1,GVF_GLOBAL_ONLY)@{ui}, imposta la
+variabile di ambiente Language al valore italiano. Il numero -1, indica la
+dimensione del buffer passato in questo caso vuol dire che è una stringa
+NULL-terminata.
+
+La funzione @{i}GetVar@{ui}, svolge il lavoro opposto, specificando una variabile, un
+buffer nel quale copiare il valore della variabile e la dimensione del buffer,
+ritorna il valore
+della variabile. Per esempio:
+
+
+       [...]
+
+  STRPTR buffer[10];
+
+       [...]
+
+  if(GetVar("Language",buffer,10,GVF_GLOBAL_ONLY) = =  -1)
+
+    printf("Errore nella lettura del valore della variabile Language!\\n ");
+
+
+La funzione @{i}DeleteVar@{ui}, elimina una variabile d'ambiente, il campo flag, come
+nelle
+altre procedure, serve per indicare se la variabile è globale o è relativa al
+nostro processo.
+
+
+Infine la variabile @{i}FindVar@{ui} serve per trovare una variabile.
+Vediamo come:
+
+       [...]
+
+   struct LocalVar *var;
+
+       [...]
+
+   if((var = FindVar("Language",LV_VAR)))
+
+       [...]
+
+
+Abbiamo quindi quasi finito, rimangono da vedere le routine:
+
+@{i}LONG Examine( BPTR lock, struct FileInfoBlock *fileInfoBlock );
+
+LONG ExNext( BPTR lock, struct FileInfoBlock *fileInfoBlock );@{ui}
+
+
+prima però di poter utilizzare queste routine, è necessario allocare una
+struttura
+@{i}FileInfoBlock@{ui} con la routine @{i}AllocDosObject@{ui}. Vediamo quindi, l'ultimo stralcio
+di codice per capire come usare queste funzioni.
+
+
+       [...]
+
+  void main(int argc,char *argv[]) {
+
+    struct FileInfoBlock *fib;
+
+    BPTR file;
+
+    struct DateTime oggi;
+
+    UBYTE giorno[LEN_DATSTRING],data[LEN_DATSTRING],ora[LEN_DATSTRING];
+
+    if((file =  Lock(argv[1],ACCESS_READ)))
+
+    {
+
+        if((fib = AllocDosObject(DOS_FIB,TAG_DONE)))
+
+        {
+
+            if(Examine(file,fib))
+            {
+
+                if(fib -> fib_DirEntryType > 0)
+
+                    printf("L'oggetto è un cassetto.\\n ");
+
+                else
+
+                    printf("L'oggetto è un file.\\n ");
+
+                printf("Nome %s\\n ",fib -> fib_FileName);
+
+                printf("Bit di protezione %lx\\n ",fib -> fib_Protection);
+
+                if(fib -> fib_DirEntryType < 0)
+
+                    printf("Lunghezza %ld\\n ",fib -> fib_Size);
+
+                oggi.dat_StrDay = giorno;
+
+                oggi.dat_StrDate = data;
+
+                oggi.dat_StrTime = ora;
+
+                oggi.dat_Format = FORMAT_DOS;
+
+                CopyMem(&fib -> fib_Date,&oggi.dat_Stamp,sizeof(struct DateStamp));
+
+                if(DateToStr(&oggi))
+
+                  printf("Creazione: %s %s %s\\n ",oggi.dat_StrDay,oggi.dat_StrDate, oggi.dat_StrTime);
+
+                printf("Commento %s\\n ",fib -> fib_Comment);
+
+            }
+
+            FreeDosObject(DOS_FIB,fib);
+
+        }
+
+        UnLock(file);
+
+    }
+
+}
+
+
+La funzione @{i}ExNext@{ui}, è molto utile per scandire l'intero contenuto di un
+cassetto.
+Infatti, per fare questo è sufficente chiamare la @{i}Examine@{ui} con il lock alla
+directory che vogliamo esaminare, quindi chiamare in un ciclo la @{i}ExNext@{ui} con lo
+stesso lock e lo stesso @{i}FileInfoBlock@{ui} finché non ritona FALSE quindi
+controllare che la funzione @{i}IoErr@{ui} non abbia ritornato l'errore
+@{i}ERROR_NO_MORE_ENTRIES@{ui} (che è normale quando non ci sono più oggetti da
+esaminare). Se volessimo scandire ricorsivamente un albero di cassetti, allora
+dovremmo creare un nuovo @{i}lock@{ui} ed allocare un nuovo @{i}FileInfoBlock@{ui} per esaminare
+i vari cassetti figli.
+
+
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link assembler_lesson_6.guide}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@ENDNODE                                                                                             

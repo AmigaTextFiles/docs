@@ -1,0 +1,599 @@
+@DATABASE "ARB48"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 48 - Error Tracing & Debugging Part 3"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 48 - ERROR TRACING & DEBUGGING - PART 3
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" Interactive Tracing                      " LINK "Interactive"}
+@{" What Happens In Interactive Mode         " LINK "What"}
+@{" Example of Toggling the Interactive Mode " LINK "Example"}
+@{" The TS Command Utility                   " LINK "TS"}
+@{" The TE Command Utility                   " LINK "TE"}
+@{" Command Inhibition With !                " LINK "!"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Interactive" "Article 48 - Error Tracing & Debugging Pt 3 - Interactive Tracing"
+
+@{B}@{U}@{JCENTER}INTERACTIVE TRACING@{UB}@{UU}
+@{JLEFT}
+Interactive tracing is a tracing mode whereby you can (guess what??!!)
+@{B}interact@{UB} with the with the program while it is being executed.
+
+The "?" character is used to turn the tracing mode on and off, i.e. it
+@{B}toggles@{UB} the mode. (See also @{"The TS Command" LINK "TS"}.)
+
+It can be used with either the @{"TRACE()" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace()"} or the @{"TRACE" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace"} instruction.
+
+It can be used before any of the tracing @{"options" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace()"19}, as in:-
+
+  CALL TRACE('?Option')
+
+For example:-
+
+  CALL TRACE('?R')
+
+or it can be used on its own, as in:-
+
+  CALL TRACE('?')
+
+@{B}If used with an option@{UB}, tracing mode is toggled (as explained two paragraphs
+down) and that option is used for all tracing until another call to TRACE()
+is made.
+
+@{B}If used on its own@{UB}, it merely acts as a toggle and leaves the current
+tracing mode unaltered.
+
+The "?" character can be used as many times as you like within the one
+program and acts as a toggle each time it is used:-
+
+- If interactive mode is currently @{B}on@{UB}
+  the use of "?" will turn it @{B}off.@{UB}
+
+- If interactive mode is currently @{B}off@{UB}
+  the use of "?" will turn it @{B}on.@{UB}
+
+Toggling can be used to set interactive to @{B}on@{UB} for some parts of a program
+and @{B}off@{UB} for others (see @{"Example48-2" LINK "Example"}).
+
+The @{"next section" LINK "What"} describes what happens when interactive tracing is
+operating.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "What" "Article 48 - Error Tracing & Debugging Pt 3 - What Happens In Interactive Mode"
+
+@{B}@{U}@{JCENTER}WHAT HAPPENS IN INTERACTIVE MODE@{UB}@{UU}
+@{JLEFT}
+When in interactive mode, the program will pause as each traced clause
+is shown in the window and display the symbol:-
+
+  >+>
+
+When this symbol is displayed and the program pauses, you can make one
+of entries shown in the following table. If the @{"Global Tracing Console" LINK "ARB:Articles_41-50/47.Error_Tracing-2/GTC"}
+(G.T.C.) Window is open, the entries must be made in it. If the G.T.C.
+is @{B}not open@{UB} then the entries must be made in the same window as the program
+is using for its output (unless you have opened @{"your own" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Own"} tracing window
+in which case the entries should be made in it.)
+
+The entries that can be made are:-
+
+  @{U} Entry @{UU}    @{U}                       Action                                @{UU}
+
+  RETURN     Return on its own will cause the program to proceed normally
+             until it reaches the next point at which it is supposed to
+             pause.
+
+    =        The "=" character will cause the same clause to be executed
+             again so that you can reexamine the action of a certain
+             clause.
+
+  Anything   Any other input will be interpreted as an ARexx instruction to
+   else      be carried out or a command clause to be sent to the host
+             program. This feature means that you can change symbol values,
+             enter instructions that aren't in the program, or send
+             commands to hosts. If you enter an incorrect syntax then an
+             error message will be given.
+
+To test it all out, RX this program and then try out the suggestions given
+after the program listing:-
+
+  /* Example48-1 */
+
+  CALL TRACE('?R')
+
+  COUNT = 0
+
+  DO FOREVER
+    Count = Count + 1
+    SAY 'Count =' Count
+  END
+
+Open the @{"G.T.C." LINK "ARB:Articles_41-50/47.Error_Tracing-2/GTC"} Window with @{"TCO" LINK "ARB:Articles_41-50/47.Error_Tracing-2/TCO"} then RX this program.
+
+The G.T.C. window will display:-
+
+        >>> "N"
+    5 *-* COUNT = 0;
+        >>> "0"
+  >+>
+
+and the program's window will not display anything. The program has not
+yet reached a point where there is a SAY instruction and ARexx is waiting
+for you input in the G.T.C. Before you can type into the G.T.C. you will
+need to click once in it to activate (select) it.
+
+Just press RETURN in the G.T.C. a couple of times.
+
+The G.T.C. should display:-
+
+    7 *-* DO FOREVER;
+      8 *-* Count = Count + 1;
+          >>> "1"
+  >+>
+      9 *-* SAY 'Count =' Count;
+          >>> "Count = 1"
+  >+>
+
+and the program's window should display:-
+
+  Count = 1
+
+Now enter in the G.T.C. window:-
+
+  =
+
+The G.T.C. will display:-
+
+      9 *-* SAY 'Count =' Count;
+         >>> "Count = 1"
+
+and the program's window will display:-
+
+  Count = 1
+
+Keep entering "=" as long as you like and the program will not proceed
+past this clause.
+
+This demonstrates the entering "=" will keep repeating the last clause.
+
+Now enter in the G.T.C. window:-
+
+  Count = 100
+
+The G.T.C. will again display:-
+
+  >+>
+
+and wait for input, just in case you wish to enter more lines. Just press
+return again @{B}twice@{UB} and the G.T.C. window will display:-
+
+     10 *-* END;
+      7 *-* DO FOREVER;
+      8 *-* Count = Count + 1;
+          >>> "101"
+  >+>
+      9 *-* SAY 'Count =' Count;
+          >>> "Count = 101"
+
+and the program's window will display:-
+
+  Count = 101
+
+@{B}You have interacted with the program and dynamically changed the value
+of a symbol!@{UB}
+
+Now enter this line in the G.T.C. window:-
+
+  DO x = 1 to 5 ; SAY 'X =' x ; END
+
+and press return once for this line and once at the next >+>
+prompt.
+
+The program's window will display:-
+
+  X = 1
+  X = 2
+  X = 3
+  X = 4
+  X = 5
+
+This demonstrates that you can test out little ARexx programs while your
+program is still being executed. This little program will not interfere
+with the program being tested @{B}unless you use the same symbol names!@{UB} For
+example, if you entered:-
+
+  DO Count = 1 to 5 ; SAY 'Count =' Count ; END
+
+then the program being tested would continue with a "Count" value of 6.
+
+@{B}NOTE@{UB} that, if you enter a number of clauses separated by semicolons (;)
+as in the DO loops shown above, or perhaps some IF...THEN...ELSE type
+sets, then you @{B}must@{UB} get the complete DO...END loop or the complete
+IF...THEN...ELSE set correct and in the same line before pressing return.
+For example, if you entered:-
+
+  DO x = 1 to 5
+
+you would get an error message "Missing or unexpected END" because there
+is no END to match the DO.
+
+Now enter in the G.T.C. window:-
+
+  ADDRESS 'COMMAND' 'Dir Ram:'
+
+and the program's window will give you a directory listing of the Ram:
+disk.
+
+Finally, enter :-
+
+  EXIT
+
+and the program will exit and cease execution.
+
+Note that this EXIT is an AREXX instruction that is @{B}not@{UB} part of the program
+but is one sent to ARexx from the G.T.C.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Example" "Article 48 - Error Tracing & Debugging Pt 3 - Example Of Toggling In Interactive Mode"
+
+@{B}@{U}@{JCENTER}EXAMPLE OF TOGGLING IN INTERACTIVE MODE@{UB}@{UU}
+@{JLEFT}
+As mentioned @{"above" LINK "Interactive"30}, the "?" character can be used more than once in a
+program. Each time it is used, the interactive mode is toggled on or off.
+This is handy if you want to trace a program but only have interactive
+mode in a certain part of it. This is illustrated by:-
+
+  /* Example48-2 */
+
+  CALL TRACE('R')
+  DO X = 1 to 5
+    SAY 'X Loop =' X
+  END
+
+  CALL TRACE('?')
+  DO Y = 1 to 5
+    SAY 'Y Loop =' Y
+  END
+
+  CALL TRACE('?A')
+  DO Z = 1 to 5
+    SAY 'Z Loop =' Z
+  END
+
+In this example:-
+
+- the "X-Loop" is executed in @{B}non-interactive@{UB} mode
+  using the @{B}Results@{UB} option,
+
+- the "Y-Loop" is executed in @{B}interactive@{UB} mode
+  with the @{B}Results@{UB} option still active,
+
+- the "Z-Loop" is executed in @{B}non-interactive@{UB} mode
+  using the @{B}All@{UB} option.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "TS" "Article 48 - Error Tracing & Debugging Pt 3 - The TS Command Utility"
+
+@{B}@{U}@{JCENTER}THE TS COMMAND UTILITY@{UB}@{UU}
+@{JLEFT}
+The TS utility turns on the what is called the @{B}"global tracing flag"@{UB} or
+@{B}"external tracing flag"@{UB}. It can be used at a Shell/CLI prompt:-
+
+  > TS
+
+or sent to AmigaDOS from within an ARexx program:-
+
+  ADDRESS 'COMMAND' 'TS'
+
+This flag, which is set in the ARexx environment, is external to all ARexx
+programs. When it is turned on, all ARexx programs (unless using the
+@{"Background" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Background"} tracing option), will go into interactive tracing mode.
+
+The TS command uses the @{"Results" LINK "ARB:Articles_41-50/47.Error_Tracing-2/AllOps"45} tracing option so that any previous tracing
+mode will be changed to "Results"
+
+When used, TS will:-
+
+1. Set the global tracing flag to on,
+
+2. Cause all program currently running, and all programs RX'ed @{B}after@{UB} it
+   has been used, to go into interactive tracing mode (unless the
+   "Background" option has been used in any of the programs).
+
+This external tracing flag is only turned off when the @{"TE" LINK "TE"} command utility
+is used, or if the REXX process is shut down.
+
+To illustrate all this, open up @{B}three@{UB} Shell/CLI windows then resize and
+position them at the top, middle and bottom of the screen so that you
+can see the output in each one. If you have the @{"G.T.C." LINK "ARB:Articles_41-50/47.Error_Tracing-2/GTC"} window open then
+it would be best to close it with @{"TCC" LINK "ARB:Articles_41-50/47.Error_Tracing-2/TCC"} so as to avoid too much clutter
+in your screen.
+
+Now RX Example48-3 in one window and Example48-4 in another. These are
+essentially the same as @{"Example48-1" LINK "What"34} except for the trace options and the
+text in the "SAY" instruction which I have altered so that you can easily
+see which is which. Example48-3 has @{B}no@{UB} trace instruction and Example48-4
+has the @{B}Background@{UB} trace option which prevents it being forced into
+interactive tracing mode by the TS utility.
+
+  /* Example48-3 */
+
+  COUNT = 0
+
+  DO FOREVER
+    Count = Count + 1
+    SAY 'Example48-3 has no tracing set in program. Count =' Count
+  END
+
+  /* Example48-4 */
+
+  CALL TRACE('B')
+
+  COUNT = 0
+
+  DO FOREVER
+    Count = Count + 1
+    SAY 'Example48-4 has background tracing set. Count =' Count
+  END
+
+These two programs will have very similar outputs.
+
+Now go to the third Shell/CLI window and enter:-
+
+  > TS
+
+Example 48-3 will now go into interactive tracing mode using the "Results"
+option (it may take quite a few displays of "Count =" before it takes
+effect) but Example48-4 will continue on as if nothing has
+happened!
+
+Now stop both programs at the same time by setting the global halt flag
+with the @{"HI" LINK "ARB:ARTICLES_01-10/03.Command_Utilities/Hi"} utility by entering in the spare Shell/CLI window:-
+
+  >HI
+
+Both programs should now stop after a few more outputs. You may have to
+press return a few times in the Example48-3 window.
+
+Now RX Example48-3 again and note that it is still using interactive tracing
+even though it does not start with a call to TRACE(). This is because
+the TS command has set the global interactive tracing flag which remains
+set until it is turned off.
+
+Now RX Example48-4 again and note that it @{B}starts off@{UB} using interactive
+tracing but that as soon as it reaches the third line with the TRACE('B')
+the tracing is turned off.
+
+Any program started when the global tracing flag is @{B}on@{UB} will automatically
+go into into interactive tracing @{B}unless@{UB} it starts with a call to TRACE()
+using the "?" toggle.
+
+If a program is started @{B}after@{UB} TS is used and the program starts with a
+call to trace using the "?" toggle, then this will happen:-
+
+1. The program starts and the external tracing flag turns on interactive
+   mode for the program
+
+2. The first instruction is a call to TRACE() using the "?" toggle
+   so interactive tracing is turned off!
+
+The reverse is @{B}not@{UB} true. If a program using TRACE('?Option') is started
+while the global tracing mode is @{B}off@{UB} and TS is used while it is running,
+the tracing mode is @{B}not@{UB} toggled off. It remains on.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "TE" "Article 48 - Error Tracing & Debugging Pt 3 - The TE Command Utility"
+
+@{B}@{U}@{JCENTER}THE TE COMMAND UTILITY@{UB}@{UU}
+@{JLEFT}
+This utility is used in the same way as TS, i.e. it is entered at a
+Shell/CLI prompt:-
+
+  > TE
+
+or sent to AmigaDOS from within an ARexx program:-
+
+  ADDRESS 'COMMAND' 'TE'
+
+When used while the global tracing flag is @{B}ON@{UB}, these actions
+occur:-
+
+1. The global tracing flag is turned off
+
+2. All programs have all modes of tracing turned off.
+   This @{B}includes @{"background" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Background"} tracing!!@{UB}
+
+Consider this sequence of events:-
+
+1. Run program XYZ using TRACE('B')
+
+2. Use TS - global tracing is invoked but does not affect program XYZ
+
+3. Use TE - global tracing flag is turned off @{B}and@{UB} tracing is turned off
+   in all active programs @{B}including@{UB} XYZ.
+
+4. Use TS again - global tracing flag is turned on and all active programs
+   are put into interactive tracing mode @{B}including@{UB} program XYZ because
+   XYZ's background tracing mode was turned off at step 3!!!.
+
+If TE is used while the the global tracing flag is @{B}already OFF@{UB} then there
+is @{B}NO@{UB} effect on any program currently running.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "!" "Article 48 - Error Tracing & Debugging Pt 3 - Command Inhibition With !"
+
+@{B}@{U}@{JCENTER}COMMAND INHIBITION WITH !@{UB}@{UU}
+@{JLEFT}
+The use of the "!" character will stop commands being sent to a host program.
+That is, it will @{B}inhibit commands@{UB}.
+
+It can be used with either the @{"TRACE()" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace()"} or the @{"TRACE" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace"} instruction.
+
+It can be used before any of the tracing @{"options" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace()"19}, as in:-
+
+  CALL TRACE('!Option')
+
+For example, the clause:-
+
+  CALL TRACE('!C')
+
+will trace all command clauses but will @{B}not@{UB} send them to the external host.
+
+OR it can be used on its own, as in:-
+
+  CALL TRACE('!')
+
+@{B}If used with an option@{UB}, tracing mode is toggled (as explained two paragraphs
+down) and that option is used for all tracing until another call to TRACE()
+is made.
+
+@{B}If used on its own@{UB}, it merely acts as a toggle and leaves the current
+tracing mode unaltered.
+
+The "!" character can be used as many times as you like within the one
+program and acts as a toggle each time it is used:-
+
+- If command inhibition mode is currently @{B}on@{UB}
+  the use of "!" will turn it @{B}off.@{UB}
+
+- If command inhibition mode is currently @{B}off@{UB}
+  the use of "?" will turn it @{B}on.@{UB}
+
+Toggling can be used to set command inhibition to @{B}on@{UB} for some parts of
+a program and @{B}off@{UB} for others.
+
+When command inhibition is @{B}ON@{UB}, the return code is always set to zero and
+so there is @{B}no return code reporting@{UB} that you would normally expect from
+the program's command clauses.
+
+@{B}@{U}Why Use Command Inhibition?@{UB}@{UU}
+
+While testing and debugging programs, it may well be quite time consuming
+and/or dangerous if you are sending commands to host programs.
+
+Just imagine if you had a clause such as:-
+
+  ADDRESS 'COMMAND' 'Format Drive' DriveName 'Name' DiskName
+
+where "DriveName" is set elsewhere in the program. @{B}Catastrophe@{UB} if "DriveName"
+was accidently set to "DH0:" and you scrubbed all your hard drive by
+mistake!!
+
+Other commands sent to hosts could take a long time to execute thus holding
+up the testing procedure.
+
+To overcome these possibilities, ARexx provides the @{B}command inhibition@{UB}
+mode as way of executing a program but preventing command clauses from
+being sent to the host.
+
+The following example program is identical to @{"Example47-7" LINK "ARB:Articles_41-50/Example47-7.rexx/MAIN"} except for the
+"!" in front of the "C" in the call to the TRACE() function.
+
+  /* Example48-5.rexx */
+
+  CALL TRACE('!C')
+
+  ADDRESS 'COMMAND'
+
+  SAY 'Copying 1 real file'
+  'COPY S:Startup-Sequence Ram:'
+  'List Ram:Startup-Sequence'
+
+  SAY 'Copying 1 non existing file'
+  'COPY Ram:NonExistentCommand Ram:Nothing'
+
+  'Ram:NonExistentCommand'
+
+  SAY 'Checking assignment of NonExistentAssignment:'
+  'Assign NonExistentAssignment: Exists'
+
+  'Delete Ram:Startup-Sequence'
+
+When we RX'ed Example47-7 it sent various commands to AmigaDOS and the
+output of those commands was displayed as discussed in the @{"last article" LINK "ARB:Articles_41-50/47.ERROR_TRACING-2/CommandExamples"38}.
+
+If you RX the above with the GTC window open, then the GTC window will
+display:-
+
+  8 *-* 'COPY S:Startup-Sequence Ram:';
+      >>> "COPY S:Startup-Sequence Ram:"
+  9 *-* 'List Ram:Startup-Sequence';
+      >>> "List Ram:Startup-Sequence"
+ 12 *-* 'COPY Ram:NonExistentCommand Ram:Nothing';
+      >>> "COPY Ram:NonExistentCommand Ram:Nothing"
+ 14 *-* 'Ram:NonExistentCommand';
+      >>> "Ram:NonExistentCommand"
+ 17 *-* 'Assign NonExistentAssignment: Exists';
+      >>> "Assign NonExistentAssignment: Exists"
+ 19 *-* 'Delete Ram:Startup-Sequence';
+      >>> "Delete Ram:Startup-Sequence"
+
+If you compare this with the @{"tracing output from Example47-7" LINK "ARB:Articles_41-50/47.ERROR_TRACING-2/Commands"11} you will see
+that there is @{B}no reporting of return codes@{UB} because all return codes are set
+to 0 (zero).
+
+And the Shell/CLI window will display:-
+
+  Copying 1 real file
+  Copying 1 non existing file
+  Checking assignment of NonExistentAssignment:
+
+If you compare this with the @{"program output from Example47-7" LINK "ARB:Articles_41-50/47.ERROR_TRACING-2/CommandExamples"38}) you will see
+that the only output is from the program's SAY instruction clauses. There
+is @{B}no output@{UB} from the commands sent to AmigaDOS because they are @{B}NOT SENT!@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

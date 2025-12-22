@@ -1,0 +1,716 @@
+                 CHAPTER 5.  INTERNAL CONTROLS
+
+      
+
+      The commands explained in this chapter
+      are of two types.  The first group
+      concerns default configurations, for
+      example, writing your own power-on
+      defaults to nonvolatile random access
+      memory (NVRAM).  The remaining commands
+      are used to select the modem's local
+      operating characteristics, for a current
+      session or to include in your default
+      configuration.  They include result
+      code, echoing, and other options.
+
+      NOTE:  When you change a default setting
+      during a session, the modem retains that
+      setting until you do one of the
+      following.
+
+         ù Change the setting.
+         ù Issue the ATZ command to reset the
+           modem to its software defaults.  If
+           DIP switch 10 is UP, the modem
+           resets to the defaults stored in
+           nonvolatile memory (NVRAM).  If DIP
+           switch 10 is DOWN, the modem resets
+           to the factory settings stored in
+           read only memory (ROM).
+         ù Issue the AT&F command to load the
+           modem's factory settings.
+         ù Turn the modem off and power it on
+           again.  At power-on, the modem
+           loads either the nonvolatile memory
+           defaults (DIP switch 10 UP) or the
+           factory settings (DIP switch 10
+           DOWN).
+
+
+SETTING/USING DEFAULTS   
+
+      The modem's read only memory (ROM)
+      permanently stores the modem's factory
+      settings.  The inclusion of nonvolatile
+      random access memory (NVRAM) allows you
+      to define your own configuration and
+      write the settings to NVRAM as your
+      power-on defaults.
+
+
+WRITING DEFAULTS TO NVRAM (&W)
+
+      When you power on the Courier, it loads
+      the settings stored in NVRAM if DIP
+      switch 10 is UP (factory setting).
+      Until you write your own settings to
+      NVRAM, the defaults stored there are the
+      same as the permanent ROM factory
+      settings.
+      You'll find a list of NVRAM options and
+      factory settings in Appendix B.  You can
+      also display them by selecting option 5
+      of the I (inquiry) command:
+
+             ATI5 <Enter>
+
+      If you've sent the modem commands to
+      change settings throughout your session
+      and want to save your current configu-
+      ration, send just the &W command.  The
+      current settings are saved.
+
+             AT&W <Enter>
+
+      You may also specify the entire
+      configuration in a single command string
+      that ends with the &W command.  The
+      following example sets the modem for the
+      current session and stores the
+      configuration in NVRAM.
+
+             AT X4 &B1 &H1 M3 &W <Enter>
+
+      After sending a configuration to NVRAM,
+      you can change any setting just for the
+      current session, as in the following
+      example.  The NVRAM configuration
+      remains intact.
+
+             ATX7 <Enter>
+
+      But if you want the new setting to be a
+      default, write it to NVRAM at the same
+      time, as in the following example.  X7
+      is substituted for the X4 setting stored
+      earlier.
+
+             AT X7 &W <Enter>
+
+LOADING THE FACTORY DEFAULTS (&F)
+
+      If DIP switch 10 is DOWN, the factory
+      settings are loaded at power-on instead
+      of the NVRAM defaults.  Factory settings
+      for the options that are stored in NVRAM
+      are in Appendix B.
+
+      If the NVRAM defaults are loaded at
+      power-on (DIP switch 10 UP) and you want
+      to load the factory defaults instead,
+      use the following command:
+
+             AT&F <Enter>
+
+      If NVRAM defaults are loaded, but you
+      want to view a screen listing of factory
+      defaults, first load them (&F), to make
+      them the
+      current settings.  Then include the I4
+      inquiry option to display a listing of
+      the newly current settings, as in the
+      following example.
+
+             AT&F I4 <Enter>
+
+      To restore your NVRAM defaults, use the
+      ATZ command described next.  (DIP switch
+      10 must be UP.)
+
+
+RESET (Z)
+
+      If you've changed several current
+      settings and want to reset to your
+      power-on defaults, type the following
+      command:
+
+             ATZ <Enter>
+
+      The modem reads its DIP switch settings
+      and resets either to its NVRAM defaults
+      (DIP switch 10 UP) or factory settings
+      (DIP switch 10 DOWN).
+
+      NOTE:  Use the ATZ command also if
+      you've changed the position of DIP
+      switches 2-5, 7 or 9 while the modem is
+      on, so that the modem can read the new
+      setting.  The only other way to initiate
+      a new setting for switches 2-5, 7 and 9
+      is to turn the modem off and on again.
+
+
+STORING TELEPHONE NUMBERS (&Zn=s)
+
+      The modem stores up to four frequently
+      dialed phone numbers.  Write the numbers
+      to NVRAM with the &Zn=s command, where n
+      is position 0 through 3, and s is the
+      phone-number string.
+      The number-string may be up to 36
+      characters long, including any Dial
+      command options.  The following example
+      includes the tone-dial (T) and wait for
+      a second dial tone (W) options of the
+      Dial command.  The number is stored at
+      position 0, assumed because there is no
+      n parameter.
+
+             AT&Z=T9W5551234 <Enter>
+
+      The following example stores a long-
+      distance number at the second position.
+      We've added spaces for readability.
+
+             AT&Z2=1 516 555 1234 <Enter>
+      The DSn command is used to dial a stored
+      number, as in this example to dial the
+      number stored at position 2:
+
+             ATDS2 <Enter>
+
+      NOTE:  Do not include modem settings in
+      the &Z string.  If the call requires a
+      special setting, insert it in the
+      command string before the DSn command.
+      In the following example, &M0 (no error
+      control) is inserted before the Dial
+      command:
+
+             AT&M0 DS2 <Enter>
+
+      The previous command establishes &M0 as
+      the current setting. To return to the
+      default error control mode, issue the
+      following command:
+
+             AT&M4 <Enter>
+
+
+RESULT CODES
+
+      Four commands control the result codes
+      that the modem returns to the screen:
+
+         Vn Numeric/verbal response mode
+         Qn Display/suppress all result codes
+         &An   Display/suppress additional
+           result code subsets
+         Xn Result code subset
+
+
+Response Modes (Vn)
+
+      Result codes are sent to the screen in
+      either words (Verbal Mode) or numbers
+      (Numeric Mode).  The Courier is factory
+      set to Verbal mode when it is powered on
+      (DIP switch 2 is UP).  Use the Vn
+      command to select verbal or numeric
+      result codes for a current session,
+      independently of the DIP switch setting.
+
+      At power-on and reset, the modem
+      operates according to the DIP switch
+      setting.  The Vn command is not stored
+      in nonvolatile memory as a power-
+      on/reset default.
+
+      V0  Numeric Mode.  Numeric result codes
+          are followed by a Carriage Return
+          but no Line Feed, as in the
+          following example, where a 3 is
+          returned (for NO CARRIER).
+
+               ATD1234567 <Enter>
+               becomes
+               3TD1234567 <Enter>
+      V1  Verbal Mode.  Verbal responses are
+          preceded and followed by a Carriage
+          Return and a Line Feed, as in the
+          following example:
+
+             ATD1234567 <Enter>
+             NO CARRIER
+
+
+Quiet Mode (Qn)     
+
+      Enable/suppress the display of result
+      codes.  The Courier is shipped with DIP
+      switch 3 DOWN, to display result codes.
+      Use the Qn command to control the
+      display for a current session,
+      independently of the switch setting.
+
+      At power-on and reset, the modem
+      operates according to the DIP switch
+      setting.  The Qn command is not stored
+      in nonvolatile memory as a power-
+      on/reset default.
+
+      Q0  Result codes are displayed.
+
+      Q1  Result codes are suppressed (made
+          quiet).
+
+      Q2  Result codes are suppressed only in
+          Answer mode.
+
+
+Additional Result Code Subsets (&An)
+
+      Use this command to enable/disable one
+      of the following subsets of error
+      control, modulation or protocol result
+      codes.
+
+      &A0 ARQ (error control) codes are
+          disabled.  This setting does not
+          affect an error-control connection;
+          the modem returns the standard
+          CONNECT messages if result codes are
+          enabled.
+
+      &A1 ARQ codes are enabled.  One of the
+          following results is sent to the
+          screen when a successful error
+          control connection is established.
+          Message 14 is displayed if the modem
+          is set to X0 and the connection is
+          at any rate from 1200 to 14.4K bps.
+          The remaining results indicate the
+          connection rate and require a
+          setting of X1 or higher.
+
+          14/CONNECT/ARQ  22/CONNECT 12000/ARQ
+          15/CONNECT 1200/ARQ 24/CONNECT
+          7200/ARQ
+          16/CONNECT 2400/ARQ 26/CONNECT
+          14400/ARQ
+          17/CONNECT 9600/ARQ 47/CONNECT
+          16800/ARQ
+          19/CONNECT 4800/ARQ 
+          
+      &A2 HST/V32 modulation codes are
+          enabled.  This option is included
+          for users of HST Dual Standard
+          modems.  If your software cannot
+          handle the added modulation
+          information, select &A1 or &A0.
+
+       23/CONNECT 9600/HST  or     33/CONNECT
+      9600/V32
+       27/CONNECT 9600/ARQ/HST     or   37/CON
+      NECT 9600/ARQ/V32
+       28/CONNECT 4800/HST  or     38/CONNECT
+      4800/V32
+       29/CONNECT 4800/ARQ/HST     or   39/CON
+      NECT 4800/ARQ/V32
+       30/CONNECT 7200/HST  or     40/CONNECT
+      7200/V32
+       34/CONNECT 7200/ARQ/HST     or   44/CON
+      NECT 7200/ARQ/V32
+       31/CONNECT 12000/HST or     41/CONNECT
+      12000/V32
+       32/CONNECT 12000/ARQ/HST    or   42/CON
+      NECT 12000/ARQ/V32
+       35/CONNECT 14400/HST or     45/CONNECT
+      14400/V32
+       36/CONNECT 14400/ARQ/HST    or   46/CON
+      NECT 14400/ARQ/V32
+       53/CONNECT 16800/HST
+       57/CONNECT 16800/ARQ/HST
+      
+      &A3 Protocol codes are enabled.  Error
+          control protocols reported are: HST,
+          LAPM, or MNP.  When the call is not
+          under one of those protocols (and
+          ARQ is not included in the result
+          code), the modem reports either
+          SYNC, indicating a synchronous
+          connection, or NONE, for no
+          protocol.
+
+          If the modems are using data
+          compression, the type of
+          compression, V42BIS or MNP5, is
+          added to the result code.  In the
+          first of the following examples, the
+          modems negotiated error control for
+          the call (ARQ), used HST modulation,
+          are using HST error control
+          protocol, and are using V.42 bis
+          compression.
+          CONNECT 14400/ARQ/HST/HST/V42BIS   [
+          or MNP5]
+          CONNECT 14400/ARQ/V32/LAPM/V42BIS  [
+          or MNP/MNP5]
+          CONNECT 9600/SYNC
+          CONNECT 2400/ARQ/MNP/MNP5   [or
+          LAPM/V42BIS]
+          CONNECT 2400/NONE
+          NOTE:  Although these codes will
+          return numeric identifiers, they are
+          the same numeric identifiers used
+          for &A2 result codes.  If the modem
+          is in Numeric Mode (V0) and set to
+          &A3, you will not be able to
+          differentiate between &A2 and &A3
+          result codes.  &A3 result codes may
+          not be compatible with some
+          software.
+
+Result Code Sets (Xn)
+
+      You have eight options, 0 through 7, for
+      selecting the result code subset best
+      suited to your applications.
+
+      X0  Basic subset, returns the first five
+          codes (0-4) in the following table.
+      X1  Extended subset, codes 0-5, 10, 13
+          and 18.  Default.  This set adds
+          rate-specific CONNECT messages to
+          the Basic set.
+      X2-7     These options include the X1
+          subset and offer advanced call-
+          progress codes and functions.
+
+                               Setting  
+      
+      Result Codes    X0 X1   X2   X3   X4   
+      X5              X6 X7
+      
+      0/OK            +  + +  + +  + +  +
+      1/CONNECT       +  + +  + +  + +  +
+      2/RING          +  + +  + +  + +  +
+      3/NO CARRIER    +  + +  + +  + +  +
+      4/ERROR         +  + +  + +  + +  +
+      5/CONNECT 1200     + +  + +  + +  +
+      6/NO DIAL TONE       +    +    +  +
+      7/BUSY                  + +  + +  +
+      8/NO ANSWER             + +  + +  +
+      9/RESERVED
+      10/CONNECT 2400    + +  + +  + +  +
+      11/RINGING                   + +  +
+      12/VOICE                     + +  
+      13/CONNECT 9600    + +  + +  + +  +
+      18/CONNECT 4800    + +  + +  + +  +
+      20/CONNECT 7200      +  + +  + +  +    +
+      21/CONNECT 12000     +  + +  + +  +    +
+      25/CONNECT 14400     +  + +  + +  +    +
+      43/CONNECT 16800     +  + +  + +  +    +
+      
+      Functions
+      
+      Adaptive Dialing        + +  + +  +    
+      +
+      Wait for 2nd Dial Tone (W)             +    
+      +               +  + +
+      Wait for Answer (@)          + +  +    +    
+      +
+      Fast Dial            +    +    +  +
+
+        Table 5-1.  Result Code Options
+      NOTE:  Additional messages indicate an
+      error-control connection and the
+      modulation for a call.  See Additional
+      Result Code Subsets (&An), earlier in
+      this chapter.
+
+Result Code  Meaning
+
+0/OK         Command has been executed
+1/CONNECT    Connection established with
+             another modem; if set to X0,
+             connection may be at 300, 1200,
+             2400 or 9600 bps; if X1 or
+             higher, connection is at 300 bps
+2/RING       Incoming ring detected
+3/NO CARRIER   Carrier detect has failed or
+             carrier has been dropped due to
+             disconnect
+4/ERROR      Command is invalid
+5/CONNECT 1200 Connection established with
+             another modem at 1200 bps
+6/NO DIAL TONE Dial tone not detected during
+             the normal 2 seconds, set in
+             Register S6
+7/BUSY       Busy signal detect; modem hangs
+             up
+8/NO ANSWER  After waiting 5 seconds for an
+             answer, modem hangs up; returned
+             instead of NO CARRIER when the @
+             option is used
+10/CONNECT 2400     Connection established
+             with another modem at 2400 bps
+11/RINGING   The modem has dialed; remote
+             phone line is ringing
+12/VOICE     Voice answer at remote site;
+             modem hangs up
+13/CONNECT 9600     Connection established at
+             reported rate.  Same meaning for
+             results of 4800 (18), 7200 (20),
+             12K (21), 14.4K (25) and 16.8K
+             (43, HST only).
+
+Adaptive Dialing    The modem attempts to use
+             Touch-Tone dialing and, if that
+             doesn't work on the line, reverts
+             to rotary dialing.
+Wait for Another    The modem continues
+             dialing as soon as it detects
+    Dial Tone (W)   another dial tone.  See
+             the dial options in Chapter 6.
+Wait for an  The modem continues dialing when
+             it detects 5
+    Answer (@) seconds of silence on the line.
+             See the dial options in Chapter
+             6.
+Fast Dial    The modem dials immediately on
+             dial-tone detect, instead of
+             waiting the normal 2 seconds set
+             in Register S6.
+
+     Table 5-2.  Result Code Definitions
+LOCAL ECHO
+
+      Local echo is the display of what you
+      type at the keyboard and data the
+      Courier transmits to another modem.  The
+      En command controls the display of your
+      typed commands, when the modem is in
+      Command Mode.  The Fn command applies to
+      when the modem is online to another
+      system.
+
+
+Command Mode Local Echo (En)
+
+      The En command enables/disables the
+      display of your typed commands.  If
+      double characters appear on the screen,
+      both the modem's local echo and your
+      software's local echo are on.
+
+      The Courier is shipped with DIP switch 4
+      UP, enabling local echo.  The En command
+      controls the local echo for a current
+      session, independently of the switch
+      setting.  At power-on and reset, the
+      modem operates according to the DIP
+      switch setting.  The En command is not
+      stored in nonvolatile memory as a power-
+      on/reset default.
+
+      E0  Command Mode echo OFF.  The modem
+          does not display keyboard commands.
+
+      E1  Command Mode echo ON.
+
+
+Online Local Echo (Fn)
+
+      This command causes the modem to display
+      a copy of the data it is transmitting to
+      another system.  Many systems, however,
+      return a copy of received data, which is
+      called a remote echo.  If the modem's
+      online echo is ON and there is also
+      remote echoing, double characters appear
+      on the screen.
+
+      In some microcomputer documentation, the
+      term duplex is applied to local online
+      echoing, although the term is not
+      technically accurate.
+
+      F0  Online echo ON.  Sometimes called
+          half duplex.  As the modem transmits
+          data to a remote system, it also
+          sends a copy of the data to the
+          screen.
+
+      F1  Online echo OFF.  Sometimes called
+      full duplex.  Default.
+THE AUDIO MONITOR
+
+      The modem's speaker enables you to
+      monitor the dial-connect process.  There
+      are several ways to make use of this
+      feature.  After the Courier dials a
+      number, it waits 60 seconds for a high-
+      pitched answer tone from the other
+      modem, immediately followed by data
+      signals, called a carrier.  These
+      signals must occur before a data link is
+      established.
+
+      At the default X1 setting, if someone
+      answers the phone, or if the line is
+      busy, the modem sends the message NO
+      CARRIER to your screen after 60 seconds.
+      If you listen to the speaker, you can
+      respond immediately instead of waiting
+      for the modem to time out.
+
+      For example, if you hear someone
+      answering the call, you can pick up the
+      phone, if it's attached to the modem,
+      and talk to the person.  Or you can
+      cancel the call by pressing any key on
+      the keyboard.  In the same way, you can
+      cancel a call when you hear a busy
+      signal.
+
+      You can also hear if dialing is
+      proceeding too quickly for the system.
+      Terminate the call (press any key) and
+      retype the Dial command, but insert a
+      comma (,) or a couple of slashes (/), to
+      have the modem pause during the dialing
+      process.
+
+
+SPEAKER CONTROL (Mn)
+
+      This command disables the speaker
+      entirely or sets the speaker to monitor
+      different segments of the dial-connect
+      sequence.
+
+      M0  This setting disables the speaker
+          entirely so that you don't hear the
+          modem go off hook, dial, etc.
+
+      M1  The speaker is ON until Carrier
+          Detect.  Default.  You can monitor
+          call progress until the Courier
+          detects the remote modem's carrier
+          signals, or until the 60-second
+          timeout and result code display.  At
+          Carrier Detect, the modem discon-
+          nects the speaker and data
+          transmission sounds are suppressed.
+
+      M2  The speaker is ON continuously,
+          including during data transmission.
+
+      M3  The speaker doesn't go ON until
+          after the last digit is dialed, then
+          goes OFF at Carrier Detect.
+MODEM CLOCK USAGE (Kn)
+
+      The modem clock is used as a call-
+      duration timer or as a real-time clock.
+      Used in conjunction with the In
+      (Inquiry) command, the modem returns the
+      duration of the last call in hours,
+      minutes, and seconds or the actual time.
+
+      K0  Call-Duration Mode.  Default.  The
+          modem times each call from CONNECT
+          to NO CARRIER, and stores the infor-
+          mation until the next connection or
+          when the modem is reset.  At ATI3
+          <Enter>, the modem displays the
+          call's duration.  If you wish, you
+          can maintain a call log by printing
+          this information after each call.
+
+      K1  Real-Time Mode.  The clock operates
+          as a real-time clock regardless of
+          the presence of a carrier.  Set the
+          clock (in military time) by
+          specifying the hour, minutes, and
+          seconds as in the following example,
+          which sets the clock at the real
+          time of 1:30 p.m.
+
+             ATI3=13:30:00 K1 <Enter>
+
+          At ATI3, the modem displays the real
+          time.  You'll need to set the clock
+          each time you power on the modem,
+          but the clock is not affected by the
+          reset command, ATZ.
+
+
+TRANSMITTER ENABLE/DISABLE (Cn)
+
+      If an additional terminal and modem
+      share the phone line for monitoring
+      purposes, the second modem is placed in
+      Receive Only state by disabling its
+      transmitter.  Use this feature only at
+      1200 or 300 bps.
+
+      C0  Transmitter disabled.  Modem is set
+          to Receive Only.
+
+      C1  Transmitter enabled.  Default.
+
+
+BREAK HANDLING (&Yn)
+
+      This command allows you to send a break
+      to abort data transfer without
+      disconnecting from the phone link.  The
+      following options are available.
+
+      &Y0 Destructive, no Break transmitted:
+          the modem clears the data from its
+          transmit buffer (all data is lost)
+          but does not transmit the Break to
+          the remote modem.
+      &Y1 Destructive, expedited:  the modem
+          clears the buffer and immediately
+          sends a Break to the remote modem.
+          Default.
+
+      &Y2 Nondestructive, expedited:  the
+          modem retains data in the transmit
+          buffer, but immediately sends a
+          Break to the remote modem.
+
+      &Y3 Nondestructive, unexpedited (send
+          Break in sequence):  the modem
+          transmits any buffer data received
+          before the Break, sends the Break,
+          and then sends any subsequent input
+          from the DTE.
+
+      NOTE:  If the call is under MNP5 data
+      compression, destructive Breaks cause
+      both modems to reset their data
+      compression tables.  When transmission
+      resumes, the modems build new tables,
+      and the result is lower than normal
+      throughput.
+
+
+S-REGISTERS
+
+      The S-Registers are used to set various
+      timing parameters, redefinition of
+      selected ASCII characters, and other
+      configuration options.  The defaults
+      reflect typical requirements.
+
+      A detailed summary of the S-register
+      functions is in Appendix B.  A less
+      detailed summary is in the Quick-
+      Reference card.

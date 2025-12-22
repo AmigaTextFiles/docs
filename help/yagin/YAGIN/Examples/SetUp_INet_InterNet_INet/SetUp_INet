@@ -1,0 +1,76 @@
+;SetUp for INet
+
+; $VER: SetUp_INet 1.0 (5.7.95) Arndt van der Molen
+
+assign INet:			InterNet:INet
+
+; No need to setup. Use setup from UUCP!
+;SetEnv LIBDIR			see UUCP
+
+; No need to setup. Use setup from UUCP!
+;SetEnv NEWSDIR			see UUCP
+
+
+SetEnv LOGFILE			INet:Logfile
+SetEnv USERNAME			`AmiTCP:bin/whoami`
+SetEnv REALNAME         Max Mustermann
+SetEnv NODENAME			dom
+SetEnv DOMAINNAME		.ain.de
+
+; Hostname is setup by AmiTCP:bin/startnet or AmiTCP:bin/startlocal script
+;SetEnv HOSTNAME		dom.ain.de
+
+SetEnv ORGANIZATION		My private Account
+SetEnv NNTPSERVER		news.dom.ain.de
+
+;SetEnv NNTPUSERID
+;SetEnv NNTPPASSWORD
+
+SetEnv SMTPSPOOLDIR		INet:Mail_OUT/
+SetEnv SMTPMAILDIR		INet:Mail_IN/
+SetEnv SMTPSMARTERHOST	smtp.dom.ain.de
+SetEnv SMTPRMAIL		INet:c/SMTPpost -r
+
+; The name of SMTPpost for SMTPd to use.
+SetEnv SMTPPOST			INet:c/SMTPpost
+
+; A (optional) command to be executed when SMTPd files _mail_ locally to inform user.
+;SetEnv MAILREADYCMD
+
+SetEnv HOSTALIASES		localhost
+
+;SMTPRoute defines the mechanisms used to find a hostname, and how to deliver it.
+SetEnv SMTPROUTE		MX,SMTP,SmarterHost
+
+; Advise SMTPPost to queue outgoing _mail_. No other possibility to send mail in local mode!
+; Add same line with 'no' in AmiTCP:db/User-Startnet for online mode after calling this script
+SetEnv SMTPAlwaysQueue	yes
+
+; NNTPxfer supports an environment variable named NNTPRNEWS. When
+; defined, NNTPxfer will call that program, with each incoming _news_
+; article on standard input, and allow it to file that article. This
+; allows the input to be filed along with UUCP news, and vice versus.
+SetEnv NNTPRNEWS		UUCP:c/rnews
+
+; The CheckUser variable defines a program which is executed for
+; incoming mail to validate whether the destination user actually
+; exists.
+;SetEnv CHECKUSER
+
+; Start SMTP Deamon to deliver outgoing _mails_
+run <>NIL: INet:serv/SMTPd <>NIL:
+
+
+;BEGIN SOCKET.LIBRARY
+;
+; Setup the environment variable 'socketconfig' to configure the socket.library
+; Example: UID=200 GID=100 USER=newbie DOMAIN=dom.ain.de UMASK=022
+;
+set uid  "`AmiTCP:bin/id -u $user`"
+set gid  "`AmiTCP:bin/id -g $user`"
+set mask "`AMiTCP:bin/umask`"
+setenv socketconfig "UID=$uid GID=$gid USER=$user DOMAIN=$nodename$domainname UMASK=$mask"
+unset uid
+unset gid
+unset mask
+;END SOCKET.LIBRARY

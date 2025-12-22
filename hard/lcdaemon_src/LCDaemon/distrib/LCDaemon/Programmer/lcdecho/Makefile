@@ -1,0 +1,1 @@
+lcdecho: lcdecho.o

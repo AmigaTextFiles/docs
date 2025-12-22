@@ -1,0 +1,1182 @@
+@DATABASE "ARB28"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 28 - Handling Files"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 28 - HANDLING FILES
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Discussion     " LINK "General"}
+@{" What Is A File?        " LINK "Files"}
+@{" What Is A Line?        " LINK "Lines"}
+@{" File Position Marker   " LINK "Marker"}
+@{" The EXISTS()  Function " LINK "Exists()"}
+@{" The OPEN()    Function " LINK "Open()"}
+@{" The CLOSE()   Function " LINK "Close()"}
+@{" The EOF()     Function " LINK "Eof()"}
+@{" The READCH()  Function " LINK "Readch()"}
+@{" The READLN()  Function " LINK "Readln()"}
+@{" The SEEK()    Function " LINK "Seek()"}
+@{" The SHOW()    Function " LINK "Show()"}
+@{" The WRITELN() Function " LINK "Writeln()"}
+@{" The WRITECH() Function " LINK "Writech()"}
+@{" Other Types Of Files   " LINK "OtherTypes"}
+@{"   Printer Files        " LINK "Printer"}
+@{"   Console Window Files " LINK "Console"}
+@{" Example Program 1      " LINK "Example1"}
+@{" Example Program 2      " LINK "Example2"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 28 - Handling Files - General Discussion"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - GENERAL DISCUSSION@{UB}@{UU}
+@{JLEFT}
+ARexx is able to read and write files. To help us do this we can use these
+built in functions:-
+
+  @{"EXISTS() " LINK "Exists()"} to test if a file exists.
+  @{"OPEN()   " LINK "Open()"} to open a file.
+  @{"CLOSE()  " LINK "Close()"} to close a previously open file.
+  @{"EOF()    " LINK "Eof()"} to test for the end of a file.
+  @{"READCH() " LINK "Readch()"} to read characters from the file.
+  @{"READLN() " LINK "Readln()"} to read a line from the file.
+  @{"SEEK()   " LINK "Seek()"} to move to another position in a file.
+  @{"SHOW('F')" LINK "Show()"} to see if a logical file is open or not
+  @{"WRITECH()" LINK "Writech()"} to write characters to a file.
+  @{"WRITELN()" LINK "Writeln()"} to write a line to a file.
+
+As well as the example programs described in this article, the above
+functions are also used in Example30-1 which is described in @{"Article 30" LINK "ARB:Articles_21-30/30.Example_Program/MAIN"}.
+
+To start with, I will discuss files in terms of disk based files as they
+are easier to understand. However, there are @{"other types" LINK "OtherTypes"} of files which
+I will touch on at the end of this article. For example, you can open
+a file to the printer or to a console window, among other things.
+
+Before going on to study the above functions, it would be best to read
+the notes on:-
+
+  @{" What Is A File? " LINK "Files"}.
+  @{" What Is A Line? " LINK "Lines"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Files" "Article 28 - Handling Files - What Is A file?"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - WHAT IS A FILE?@{UB}@{UU}
+@{JLEFT}
+Before proceeding to a discussion of the functions that handle @{"files" LINK "ARB:Misc/Glossary/files"},
+we need to get some terminology straight.
+
+In the ARexx manuals, you will see reference to "File" and "Filename"
+in the syntax of the above functions. For example:-
+
+  OPEN(File,Filename['Append'|'Read'|'Write'])
+
+So what is the difference?
+
+@{B}"File"@{UB} refers to what is called a "logical" file, i.e. one that is created
+by name for @{B}reference within@{UB} the ARexx program. It has no significance
+@{B}outside@{UB} the ARexx program.
+
+@{B}"FileName"@{UB} refers to an external file, e.g. a disk file. Once the external
+file has been opened, all future reference to it by the ARexx program
+is by its logical file name. No further reference is made to its external
+file name.
+
+ARexx maintains an internal list of all open logical files and the external
+file names to which they refer.
+
+To try and avoid confusion, I will use the following terms in the discussion
+of these functions:-
+
+  ExtFile - for the external file,
+            e.g. the disk file name
+
+  LogFile - for the logical file
+            i.e. the name the ARexx program will recognise.
+
+@{B}File names@{UB}, both logical and external, can be represented in the function
+syntax as:-
+
+- @{B}strings@{UB} which are the actual file names
+  and @{B}must@{UB} be enclosed in @{"string delimiters" LINK "ARB:Misc/Glossary/Strings"15},    or
+
+- @{B}symbols@{UB} that hold the file names.
+
+To illustrate this, let's assume that we are using:-
+
+- a logical file name of "MyFileName"
+
+- an external file name of "S:Startup-sequence"
+
+We could use either this:-
+
+  OPEN('MyFileName','S:Startup-Sequence')
+
+or this:-
+
+  LogFile = 'MyFileName' ; ExtFile = 'S:Startup-Sequence'
+  OPEN(LogFile,ExtFile)
+
+@{B}You will have to be very careful@{UB} with these functions to differentiate
+between symbol names (no quotes) and actual file names (use
+quotes).
+
+Also, the external file name must include the path to the file unless
+it is in the @{"current directory" LINK "ARB:Articles_21-30/26.Pragma/CD"}. For example:-
+
+  OPEN('LogFile','DF1:s/startup-sequence')
+
+  ExtFile = 'DF1:s/startup-sequence'
+  OPEN('LogFile',ExtFile)
+
+As the string representing the logical file name should be enclosed in
+quotes, the logical filename @{B}will be case sensitive!@{UB} so make sure that
+you always use the same case!!
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Lines" "Article 28 - Handling Files - What Is A Line?"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - WHAT IS A LINE?@{UB}@{UU}
+@{JLEFT}
+In handling files, one important concept is that of a @{B}LINE@{UB}. To understand
+two of the functions we will be looking at, @{"READLN()" LINK "Readln()"} and @{"WRITELN()" LINK "Writeln()"}, it
+is necessary to define exactly what a @{B}line@{UB} is.
+
+@{B}A line@{UB} is defined as all characters up to the next @{B}"line-feed"@{UB} or @{B}"new-line"@{UB}
+character. These two terms are synonymous.
+
+The "line-feed" character has an @{"ASCII code" LINK "ARB:Appendices/App-C_ASCII_Codes/MAIN"} of decimal 10, or hexadecimal
+0A.
+
+@{B}Note -@{UB} this is different to IBM compatible, or MS-DOS, computers which
+have both a "line-feed" @{B}and@{UB} a "carriage-return" character (ASCII code
+decimal 13) at the end of lines @{B}and@{UB} it is different to the Commodore 64
+& 128 computers which have only a "carriage-return" character at the end
+of lines.
+
+A "line-feed" character is put into a document when the return key is
+pressed or, in most text editors, when text being input has reached the
+end of a line and a new line is started @{B}even if return is not pressed!@{UB}
+However, most word processors only insert a line feed character when return
+is pressed and @{B}not@{UB} at the end of every screen line.
+
+The length of lines in text files will therefore vary a lot.
+
+If the file is from a text editor then it will rarely have a line length
+greater than 80 characters.
+
+If it is from a word processor, then the line lengths could be vastly
+greater than this. In fact, in a word processed document, the "line-feed"
+character is really an "end of paragraph" marker.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Exists()" "Article 28 - Handling Files - The EXISTS() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE EXISTS() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This is the only one of the above mentioned functions that does @{B}not@{UB} refer
+to a logical file name. This is because it is usually used @{B}before@{UB} a file
+is opened to see if it actually exists.
+
+This function tells you whether an external file exists. (To see if a
+logical file has been opened we use @{"SHOW()" LINK "Show()"}.)
+
+It is used as follows:-
+
+  @{B}EXISTS(ExtFile)@{UB}
+
+For example:-
+
+  IF EXISTS('df1:s/startup-sequence') = 1
+
+The expression EXISTS('df1:s/startup-sequence') will have a @{"Boolean" LINK "ARB:Misc/Glossary/Boolean"} value
+of:-
+
+   1 (true) if it exists, or
+   0 (false) if it does not exist.
+
+@{"Lines 4-7 in Example28-1" LINK "Example1"12} give an example of how it is used.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Open()" "Article 28 - Handling Files - The OPEN() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE OPEN() FUNCTION@{UB}@{UU}
+@{JLEFT}
+We have already mentioned the OPEN() function in passing in previous
+articles. Its full syntax is:-
+
+  @{B}OPEN('LogFile',ExtFile [,'Append'|'Read'|'Write'])@{UB}
+
+This means that it can be used in one of the following forms:-
+
+  OPEN('LogFile',ExtFile)
+  OPEN('LogFile',ExtFile,'A')
+  OPEN('LogFile',ExtFile,'R')
+  OPEN('LogFile',ExtFile,'W')
+
+The last part of the syntax:-
+
+  [,'Append'|'Read'|'Write'])
+
+is in [] so it is optional. If left out, ARexx assumes the default of @{B}Read@{UB}.
+
+As the three options are separated by | then @{B}only one@{UB} is used at a time.
+
+The OPEN() expression takes on a Boolean value equal to:-
+
+  1 (True)  if the file is successfully opened
+  0 (False) if the file has not been opened for some reason
+
+You can therefore use it in place of EXISTS as in:-
+
+  IF OPEN('LogFile',ExtFile) = 0 THEN DO
+     .... action for file not opened
+  END
+  ELSE DO
+     ..... action for file opened
+  END
+
+This could be O.K. for reading and appending. However, if you are @{B}writing@{UB}
+to the file and the "ExtFile" already exists then the mere fact of OPENing
+it to write @{B}will cause the old file to be deleted@{UB} ready for the new one
+to be written!! So, in this case it would be best to use EXISTS. In fact,
+I would suggest that you @{B}always@{UB} use EXISTS() (as illustrated in @{"Line 4" LINK "Example1"12} of
+Example28-1) so that you get into the habit of it!
+
+When opening, you must specify whether you want to:-
+
+  Append to an existing file
+  Read an existing file
+  Write to a new file
+
+If none of these three options are specified, as in:-
+
+  OPEN('LogFile','ExtFile')
+
+then the default option of "Read" is used.
+
+See @{"Line 8 Example28-1" LINK "Example1"12} for an illustration of its use.
+
+If you use "Append" then the file, if it exists, will have any information
+written to it added to the end of it. If it does not exist then there
+will be an error situation. So make sure that it exists before you append
+to it!! (Another good reason to get into the habit of using EXISTS() before
+opening a file!!!
+
+If you use "Write" then a new file will be created to enable you to write
+to it. If another file exists in the same directory with the same name
+then the old file will be @{B}overwritten@{UB} and all its contents lost! So make
+sure that the file name does NOT exists or give the program user the option
+of overwriting or aborting.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Show()" "Article 28 - Handling Files - The SHOW() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE SHOW() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Whereas we use @{B}EXISTS()@{UB} to check on an @{B}external file,@{UB} we use @{B}SHOW('F')@{UB}
+to determine whether a @{B}logical file@{UB} is open or not. You will recall that
+we talked about @{"SHOW()" LINK "ARB:Articles_21-30/24.TALKING-PROGRAMS-2/Show()"} in Article 24.
+
+The syntax for this one is:-
+
+  @{B}SHOW('F'[,Name])@{UB}
+
+This means that it can be used in one of these ways:-
+
+  SHOW('F',Name)
+  SHOW('F')
+
+To see if a file is open or not you use this usage of SHOW():-
+
+  SHOW('F',Name)
+
+where "Name" is the name of the of the @{B}logical@{UB} file.
+
+This usage of the function will return a Boolean value of:-
+
+- 0 if the logical file is @{B}not@{UB} open
+- 1 if the logical file @{B}is@{UB} open
+
+For example, you can test to see if a file is open or not. If SHOW() returns
+0 it is not open so you can then open it:-
+
+  IF SHOW('F','LogFile') = 0 THEN DO
+    CALL OPEN('LogFile','ExtFile')
+  END
+
+If you use SHOW('F') @{B}without@{UB} a file name then you will be given a list
+of all open logical file names. For example:-
+
+  SAY SHOW('F')
+  --> STDOUT STDIN
+
+  CALL OPEN('LogFile','ExtFile')
+  SAY SHOW('F')
+  --> STDOUT STDIN LogFile
+
+STDOUT and STDIN are the logical names for the two @{"streams" LINK "ARB:Misc/Glossary/Streams"} that are
+automatically opened by the system.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Eof()" "Article 28 - Handling Files - The EOF() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE EOF() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The syntax for this one is:-
+
+  @{B}EOF('LogFile')@{UB}
+
+It tells you if the end of the file has been reached. It is commonly used
+when you have opened a file for reading. It returns the Boolean values
+as follows:-
+
+  False (0) - End of file not reached.
+  True  (1) - End of file reached.
+
+It can be used like this:-
+
+  CALL OPEN('LogFile','Diskfile','R')
+  DO WHILE EOF('LogFile') = 0
+    ...... whatever you want to do
+  END
+  CALL CLOSE('LogFile')
+
+See @{"Line 11 Example28-1" LINK "Example1"12} for an illustration of its use.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Close()" "Article 28 - Handling Files - The CLOSE() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE CLOSE() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This one tells ARexx that you have finished with the file and to close
+it off. Its syntax is:-
+
+  @{B}CLOSE('LogFile')@{UB}
+
+If you do not use it, and the AREXX program comes to an end, then ARexx
+will automatically close all open files. However, it is good housekeeping
+to close files yourself. If you have opened a file for writing or appending
+and you try to do something else with the file before closing it, e.g.
+call on AmigaDOS to delete it, then you will get an error message saying
+that the file is in use.
+
+The CLOSE() function returns a Boolean value of 1 (True) or 0 (False)
+depending on whether the file has been successfully closed.
+
+See @{"Line 14 Example28-1" LINK "Example1"12} for an illustration of its use.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Readln()" "Article 28 - Handling Files - The READLN() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE READLN() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The syntax for this function is:-
+
+  @{B}READLN('LogFile')@{UB}
+
+READLN() reads a @{"line" LINK "Lines"} from the logical file "LogFile" that has already
+been @{"OPENed" LINK "Open()"} for reading. The above expression takes on a value equal to
+the line that has been read from the file.
+
+It is important to note that READLN() reads all the characters up to but
+@{B}not including@{UB} the next "line-feed" character. The "line-feed" character
+is @{B}ignored@{UB} and the next READLN() or READCH() starts reading from the
+character @{B}immediately after@{UB} the "line-feed" character.
+(Compare this to @{"READCH()" LINK "Readch()"28} which @{B}does@{UB} read the "line-feed" character.
+
+As well as reading normal text characters, READLN() can also read any
+of the @{"non printable codes" LINK "ARB:Appendices/App-C_ASCII_Codes/NonPrintable"} @{B}except@{UB} for the line-feed character. Thus it
+will read the non-printable formatting codes used by word processors,
+etc.
+
+To read the line-feed character, you should use the @{"READCH()" LINK "Readch()"} function.
+
+As mentioned above, the expression "READLN()" takes on a value equal to
+the line read and so it must either be used with the SAY instruction,
+e.g.:-
+
+  SAY READLN('LogFile')
+
+or it must be assigned as a symbol value, e.g.:-
+
+  Symbol = READLN('LogFile')
+
+Unless, of course, the line needs to be discarded for some reason in which
+case you would discard the next line due to be read with:-
+
+  CALL READLN('LogFile')
+
+which will read the line but not do anything with it.
+
+ARexx keeps track of which lines have already been read so that each READLN()
+reads a new line until the end of the file has been reached. (See
+@{"File Position Marker" LINK "Marker"}.)
+
+If READLN() is used after the end of the file has been reached, then a
+null string is returned.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Example1" "Article 28 - Handling Files - Example Program"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - EXAMPLE PROGRAM@{UB}@{UU}
+@{JLEFT}
+The following example program (Example28-1) demonstrates the use of the
+functions:-
+
+  @{" EXISTS() " LINK "Exists()"}
+  @{" OPEN()   " LINK "Open()"}
+  @{" EOF()    " LINK "Eof()"}
+  @{" READLN() " LINK "Readln()"}
+  @{" CLOSE()  " LINK "Close()"}
+
+  /* Example28-1.rexx */
+
+  /* Read the startup-sequence file from a disk */
+
+ 1. OPTIONS PROMPT 'c'x'Which disk to read? (enter df0: etc.) '
+ 2. PULL Drive
+ 3. ExtFile = Drive||'s/startup-sequence'
+ 4. IF EXISTS(ExtFile) = 0 THEN DO
+ 5.   SAY 'That disk does not have a startup-sequence file'
+ 6.   EXIT
+ 7. END
+
+ 8. CALL OPEN('LogFile',ExtFile)
+ 9. SAY 'The disk in drive' Drive 'has this startup-sequence file'
+10. SAY
+11. DO WHILE EOF('LogFile') = 0
+12.   SAY READLN('LogFile')
+13. END
+14. CALL CLOSE('LogFile')
+
+@{B}Line 2@{UB} allows the user to enter a drive name (If you try this example
+then make sure you add the colon (:) at the end of the drive name).
+
+@{B}Line 3@{UB} adds the string "s/startup-sequence" to the drive name and assigns
+it as the value of "ExtFile" so that, if we entered "df1:" @{B}Line 3@{UB} would
+be the equivalent of:-
+
+  ExtFile = 'df1:s/startup-sequence'
+
+As "ExtFile" is a symbol name, we @{B}do not@{UB} put it in quotes in @{B}Lines 4 and 8@{UB}.
+
+@{B}Lines 4 to 7@{UB} test for the existence of the file and exit the program if
+it is not there.
+
+@{B}Lines 8 to 14@{UB} open the file and display the lines on the screen using
+the READLN() function.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Readch()" "Article 28 - Handling Files - The READCH() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE READCH() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The syntax for this function is:-
+
+  @{B}READCH('LogFile'[,length])@{UB}
+
+This means that it can be used in one of these forms:-
+
+  READCH('LogFile',Length)
+  READCH('LogFile')
+
+If the "length" option is omitted, then it reads only one character from
+the file. If "length" is used, then it reads that many characters provided
+that there are that many characters left in the file.
+
+If the length specified is greater than the rest of the file then all
+of the rest of the file is read.
+
+ARexx keeps track of which characters have already been read so that each
+READCH() reads a new character(s) until the end of the file has been reached.
+(See @{"File Position Marker" LINK "Marker"}.)
+
+If READCH() is used after the end of the file then a null string is
+returned.
+
+Note that the characters read @{B}include the "line-feed"@{UB} character (compare
+this to the @{"READLN()" LINK "Readln()"11} function which does @{B}not@{UB} read the "line-feed" character).
+It will also read all other @{"non  printable codes" LINK "ARB:Appendices/App-C_ASCII_Codes/NonPrintable"}.
+
+We can use this last feature in @{"Lines 20-30 Example28-3" LINK "Example2"129} which will strip
+out "line-feed" characters from all lines except those at the end of a
+paragraph.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Marker" "Article 28 - Handling Files - Position In File"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - FILE POSITION MARKER@{UB}@{UU}
+@{JLEFT}
+When a file is opened for reading, a "marker" is set up to indicate the
+current position within the file.
+
+Before any reading is done, the value of this marker is 0 (zero) indicating
+that the next character to be read is the zeroth character. (Note that
+computers usually start counting at 0!)
+
+So, the next character to be read is always that to which the marker is
+pointing. As characters are read, so the marker moves along the file.
+Read the first 5 characters (i.e. those numbered 0 1 2 3 4) and the marker
+will move to number 5. The value of the marker always increases by the
+number of characters read (but see "If READLN() Is Used" 2 paragraphs
+below).
+
+After the complete file has been read, the marker is placed at a position
+one @{B}past@{UB} the @{B}last@{UB} character. So if the program tries to read the character
+at the marker position, there is nothing to read!.
+
+@{B}If @{"READLN()" LINK "Readln()"} is used@{UB} then the count increases by the number of characters
+in the line @{B}plus@{UB} the line feed character at the end of the line. I say
+under the READLN() heading that @{"READLN() reads" LINK "Readln()"11} up to but not including
+the line feed but that the line feed is ignored. What happens is that
+the line feed character is really read but then discarded. This means
+that, after a READLN(), the position of the "marker" will be at the
+character one beyond the line feed.
+
+@{B}If @{"READCH()" LINK "Readch()"} is used@{UB} then the count increases by the number of characters
+read.
+
+If a straight read of all the file is required (as in @{"Lines 11-13" LINK "Example1"13} of
+Example28-1), then the program would just continue reading until the end of
+file (as determined by the @{"EOF()" LINK "Eof()"} function) is reached and the programmer
+need never worry about the marker.
+
+However, there can be times when a straight sequential read is @{B}not@{UB} what
+the programmer wants and, in these cases, the @{"SEEK()" LINK "Seek()"} function can be used
+to reset the marker to any position within the file.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Seek()" "Article 28 - Handling Files - The SEEK() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE SEEK() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The syntax for this function is:-
+
+  @{B}SEEK(File,offset[,option])@{UB}
+
+Its purpose is to move the marker that indicates the next character in
+the file to be read to any position in the file required by the
+programmer.
+
+@{B}File@{UB} is that internal file name that has already been opened with the
+OPEN() function.
+
+@{B}Offset@{UB} is a positive or negative integer number that tells ARexx how many
+characters from the beginning, end or current position that you want to
+move the marker.
+
+@{B}Option@{UB} can be any of:-
+
+  BEGIN   or B  - to reference the beginning of the file
+  CURRENT or C  - to reference the current position of the marker
+  END     or E  - to reference the end of the file
+
+If "option" it is omitted then the default is "CURRENT".
+
+For example:-
+
+  SEEK(File,5,'B')   - Move the marker to 5 from the beginning of the file
+  SEEK(File,-7,'E')  - Move the marker to 7 before the end of the file
+  SEEK(File,15,'C')  - Move the marker to 15 past the current position
+  SEEK(File,-22,'C') - Move the marker to 22 before the current position
+
+You can also return the marker to the start or end with an offset of
+zero:-
+
+  SEEK(File,0,'B') - Move the marker to the start of the file
+  SEEK(File,0,'E') - Move the marker to the end of the file
+
+The function always returns a value equal to the new position of the marker.
+This leads us to two useful features.
+
+@{B}The current position@{UB} can always be obtained by using:-
+
+  Position = SEEK(File,0,'C')
+
+which, in effect, leaves the marker where it is as it moves @{B}zero@{UB} places
+from the current position.
+
+This can be handy if you want to find out the current position.
+
+Or you could always keep track of the position by using something like
+the following every time you use seek:-
+
+  Position = SEEK(File,22,'C')
+
+@{B}The total length of the file@{UB} can always be determined with:-
+
+  Length = SEEK(File,0,'E')
+
+This places the marker at the end of the file and returns the new position
+which is, in fact, the length of the file. If you need to be back at the
+start after determining the length, then use the following line after
+the above line:-
+
+  CALL SEEK(File,0,'B')
+
+@{B}An example program@{UB} (Example28-2) is on this disk which illustrates the
+SEEK() function. I will not repeat it here as SEEK() is unlikely to be
+used by the beginner. @{"Click here" LINK "ARB:Articles_21-30/Example28-2.rexx/MAIN"} to read it. It provides plenty of
+explanations of how it works as it is running.
+
+It accesses a file that I have placed on the disk in the same directory
+which is exactly 100 bytes, or characters, long and @{B}does not@{UB} have a line
+feed character at the end. This file, which is called "Example28-2-100bytes"
+contains this one line:-
+
+@{JCENTER}0123456789zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
+zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzJIHGFEDCBA
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Writeln()" "Article 28 - Handling Files - The WRITELN() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE WRITELN() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This function will write a line to a file that has been opened for writing
+or appending. Its syntax is:-
+
+  @{B}WRITELN('LogFile',string)@{UB}
+
+The @{"string" LINK "ARB:Misc/Glossary/Strings"} is the @{"line" LINK "Lines"} written and, as it is defined as a "line", a
+"line-feed" character is automatically appended to the end of the line.
+
+The "string" can be an actual string, as in:-
+
+  CALL WRITELN('LogFile','This string will be written')
+
+or it can be a symbol holding a string value, as in:-
+
+  xyz = 'This string will be written'
+  CALL WRITELN('LogFile',xyz)
+
+Examples of the use of this function are given in @{"Example28-4" LINK "Printer"19} and
+@{"Example28-6" LINK "Console"30}.
+
+When used in one of these formats:-
+
+    SAY WRITELN(LogFile,String)
+or
+    Symbol = WRITELN(LogFile,String)
+
+then the line is still written to the file but a value is returned (SAYed
+or assigned to "Symbol") which is equal to the length (number of characters)
+written @{B}including@{UB} the final "line-feed" character. For example:-
+
+  SAY WRITELN('LogFile','Test Line')
+  --> 10
+
+This indicates 10 characters, including the "line-feed" character, have
+been written to the file.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Writech()" "Article 28 - Handling Files - The WRITECH() Function"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - THE WRITECH() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The syntax for this one is:-
+
+  @{B}WRITECH('LogFile',string)@{UB}
+
+It will write the @{"string" LINK "ARB:Misc/Glossary/Strings"} to the Logical File (LogFile) that has already
+been @{"OPENed" LINK "Open()"} for writing or appending.
+
+With one exception, this is identical to @{"WRITELN()" LINK "Writeln()"} and, apart from that
+exception, everything I said under that heading can be applied to
+WRITECH().
+
+The exception is that a "line-feed" character is NOT written to the file
+whereas with WRITELN() a "line-feed" @{B}is@{UB} written.
+
+This can be demonstrated with:-
+
+  SAY WRITECH('LogFile','Test Line')
+  --> 9
+
+  SAY WRITELN('LogFile','Test Line')
+  --> 10
+
+An example of the use of this function is given in Example28-3.rexx below.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Example2" "Article 28 - Handling Files - Example Program"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - EXAMPLE PROGRAM@{UB}@{UU}
+@{JLEFT}
+The following example program (Example28-3) demonstrates the use of the
+functions:-
+
+  @{" EXISTS()  " LINK "Exists()"}
+  @{" OPEN()    " LINK "Open()"}
+  @{" EOF()     " LINK "Eof()"}
+  @{" READLN()  " LINK "Readln()"}
+  @{" READCH()  " LINK "Readch()"}
+  @{" WRITECH() " LINK "Writech()"}
+  @{" CLOSE()   " LINK "Close()"}
+
+@{B}@{U}About Example28-3.rexx@{UB}@{UU}
+
+One of my pet hates is that most text editors put a "line-feed" character
+@{"ASCII Code" LINK "ARB:Appendices/App-C_ASCII_CODES/MAIN"} 13 decimal or 'A' hexadecimal at the end of @{B}every@{UB} line (even
+if RETURN is not pressed) whereas most word processors only put it there
+when you press RETURN for a new paragraph.
+
+So, when you try to load a text file created by a text editor into a word
+processor and use it with a different line length than was used in the
+text editor, you get problems.
+
+The following ARexx program strips out all the "line-feed" characters
+except those at the end of paragraphs. It works on the basis that end
+of paragraphs normally have TWO "line-feed" characters, one for the end
+of the paragraph and another to create a blank line between
+paragraphs.
+
+In writing this program, we must take into account that some files will
+have a space between the last legitimate character of the line and the
+"line-feed" character and some will not. If we simply stripped out the
+"line-feed" character and there was no space between it and the end of
+the line then the last word of the line would be joined to the first word
+of the next line!! The two possibilities are covered in the following
+program.
+
+If you want to try out this program on a text file that has a line feed
+at the end of every line then use the file called @{"Example28-3.text" LINK "ARB:Articles_21-30/Example28-3.text/MAIN"} on
+this disk. This text file has no space between the last word of the line
+and the line feed character in paragraphs 1 and 3 but does have a space
+in that spot in paragraph 2. However, this will @{B}not@{UB} be obvious when you
+read it by clicking on the above highlighted area.
+
+To test it, enter in a CLI window:-
+
+  > RX Example28-3
+
+You will be asked to enter the name of the file to convert. Now enter:-
+
+    Example28-3.text
+
+The converted file will be in the RAM: disk and will have the name:-
+
+    Example28-3.text.conv
+
+If you want to see what it looks like after conversion without actually
+running the program then @{"click here" LINK "ARB:Articles_21-30/Example28-3.text.conv/MAIN"}.
+
+@{"Click here" LINK "ARB:Articles_21-30/Example28-3.rexx/MAIN"} to read the program in one go. The following explanations split
+up the program as the various lines are explained.
+
+Note that in this program there are two files being handled, one from
+which we will @{B}input@{UB} lines and one to which we will @{B}output@{UB} lines. I am
+therefor using these file names:-
+
+  LogFile_In  - for the logical file name for the input file
+  LogFile_Out - for the logical file name for the output file
+
+  ExtFile_In  - as the symbol name to hold the actual input file name
+  ExtFile_Out - as the symbol name to hold the actual output file name
+
+@{B}Lines 1-3@{UB} allow the user to enter the file name:-
+
+1. SAY 'c'x'This program assumes the file is in the current directory'
+2. OPTIONS PROMPT 'Enter name of file to strip excluding its path:'
+3. PARSE PULL ExtFile_In
+
+@{B}Lines 4-7@{UB} check to see if the file exists and, if not, exits the program
+after giving the user an appropriate message:-
+
+4. IF EXISTS(ExtFile_In) = 0 THEN DO
+5.   SAY 'a'x||ExtFile_In 'does not exist in current directory.
+         Please try again.'
+6.   EXIT
+7. END
+
+@{B}Line 8@{UB}:-
+
+8. ExtFile_Out = TRIM(LEFT(ExtFile_In,25))||'.conv'
+
+creates a name for the file that will be written to disk. In order to
+allow the user to identify the new file we will tack on a suffix ".conv".
+However, this may make the new file name longer than the maximum allowable
+30 characters. We therefore use @{"LEFT()" LINK "ARB:Articles_11-20/18.Functions-String/Left()"} to take the leftmost 25 characters
+of "ExtFile_In". As this will give spaces at the right end if it is less
+than 25 characters, we then use @{"TRIM()" LINK "ARB:Articles_11-20/18.Functions-String/Trim()"} to remove the spaces. We then add
+the suffix ".conv". As an example this would give these names:-
+
+  Short_Name                         Short_Name.conv
+  A_File_Name_With_30_characters     A_File_Name_With_30_chara.conv
+
+@{B}Line 9@{UB} simply tells the user the name and location of the converted file:-
+
+9. SAY 'a'x'Converted file will have the name' ExtFile_Out 'and will be
+       in RAM:'
+
+@{B}Lines 10-17@{UB} check to see if the new file name already exists in RAM: which
+is where we are going to put it.
+
+10. IF EXISTS('Ram:'||ExtFile_Out) = 1 THEN DO
+11.   OPTIONS PROMPT 'a'x||ExtFile_Out 'already exists. Overwrite? (Y/N)
+'
+12.   PULL Which
+13.   IF Which = 'N' THEN DO
+14.     SAY 'O.K. - Bye'
+15.     EXIT
+16.   END
+17. END
+
+@{B}Lines 18-19@{UB} - having now established that the "IN" file does exist, and
+that if the "OUT" file exists it is O.K. to overwrite it, we can now open
+the two files for reading and writing respectively.
+
+18. CALL OPEN('LogFile_In',ExtFile_In)
+19. CALL OPEN('LogFile_Out','Ram:'||ExtFile_Out,'W')
+
+@{B}Line 20@{UB} sets up a loop to operate until the end of the "IN" file is
+reached.
+
+20. DO WHILE EOF('LogFile_In') = 0
+
+@{B}Line 21@{UB}:-
+
+21.   Line = READLN('LogFile_In')
+
+reads a line from the in-file. Note that the symbol @{B}Line@{UB} will @{B}not@{UB} include
+the "line-feed" character. READLN() will have discarded it and placed
+the @{"position marker" LINK "Marker"} one past the line feed. We will therefore have to
+put a line-feed into the out-file ourselves at the end of paragraphs,
+but not at the end of lines.
+
+@{B}Line 22@{UB}:-
+
+22.   LineEnd = RIGHT(Line,1)
+
+uses @{"RIGHT()" LINK "ARB:Articles_11-20/18.Functions-String/Left()"} to get the last character of the line which will be checked
+in @{B}Line 27@{UB} to see if it is a space.
+
+@{B}Line 23@{UB} writes the line to the out-file using WRITECH() as we do @{B}NOT@{UB} want
+a "line-feed" character.
+
+23.   WRITECH('LogFile_Out',Line)
+
+@{B}Line 24@{UB} reads the next character in the file:-
+
+24.   Char = READCH('LogFile_In')
+
+@{B}Line 25@{UB}:-
+
+25.   IF Char = 'a'x THEN WRITECH('LogFile_Out','a'x'a'x)
+
+checks to see if it is a "line-feed" character. If it is, it means that
+there have been two in a row (@{B}Line 21@{UB} would have read up to the last
+"line-feed" then discarded it) so we write two "line-feed" characters to
+the new file, one for the end of the paragraph and the other to create a
+blank line.
+
+@{B}Lines 26-29@{UB}:-
+
+26.   ELSE DO
+27.     IF LineEnd ~= '20'x THEN WRITECH('LogFile_Out','20'x)
+28.     WRITECH('LogFile_Out',Char)
+29.   END
+
+operate if @{B}Line 25@{UB} did @{B}NOT@{UB} find a "line-feed" character. If the "LineEnd"
+symbol does @{B}not@{UB} hold a space (ASCII Code hexadecimal 20) then one is written
+to the new file by @{B}Line 27@{UB} to prevent two lines being joined without a
+space between them. Finally, @{B}Line 28@{UB} writes the "Char" symbol read in
+@{B}Line 24@{UB} to the out-file as it has been read from the start of the next
+line and the next READLN() will now read from the second character of
+the line.
+
+@{B}Line 30@{UB} ends the loop started in @{B}Line 20@{UB}:-
+
+30. END
+
+@{B}Lines 31-32@{UB} do our housekeeping by closing off the open files:-
+
+31. CALL CLOSE('LogFile_In')
+32. CALL CLOSE('LogFile_Out')
+
+@{B}Line 33@{UB} just tells the user it is all done:-
+
+33. SAY 'O.K. - All done'
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "OtherTypes" "Article 28 - Handling Files - Other Types Of Files"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - OTHER TYPES OF FILES@{UB}@{UU}
+@{JLEFT}
+So far in our discussion of these functions we have talked only of handling
+disk files. However, it is not just disk files that can be handled. There
+are other types of files that can be opened to allow the transfer of data
+to and from such areas as:-
+
+  the serial port
+  the parallel port
+  the printer
+  a console window
+
+I will just cover two examples here:-
+
+  @{" Printer Files        " LINK "Printer"}
+
+  @{" Console Window Files " LINK "Console"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Printer" "Article 28 - Handling Files - Printer Files"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - PRINTER FILES@{UB}@{UU}
+@{JLEFT}
+To allow your program to talk to your printer, you open a file to the
+"PRT:" device by using "PRT:" as the external file name. You can then
+use the WRITELN() or WRITECH() functions to send data to it.
+
+For example:-
+
+  CALL OPEN('PrtFile','Prt:','W')
+  WRITELN('PrtFile','Text')
+  CLOSE('PrtFile')
+
+Of course, you would @{B}not@{UB} want to open a file to the printer for reading!
+
+The following program allows you to enter text in the Shell/CLI window
+and have it come out on the printer:-
+
+  /* Example28-4.rexx */
+
+  /* Typing Straight to Printer */
+
+  SAY 'c'x'Type in text to send to printer - press return at end of each
+           line.'
+  SAY 'Enter "QUIT" then RETURN to exit the program'
+
+  CALL OPEN('PrtFile','Prt:','W')
+
+  DO FOREVER
+    PARSE PULL Line
+    IF UPPER(Line) = 'QUIT' THEN LEAVE
+    CALL WRITELN('PrtFile',Line)
+  END
+
+  CALL CLOSE('PrtFile')
+
+This is really a very simple program. I use "PARSE PULL" rather than "PULL"
+in order to maintain the case (upper or lower) of the text entered.
+
+The "Line" entered at the "PARSE PULL" instruction is immediately written
+to the "PrtFile" by the CALL WRITELN() instruction.
+
+If "QUIT" is entered then the "FOREVER" looped is left.
+
+@{"Example28-1" LINK "Example1"} displayed the startup-sequence on a disk in the window.
+Example28-5 will add to this program to allow the option of sending the
+startup-sequence to either the window or the printer.
+
+  /* Example28-5.rexx */
+
+  /* Read the startup-sequence file from a disk */
+
+  OPTIONS PROMPT 'c'x'Which disk to read? (enter df0: etc.) '
+  PULL Drive
+  ExtFile = Drive||'s/startup-sequence'
+  IF EXISTS(ExtFile) = 0 THEN DO
+    SAY 'That disk does not have a startup-sequence file '
+    EXIT
+  END
+
+  CALL OPEN('LogFile',ExtFile)
+
+  OPTIONS PROMPT 'a'x'Send output to <W>indow or <P>rinter? '
+  PULL Which
+
+  IF Which = 'W' THEN DO
+    SAY 'The disk in drive' Drive 'has this startup-sequence file '
+    SAY
+    DO WHILE EOF('LogFile') = 0
+      SAY READLN('LogFile')
+    END
+  END
+  ELSE DO
+    IF Which = 'P' THEN DO
+      CALL OPEN('PrtFile','Prt:','W')
+      DO WHILE EOF('LogFile') = 0
+        Line = READLN('LogFile')
+        CALL WRITELN('PrtFile',Line)
+      END
+    END
+    ELSE SAY 'You did not enter "W" or "P" - Try again'
+  END
+
+  CALL CLOSE('LogFile')
+  CALL CLOSE('PrtFile')
+
+There is really nothing new in this program that needs explanation.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Console" "Article 28 - Handling Files - Console Window Files"
+
+@{B}@{U}@{JCENTER}HANDLING FILES - CONSOLE WINDOW FILES@{UB}@{UU}
+@{JLEFT}
+If you open a console window by using a window specification as the external
+file name in the @{"OPEN()" LINK "Open()"} function then you can use the @{"WRITELN()" LINK "Writeln()"}, @{"WRITECH()" LINK "Writech()"},
+@{"READLN()" LINK "Readln()"} and @{"READCH()" LINK "Readch()"} functions to communicate with that window.
+
+The method of opening the window follows the same rules as opening a window
+from CLI. You just use the "CON:" device as follows:-
+
+  CON:x/y/w/h/WindowName/OPTIONS
+
+where:-
+
+  x = number of pixels from top of screen
+  y = number of pixels from left of screen
+  w = width of window in pixels
+  h = height of window in pixels
+  WindowName = name that will appear in window's title bar
+  OPTIONS = window options available in Workbench2.0 and later
+            For example "CLOSE" for a close gadget and "WAIT" to make the
+            window stay open until the close gadget is clicked.
+
+So, to open a window you could use something like this:-
+
+  CALL OPEN('WinFile','CON:0/11/640/100/Test Window/CLOSE')
+
+The following program illustrates its use:-
+
+  /* Example28-6 */
+
+  Down = 'a'x
+
+  CALL OPEN('WinFile','CON:0/11/640/100/Test Window/CLOSE')
+
+  DO FOREVER
+
+    Line = Down'Please type something in this window (or Q to quit)
+           & press return'Down
+
+    CALL WRITELN('WinFile',Line)
+
+    LineIn = READLN('WinFile')
+    IF UPPER(LineIn) = 'Q' THEN LEAVE
+
+    LineOut = Down'You entered this line:-'Down||Down||LineIn
+    CALL WRITELN('WinFile',LineOut)
+
+  END
+
+  CLOSE('WinFile')
+
+To try this out, just enter in your Shell/CLI window:-
+
+  > RX Example28-6
+
+Then type anything you like into the new window and watch it repeat what
+you typed.
+
+Again, there is really nothing new in this program. It simply opens a
+file to a console window, and uses WRITELN() to send some text to the
+new window.
+
+"Line = READLN('Winfile')" is then used to read any text that is entered
+into the new window. All text up to when RETURN is pressed is read by
+a single use of READLN().
+
+The result of the READLN(), which has been stored in the symbol "LineIn"
+and displayed in the window with WRITELN()
+
+An example of opening your own window is given in @{"Article 47" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Own"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

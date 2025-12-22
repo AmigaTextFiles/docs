@@ -1,0 +1,319 @@
+
+(set @default-dest (expandpath "LIBS:"))
+(set #safedelay 10)
+
+;--------------------------- Englische Texte ----------------------------
+
+(set #workmodeprompt (cat "This is a multi-purpose script. "
+        "What do you want to do?") )
+(set #workmode0 "Install i2c.library")
+(set #workmode1 "Configure")
+(set #workmode2 "Uninstall")
+(set #workmode3 "Set special options for ICY")
+(set #workmodehelp ( cat "\n\"Install\" copies a library to LIBS: and creates "
+        "an environment variable. Both can be removed again using the "
+        "\"Uninstall\" option.\n\n"
+        "\"Configure\" lets you adjust the environment variable which you "
+        "created during installation.\n\n"
+        "\"Special options for ICY\" only apply to the operation of Michael "
+        "Boehmer's \"ICY\" interface board.") )
+(set #hwchoiceprompt "Pick your type of I²C interface:")
+(set #hwchoice0 "autoconfig board, Michael Boehmer's Icy")
+(set #hwchoice1 "autoconfig board, M&T TeleTxt")
+(set #hwchoice2 "SERIAL PORT, as proposed by \"c't\" magazine")
+(set #hwchoice3 "serial port, Wiegand VTX 2000 hardware")
+(set #hwchoice4 "serial port, HSL VideoTXT hardware")
+(set #hwchoice5 "serial port, KDK Satcom PC-Videotext")
+(set #hwchoice6 "PARALLEL PORT, as proposed by Jan Leuverink")
+(set #hwchoice7 "parallel port, Printtechnik teletext")
+(set #hwchoice8 "parallel port, Microtext hardware")
+(set #hwchoice9 "FLOPPY PORT")
+(set #hwchoicehelp (cat "\nDepending on the kind of interface hardware you "
+        "own, you can have one of several customized i2c.library versions "
+        "installed. Those interfaces which are described in the accompanying "
+        "schematics are CAPITALIZED.") )
+(set #delayprompt "Enter a timing parameter for i2c.library:" )
+(set #delayhelp (cat "\nSetting too small a delay parameter will keep "
+        "i2c.library from working properly.\n\n"
+        "While a value of " #safedelay " should be safe for all systems (and "
+        "has apparently been confirmed to work for you, too), you might "
+        "want to try smaller values, to optimize throughput: "
+        "5 has often been reported to work for A1200, 1 for all other Amigas "
+        "(including A4000).\n\n"
+        "Forget all of the above, if you are using the ICY controller "
+        "board. The I2CDELAY variable has a slightly different meaning in "
+        "that case: 0 = full speed, 1 = 50%, 2 = 12.5%, all other values: "
+        "1.5%, where \"full speed\" is guaranteed to be 90 kHz, no more "
+        "and no less.\n\n"
+        "It is therefore recommended that ICY owners always set a "
+        "delay value of 0." ) )
+(set #xtalchoiceprompt "What crystal is installed on your ICY board?")
+(set #xtalchoice3 "3 MHz")
+(set #xtalchoice4 "4.43 MHz")
+(set #xtalchoice6 "6 MHz")
+(set #xtalchoice8 "8 MHz")
+(set #xtalchoice12 "12 MHz")
+(set #xtalchoicehelp (cat "\nUnless you know better, it is safe to assume "
+        "that your board is running at 12 MHz, as specified by Michael "
+        "Boehmer's original hardware design.\n\n"
+        "Be careful: Setting the I2CXTAL environment variable to a lower "
+        "frequency than the one that you actually use in hardware will "
+        "increase SCL speeds in an unexpected way. This may lead to "
+        "transmission errors, if the 100 kHz allowed by the I2C "
+        "specification are exceeded." ) )
+(set #pollsizeprompt "Enter a size threshold for interrupt operation:" )
+(set #pollsizehelp (cat "\nThe ICY hardware can perform interrupt-driven "
+        "I/O, but i2c.library may still choose to operate it in polled mode "
+        "when doing small transfers, in order to avoid unnecessary task "
+        "switching. Which I/O operations are considered as \"small\" is "
+        "determined by the I2CPOLLSIZE variable.\n\n"
+        "In particular, setting a value of 0 will force i2c.library to "
+        "use interrupts always, whereas the maximum value of 65535 "
+        "will disable interrupts completely. The built-in default threshold "
+        "is a transfer byte count of 8.\n\n"
+        "In general, I²C bus operation itself might be slightly faster "
+        "in polled mode, whereas overall system performance should "
+        "definitely be better when using interrupts." ) )
+(set #okmsg (cat "Communication with your I²C peripheral(s) was successfully "
+        "established. Congratulations.") )
+(set #advice (cat "\n\nHint: If you think that you chose the wrong type of "
+        "library, you might want to reset your Amiga before running this "
+        "script again. That's (in some cases) the only way to make sure that "
+        "the current i2c.library is removed from memory.") )
+(set #diagmsg5 (cat "I2CScan could not detect any listeners on your I²C bus. "
+        "This might of course be just because there aren't any?" #advice ) )
+(set #diagmsg10 (cat "I2CScan couldn't test your interface, because "
+        "i2c.library either failed to detect it, or failed to access it "
+        "(possibly due to resource conflicts)." #advice ) )
+(set #diagmsg15 (cat "I²C protocol errors occured while running I2CScan. "
+        "This might be because your hardware is not appropriate for the "
+        "type of i2c.library that you installed." #advice ) )
+(set #diagmsg20 "I2CScan failed to open i2c.library. This is weird." )
+(set #timingmsg (cat "Your I2CDELAY parameter does not seem to work for "
+        "i2c.library and has been reset to the default value of "
+        #safedelay ".") )
+(set #uifarewell (cat "Deinstallation complete!\n"
+        "i2c.library and its environment variables have been "
+        "removed from your system.") )
+(set #specfarewell (cat "Environment variables have been set!\n"
+        "You may want to reset your Amiga to make sure that the changes "
+        "take effect.") )
+
+;---------------------------- Default values ----------------------------
+
+(set #hwtype 2)         ; c't hardware
+(set #workmode 0)       ; normal installation
+(set #result 0)         ; will be overwritten once we run I2Cscan
+(set #farewell #okmsg)  ; this too, in case of an error
+; The default value for #busdelay depends on #hwtype. We will set it
+; later, only just before asking for a #busdelay value.
+
+;-------------------- Experts may choose what to do. --------------------
+
+(if (= @user-level 2)
+    (set #workmode
+        (askchoice
+            (prompt #workmodeprompt)
+            (help #workmodehelp)
+            (choices #workmode0 #workmode1 #workmode2 #workmode3)
+            (default #workmode)
+        )
+    )
+)
+
+;------------------------- Are we uninstalling? -------------------------
+
+(if (= #workmode 2)
+  (
+    (delete "ENV:I2CDELAY")
+    (delete "ENV:I2CXTAL")
+    (delete "ENV:I2CPOLLSIZE")
+    (delete "ENVARC:I2CDELAY")
+    (delete "ENVARC:I2CXTAL")
+    (delete "ENVARC:I2CPOLLSIZE")
+    (delete (tackon @default-dest "i2c.library") )
+    (run "Avail FLUSH >NIL:")
+    (message #uifarewell)
+    (exit (quiet))
+  )
+)
+
+;--------------------- Set special ICY options only? --------------------
+
+(if (= #workmode 3)
+(
+
+; The Crystal type, a little tricky.
+(if (= 0 (exists "ENV:I2CXTAL"))
+  (run "SetEnv I2CXTAL 12")
+)
+(set #xtal (+ (getenv "I2CXTAL")))
+(set #xtalno 4)     ; default: 12 MHz
+; loop to determine the actual setting
+(set #n 0)
+(while (set #x (select #n 3 4 6 8 0) )
+  (
+    (if (= #x #xtal)
+        (set #xtalno #n)
+    )
+    (set #n (+ #n 1))
+  )
+) ; while
+(set #xtalno
+    (askchoice
+        (prompt #xtalchoiceprompt)
+        (help #xtalchoicehelp)
+        (choices #xtalchoice3 #xtalchoice4
+                 #xtalchoice6 #xtalchoice8 #xtalchoice12 )
+        (default #xtalno)
+    )
+)
+(set #xtal (select #xtalno 3 4 6 8 12))
+(run (cat "SetEnv I2CXTAL " #xtal) )
+(copyfiles
+    (source "ENV:I2CXTAL")
+    (dest "ENVARC:")
+)
+
+; The polling threshold, rather straightforward.
+(if (= 0 (exists "ENV:I2CPOLLSIZE"))
+  (run "SetEnv I2CPOLLSIZE 8")
+)
+(set #pollsize
+    (asknumber
+        (prompt #pollsizeprompt)
+        (help #pollsizehelp)
+        (range 0 65535)
+        (default (+ (getenv "I2CPOLLSIZE")))
+    )
+)
+(run (cat "SetEnv I2CPOLLSIZE " #pollsize) )
+(copyfiles
+    (source "ENV:I2CPOLLSIZE")
+    (dest "ENVARC:")
+)
+
+; Try to force the library to reload.
+(run "Avail FLUSH >NIL:")
+
+(message #specfarewell)
+(exit (quiet))
+) ) ; #workmode 3
+
+;------ For normal installation, pick, install and test a library. ------
+
+(if (= #workmode 0) (
+
+(set #hwtype
+    (askchoice
+        (prompt #hwchoiceprompt)
+        (help #hwchoicehelp)
+        (choices #hwchoice0 #hwchoice1 #hwchoice2 #hwchoice3 #hwchoice4
+                 #hwchoice5 #hwchoice6 #hwchoice7 #hwchoice8 #hwchoice9 )
+        (default #hwtype)
+    )
+)
+
+; Copy the library binary.
+(set #sourcefile
+    (select #hwtype
+      "libs/i2c.library.bcu"
+      "libs/i2c.library.card"
+      "libs/i2c.library.ser"
+      "libs/i2c.library.ser2"
+      "libs/i2c.library.ser3"
+      "libs/i2c.library.ser4"
+      "libs/i2c.library.par"
+      "libs/i2c.library.par2"
+      "libs/i2c.library.par3"
+      "libs/i2c.library.disk"
+    )
+)
+(copyfiles
+    (source #sourcefile)
+    (dest @default-dest)
+    (newname "i2c.library")
+)
+
+; Try to purge a currently loaded image.
+(run "Avail FLUSH >NIL:")
+
+; Before asking for an optimized delay value, does this library work at all?
+(set #result
+    (run (cat "bin/I2CScan -d" #safedelay " >NIL:") )
+)
+(if (= #result 20)
+    (set #farewell #diagmsg20)
+)
+(if (= #result 15)
+    (set #farewell #diagmsg15)
+)
+(if (= #result 10)
+    (set #farewell #diagmsg10)
+)
+(if (= #result 5)
+    (set #farewell #diagmsg5)
+)
+
+) ) ; #workmode 0
+
+;------ Ask about optimization. Skip here directly in workmode 1. ---------
+
+; Default value for I2CDELAY: Its current contents or, if it doesn't yet
+; exist: 0 for ICY hardware, otherwise #safedelay.
+(if (= 0 (exists "ENV:I2CDELAY"))
+  (if (= 0 #hwtype)
+    (run "SetEnv I2CDELAY 0" )  ; ICY
+    ; "else"
+    (run (cat "SetEnv I2CDELAY " #safedelay) )
+  )
+)
+(set #busdelay (getenv "I2CDELAY"))
+
+(if (= #result 0)           ; Alright, it works with the safe value. Optimize?
+(
+
+(if (= @user-level 2)       ; this question for experts only
+    (set #busdelay
+        (asknumber
+            (prompt #delayprompt)
+            (help #delayhelp)
+            (range 0 100)
+            (default (+ #busdelay))
+        )
+    )
+)
+
+; Test the current setting of #busdelay
+(set #result
+    (run (cat "bin/I2CScan -d" #busdelay " >NIL:") )
+)
+(if (<> #result 0)          ; poorly chosen delay parameter
+    (
+    (set #farewell #timingmsg)
+    (set #busdelay #safedelay)
+    )
+)
+
+)
+)   ; #result 0
+
+;-------------------------- Installation, part 2 ------------------------
+
+; create the I2CDELAY environment variable
+(run (cat "SetEnv I2CDELAY " #busdelay) )
+(copyfiles
+    (source "ENV:I2CDELAY")
+    (dest "ENVARC:")
+    ; Argh! The WB2.1 Installer apparently remembers the 'newname'
+    ; parameter from the previous 'copyfiles'!
+    (newname "I2CDELAY")
+)
+
+;------------------------------- Farewell -------------------------------
+
+(message #farewell)
+
+(if (= #workmode 1)
+  (exit (quiet))
+)

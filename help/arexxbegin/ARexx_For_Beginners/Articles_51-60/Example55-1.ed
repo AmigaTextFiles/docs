@@ -1,0 +1,110 @@
+/* Example55-1.ed */
+
+/* Search and Replace in ED */
+
+Esc     = '1b'x
+Down    = 'a'x
+Colour2 = Esc'[32m'
+Reset   = Esc'[0m'
+
+OPTIONS FAILAT 21
+
+Host = ADDRESS()
+IF LEFT(Host,2) ~= 'Ed' THEN DO
+  SAY 'a'x'This program can only be used when started from within ED.'
+  EXIT
+END
+
+ADDRESS VALUE Host
+
+CALL CLOSE('STDIN')
+CALL OPEN('STDIN','CON:100/150/440/80/Ed Search Message Window')
+
+DO FOREVER
+  OPTIONS PROMPT 'Please enter the string to search for'Down
+  PARSE PULL String
+  IF String ~= '' THEN LEAVE
+END
+
+DO WHILE Case ~= 'C' & Case ~= 'N' & Case ~= ''
+  OPTIONS PROMPT Down'Do you want search to be'Down'<C>ase sensitive',
+  '<N>on case sensitive'Down'RETURN = Non case sensitive:-  '
+  PULL Case
+END
+
+IF Case = 'C' THEN 'lc'
+ELSE 'uc'
+
+DO WHILE Exchange ~= 'S' & Exchange ~= 'R' & Exchange ~= ''
+  OPTIONS PROMPT Down'<S>earch only or <R>eplace when find',
+  Down'RETURN = Search only:-  '
+  PULL Exchange
+END
+
+IF Exchange = 'R' THEN DO
+  OPTIONS PROMPT Down'Enter the replacement string',
+  Down'or just press RETURN if replacing with a null string'Down
+  PARSE PULL RepString
+END
+
+DO WHILE Start ~= 'T' & Start ~= 'C' & Start ~= ''
+  OPTIONS PROMPT Down'Start the search from'Down'<T>op of file',
+  '<C>ursor Position'Down'RETURN = Top of file:-  '
+  PULL Start
+END
+
+IF Start = 'T' | Start = '' THEN DO
+  't'
+  Direction = 'F'
+END
+ELSE DO WHILE Direction ~= 'F' & Direction ~= 'B' & Direction ~= ''
+  OPTIONS PROMPT Down'Searching from current cursor'Down'<B>ackwards',
+  '<F>orwards Search?'Down'RETURN = Forwards:-  '
+  PULL Direction
+END
+
+IF Direction = 'F' | Direction = '' THEN Direction = 'F'
+ELSE Direction = 'BF'
+
+IF Exchange = 'R' THEN DO FOREVER
+  Direction '!'String'!'
+  IF RC > 0 THEN SIGNAL End
+  OPTIONS PROMPT Down'FOUND:  'Colour2||String||Reset,
+  Down'Replacing with: 'Colour2||RepString||Reset,
+  Down'<R>eplace then find next <F>ind next, no replace',
+  Down'<Q>uit the search   '
+  PULL Again
+  SELECT
+    WHEN Again = 'Q' THEN SIGNAL End
+    WHEN Again = 'F' THEN ITERATE
+    WHEN Again = 'R' THEN 'e !'String'!'RepString'!'
+  OTHERWISE CALL BackSpace
+  END
+END
+
+ELSE DO FOREVER
+  Direction '!'String'!'
+  IF RC > 0 THEN SIGNAL End
+  OPTIONS PROMPT Down'FOUND:  'Colour2||String||Reset,
+  Down'<R>epeat search <Q>uit RETURN = Repeat:-  '
+  PULL Again
+  SELECT
+    WHEN Again = 'Q' THEN SIGNAL End
+    WHEN Again = 'R' THEN ITERATE
+    WHEN Again = '' THEN ITERATE
+  OTHERWISE CALL BackSpace
+  END
+END
+
+BackSpace:
+  'rv "Curr"'
+  IF Curr.X = 1 THEN 'p ; ce'
+  ELSE 'cl'
+RETURN
+
+End:
+
+IF Again = 'Q' THEN OPTIONS PROMPT Down'User aborted! - Press RETURN to exit'
+ELSE OPTIONS PROMPT Down'Last search failed - Press RETURN to exit'
+PULL End
+

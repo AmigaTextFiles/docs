@@ -1,0 +1,102 @@
+@node Betriebssystem
+@chapter Das Betriebssystem
+Dieses Kapitel behandelt Fragen sowohl zum Betriebssystem Kickstart als
+auch zur Oberfläche Workbench.
+
+@menu
+* Softkicker:: Kann ich eine andere als die eingebaute Kickstart benutzen?
+* Workbench:: Die grafische Oberfläche
+* Dot-Ersatz:: Was entspricht unter AmigaDOS dem . (Aktuelles Directory)?
+* Pipes:: der Queue-Handler PIPE:
+* ARexx:: Die Programm-Steuerungssprache
+@end menu
+
+@node Softkicker
+@section Kann ich eine andere als die eingebaute Kickstart benutzen?
+Zunächst ein paar Worte zur Legalität der Benutzung einer anderen
+Kickstart: Es ist @strong{nicht} erlaubt, Kopien von Kickstarts fremder
+Computer zu erstellen und auf einem anderen Computer zu benutzen! (Es ist
+sogar fraglich, ob man das auf eigenen Maschinen darf, wenn man mehr als
+einen Amiga hat.)
+
+Natürlich ist es möglich und für gewisse Personen (z.B. Developer,
+@pxref{Developer}) auch erlaubt.
+Es gibt zwei verschiedene Möglichkeiten, eine Hardware- und eine
+Softwarelösung. Erstere ist, eine Platine in den Computer einzubauen, die
+sowohl die eigene als auch eine andere Kickstart aufnehmen kann, zwischen
+denen man dann umschalten kann.
+
+Die Softwarelösung benötigt ein Programm (einen sogenannten
+Softkicker) und
+die Kopie der anderen Kickstart. Der Softkicker alloziert RAM, lädt die
+Kickstart-Kopie in dieses RAM und führt einen Reset aus. Natürlich
+fehlt dann nach dem Reboot unter der neuen Kickstart etwas RAM: 256KB
+weniger für Kickstart 1.2 oder 1.3 und 512KB für die neueren Kickstarts.
+Es gibt verschiedene Softkicker, von denen einige eine MMU benötigen
+(@pxref{68EC0xx,MMU,MMU}). Ich empfehle SKick 3.43 (Aminet, Directory
+@file{util/boot}) empfehlen, das keine MMU braucht und viele verschiedene
+Kickstarts unterstützt. Die Kopie des ROM zu erzeugen ist mit einem Programm
+wie dem Folgendem möglich:
+
+@example
+    #include <stdio.h>
+
+    #define kickorig 0xf80000   /*  0xfc0000 für Kick 1.2 und 1.3   */
+    #define kicklen  0x080000   /*  0x040000 für Kick 1.2 und 1.3   */
+
+    void main(int argc, char*argv[])
+    @{
+        FILE *fh;
+
+        if ((fh = fopen("kickstart.file", "w"))  !=  NULL) @{
+            result = fwrite(kickorig, kicklen, 1, fh);
+        @}
+        fclose(fh);
+    @}
+@end example
+
+
+@include os-gui-g.texinfo
+
+
+@node Dot-Ersatz
+@section Was entspricht unter AmigaDOS dem . (Aktuelles Directory)?
+@cindex Aktuelles Directory
+@cindex . (Ersatz für)
+Unter AmigaDOS entspricht dem . (der das aktuelle Directory unter Unix und
+gewissen nicht-reentranten Interrupt-Handlern repräsentiert) der leere
+String, den man als "" schreibt.
+
+Beispiel:
+@example
+        COPY S:Startup-Sequence ""
+@end example
+@noindent
+Dies kopiert Ihre Startup-Sequence in das aktuelle Directory.
+
+Es gibt verschiedene Programme, die AmigaDOS so patchen, daß es . und
+.. wie unter Unix akzeptiert, z.B. UnixDirs. (Aminet,
+@file{os20/util/UnixDirsII.lha} oder Fish-Disk 837)
+
+Arno Eigenwillig (arno@@yaps.dinoco.de)
+
+
+@include os-pipe-g.texinfo
+
+
+@node ARexx
+@section ARexx, die Programm-Steuerungs-Sprache
+@cindex ARexx
+@table @strong
+@item F:
+Ich will ein Arexx-Kommando über die CLI oder ein Shellskript schicken.
+Das klappt aber nicht. Ich gebe zwar
+rx ADDRESS PORTNAME;KOMMANDO ein, jedoch ohne Erfolg.
+@item A:
+Es müssen Anführungszeichen gesetzt werden. Also:
+rx "ADDRESS PORTNAME;KOMMANDO".
+Dies verhindert auch das automatische Umwandeln des Portnamens in
+Großbuchstaben, falls der Portname klein geschrieben wird.
+@end table
+
+

@@ -1,0 +1,104 @@
+Digital Illusion format
+Created by TSL (the Silents) for Digital Illusion (1991)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(All right, writing my name like that means that if there's)
+(something wrong in this file, it is MY fault ... that way,)
+(you know where to send flames if needed ... .)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           2          Number of sample [NOS]
+  2           4          Address of pattern table (in the file !) [1]
+  6           4          Address of pattern data (in the file !)  [2]
+ 10 (Ah)      4          Adresss of sample data (in the file !)
+
+      ***************************************
+      * the following is repeated NOS times *
+      * with 8 bytes description for 1 smp  *
+******************************************************
+                                                     *
+ 14 (Eh)       2         Sample Size / 2             *
+ 16 (10h)      1         Finetune (0 -> F)           *
+ 17 (11h)      1         Volume (0 - 40h)            *
+ 18 (12h)      2         Loop Start / 2              *
+ 20 (14h)      2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+10+NOS*8     NOP*2       pointer table on pattern
+                         NOP = Number of pattern (REAL!!!)
+                         (this is a table containing the addresses)
+                         (IN THE FILE of each pattern data)
+                         (several ways to get its size ...)
+                         ( -> read 'til you reach the Address of)
+                         (   the pattern table)
+                         ( -> read all through pattern table and)
+                         (   get the highest pattern to play, then)
+                         (   read this number of word ... safer !)
+
+[1]           NOP        Pattern order table
+[1]+NOP        1         $FF (terminates pattern order table)
+[2]           ???        pattern data ...
+
+
+ we get something like that
+
+ pattern 0 :
+ row 0 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 1 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 2 ...
+ row 63| voice 1 | voice 2 | voice 3 | voice 4 |
+ pattern 1 :
+ ...
+
+ the size of each pattern is variable. it can be between 256 (100h)
+and 768 (300h)
+
+ if bit 7 of first byte is set to 1 : two cases
+
+*first case
+
+  0000 0000  0000 0000  0000 0000
+  ||    ||      | |  |  |       |
+ -| \  /  \    /   \/    \     /
+|  sample relativ effect  effect
+|  number  note           value
+|         number
+|------------description bit set to 1
+
+*second case
+
+  0000 0000  all bits are set to 1 ($ff) then it's an empty voice
+  |          meaning for Ptk 4 empty bytes.
+  |
+  |------------description bit set to 1
+
+ if bit 7 of first byte is set to 0 : one case
+
+  0000 0000  0000 0000
+  ||    ||      | |  |
+ -| \  /  \    /   \/
+|  sample relativ  effect
+|  number  note
+|         number
+|------------description bit set to 0
+
+
+relative note number: (ProTracker)
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes : (Digital Illusion)
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+
+ Follows Sample datas stored like ProTracker.
+

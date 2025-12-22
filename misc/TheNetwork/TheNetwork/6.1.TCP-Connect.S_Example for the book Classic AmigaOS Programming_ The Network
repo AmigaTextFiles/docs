@@ -1,0 +1,645 @@
+;APS00000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+
+		INCDIR	"Develop:NDK_3.2/Include_I/"
+		INCLUDE "dos/dos.i"
+		INCLUDE "lvo/dos_lib.i"
+		INCLUDE "lvo/exec_lib.i"
+		INCLUDE "lvo/bsdsocket_lib.i"
+		INCLUDE "utility/tagitem.i"
+
+
+AF_INET		= 2
+SOCK_STREAM	= 1
+SOCK_DGRAM 	= 2
+
+SOL_SOCKET	= $FFFF
+
+SO_ERROR	= $1007
+SO_EVENTMASK	= $2001
+
+FIOASYNC	= $8004667d
+FIONBIO		= $8004667e
+FIONREAD	= $4004667f
+
+FD_ACCEPT	= $01
+FD_CONNECT	= $02
+FD_OOB		= $04
+FD_READ		= $08
+FD_WRITE	= $10
+FD_ERROR	= $20
+FD_CLOSE	= $40
+
+EAGAIN		= 35
+EINPROGRESS	= 36
+
+SBTM_GETVAL		= $80000000
+SBTM_SETVAL		= $80000001
+
+SBTC_SIGEVENTMASK	= 8
+SBTC_ERRNOSTRPTR	= 28
+SBTC_ERRNOLONGPTR	= 48
+SBTC_HERRNOLONGPTR	= 50
+
+
+ STRUCTURE hostent,0
+    APTR	h_name
+    APTR	h_alisases
+    LONG	h_addrtype
+    LONG	h_length
+    APTR	h_addr_list
+ LABEL he_SIZEOF
+
+
+
+
+		; Store argument pointers
+
+		MOVE.L	d0,ArgLen
+		MOVE.L	a0,ArgBase
+
+		; Open libraries we need
+
+ 		MOVE.L	4.W,a6			; a6 = ExecBase
+		LEA.L	DosName(PC),a1
+		JSR	_LVOOldOpenLibrary(a6)
+		MOVE.L	d0,DosBase
+		BEQ.W	.NoDos
+		LEA.L	SockName(PC),a1
+		JSR	_LVOOldOpenLibrary(a6)
+		MOVE.L	d0,SockBase
+		BEQ.W	.NoSock
+
+		; Allocate the signal
+
+		MOVEQ.L	#-1,d0			; Any free signal
+		JSR	_LVOAllocSignal(a6)
+		MOVE.L	d0,Signal
+		BMI.W	.NoSignal
+		MOVEQ.L	#1,d1
+		ASL.L	d0,d1
+		MOVE.L	d1,SignalMask
+
+		; Get the output handle of the CLI/Shell
+
+		MOVE.L	DosBase(PC),a6		; a6 = DOS
+		JSR	_LVOOutput(a6)
+		MOVE.L	d0,OutHand		; BPTR console handle
+		BEQ.W	.Exit
+
+		; Check the arguments
+
+		BSR.W	ProcessArgs		; Get hostname from args
+		BMI.W	.Exit			; Exit in case of error
+
+		; Print the hostname
+
+		LEA.L	.HostStr(PC),a0
+		BSR.W	Print
+		LEA.L	HostName,a0
+		BSR.W	Print
+
+		; Resolve the hostname into an IP address
+
+		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		LEA.L	HostName,a0
+		BSR.W	GetIPAddress
+		MOVE.L	d0,.IPAddress		; Store the IP address
+		BEQ.W	.Exit			; Zero means error.
+
+		; Print the IP address
+
+		LEA.L	.IPAddrStr(PC),a0
+		BSR.W	Print
+		JSR	_LVOInet_NtoA(a6)
+		MOVE.L	d0,a0
+		BSR.W	Print
+
+		; Prepare the socket
+
+		BSR.W	PrepareSocket
+		TST.L	Socket(PC)		; Check socket
+		BMI.B	.Exit			; Negative socket is error
+		LEA.L	.SockOpenStr(PC),a0
+		BSR.W	Print			; Print socket open message
+
+		; Start the connection
+
+		MOVE.L	Socket(PC),d0		; LONG sd
+		MOVEQ.l	#16,d1			; LONG addrlen
+		LEA.L	.SockAddrIn(PC),a0	; APTR addr
+		JSR	_LVOconnect(a6)
+		TST.L	d0			; Check the result
+		BEQ.B	.NoErr			; Zero = no error
+
+		CMPI.L	#EINPROGRESS,ErrNo	; Just an "in progress"?
+		BNE.B	.Close			; No - a real error
+
+.NoErr		LEA.L	.ConnectStr(PC),a0
+		BSR.W	Print
+
+
+		; The main loop of the program
+
+.MainLoop	MOVE.L	4.W,a6			; a6 = ExecBase
+		MOVE.L	SignalMask(PC),d0	; ULONG Socket signal
+		ORI.L	#SIGBREAKF_CTRL_C,d0	; ULONG Ctrl+C signal
+		JSR	_LVOWait(a6)		; Wait for signals
+
+		MOVE.L	d0,d1
+		ANDI.L	#SIGBREAKF_CTRL_C,d0	; User Ctrl+C break?
+		BNE.B	.UserBreak		; Yes.
+
+		AND.L	SignalMask(PC),d1	; Socket signal?
+		BEQ.B	.MainLoop		; No. Wait again.
+
+		BSR.W	ProcessSocket		; Yes. Process socket event
+		BNE.B	.Close			; Non-zero = connection gone
+
+		BRA.B	.MainLoop		; Keep looping.
+
+
+		; Show message before closing
+
+.UserBreak	LEA.L	.BreakStr(PC),a0
+		BSR.W	Print
+
+		; Close the socket
+
+.Close		MOVE.L	SockBase(PC),a6		; a6 = SockBase
+		MOVE.L	Socket(PC),d0
+		JSR	_LVOCloseSocket(a6)
+
+		; Close the libraries
+
+.Exit		MOVE.L	4.W,a6			; a6 = ExecBase
+		MOVE.L	Signal(PC),d0		; Signal number
+		JSR	_LVOFreeSignal(a6)
+.NoSignal	MOVE.L	SockBase(PC),a1
+		JSR	_LVOCloseLibrary(a6)
+.NoSock		MOVE.L	DosBase(PC),a1
+		JSR	_LVOCloseLibrary(a6)
+.NoDos		MOVEQ	#0,d0
+		RTS
+
+
+
+.SockAddrIn	DC.W	AF_INET	; Family
+		DC.W	80	; Port number
+.IPAddress	DC.L	0	; IP address
+		BLK.B	8,0	; sin_zero
+
+
+.HostStr	DC.B	"Hostname: ",0
+.IPAddrStr	DC.B	10,"IP address: ",0
+.SockOpenStr	DC.B	10,"Socket open..",10,0
+.ConnectStr	DC.B	"Connecting..",10,0
+.BreakStr	DC.B	"User break!",10,0
+		EVEN
+
+
+
+; ========================================================================
+; Check the argument length
+; Copy the argument into the HostName buffer
+; Use that to create the GET reguest string
+
+ProcessArgs:	MOVE.L	ArgLen(PC),d0		; Length of the arguments
+		CMPI.W	#5,d0			; At least 5 characters?
+		BMI.B	.ArgLenErr		; No? Error!
+		CMPI.L	#255,d0			; Fit the buffer?
+		BPL.B	.ArgLenErr		; No? Error!
+
+		; Copy into the hostname buffer
+
+		MOVE.L	ArgBase(PC),a0		; APTR Source
+		LEA.L	HostName,a1		; APTR Destination
+		SUBQ.L	#2,d0
+.CopyArg	MOVE.B	(a0)+,(a1)+
+		DBF	d0,.CopyArg
+		MOVE.B	#0,(a1)			; Null-terminator
+
+		; Create GET request
+		MOVE.L	4.w,a6			; a6 = Exec Base
+		LEA.L	.RequestStr(PC),a0	; APTR Format string
+		LEA.L	.RequestData(PC),a1	; APTR Data for string
+		LEA.L	PutChar(PC),a2		; APTR Callback function
+		LEA.L	Buffer,a3		; APTR Buffer to print to
+		JSR	_LVORawDoFmt(a6)
+
+		MOVEQ.L	#0,d0
+		RTS
+
+		; Show error message
+
+.ArgLenErr	LEA.L	.ArgErrStr(PC),a0
+		BSR.W	Print
+		MOVEQ.L	#-1,d0
+		RTS
+
+
+.ArgErrStr	DC.B	"Please provide a hostname argument.",10,0
+
+.RequestStr	DC.B	"GET / HTTP/1.1",$0D,$0A,"host: %s",$0D,$0A,$0D,$0A,0
+.RequestData	DC.L	HostName
+
+
+; ========================================================================
+; Resolve the hostname into an IP address to connect to
+
+GetIPAddress:	JSR	_LVOgethostbyname(a6)
+		TST.L	d0			; Successful result?
+		BEQ.B	.NoAddr			; No? Show error message
+
+		MOVE.L	d0,a0			; APTR Hostent struct
+		CMPI.L	#4,h_length(a0)		; LONG Length: must be 4
+		BNE.B	.NoAddr
+
+		MOVE.L	h_addr_list(a0),a0	; APTR 1st addr in list
+		MOVE.L	(a0),A0			; APTR IP address
+		MOVE.L	(a0),d0			; DWORD IP address
+		RTS
+
+
+.NoAddr		LEA.L	.ErrorStr(PC),a0
+		BSR.W	Print
+		MOVEQ.L	#0,d0			; Return 0 as IP address
+		RTS
+
+.ErrorStr:	DC.B	" - unable to resolve!",10,0,0
+
+
+
+; ========================================================================
+; Setup the socket library and create a non-blocking socket with events
+
+PrepareSocket:	LEA.L	.Tags(PC),a0		; APTR tags
+		JSR	_LVOSocketBaseTagList(a6)
+
+		; Get the socket descriptor
+
+		MOVEQ.L	#AF_INET,d0		; LONG domain
+		MOVEQ.L	#SOCK_STREAM,d1		; LONG type
+		MOVEQ.L	#0,d2			; LONG protocol
+		JSR	_LVOsocket(a6)
+		MOVE.L	d0,Socket		; Store socket descriptor
+		BMI.B	.NoSocket		; Negative result?
+
+		; Request events on the socket
+
+		MOVE.L	#SOL_SOCKET,d1		; LONG level
+		MOVE.L	#SO_EVENTMASK,d2	; LONG optname
+		MOVEQ.L	#4,d3			; LONG optlen
+		LEA.L	.EventMask(PC),a0	; APTR optval
+		JSR	_LVOsetsockopt(a6)
+
+		; Make socket non-blocking
+
+		MOVE.L	Socket(PC),d0		; LONG sd
+		MOVE.L	#FIONBIO,d1		; LONG request
+		LEA.L	.Arg(PC),a0		; APTR argp
+		JSR	_LVOIoctlSocket(a6)
+
+.NoSocket	RTS
+
+
+.Arg		DC.L	1
+.EventMask	DC.L	FD_CONNECT|FD_READ|FD_WRITE|FD_CLOSE|FD_ERROR
+
+.Tags		DC.L	SBTM_SETVAL|SBTC_SIGEVENTMASK
+SignalMask:	DC.L	0
+		DC.L	SBTM_SETVAL|SBTC_ERRNOLONGPTR
+		DC.L	ErrNo
+		DC.L	SBTM_SETVAL|SBTC_HERRNOLONGPTR
+		DC.L	HErrNo
+		DC.L	TAG_END
+
+
+; ========================================================================
+; Get the socket event(s) and call the apropriate action(s)
+
+ProcessSocket:	MOVE.L	SockBase(PC),a6		; A6 = SockBase
+		LEA.L	.Events(PC),a0		; APTR events_ptr
+		JSR	_LVOGetSocketEvents(a6)
+		MOVE.L	d0,d7			; Event socket descriptor
+		BMI.B	.Done			; No socket! Nothing to do.
+
+		LEA.L	.EventStr(PC),a0
+		BSR.W	Print
+
+		MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_ERROR,d0		; Is the FD_ERROR bit set?
+		BEQ.B	.NotErr			; No. Process the event
+		BSR.W	EventError		; Yes. Process the event
+		MOVEQ	#-1,d0			; Indicate to stop
+		RTS
+
+.NotErr		MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_CONNECT,d0		; Is the FD_CONNECT bit set?
+		BEQ.B	.NotConn		; No. Check the next event
+		BSR.B	EventConnect		; Yes. Process the event
+
+.NotConn	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_WRITE,d0		; Is the FD_WRITE bit set?
+		BEQ.B	.NotWrite		; No. Check the next event
+		BSR.W	EventWrite		; Yes. Process the event
+
+.NotWrite	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_READ,d0		; Is the FD_READ bit set?
+		BEQ.B	.NotRead		; No. Check the next event
+		BSR.W	EventRead		; Yes. Process the event
+
+.NotRead	MOVE.L	.Events(PC),d0		; Get the mask of events
+		ANDI.W	#FD_CLOSE,d0		; Is the FD_CLOSE bit set?
+		BEQ.B	.Done		; No. Check the next event
+		BSR.W	EventClose		; Yes. Done all the events
+		MOVEQ	#-1,d0			; Indicate to stop
+		RTS
+
+.Done		MOVEQ	#0,d0			; Indicate to continue
+		RTS
+
+.Argp		DC.L	0
+.Events		DC.L	0
+.EventStr	DC.B	"Event! ",0
+
+
+
+; ------------------------------------------------------------------------
+; Print string, send GET request and shutdown sending
+
+EventConnect:	LEA.L	.ConnectedStr(PC),a0
+		BSR.W	Print
+
+		; Calculate the length of the request
+
+.SendReq	LEA.L	Buffer,a0		; APTR Get request
+		MOVE.L	a0,a1			; Make copy for counting
+		MOVEQ.L	#0,d1			; Length counter
+.Count		TST.B	(a1)+			; Null-terminator?
+		BEQ.B	.Done			; Yes. Done counting
+		ADDQ.L	#1,d1			; Count another char
+		BRA.B	.Count			; Do until terminator
+
+		; Send the request string.
+
+.Done		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVEQ.L	#0,d2			; LONG flags
+		JSR	_LVOsend(a6)
+		MOVE.L	d0,.FmtData		; Copy result for printing
+
+		; Show how many bytes were sent
+
+		LEA.L	.FmtStr(PC),a0		; APTR FormatString
+		LEA.L	.FmtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+
+		; No more sending; call shutdown
+
+		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVEQ.L	#1,d1			; LONG how = no more sending
+		JSR	_LVOshutdown(a6)
+		RTS
+
+
+.ConnectedStr	DC.B	"FD_CONNECT ",0
+.FmtStr		DC.B	"sent %ld bytes",10,0
+.FmtData	DC.L	0
+
+
+; ------------------------------------------------------------------------
+; Print string but do nothing else
+
+EventWrite:	LEA.L	.WriteStr(PC),a0
+		BSR.W	Print
+		RTS
+
+
+.WriteStr	DC.B	"FD_WRITE",10,0
+
+
+; ------------------------------------------------------------------------
+; Read the received data into the buffer
+
+EventRead:	LEA.L	.ReadStr(PC),a0
+		BSR.W	Print
+
+		; Receive into the buffer
+
+		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVE.L	#4095,d1		; LONG buffer length
+		MOVEQ.L	#0,d2			; LONG flags
+		LEA.L	Buffer,a0		; APTR buffer
+		JSR	_LVOrecv(a6)
+		MOVE.L	d0,.FmtData		; Copy result for printing
+		BMI.W	.Negative		; Negative? Maybe an error
+
+		; Show contents of buffer
+
+;		LEA.L	Buffer,a0		; APTR buffer
+;		MOVE.B	#0,(a0,d0)
+;		BSR	Print
+
+		; Show how many bytes received
+
+		LEA.L	.FmtStr(PC),a0		; APTR FormatString
+		LEA.L	.FmtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+		RTS
+
+.Negative	MOVE.L	ErrNo(PC),d0		; ULONG errno
+		CMPI.L	#EAGAIN,d0		; EAGAIN is not an error
+		BNE.W	PrintErr		; But anything else is
+		LEA.L	.NewLine(PC),a0		; APTR newline
+		BRA	Print
+
+
+.ReadStr	DC.B	"FD_READ ",0
+.FmtStr		DC.B	"read %ld bytes"
+.NewLine	DC.B	10,0,0
+.FmtData	DC.L	0
+
+
+; ------------------------------------------------------------------------
+; Retrieve the error and print it
+
+EventError:	LEA.L	.ErrorStr(PC),a0
+		BSR.W	Print
+
+		TST.L	ErrNo		; ErrNo has been set?
+		BNE.B	.ShowIt		; Yes. Then print it
+
+		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVE.L	#SOL_SOCKET,d1		; LONG level
+		MOVE.L	#SO_ERROR,d2		; LONG optname
+		LEA.L	ErrNo(PC),a0		; APTR optval
+		LEA.L	.ErrNoLen(PC),a1	; APTR optlen
+		JSR	_LVOgetsockopt(a6)
+
+.ShowIt	BSR.W	PrintErr
+		RTS
+
+
+.ErrorStr	DC.B	"FD_ERROR ",0
+.ErrNoLen	DC.L	4
+
+
+
+; ------------------------------------------------------------------------
+; Receive all data still in the internal buffer.
+
+EventClose:	LEA.L	.CloseStr(PC),a0
+		BSR.W	Print
+
+		; Receive into the buffer
+
+.Loop		MOVE.L	d7,d0			; LONG socket descriptor
+		MOVE.L	#4095,d1		; LONG buffer length
+		MOVEQ.L	#0,d2			; LONG flags
+		LEA.L	Buffer,a0		; APTR buffer
+		JSR	_LVOrecv(a6)
+		MOVE.L	d0,.FmtData		; Copy result for printing
+		BMI.B	PrintErr		; Negative? That's an error.
+		BEQ.B	.NoData			; Zero means no more data
+
+		; Show how many bytes received
+
+		LEA.L	.FmtStr(PC),a0		; APTR FormatString
+		LEA.L	.FmtData(PC),a1		; APTR Data for the string
+		BSR.W	Printf
+		BRA.B	.Loop			; Read more data
+
+		; Print last message and exit
+
+.NoData		LEA.L	.NoDataStr(PC),a0
+		BSR	Print
+		RTS
+
+.CloseStr	DC.B	"FD_CLOSE",10,0
+.NoDataStr	DC.B	"No more data to read. Closing..",10,0
+.FmtStr		DC.B	"read %ld bytes from internal buffer",10,0
+.FmtData	DC.L	0
+
+
+; ========================================================================
+; Convert ErrNo to human readable string and print that
+
+
+PrintErr:	MOVE.L	ErrNo(PC),d0		; LONG error code
+		CMPI.L	#10000,d0		; Code in the 10000 range?
+		BMI.B	.CodeOK			; No. No need to change
+		SUBI.L	#10000,d0		; Change to normal range
+
+.CodeOK		LEA.L	.Tags(PC),a0		; APTR tags
+		MOVE.L	d0,4(a0)		; Place error code
+		JSR	_LVOSocketBaseTagList(a6)	; Get error string
+		TST.L	d0			; Success?
+		BNE.B	.TagErr			; No! Do not print
+
+		MOVE.L	.Tags+4(PC),a0		; APTR Error string
+		BSR.B	Print			; Show user
+
+		LEA.L	.Str(PC),a0
+		LEA.L	ErrNo(PC),a1
+		BSR.B	Printf
+
+.TagErr		RTS
+
+.Str		DC.B	" (Error %ld)",10,0
+.Tags		DC.L	SBTM_GETVAL|SBTC_ERRNOSTRPTR
+		DC.L	0
+		DC.L	TAG_END
+
+
+; ========================================================================
+; Print format string in A0, data stream in A1 to console (CLI/Shell)
+
+Printf:		MOVEM.L	d0-d7/a0-a6,-(a7)
+
+		MOVE.L	4.w,a6			; a6 = Exec Base
+		LEA.L	PutChar(PC),a2		; APTR Callback function
+		LEA.L	Buffer,a3		; APTR Buffer to print to
+		JSR	_LVORawDoFmt(a6)
+
+		LEA.L	Buffer,a0		; APTR Buffer to print
+		BSR.B	Print
+
+		MOVEM.L	(a7)+,d0-d7/a0-a6
+		RTS
+
+
+PutChar:	MOVE.B	d0,(a3)+		; Place char into string
+		RTS
+
+
+; ========================================================================
+; Print string in A0 to console (CLI/Shell)
+
+Print:		MOVEM.L	d0-d7/a0-a6,-(a7)
+
+		MOVE.L	OutHand(PC),d1		; BPTR console handle
+		MOVE.L	a0,d2			; APTR String to print
+
+		MOVEQ	#0,d3			; Reset counter in D3
+.CountLoop	TST.B	(a0)+			; Check for null-terminator
+		BEQ.B	.Counted		; Found it? Done counting
+		ADDQ.L	#1,d3
+		BRA.B	.CountLoop		; Keep counting
+
+.Counted	MOVE.L	DosBase(PC),a6		; A6 = DOS
+		JSR	_LVOWrite(a6)		; Print string to console
+
+		MOVEM.L	(a7)+,d0-d7/a0-a6
+		RTS
+
+
+
+; ========================================================================
+
+ArgLen:	DC.L	0
+ArgBase:	DC.L	0
+
+OutHand:	DC.L	0
+
+Signal:		DC.L	0
+ErrNo:		DC.L	0
+HErrNo:		DC.L	0
+Socket:		DC.L	-1
+
+DosName:	DC.B	"dos.library",0
+SockName:	DC.B	"bsdsocket.library",0
+DosBase:	DC.L	0
+SockBase:	DC.L	0
+
+
+; ========================================================================
+
+		SECTION TCPConnect,BSS
+
+HostName:	DS.B	256
+Buffer:		DS.B	4096
+
+

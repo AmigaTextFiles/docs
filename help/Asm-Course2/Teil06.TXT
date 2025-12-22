@@ -1,0 +1,319 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 6.Teil...
+
+So,leute...ich habe mal ein ganz klein bisschen pause gemacht..damit ich
+nicht verroste, und ein paar effekte `gebaut`, die werde ich euch
+warscheinlich beibringen.
+
+Hmmmh, weiter mit dem raster....Wie gesagt werden wir erstmal das Ding von
+demletzt bearbeiten. Und zwar in der Form, das es erstmal weicher wird, und
+nicht so Flackert, und zweitens das wir mal ein Schwingen in die Sache
+bringen.
+
+Wie gesagt, es ist besser wenn ihr das ausgedruckt vor den Augen habt. Ich
+kann zwar aus dem Kopf erzaehlen was geaendert werden muss, schliesslich
+habe ich das ding ja Programmiert, aber ihr muesstet es schon sehen, denn
+einfach nur tippen und starten is scheisse. Wenn einer aber absolut keine
+Moeglichkeit hat, dem werde ich es zuschicken, ich glaube aber das jeder
+irgendeinen kennt der Druckern kann.
+
+Ja, pack mers Buam
+
+So, das erste was wir aendern wollen ist das es weicher zieht. Das mit der
+Verzoegerungsschleife is` wohl jedem Klar..Aber wir koennen auch auf etwas
+anderes warten. Wir sollten da etwas nehmen was zuverlaessig immer an der
+gleichen position abfragbar ist, und was immer in gleichen abstaeden
+Passiert....
+Die uhr...noe geht nicht...die schalten wir bei der Interrupt sperre direkt
+mit aus..da tut sich nichts mehr.
+Aber den Bildschirm, wir sind mit dem Prozessoer zwar nicht so gut dran wie
+mit dem Copper, aber fuer eine Abfrage reicht es allemal.
+Vorher muesste ihr aber noch wissen das es im oberen bildschirmbereich ein
+paar Zeilen gibt indenen der Amiga und der Copper usw. nichts machen, dort
+koennen wir uns hervorragend `Einklinken`, man nennt es den Vertikal
+Blanking bereich....Wie fragen wir das aber ab ?
+Nun wir haben im Amiga ein Schoenes register..es nennt sich VHposr und
+liegt in $DFF006, wir koennen dort X- und Y-position des Rasterstrahls
+abfragen, dazu brauchen wir aber einen neuen befehl.
+
+Compare Kurz CMP
+
+Um uns die sache leicht zu machen, vergleichen wir Direkt, das heisst Wert
+mit Speicherstelle, und sieht dann so aus
+
+Cmpi.B #$00,VHposr
+
+Das i hinter dem Cmp befehl muss bei allen Befehlen eingegeben werden wenn
+sie so Direct arbeiten. z.b. Addi, Subi usw.
+Also koennen wir das schon mal anstelle der #$5000 wartreschhleife im
+Source einfuegen ....
+So, jetzt wollen wir uns mal mit der Routine fuer die Bewegung befassen.
+Was macht sie Eigentlich...hmmm nicht viel, sie addiert die Positionen der
+Wait befehle in der Copperliste nur das das naechste mal bis eine zeile
+tiefer gewartet wird. Das macht sie mit `Add`.
+Es waere aber nicht viel schwerer eine Tabelle anzufertigen, in der halt
+eine menge positionen stehen, die man dann einfach ausliesst, und jeden
+durchlauf ein weiteres element nimmt.
+Is wohl klar oder ?
+Also zur Technik...keine bange, ich mache das mit den Mitteln die euch
+schon zur verfuegung stehen.
+Wir machen uns erstmal eine Tabelle, anhand dieser tabelle kann ich die
+weiteren Sachen die noetig sind viel besser erklaeren. Bei dem
+Programmierstil ist es egal wieviele Elemente die tabelle hat, das
+erleichter die sache ungemein.
+Erstmal die Tabelle, sie besteht der einfachheit halber erstmal aus dem
+Ganzen Wait-befehl Datum...Hinterher werden wir dann mit Bytes arbeiten,
+und durch manipulation in der Bitebene, die sache auf die richtige position
+bringen...Also, here she comes
+
+
+Dc.w $500f,$500f,$500f,$500f,$510f,$510f,$510f,$520f,$520f,$530f,$540f
+Dc.w $550f,$570f,$590f,$570f,$550f,$540f,$530f,$520f,$520f,$510f,$510f
+Dc.w $510f,$500f,$500f,$500f,$500f,$500f
+
+
+Wie ihr vielleicht seht hoert die tabelle so auf wie sie angefangen hat,
+sie ist eine Cyklus-tabelle.
+Sie soll ein Titschbewegung des Balkens hervorrufen.
+
+So, um diese Bewegung zu ermoeglichen muessen wir jetzt nur noch jeden
+bildschirm durchlauf eine neue position aus der tabelle nehmen..und schon
+titscht das ding.
+Also, wie koennten wir das machen...Wir nehmen am besten einen Indirekten
+zeiger, setzen ihn auf das erste Element der Tabelle, und lassen ihn
+durchlaufen, er holt sich dan das erste element..sobald das passiert ist
+setzen wir den Zeiger auf das naechtse Element...u.s.w.  sobald das letzte
+Element erreicht ist setzen wir den zeiger einfach wieder auf das naechste
+Element....Ja, das ist relativ einfach...aber Programmtechnisch schwerer
+als mein Zweiter Vorschlag zu diesem thema.
+
+Wir lesen `Bei Jedem` durchlauf immer der erste Element der Tabelle, und
+bearbeiten es. Dann lassen wir die Tabelle Rotieren, indem wir das erste
+Element irgendwo zwischen speichern, und das zweite Element an die Stelle
+des Ersten setzen, dann das dritte an die Stelle des Zweiten usw. sobald
+wir dann das letzte an die Stelle des vorletzten kopiert haben schreiben
+wir das gerettete erste an die letzte position geschrieben haben, haben wir
+die Tabelle rotieren lassen...Das hat den Vorteil wenn wir die tabelle von
+mehreren stellen auslesen lassen, das wir nicht Hunderttausend zeiger
+Stellen und abfragen muessen, denn das ist eine Menge aufwand...Jetzt kommt
+das geaenderte listing....Die tabelle koennt ihr auch selber eingeben, ihr
+muesst dann nur den Counter-wert im Programmsource auf Tabellenlaenge in
+worten -2 worten stellen....
+
+
+Execbase = 4
+Openlibrary = -552
+CIAapra = $BFE001
+Cop1lc  = $DFF080
+Forbid = -132
+Permit = -138
+VHposr = $DFF006
+
+Start:  move.l Execbase,a6
+        jsr Forbid(a6)
+        clr.l d0
+        lea gfxname,a1
+        jsr Openlibrary(a6)
+        move.l d0,gfxbase
+        move.l #copperliste,Cop1lc
+
+Vonvorne:
+        LEA COPPERLISTE,A0
+        LEA SINTABLE,a1
+
+Wait:   CMPI.B #$80,VHPOSR
+        BNE.S WAIT
+        MOVE.W 18(A1),d0
+        MOVE.W D0,4(a0)
+        ADD.W #$200,D0
+        MOVE.W D0,12(a0)
+        BSR.S TABLEROTATE
+
+        Btst #6,CIAapra
+        Bne.s vonvorne
+
+        Move.l gfxbase,a0
+        Move.l 38(a0),Cop1lc
+
+        Jsr Permit(a6)
+        Clr.l d0
+        Rts
+
+Tablerotate:
+        Move.l #sintable,a2     ; Holt sich tabellenzeiger
+        Move.l a2,a3            ; zweiter zeiger nach a3
+        Add.l #2,a3             ; zweiter zeiger auf naechstes Element
+        Move.w #25,d0           ; Counter
+        Move.w (a2),a4          ; Erstes wort retten
+roloop:
+        Move.w (a3)+,(a2)+
+        dbf d0,roloop
+        move.w a4,(a2)          ; Erstes wort-> unten dran
+        rts
+
+Gfxname:        dc.b "graphics.library",0
+even
+Gfxbase:        dc.l 0
+Copperliste:
+dc.w $0180,$0000
+dc.w $200f,$fffe
+dc.w $0180,$0f00
+dc.w $220f,$fffe
+dc.w $0180,$0000
+
+copperlistenende:
+dc.l $-2                ; ende der copperliste , -2 = $fffffffe
+
+Sintable:
+Dc.w $500f,$500f,$500f,$500f,$510f,$510f,$510f,$520f,$520f,$530f,$540f
+Dc.w $550f,$570f,$590f,$570f,$550f,$540f,$530f,$520f,$520f,$510f,$510f
+Dc.w $510f,$500f,$500f,$500f,$500f,$500f
+
+
+Natuerlich koennt ihr das listing ausschneiden, oder ihr tippt einfach die
+aenderungen in euer Grundprogramm ein, wie ihr es macht is egal..hauptsache
+ihr habt es verstanden.
+
+So, nachdem wir Copperlistenverwaltungen und Copperlisten manipulation
+gelernt haben, koennten wir eigentlich weitergehen oder....
+Wir verlassen jetzt mal wieder das kapitel `Manipulationen an der Laufenden
+Copperliste`, und gehen weiter mit dem Copper....Wir werden jetzt ein paar
+tolle sachen machen, und dann machen wir weiter mit den Effekten...Aber
+glaubt mir....Mit ! Bild! im hintergrund sehen die Effekte nochmal so doll
+aus....
+
+10.Konvertierung von IFF-ILBM Dateien ins RAW-Format
+
+Endlich...jetzt kommen wir mal zu einer Sache die nicht so viel mit
+Maschinensprache zutun hat, dafuer aber um so mehr mit Intros und Demos.
+
+Wir wollen naehmlich mal ein Bild auf den Bildschirm bringen...
+Ich ueberlege mir gerade ob wir erst Malen oder erst das programm entwerfen
+sollen......Hmmmm, ich wuerde sagen - malen wir erstmal.
+
+O.k, Deluxepaint 3.0 ist schnell zur hand, oder wer Dpaint 3.21 hat ist
+natuerlich besser dran, denn es hat eine Funktion die ich sehr zu schaetzen
+weiss, naehmlich die Umschaltung PAL->NTSC.. Naja wir malen auf jeden Fall
+im PAL-modus, und leider erstmal nur mit einer (2) farben, und im LO-RES
+modus...Also Stellt im Dpaint Menu bitte alles dafuer ein...
+
+Also, was ihr jetzt malt ist mir Wurscht...Hauptsache es gefaellt euch.
+Wenn es fertig ist...abspeichern...Dpaint verlassen und rein in den
+Kefrens-IFF-converter...was dahinten hat den noch einer nicht, kann ich mir
+garnicht vorstellen...wenn das einer von sich auch sagen kann, schreibe er
+mir bitte einen kleinen brief, ich werde ihm das teil dann in den
+Briefkasten pumpen...
+
+O.k...gehen wir mal davon aus das jeder den hat...
+
+Starten..So jetzt seht ihr viele Knoepfe und so..ihr geht erstmal auf den,
+auf dem `CD DF0:` und drueckt solange drauf bis dort das laufwerk steht auf
+dem die Diskette mit `EUREM` bild liegt. Dann lasst ihr diesen in ruh.
+Nun druecken auf `READ DIR`, ratter...ratter... jetzt liegt die Directory
+in dem Klitzekleinen Fenster ober Rechts.
+Die bedienung kennt ihr ja...klickt euer bild an, und geht auf `LOAD`
+Nach kurzer Zeit muesste euer Bild auf dem Bildschirm erscheinen...Was ? es
+ist nicht ganz drauf, fehlt ein stueck...dann benutzt mal die
+Cursortasten..Schoen nicht.?
+
+So jetzt gehen wir zum Konvertieren.
+Ihr seht oben ein Kleines Knoepfchen `IFF-ILBM`..das ist ja das was ihr
+eingeladen habt, drueckt da jetzt einmal drauf. Jetzt muesste da RAW-NORM`
+stehen..gut !
+
+Jetzt geht ihr auf das ding Daneben, da drueckt ihr drauf bis da `BEFORE`
+steht. Es bezieht sich auf die Colormap, sie ist dafuer da damit man die
+genauen farben des Bildes hat und sie nicht aus der Palette von Dpaint
+abschreiben muss, toll was ?
+
+So jetzt muesst ihr dem Bild, das jetzt schon konvertiert ist noch einen
+neuen Namen geben, dazu geht ihr in das laengliche Fenster unter den
+Koordinaten, Drueckt mit der Maus drauf, und gebt einen Namen ein.
+Dann geht ihr nur noch auf `SAVE` und fertig seid ihr mit dem Konvertieren.
+
+Ich wuerde euch gerne die ganzen funktionen dieses ganz fantastischen
+konverters erklaeren, aber die sind alle sehr schwer zu verstehen, und es
+hat erst sinn wenn ihr den Blitter kennt, und das dauert noch etwas.
+
+So nachdem wir das Bild abgespeicher haben, muesste es genau 10244 bytes
+lang sein, falls nicht habt ihr etwas falsch gemacht.....
+
+Probiert es nochmal....
+
+So nachdem das Bild die richtige laenge hat, koennen wir die noetigen
+Schritte zur darstellung durch den Computer besprechen...
+
+So, gehen wir mal durch was der Amiga wissen muss...
+1. Modus des dargestellten Bildes
+
+Unter Modus versteht man ob Ham, Hi-Res, Lo-Res oder Interlace, zwischen
+den 4 Modi koennen wir waehlen. Dazu dient das BPLcon0-register bei
+$DFF100.
+
+2. Anzahl der Planes
+Zur einstellung der Planesanzahl benutzt man ebenfalls das BPLcon0
+register.
+
+Erstmal ein kleiner einschub zum Thema Raw-format und darstellung der
+Farben und so.
+
+Manche Computer haben Tolle Grafik Modi mit 32 oder 16 farben.
+Man waehlt dann diesen modus aus und arbeitet darin, der noetige Platz im
+speicher ist immer derselbe, egal ob ich jetzt alle 16 oder nur Zwei farben
+brauche.
+Beim Amiga ist es anders...wir koennen in Jedem der Obengenannten Modi,
+noch die Anzahl der Planes eingeben, diese bestimmt dann die Anzahl der
+Farben.
+
+1 Plane = 2 Farben
+2 Planes = 4 Farben
+3 Planes = 8 Farben
+4 Planes = 16 Farben
+5 Planes = 32 Farben
+6 Planes = 64 Farben (allerdings Extra-Half-Bright modus)
+
+Man kann sich so sein Bild nach bedarf reservieren, nach dem Motto, Warum
+soll ich fuer 32 Farben platz machen wenn ich nur 4 brauche.
+
+Also, das mit den Planes sieht so aus..es sind die Vollen 320*256 Bits, mit
+denen wir auch gemalt haben (ich beziehe das jetzt erstmal auf das Bild
+was ihr malen solltet). Da gibt es nur Punkt gesetzt oder nicht gesetzt.
+Also zwei kombinationen. Wenn ich von Oben auf so eine Plane gucke dann
+sehe ich nur 0 oder 1, also zwei Farben.
+Jetzt kommt eine Zweite Plane ins spiel. Der Amiga stellt diese dann genau
+unter der Ersten dar. Wenn ich jetzt auf ein Bit gucke,gibt es ja 4
+kombinationen, also auch vier Farben, 00 01 10 11, sind die Kombinationen.
+Wenn ihr jetzt halt 5 Planes habt dann habt ihr auch 32 Kombinationen.
+Die Kombinationen, geben als Bitkombination immer einen Wert, und der wert
+stellt dann die farben dar. Also bei 2 Planes wuerde die Kombi.. 10, die
+Zweite farbe darstellen, welche das ist muss man dem Programmierer
+Ueberlassen, den Farben kann man setzen wie man will, wenn man erstmal den
+Copper in seiner Hand hat.
+
+Nach dem Wir jetzt Modus und farbenanzahl gewaehlt haben, muessen wir dem
+Amiga noch sagen wie gross unser Bild ist. Da der Amiga den Ganzen
+Bildschirm als Grafikbildschirm benutzen kann muessen wir das Fenster, auch
+genannt `Playfield` fuer das bild ermitteln.
+Dazu geben wir ecken oben Links, und unten rechts an, und wieviel vom
+linken rand die darstellung anfaengt und wieviel vom Rechten Rand sie
+aufhoert.
+
+Die werte fuer unser Bild...Pal sind
+
+DiwStrt = $3081
+DiwStop = $30c1
+Ddfstrt = $0038
+Ddfstop = $00d0
+
+Und ins Bitplane-Controll-registern (BPLcon0)
+
+Kommt $1200
+
+1 fuer eine Plane, und die 2 steht fuer Lores...
+
+Mehr im Naechsten Teil....
+
+So long
+
+                Jeff Kandle

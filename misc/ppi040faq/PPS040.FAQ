@@ -1,0 +1,569 @@
+Warning Long Post 
+
+
+FAQ on Progressive Peripherals & Software (PP&S) 040.
+
+
+This is a new FAQ. It has changed from my last PPI 040 FAQ.
+I now use RomTagMem to get full contiguous ram. The PPI 040
+originally separated 2meg at the 2meg to 4meg address to the 
+16bit address and split the ram into 3 pieces. IE. if you had
+16meg you got 2meg 32bit, 2meg 16bit, and 12meg 32. 
+
+RomTagMem allows you to use all the ram for programs like ArtDept,
+Deluxe Paint and Emplant. They and others all look for the largest
+contiguous ram and use that for the program ram. 
+
+
+IF all you want to do is use Gigamem and don't care about getting 
+contiguous ram, then you can use the original FAQ cure that uses 
+Addmem 2.0. It follows this new RomTagMem FAQ.
+
+
+
+
+	If you have any additions or more info, please email them 
+        to me to include in the FAQ.
+
+		Tim Salazar
+		grover@cyber.net
+
+
+
+
+
+     Caveat: Most of this is from the 2000 040 but most is
+             relavent to the Zeus also.
+
+
+
+Both the Zeus and 040 2000s have a MMU, the chips were just mismarked
+and PP&S got them for a deal.
+
+
+Init040 in its full form gets in the way of Emplant and Gigamem. 
+   (Init040 Addmem FastRom FastSys).
+
+
+To use with Gigamem you need to change the 68040.library (ver37.4 
+this is version 37. four) in your Libs drawer to a later version 
+than comes on the PPS disk. I have ver 37.30 (dos 2.1). That reads as 
+version 37. thirty not three zero. (I believe the newer ver is on the 
+Gigamem disk.)
+
+	BEFORE TRYING THIS AND REBOOTING READ ON!!!!!!!! 
+	    MAKE A COPY OF YOUR STARTUP-SEQUENCE 
+	   AND MAKE A ORIG BOOT DISK FOR SAFETY!!!
+
+
+
+
+I placed RomTagMem (Aminet util/misc) in the first line of my 
+Startup-Sequence. Here's mine for 32meg of ram:
+
+
+
+dh0:c/RomTagMem -D 8000000 2000000 5 10 >NIL:  ;RomTagMem Loads libs into 
+                                               ;32bit mem and loads mem
+                                               ;contiguous 32meg
+
+
+
+16meg will be:
+
+dh0:c/RomTagMem -D 8000000 1000000 5 10 >NIL:   
+
+
+You can just copy the correct line if you have 32 or 16meg :-). If not 
+you can use the start address 8000000. And for the end address you will
+SysInfo to get the UPPER BOUND number from your setup as it is setup 
+right now. Then in HEX subtract the START from the UPPER BOUND. I used 
+KingCalc (Aminet util/wb) for doing the HEX subtraction. (Hint: Replace 
+the beginning 0 from the SysInfo address with 0x button on KingCalc.)
+(If anyone does this please send me the info to include in the FAQ.)
+
+Now we have contiguous memory. Next we need to turn on the CPU.
+
+  EMPLANT users now put in you first line of the Emplant Startup-s:
+  execute >NIL: s:SetupEMPLANT)
+  
+  And the second line starting the CPU:
+  DH0:Emplant/MAC/HardkickMMU -h -f -t >NIL: 
+                                   ;Turns on copyback remaps kickstart,
+                                   ;h=remaps emplant hardware
+
+
+
+
+NON Emplant:
+ My favorite is SET040 here's my line:
+  ;set040 fastrom cache copyback nolocal >NIL:
+
+
+Both Emplant and regular users need to turn on the supervisor mode,
+to get the speed of the PPI 040, with the following line:
+
+SYS:68040/Init040 FASTSYS >NIL:
+
+
+Now comes SetPatch and the rest of the regular Startup-Sequence
+
+
+
+   Notes: Important I did have problems with an error requestor 
+          looking for the ENV drawer. So I moved the following lines to 
+          the top of my Startup-Sequence:
+
+             MakeDir RAM:ENV RAM:ENV/Sys
+             Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+             Assign >NIL: ENV: RAM:ENV
+
+
+If anyone knows of a better more elegant way please tell me. 
+
+
+---------------------------------------------------------------------------
+
+Below is my Emplant Startup-Sequence:
+
+
+; $VER: startup-sequence 38.22 (24.4.92)
+echo
+MakeDir RAM:ENV RAM:ENV/Sys
+Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+Assign >NIL: ENV: RAM:ENV
+
+dh0:c/RomTagMem -D 8000000 2000000 5 10 >NIL:  ;RomTagMem Loads libs into 
+                                               ;32bit mem and loads mem
+                                               ;contiguous 32meg
+
+
+
+execute >NIL: s:SetupEMPLANT ;commented out May 18 95
+
+DH0:Emplant/MAC/HardkickMMU -h -f -t >NIL: ;Turns on copyback remaps kickstart,
+                                   ;h=remaps emplant hardware
+
+
+SYS:68040/Init040 FASTSYS >NIL:
+
+C:SetPatch QUIET
+Version >NIL:
+AddBuffers >NIL: DF0: 15
+FailAt 21
+
+MakeDir RAM:T RAM:Clipboards
+
+
+;MakeDir RAM:T RAM:Clipboards RAM:ENV RAM:ENV/Sys
+;Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+;Assign >NIL: ENV: RAM:ENV
+Assign >NIL: T: RAM:T
+Assign >NIL: CLIPS: RAM:Clipboards
+Assign >NIL: REXX: DH0:Rexx
+Assign >NIL: PRINTERS: DEVS:Printers
+Assign >NIL: KEYMAPS: DEVS:Keymaps
+Assign >NIL: LOCALE: SYS:Locale
+
+
+IF NOT EXISTS SYS:Fonts
+  Assign FONTS:
+EndIF
+
+BindDrivers
+Mount >NIL: DEVS:DOSDrivers/~(#?.info)
+
+Resident >NIL: C:Execute PURE
+
+IF EXISTS DEVS:Monitors
+  List >NIL: DEVS:Monitors/~(#?.info) TO T:M LFORMAT "DEVS:Monitors/%s"
+  Execute T:M
+  Delete >NIL: T:M
+EndIF
+
+SetEnv Workbench $Workbench
+SetEnv Kickstart $Kickstart
+UnSet Workbench
+UnSet Kickstart
+
+IPrefs
+
+Echo "Amiga Release 2.1.  Kickstart $Kickstart, Workbench $Workbench"
+
+ConClip
+
+Path >NIL: RAM: C: SYS:Utilities SYS:Rexxc SYS:System S: SYS:Prefs SYS:WBStartup SYS:Tools SYS:Tools/Commodities
+
+IF EXISTS S:User-Startup
+  Execute S:User-Startup
+EndIF
+
+Resident Execute REMOVE
+
+LoadWB
+EndCLI >NIL:
+
+
+------------------------cut here------------------------------------------------
+
+
+Below is a Regular (NON Emplant) Startup-Sequence:
+
+
+
+; $VER: startup-sequence 38.22 (24.4.92)
+echo
+MakeDir RAM:ENV RAM:ENV/Sys
+Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+Assign >NIL: ENV: RAM:ENV
+
+dh0:c/RomTagMem -D 8000000 2000000 5 10 >NIL:  ;RomTagMem Loads libs into 
+                                               ;32bit mem and loads mem
+                                               ;contiguous 32meg
+
+
+set040 fastrom cache copyback nolocal >NIL:
+
+
+
+SYS:68040/Init040 FASTSYS >NIL:
+
+C:SetPatch QUIET
+Version >NIL:
+AddBuffers >NIL: DF0: 15
+FailAt 21
+
+MakeDir RAM:T RAM:Clipboards
+
+
+;MakeDir RAM:T RAM:Clipboards RAM:ENV RAM:ENV/Sys
+;Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+;Assign >NIL: ENV: RAM:ENV
+Assign >NIL: T: RAM:T
+Assign >NIL: CLIPS: RAM:Clipboards
+Assign >NIL: REXX: DH0:Rexx
+Assign >NIL: PRINTERS: DEVS:Printers
+Assign >NIL: KEYMAPS: DEVS:Keymaps
+Assign >NIL: LOCALE: SYS:Locale
+
+
+IF NOT EXISTS SYS:Fonts
+  Assign FONTS:
+EndIF
+
+BindDrivers
+Mount >NIL: DEVS:DOSDrivers/~(#?.info)
+
+Resident >NIL: C:Execute PURE
+
+IF EXISTS DEVS:Monitors
+  List >NIL: DEVS:Monitors/~(#?.info) TO T:M LFORMAT "DEVS:Monitors/%s"
+  Execute T:M
+  Delete >NIL: T:M
+EndIF
+
+SetEnv Workbench $Workbench
+SetEnv Kickstart $Kickstart
+UnSet Workbench
+UnSet Kickstart
+
+IPrefs
+
+Echo "Amiga Release 2.1.  Kickstart $Kickstart, Workbench $Workbench"
+
+ConClip
+
+Path >NIL: RAM: C: SYS:Utilities SYS:Rexxc SYS:System S: SYS:Prefs SYS:WBStartup SYS:Tools SYS:Tools/Commodities
+
+IF EXISTS S:User-Startup
+  Execute S:User-Startup
+EndIF
+
+Resident Execute REMOVE
+
+LoadWB
+EndCLI >NIL:
+
+
+
+-------------cut here----------------------------------------------------
+
+
+
+
+
+
+	Jumpers:
+
+		2000 A1 absent, A2 present, B3 absent (pg 16 man)
+		Zeus A1 absent, A2 present 
+
+		Cache ON
+		2000 C1 absent, C2 present
+		Zeus C3 present
+
+		Burst ON
+		2000 C3 absent, C4 present
+		Zeus C4 present 
+
+
+-------------------------------------------------------------------------
+
+
+	If you have any additions or more info, please email them 
+        to me to include in the FAQ.
+
+		Tim Salazar
+		grover@cyber.net
+
+
+
+
+
+
+
+--------------------------------------------------------------------------
+Below is the original FAQ:  (pre October 15, 1995
+
+
+
+
+
+FAQ on Progressive Peripherals & Software (PP&S) 040.
+Here's some info that I have gleaned off the net. Thanks to all.
+
+     Caveat: Most of this is from the 2000 040 but most is
+             relavent to the Zeus also.
+
+Both the Zeus and 040 2000s have a MMU, the chips were just mismarked
+and PP&S got them for a deal.
+
+
+Init040 in its full form gets in the way of Emplant and Gigamem. 
+   (Init040 Addmem FastRom FastSys).
+
+Leave the board with 2meg autoconfig ram (See Jumpers)
+
+
+To use with Gigamem you need to change the 68040.library (ver37.4 
+this is version 37. four) in your Libs drawer to a later version 
+than comes on the PPS disk. I have ver 37.30 (dos 2.1). That reads as 
+version 37. thirty not three zero. (I believe the newer ver is on the 
+Gigamem disk.)
+
+BEFORE REBOOTING READ ON!!!!!!!! MAKE A ORIG BOOT DISK!!!
+
+But now Init040 won't work. 
+
+First, you need to remove Init040 from the Startup-Sequence and use 
+Addmem 2.0 to add ram to your machine, see Addendums below. 
+And If no Emplant, then use: 
+
+    CPU Fastrom Cache Burst Copyback
+
+This line will turn on your CPU.
+
+
+Then to put the 040 into supervisor mode:
+
+    Init040 FastSys 
+
+
+And that should be it.
+
+
+For Emplant here is my Startup-Sequence beginning:
+	(I put the lines MakeDir RAM thru Assign....RAM:ENV in the 
+	beginning of the SS to get rid of an error that I was
+	getting. Anyone know of a different way?)
+
+	The line HardkickMMU turns on the CPU and sets its parameters.
+
+____________________cut_______________________________________________________
+
+; $VER: startup-sequence 38.22 (24.4.92)
+
+MakeDir RAM:ENV RAM:ENV/Sys
+Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+Assign >NIL: ENV: RAM:ENV
+
+
+dh0:c/AddMem $8000000 $8200000 32Bit
+dh0:c/AddMem $8400000 $A000000 32Bit  ; for 32meg (30m actual) 10.4.94
+;dh0:c/AddMem $8400000 $9000000 32Bit ; for 16meg (12 meg actual) 10/4/94
+
+
+execute >NIL: s:SetupEMPLANT ;commented in 8/31/94 TFS
+
+
+DH0:Emplant/MAC/HardkickMMU -h -f -t >NIL: ;Turns on copyback remaps kickstart,
+                                   ;h=remaps emplant hardware
+
+SYS:68040/Init040 FASTSYS >NIL:
+
+C:SetPatch QUIET
+Version >NIL:
+AddBuffers >NIL: DF0: 15
+FailAt 21
+
+MakeDir RAM:T RAM:Clipboards
+
+
+;MakeDir RAM:T RAM:Clipboards RAM:ENV RAM:ENV/Sys
+;Copy >NIL: ENVARC: RAM:ENV ALL NOREQ
+
+;Assign >NIL: ENV: RAM:ENV
+Assign >NIL: T: RAM:T
+Assign >NIL: CLIPS: RAM:Clipboards
+Assign >NIL: REXX: DH0:Rexx
+Assign >NIL: PRINTERS: DEVS:Printers
+Assign >NIL: KEYMAPS: DEVS:Keymaps
+Assign >NIL: LOCALE: SYS:Locale
+
+
+IF NOT EXISTS SYS:Fonts
+  Assign FONTS:
+EndIF
+
+BindDrivers
+Mount >NIL: DEVS:DOSDrivers/~(#?.info)
+
+Resident >NIL: C:Execute PURE
+
+IF EXISTS DEVS:Monitors
+  List >NIL: DEVS:Monitors/~(#?.info) TO T:M LFORMAT "DEVS:Monitors/%s"
+  Execute T:M
+  Delete >NIL: T:M
+EndIF
+
+SetEnv Workbench $Workbench
+SetEnv Kickstart $Kickstart
+UnSet Workbench
+UnSet Kickstart
+
+IPrefs
+
+Echo "Amiga Release 2.1.  Kickstart $Kickstart, Workbench $Workbench"
+
+ConClip
+
+Path >NIL: RAM: C: SYS:Utilities SYS:Rexxc SYS:System S: SYS:Prefs SYS:WBStartup SYS:Tools SYS:Tools/Commodities
+
+IF EXISTS S:User-Startup
+  Execute S:User-Startup
+EndIF
+
+Resident Execute REMOVE
+
+LoadWB
+EndCLI >NIL:
+
+-----------------------cut--------------------------------------------
+_________________________________________________________________
+
+ADDENDUM
+
+
+AddMem ver 2.0 by Martin Schlodder (I got from Aminet util/boot)
+
+For 16meg machines:
+
+AddMem $8000000 $8200000 32Bit  
+AddMem $8400000 $9000000 32Bit 
+
+For 32meg machines:
+
+AddMem $8000000 $8200000 32Bit
+AddMem $8400000 $A000000 32Bit
+
+I don't know 4meg and 64meg. You can find out by using Sysinfo or
+ShowConfig and recording the info from there. 
+
+
+	As you can see the PPS 040 break the ram into 3 sections;
+	2meg 24bit, 2meg 32 bit, and the rest in a contiguous section.
+	Ie. for 16 meg you have 12meg contiguous that AdPro can use.
+	(Strange huh? if anyone knows how to get this all in one chunk
+	please let me know.)
+
+---------------------------------------------------------------------------
+The following is a letter from Inet that I got:
+
+[1] Re: Progressive 040 Problem
+Date: 1 Sep 93 18:19:23 EST
+Reply-To: sgberg@charon.bloomington.in.us (Stefan Berg)
+
+In article <todd.1zey@burner.com> todd@burner.com (Todd Saltzman) writes:
+> SB> What exactly is the problem? I too have the PPI040 (28MHz) with
+> SB> practically the same setup you do (except that I got 8MB 16 bit RAM)
+> SB> and have no problem to use it together with GigaMem. You should not
+> SB> and have no problem to use it together with GigaMem. You should not
+> SB> use CPU... use some other program like Set040.
+> 
+> Well, for one thing, GIGAMEM requires version 37.10(37.4 is older than 37.10)
+> or higher of 68040.library.  When I try to install it, INIT040 locks the
+> computer.  Without INIT040 my computer runs at half the speed.
+
+I faxed PPI about this problem and they told me that their software is
+incompatible to the 68040.library v37.10. However you can replace
+Init040 with other programs. There are three functions Init040
+servers:
+
+AddMem - add 32 bit memory to memory list
+
+There are a couple alternatives.  All of them require you to know at
+exactly which address the 32 bit memory is.  To find this out use
+"Init040 AddMem" to add all your 32 bit memory to your system (don't
+use the FastROM option, because it will "steal" 1MB).  Now you can use
+any program like SysInfo, ShowConfig, AIBB, etc...  to find out where
+this 32 bit memory is.  Once you know this you can use a program like
+AddMem to add in the 32 bit memory.  This would be an exact
+duplication of what "Init040 AddMem" does.  I personally prefer to use
+a program like ROMTagMem (I use my own little assembly program) to
+install a program into ChipMem which will add the 32 bit memory before
+the startup-sequence is executed.  This speeds up the computer by a
+few percent, because more system stuff will be put into 32 bit memory.
+
+FastROM - map Kickstart into 32 bit RAM
+
+I found Set040 to be the best replacement.  It not only uses 440KB
+less 32 bit memory, it also has much more options, leading to a faster
+system if correctly optimized.  You need to get the latest version
+(v2.35), because of the NOLOCAL option.  I believe this version is not
+on aminet, if anybody wants it, email me.
+
+FastSys - put supervisor stack in 32 bit memory
+
+Just use "Init040 FastSys" in your startup-sequence. Init040 will not
+crash if only called with this option, even under the newer
+68040.library. However, there should also be other programs which do
+the exact same thing.
+
+In short... Init040 can be replaced by more efficient programs, so you
+should not use it anyway if you want to optimize your computer highly.
+Using GigaMem you don't have a choice anyway.
+
+Stefan
+
+-- 
+,-------------------------------------------------------,
+|Usenet   sgberg@charon.bloomington.in.us Stefan G. Berg|
+|Internet sgberg@ucs.indiana.edu               // AMIGA |
+|Bitnet   sgberg@iubacs   GE Mail  s.berg5   \X/ w/ bms |
+`-------------------------------------------------------'
+
+--------------------------------------------------------------------------
+
+
+	If you have any additions or more info, please email them 
+        to me to include in the FAQ.
+
+		Tim Salazar
+		grover@cyber.net
+

@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<!-- AG2HTML: CONVERTER=AG2HTML/1.1 FORMAT=AMIGAGUIDE/39.2 FILE="V44_Changes.guide" NODE="Drop Zones" TITLE="V44_Changes.guide/Drop Zones" TOC="Workbench" NEXT="AppIcons" PREV="WorkbenchControl()" -->
+<head>
+<title>V44_Changes.guide/Drop Zones</title>
+</head>
+<body text="#000000" bgcolor="#AAAAAA">
+<a href="../V44_Changes_guide/node0002.html"><img src="../images/toc.gif" alt="[Contents]" border=0></a>
+<img src="../images/index_d.gif" alt="[Index]">
+<img src="../images/help_d.gif" alt="[Help]">
+<img src="../images/retrace_d.gif" alt="[Retrace]">
+<a href="../V44_Changes_guide/node0004.html"><img src="../images/prev.gif" alt="[Browse &#060;]" border=0></a>
+<a href="../V44_Changes_guide/node0006.html"><img src="../images/next.gif" alt="[Browse &#062;]" border=0></a>
+<hr>
+<pre>
+<!-- AG2HTML: BODY=START -->
+
+AppWindow icon drop zones
+=========================
+
+Adding drop zones
+-----------------
+
+   Once it is created, Workbench will allow the user to drop an icon
+anywhere inside an <b>AppWindow</b>, regardless of whether the icon was
+dropped on an area designated for dropping icons on or not. With
+<b>AddAppWindowDropZoneA()</b> you can tell Workbench which <b>AppWindow</b> areas
+are suitable for dropping icons on.
+
+Drop zone <b>AppMessage</b>s
+---------------------
+
+   Once an <b>AppWindow</b> has a drop zone installed, Workbench will send a
+new type of <b>AppMessage</b> to your port if icons are dropped on a drop
+zone. Instead of <b>AMTYPE_APPWINDOW</b> type messages you will receive
+<b>AMTYPE_APPWINDOWZONE</b> messages. In fact, you will no longer hear any
+<b>AMTYPE_APPWINDOW</b> type messages since Workbench will allow users to drop
+icons only on drop zones.  Be prepared to handle this.
+
+   Adding a drop zone to an AppWindow does not guarantee that only
+<b>AMTYPE_APPWINDOWZONE</b> type messages will arrive at your message port. In
+fact, the user may be able to drop an icon on the window before the
+first drop zone is installed. Be prepared to handle this.
+
+Drop zones priority
+-------------------
+
+   Workbench checks drop zones in the order in which they were added to
+the <b>AppWindow</b>. Thus, if two zones overlap, the zone that was added
+first will be reported as hit.
+
+   An <b>AppWindow</b> starts out with its entire area available for dropping
+icons on. Thus, you may receive <b>AppMessage</b>s for icons dropped upon your
+<b>AppWindow</b> before you have added the first drop zone to it. Be prepared
+to handle this.
+
+Drop zone hooks
+---------------
+
+   Using the <b>WBDZA_Hook</b> tag, you can set a hook that will be invoked
+whenever the mouse enters or leaves your drop zone area. Your hook will
+be called with the following parameters:
+
+
+     result = hookFunc(hook,reserved,arm)
+       D0               A0     A2     A1
+
+     LONG hookFunc(struct Hook *hook, APTR reserved,
+                   struct AppWindowDropZoneMsg *adzm);
+
+     struct AppWindowDropZoneMsg
+     {
+         struct RastPort * adzm_RastPort;    /* RastPort to render into. */
+         struct IBox       adzm_DropZoneBox; /* Limit your rendering to this area. */
+         ULONG             adzm_ID;          /* \ These come from straight */
+         ULONG             adzm_UserData;    /* / from AddAppWindowDropZoneA(). */
+         LONG              adzm_Action;      /* See below for a list of actions. */
+     };
+
+     #define ADZMACTION_Enter (0)
+     #define ADZMACTION_Leave (1)
+
+
+   The `reserved' parameter will be set to <b>NULL</b>.  For future
+enhancement, make sure that your hook function always returns <b>NULL</b>.
+
+   The drop zone message contents are as follows:
+
+<b>adzm_RastPort</b>
+     A pointer to the <b>RastPort</b> to render into. Typically, this is the
+     <b>RastPort</b> of the window the drop zone is attached to.
+
+<b>adzm_DropZoneBox</b>
+     This member describes the position and size of the drop zone.  The
+     zone is guaranteed to be a valid area, i.e. the Width and Height
+     will both be greater than 0 and the Left/Top will be well within
+     the bounds of the window containing the drop zone.
+
+<b>adzm_ID</b>
+<b>adzm_UserData</b>
+     These two come straight from the values you passed as the `id' and
+     `userData' parameters to <b>AddAppWindowDropZoneA()</b>.
+
+<b>adzm_Action</b>
+     Depending upon whether the mouse has just entered or left the drop
+     zone area, this variable will be set to <b>ADZMACTION_Enter</b> or to
+     <b>ADZMACTION_Leave</b>. Any other values for <b>adzm_Action</b> should be
+     ignored.
+
+   When the mouse enters the drop zone, do your drop zone area
+highlighting. When the mouse leaves the drop zone, remove any
+highlighting done in the previous <b>ADZMACTION_Enter</b> pass.
+
+   Note that the mouse leaving your drop zone box does not imply that
+no icons will be dropped on it. You may still receive a notification
+lateron, telling you that your drop zone had icons dropped on it.  The
+hook function is solely for highlighting and unhighlighting the drop
+zone area.
+
+   A final word of warning: when your hook code is called, you must
+limit your rendering to simple drawing operations from <b>graphics.library</b>;
+if you do anything complex that involves Intuition locking and unlocking
+the display, such as refreshing gadgets or locking <b>IntuitionBase</b>, you
+will deadlock the operating system. You have been warned!
+
+Removing drop zones
+-------------------
+
+   Use <b>RemoveAppWindowDropZone()</b> to remove a drop zone previously added
+with <b>AddAppWindowDropZone()</b>. Due to the asynchronous nature of
+Workbench/user interaction, you may receive <b>AppIcon</b> drop zone messages
+for zones that you have just removed. These messages may arrive in the
+time between your code calling <b>RemoveAppWindowDropZone()</b> and Workbench
+responding to the drop zone removal request. Be prepared to handle
+this. Once a drop zone is removed, it will generate no new <b>AppMessage</b>s.
+
+   Before the <b>AppWindow</b> is removed, all its drop zones will be removed
+first. There is no need for you to call <b>RemoveAppWindowDropZone()</b> for
+every single one.
+<!-- AG2HTML: BODY=END -->
+</pre>
+</body>
+</html>

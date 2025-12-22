@@ -1,0 +1,1444 @@
+@DATABASE "Amiga_MOD_Packers_Described.guide"
+@WIDTH 80
+
+##
+##       Version 1.0 (29/09/97)
+##       written by  Asle
+##
+
+##
+## Contents
+##
+@NODE main "Amiga MOD packers described"
+
+ @{" -- Introduction -- " LINK intro}
+
+ @{" Digital Illusions  " LINK DI}      @{" Hornet Packer      " LINK HRT}      @{" Kris Tracker       " LINK Kris}
+ @{" Module Protector   " LINK ModProt}      @{" Pha Packer         " LINK Pha}      @{" Polka Packer       " LINK Polka}
+ @{" Promizer v1.8a     " LINK PM18a}      @{" ProPacker v2.1     " LINK PP21}      @{" ProPacker v3.0     " LINK PP3}
+ @{" ProRunner v1.0     " LINK PRU1}      @{" ProRunner v2.0     " LINK PRU2}      @{" UNIC Tracker 1     " LINK UNIC}
+ @{" UNIC Tracker 2     " LINK UNIC2}      @{" Wanton Packer      " LINK wanton}      @{" XANN Packer        " LINK XANN}
+
+
+ @{"Thanks" LINK thanks}
+
+ by Sylvain "Asle" Chipaux
+@ENDNODE
+
+##
+## thx
+##
+@NODE thanks "* thanks *"
+
+  Here follows various thanks, Greets and messages to the few people who helped
+ me, in any way. some might be missing ... sorry then :) ... just tell me for
+ the next release.
+
+  Gryzor, for Pro-Wizard, advices and packed MODs.
+  Turbo & Marley, for Exotic Ripper.
+  Buggs, for NoiseConverter.
+  Slight, for beeing a real cool friend :).
+  Xigh, for whatever you want :).
+  and last but not least, Elsa for beeing.
+@ENDNODE
+##
+## intro
+##
+@NODE intro "* Introduction *"
+
+  This guide contains the description of some 'packed' MOD formats. My guess
+ is that nobody is interrested anymore in these descriptions, but I've gathered
+ them all the same :). I think it's always good to know history. Now, it's not
+ that much historical, so I ask for help/advices when it comes to what's already
+ described and/or what will be !.
+  Dont hesitate to send me Packed MODs, Packers and Trackers !. I'll welcome
+ nearly everything.
+
+  Contact me :
+
+   snail mail:  Chipaux Sylvain
+                27 rue Prosper Legoute
+                92160 Antony  France
+
+   E-mail:      asle@warka.com
+                asle@mygale.org
+
+   Tel:         (+33) 01-46-66-93-03
+
+
+  Asle / Lithium / ReDoX
+
+@ENDNODE
+
+##
+## UNIC Tracker 1 format
+##
+@NODE UNIC "* Format UNIC Tracker *"
+
+Unic Tracker format
+Created by Anders E. Hansen (Laxity / Kefrens) 1991-1993
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           14h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 14h          14h        Sample Name                 *
+ 28h           2         finetune (signed word) ...  *
+ 2Ah           2         Sample Size / 2             *
+ 2Ch           1         ?                           *
+ 2Dh           1         Volume (0 - 40h)            *
+ 2Eh           2         Loop Start / 4  (or / 2)    *
+ 30h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+(about this loop start /4 or /2, I cannot tell for sure bcoz I've
+encountered BOTH cases : "Guardian dragon" (/2) & "Guardian dragon II" (/4).
+I guess Laxity did a new version of his tracker in between those two demos :).
+It's not that hard to check if it's /2 or /4 ... somehow, the hardiest was
+to know :).
+
+
+3B6h           1         Number of pattern to play
+3B7h           1         "noisetracker byte" set to $00
+                         
+3B8h         80h         pattern table
+
+438h           4         "M.K."  ID string. Gryzor says this ID is not
+                         always present. I've only two Unic files and
+                         both have this ID. Now, Marley states there
+                         can be the ID "UNIC" instead or even $00-00-00-00.
+43Ch           ?         Pattern datas.
+
+ each pattern takes 300h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000
+ ||\\     /  \\  / \\  /  \\       /
+ ||relative  || effect   effect
+ || note     ||          value
+ ||number    ||
+ ||          //
+ | \\        //
+ |  sample number
+ |
+unused
+
+effect:
+  Just note that pattern break effect command (D**) uses HEX value
+ in UNIC format (while it is DEC values in PTK). Thus, it has to
+ be converted !.
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (UNIC):
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## UNIC Tracker 2 format
+##
+@NODE UNIC2 "* Format UNIC Tracker 2 *"
+
+Unic Tracker 2 format
+Created by Anders E. Hansen (Laxity / Kefrens) 1991-1993
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(VERY similare to UNIC tracker format ... . Who knows, maybe it's
+the very same tracker with but a few minor changes ... . Someone
+knows how to contact Laxity ?)
+
+Offset    size (byte)    Comment
+------    -----------    -------
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+  0h          14h        Sample Name                 *
+ 14h           2         finetune (signed word) ...  *
+ 16h           2         Sample Size / 2             *
+ 18h           1         ?                           *
+ 19h           1         Volume (0 - 40h)            *
+ 1Ah           2         Loop Start / 4  (or / 2)    *
+ 1Ch           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+(about this loop start /4 or /2, I keep it that way knowing there
+were the two possible cases in UNIC format. UNIC2 file I have, have
+all this value /4).
+
+
+3A2h           1         Number of pattern to play
+3A3h           1         "noisetracker byte" set to $00
+                         
+3A4h         80h         pattern table
+
+424h           ?         Pattern datas.
+
+ each pattern takes 300h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000
+ ||\\     /  \\  / \\  /  \\       /
+ ||relative  || effect   effect
+ || note     ||          value
+ ||number    ||
+ ||          //
+ | \\        //
+ |  sample number
+ |
+unused
+
+effect:
+  Just note that pattern break effect command (D**) uses HEX value
+ in UNIC2 format (while it is DEC values in PTK). Thus, it has to
+ be converted !.
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (UNIC / UNIC2):
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+
+##
+## XANN Packer format
+##
+@NODE XANN "* Format XANN Packer *"
+
+XANN Packer format
+Created by XANN / The Silents 1992
+Analysed by Asle / ReDoX (asle@warka.com)
+
+ Heh, XANN, tu ne vas qd meme pas me laisser dans cette
+poisse :). J'espere te voir a la Saturne party V !.
+(amene tes sources :).
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0h         200h        Pattern address table. 128 patterns addresses
+                         which are dword.
+
+200h           6h        ? filled with $00
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 16 bytes description for 1 smp *
+******************************************************
+                                                     *
+206h           1h        ?finetune?                  *
+207h           1h        Volume (0 - 40h)            *
+208h           4h        Loop start address          *
+20Ch           2h        Loop Size / 2               *
+20Eh           4h        Sample Address              *
+212h           2h        Sample Size / 2             *
+214h           2h        ?                           *
+                                                     *
+******************************************************
+
+3F6h          46h        ? filled with $00
+
+43Ch           ?         pattern data
+
+
+ each pattern is 400h bytes with 4 bytes for a note description.
+
+row  1: voice1|voice2|voice3|voice4
+row  2: voive1|voice2|voice3|voice4
+...
+row 64: voive1|voice2|voice3|voice4
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\    /\\ /  \\       /  \\       /  \\       /
+ sample |   relative     effect     effect
+ number |     note                  value
+        |    number
+       unused
+
+effect: all the effects number have changed and here is the list
+$04: $0  (arpeggio)
+$08: $1  (portamento up)
+$0C: $2  (portamento down)
+$10: $3  (tone portamento with FxVal set to 0x00)
+$14: $3  (tone portamento)
+$18: $4  (vibrato with no FxVal)
+$1C: $4  (vibrato)
+$20:   !! never seen ... probably $5 with no FxVal
+$24: $5  (tone portamento + volume slide)
+$28:   !! never seen ... probably $6 with no FxVal
+$2C: $6  (vibrato + volume slide)
+$30:   !! never seen ... probably $7 with no FxVal
+$34:   !! never seen ... probably $7
+$38: $9  (sample offset)
+$3C: $A  (volume slide UP !!!  so effect value is <<4 when converting)
+$40: $A  (volume slide DOWN !!!)
+$44: $B  (position jump)
+$48: $C  (set volume)
+$4C: $D  (pattern break)
+$50: $F  (set speed)
+$54:   !! never seen ... probably $F (set BPM)
+$58: $E with effect value $01  (set filter)
+$5C: $E with effect value |= $10  (fine slide up)
+$60: $E with effect value |= $20  (fine slide down)
+$64:   !! never seen ... probably $E3?
+$68:   !! never seen ... probably $E3*
+$6C:   !! never seen ... probably $E4*
+$70:   !! never seen ... probably $E5*
+$74:   !! never seen ... probably $E60
+$78:   !! never seen ... probably $E6*
+$7C:   !! never seen ... probably $E7*
+$80:   !! never seen ... probably $E90
+$84: $E with effect value |= $90  (retriger)
+$88: $E with effect value |= $A0  (fine volume slide up)
+$8C: $E with effect value |= $B0  (fine volume slide down)
+$94: $E with effect value |= $D0  (note delay)
+$98: $E with effect value |= $E0  (pattern delay)
+$9C:   !! never seen ... probably $EF*
+
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+relative note number (XANN):
+
+C-1 to B-1 : 02,04,06,08,0a,0c,0e,10,12,14,16,18
+C-2 to B-2 : 1a,1c,1e,20,22,24,26,28,2a,2c,2e,30
+C-3 to B-3 : 32,34,36,38,3a,3c,3e,40,42,44,46,48
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## Kris Tracker format
+##
+@NODE Kris "* Format Kris tracker *"
+
+Kris tracker format  (also called ChipTracker by NoiseConverter & Exotic)
+Created by Kris / Anarchy
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           16h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 16h          16h        Sample Name or $01 if no smp*
+ 2Ch           2         Sample Size / 2             *
+ 2Eh           1         Finetune (0 -> F)           *
+ 2Fh           1         Volume (0 - 40h)            *
+ 30h           2         Loop Start                  *
+ 32h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+3B8h           4         "KRIS" id.
+3BCh           1         Number of pattern to play
+3BDh           1         7Fh (set that way for some
+                         OLD NoiseTracker replayers )
+                         NOTE: ProWiz example has this byte set
+                         to 00h ... . My example has 7Fh ... .
+
+3BEh         400h        track table per pattern. each track number is a word.
+                         first track number is 00-00h and IS saved !. In fact,
+                         it is the address of the track ... . Add this value
+                         to $7C0 (starting address of tracks datas) to find the
+                         corresponding track datas.
+7BEh           2         ?? seems to be 00-00h.
+
+7C0h           ?         tracks datas.
+
+
+ each track is 100h bytes with 4 bytes for a note description.
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\       /  \\       /   |   \\  /  \\       /
+  relative   sample     |  effect  effect
+  note       number   unused        value
+  number
+
+BEWARE: if the relative note number is $A8, it means there are
+       no note !.
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (KRIS): (somehow, it could mean than there are more
+                 than 3 octaves supported. Though, I've never
+                 seen KRIS mods with other values )
+
+C-1 to B-1 : 46,48,4a,4c,4e,50,52,54,56,58,5a,5c
+C-2 to B-2 : 5e,60,62,64,66,68,6a,6c,6e,70,72,74
+C-3 to B-3 : 76,78,7a,7c,7e,80,82,84,86,88,8a,8c
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed...
+@ENDNODE
+##
+## Pha Packer format
+##
+@NODE Pha "* Format Pha Packer*"
+
+PhaPacker format (also called ProPacker V1.0 by NoiseConverter & Exotic Ripper)
+                 (also called HanniPacker and/or StrangePlayer)
+Created by Azatoth / Phenomena
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 14 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 0             2         Sample Size / 2             *
+ 2             1         ??                          *
+ 3             1         Volume (0 - 40h)            *
+ 4             2         Loop Start / 2              *
+ 6             2         Loop Size / 2               *
+ 8             4         address of this sample      *
+ 12 ($C)       1         finetune - $b (?seems ok?)  *
+ 13 ($D)       1         ??                          *
+                                                     *
+******************************************************
+
+434 ($1B2)    14         ?!?!?!? Couldn't understand
+                         nothing out of these bytes.
+                         Though, it's fairly safe to
+                         say that there might be the
+                         number of pattern in pattern
+                         list ... . It's possible to
+                         convert without this info, but
+                         it's VERY hard !.
+
+448 ($1C0)    512 ($200) pattern list (128 dword)
+
+ it's a table of pointers which points at the adresses
+of the pattern data in the "PhaPacked" file. So, the
+pattern 0 will be the one starting right after the smp
+data. Beware of the unused patterns when converting !.
+
+
+960 ($3C0)    ??         sample data
+
+ stored the same way as Protracker.
+
+
+??            ??         pattern data
+
+ Stored like protracker .. meaning :
+ row 01: voice 1 | voice 2 | voice 3 | voice 4
+ row 02: voice 1 | voice 2 | voice 3 | voice 4
+ ...
+
+ each voice is 4 bytes (or two bytes .. see below).
+
+Two cases depending of first byte:
+
+ 0000-0000  0000-0000
+ \\       /  \\       /
+   $ff        value
+
+ If the first byte is $ff, then the following byte is
+the number of times the previous value in THIS row will
+be re-used. Well, in fact, it's ($ff-value) number of
+times !.
+ example :
+
+  01-02-0A-0A  00-00-0F-06  02-00-00-37  FF-F5
+  1st four bytes : Sample #1, Note #1, Fx Vol Slide, FxArg $0A.
+  2nd four bytes : no sample, no note, Fx Set Speed, FxArg $06.
+  3rd four bytes : sample #2, no note, no Fx or arpeggio, FxArg $37.
+  4th block : $ff meaning previous block (02-00-00-37) will be repeated
+             FF-F5=0A times IN THE VOICE #3 !!!.
+
+
+
+ 0000-0000  0000-0000  0000-0000  0000-0000
+ ||\\     /  \\       /  |  | \\  /  \\       /
+ ||sample   relative    \\/   Fx    Fx Arg
+ ||number     note    unused
+ ||          number
+ ||
+ description bits, both set to 0 in this case.
+
+relative note number: (ProTracker)
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes : (Pha Packer)
+
+C-1 to B-1 : 02,04,06,08,0a,0c,0e,10,13,15,17,19
+C-2 to B-2 : 1a,1c,1e,20,22,24,26,28,2a,2c,2e,30
+C-3 to B-3 : 32,34,36,38,3a,3c,3e,40,42,44,46,48
+@ENDNODE
+##
+## Wanton Packer format
+##
+@NODE wanton "* Format Wanton Packer*"
+
+Wanton Packer format
+Created by Wanton / Bloodsuckers
+Analysed by Asle / ReDoX (asle@warka.com)
+
+[not so much of an analyze .. mind :) ... it was done in 10 minutes]
+[with the help of ProWizard by Gryzor ! (thx).]
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           14h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 14h          16h        Sample Name                 *
+ 2Ah           2         Sample Size / 2             *
+ 2Ch           1         Finetune (0 -> F)           *
+ 2Dh           1         Volume (0 - 40h)            *
+ 2Eh           2         Loop Start / 2              *
+ 30h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+3B6h           1         Number of pattern to play
+3B7h           1         7Fh (set that way for some
+                         OLD NoiseTracker replayers )
+3B8h         80h         pattern table
+
+438h           3         { 'W','N',0x00 }  ID string
+43Bh           1         real number of pattern (thx Gryzor's ProWiz !)
+43Ch           ?         Pattern datas.
+
+ each pattern takes 400h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\       /  \\       /   |   \\  /  \\       /
+ relative    sample     |  effect  effect
+   note      number   unused       value
+  number     0 -> 1f
+
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (WN):
+
+C-1 to B-1 : 02,04,06,08,0a,0c,0e,10,12,14,16,18
+C-2 to B-2 : 1a,1c,1e,20,22,24,26,28,2a,2c,2e,30
+C-3 to B-3 : 32,34,36,38,3a,3c,3e,40,42,44,46,48
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## Promizer 1.8a format
+##
+@NODE PM18a "* Format Promizer 1.8a *"
+
+Promizer v1.8a format
+Created by MC68000 / TECH (Frank Hœlsmann)
+analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+
+ 0        4456 (1168h)   Replay routine and, certainly, near the end of this
+                         block, some unidentified bytes. Since I could manage
+                         without these to convert, I guess they are not that
+                         very important.
+
+4456          4          Number of bytes to add to get the sample data
+(1168h)                  starting address (so, it's 4460+ "this value").
+                         (SDAV - Sample Data Address Value)
+                         RMQ: This info could be of great value when
+                         ripping, however, I couldn't find any interrest
+                         for converting ... .
+
+4460          4          Size of the pattern data, which starts at address
+(116Ch)                  146Ah. (WPS - Whole Patterns Size)
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 8 bytes description for 1 smp  *
+******************************************************
+                                                     *
+4464 (1170h)   2         Sample Size / 2             *
+4466 (1172h)   1         Finetune (0 -> F)           *
+4467 (1173h)   1         Volume (0 - 40h)            *
+4468 (1174h)   2         Loop Start / 2              *
+4470 (1176h)   2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+4712           2         word. (NOP) Number of pattern *4
+(1268h)
+
+4714          512        pattern table. It's the starting address of each
+(126Ah)                  pattern from $146A. Pattern $00 address, in this
+                         list, will be $00000000.
+
+
+5226          WPS        pattern data. Each pattern is 512 bytes long. Though,
+(146Ah)                  that's the theory because some patterns may NOT be
+                         that long. In fact, you'll have to check if the note
+                         isn't a PATTERN BREAK command or a PATTERN JUMP. If
+                         so, the pattern ends and another begins ... therefore,
+                         its size is less than the 512 'standard bytes'.
+                         Now, whatever the pattern size is, its meaning does
+                         not vary :). In fact, those data are some values which
+                         refer to a "reference table" (description is right
+                         below).
+                         RMQ: first value is 00h.
+
+5226+          ?         the "reference table" which contains the standard
+WPS                      PTK pattern data. Its size is easy to calculate since
+                         it consists of blocks of 4 bytes, knowing that there
+                         are 'n' blocks ('n' is the highest value in the
+                         pattern data).
+
+
+      * Here's a quick description of these four bytes (like ptk ...)
+
+         _____byte 1_____   byte2_    _____byte 3_____   byte4_
+        /                 /        /                 /      
+       0000          0000-00000000  0000          0000-00000000
+ 
+       Upper four    12 bits for    Lower four    Effect command.
+       bits of sam-  note period.   bits of sam-
+       ple number.                  ple number.
+ 
+      Note period table
+       C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+       C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+       C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+      * NOTE: This period table is only valid for samples with a finetune
+       set to 0 !. Promizer 1.8a saves HERE the fintuned values !. So,
+       here follows the lists of the period tables for each tuning, well,
+       not HERE :), but at the end of this file ... .
+ 
+
+
+5226+WPS       4         Four empty bytes ... . Surely they have a very good
+                         reason for beeing here, but, for now, it's beyond
+                         my understanding :(.
+
+ (next come the sample datas. We got two ways to find the starting address.)
+ (we could follow step by step, as described here, but with a lot of       )
+ (calculating ... . Now, there is this long byte in the description that I )
+ (find very useful for the job. I use this way below. So, first there is   )
+ (less calculating, but also, I think it's FAR safer that way !.           )
+
+4460+SDAV      ?         Sample datas. (The address "4460" is not an error ..)
+(116Ch)                  I explain this a bit upward.
+
+
+
+ Follow Sample datas stored like ProTracker.
+Nothing is packed..
+
+
+
+
+---------------------
+ * Period tables for each tuning (extracted from PT-play.s written by
+  Peter "CRAYON" Hanning / Mushroom Studio !). It's the official
+  Protracker V2.1A Playroutine .. .
+
+tuning 0:  (already written above, so check there for this one)
+
+Tuning 1:
+            850,802,757,715,674,637,601,567,535,505,477,450
+            425,401,379,357,337,318,300,284,268,253,239,225
+            213,201,189,179,169,159,150,142,134,126,119,113
+
+Tuning 2:
+            844,796,752,709,670,632,597,563,532,502,474,447
+            422,398,376,355,335,316,298,282,266,251,237,224
+            211,199,188,177,167,158,149,141,133,125,118,112
+
+Tuning 3:
+            838,791,746,704,665,628,592,559,528,498,470,444
+            419,395,373,352,332,314,296,280,264,249,235,222
+            209,198,187,176,166,157,148,140,132,125,118,111
+
+Tuning 4:
+            832,785,741,699,660,623,588,555,524,495,467,441
+            416,392,370,350,330,312,294,278,262,247,233,220
+            208,196,185,175,165,156,147,139,131,124,117,110
+
+Tuning 5:
+            826,779,736,694,655,619,584,551,520,491,463,437
+            413,390,368,347,328,309,292,276,260,245,232,219
+            206,195,184,174,164,155,146,138,130,123,116,109
+
+Tuning 6:
+            820,774,730,689,651,614,580,547,516,487,460,434
+            410,387,365,345,325,307,290,274,258,244,230,217
+            205,193,183,172,163,154,145,137,129,122,115,109
+
+Tuning 7:
+            814,768,725,684,646,610,575,543,513,484,457,431
+            407,384,363,342,323,305,288,272,256,242,228,216
+            204,192,181,171,161,152,144,136,128,121,114,108
+
+Tuning -8:
+            907,856,808,762,720,678,640,604,570,538,508,480
+            453,428,404,381,360,339,320,302,285,269,254,240
+            226,214,202,190,180,170,160,151,143,135,127,120
+
+Tuning -7:
+            900,850,802,757,715,675,636,601,567,535,505,477
+            450,425,401,379,357,337,318,300,284,268,253,238
+            225,212,200,189,179,169,159,150,142,134,126,119
+
+Tuning -6:
+            894,844,796,752,709,670,632,597,563,532,502,474
+            447,422,398,376,355,335,316,298,282,266,251,237
+            223,211,199,188,177,167,158,149,141,133,125,118
+
+Tuning -5:
+            887,838,791,746,704,665,628,592,559,528,498,470
+            444,419,395,373,352,332,314,296,280,264,249,235
+            222,209,198,187,176,166,157,148,140,132,125,118
+
+Tuning -4:
+            881,832,785,741,699,660,623,588,555,524,494,467
+            441,416,392,370,350,330,312,294,278,262,247,233
+            220,208,196,185,175,165,156,147,139,131,123,117
+
+Tuning -3:
+            875,826,779,736,694,655,619,584,551,520,491,463
+            437,413,390,368,347,328,309,292,276,260,245,232
+            219,206,195,184,174,164,155,146,138,130,123,116
+
+Tuning -2:
+            868,820,774,730,689,651,614,580,547,516,487,460
+            434,410,387,365,345,325,307,290,274,258,244,230
+            217,205,193,183,172,163,154,145,137,129,122,115
+
+Tuning -1:
+            862,814,768,725,684,646,610,575,543,513,484,457
+            431,407,384,363,342,323,305,288,272,256,242,228
+            216,203,192,181,171,161,152,144,136,128,121,114
+@ENDNODE
+
+##
+## ProRunner v1
+##
+@NODE PRU1 "* Format ProRunner v1 *"
+
+ProRunner v1 format
+Created by Cosmos / Sanity (1992)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           14h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 14h          16h        Sample Name                 *
+ 2Ah           2         Sample Size / 2             *
+ 2Ch           1         Finetune (0 -> F)           *
+ 2Dh           1         Volume (0 - 40h)            *
+ 2Eh           2         Loop Start / 2              *
+ 30h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+3B6h           1         Number of pattern to play
+3B7h           1         7Fh (set that way for some
+                         OLD NoiseTracker replayers )
+3B8h         80h         pattern table
+
+438h           4         "SNT."  ID string
+43Ch           ?         Pattern datas.
+
+ each pattern takes 400h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\       /  \\       /   |   \\  /  \\       /
+  sample     relative   |  effect  effect
+  number     note     unused       value
+  0 -> 1f    number
+
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (PRUN1):
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## ProRunner v2
+##
+@NODE PRU2 "* Format ProRunner v2 *"
+
+ProRunner v2 format
+Created by Cosmos / Sanity (1992)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           4          ID "SNT!"
+  4           4          pointer to the sample data (thx gryzor :)
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 8 bytes description for 1 smp  *
+******************************************************
+                                                     *
+ 8             2         Sample Size / 2             *
+ Ah            1         Finetune (0 -> F)           *
+ Bh            1         Volume (0 - 40h)            *
+ Ch            2         Loop Start / 2              *
+ Eh            2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+100h           1         Number of pattern to play
+101h           1         NoiseTracker restart byte
+102h          80h        Pattern order table
+182h          100h       ?? are those used in fact ?!?
+                         might be used when playing ...
+282h          80h        pointer table
+
+ pointer table contains 64 pointers ( one word each )
+pointing at the first pattern data. It starts at 0000h
+and goes on adding pattern sizes. As an exemple, if
+pattern 0 is 1024 bytes long and pattern 1 is 1000
+bytes long, first pointer table will be 0000, second
+will be 0400. the rest is filled with 0000h.
+ seems unusable to me ...
+
+302h           ?         pattern data
+
+ we get something like
+
+ pattern 0 :
+ row 0 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 1 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 2 ...
+ row 63| voice 1 | voice 2 | voice 3 | voice 4 |
+ pattern 1 :
+ ...
+
+ the size of each pattern is variable and is between
+100h and 300h bytes. One voice can be 1 or 3 bytes long.
+it depends if bit 7 of first byte is set to 1. If so,
+the size of this voice is 1 byte. It means there's
+nothing at this line. If this bit is set to 0, the size
+of this voice is 3 bytes. so we get :
+
+ 1000 0000
+ |
+ if this bit is set, nothing follows and this is an
+empty note. it meens for PTK four bytes set to 00h.
+ 1100 0000
+  |
+ if both first bits are set to 1, it meens that
+previous note IN THIS ROW will be re-used ... .
+
+if first bit is set to 0, follows the description
+
+  0000 0000  0000 0000  0000 0000
+  ||     ||     | |  |  |       |
+ -| \\   /  \\   /   \\/    \\     /
+| relative sample effect  effect
+|   note   number         value
+|  number
+|------------description bit set to 0
+
+sample number :
+  hard to get by this way of coding :( ... anyway, let's try
+ tro explain it ...
+  first, we agree it's coded on 5 bits.
+   0 0 0 0 0   ( in the order of saving )
+  I name these bit 0, bit 1, bit 2, bit 3 and bit 4 in the
+ same order of saving.
+  in fact, all we got to do, is to rol the whole five bits
+ by one on the left.
+  exemples :
+   10000 will become 00001   (sample 1)
+   01010 will become 10100   (sample 20)
+   00010 will become 00100   (sample 4)
+   etc...
+
+relative note number: (ProTracker)
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes : (ProRunner v2)
+
+C-1 to B-1 : 01,03,05,07,09,0b,0d,0f,11,13,15,17
+C-2 to B-2 : 19,1b,1d,1f,21,23,25,27,29,2b,2d,2f
+C-3 to B-3 : 31,33,35,37,39,3b,3d,3f,41,43,45,47
+
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## ProPacker 2.1 format
+##
+@NODE PP21 "* Format ProPacker v2.1 *"
+
+ProPacker v2.1
+Created by C Estrup / Static Bytes (1991)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(All right, writing my name like that means that if there's)
+(something wrong in this file, it is MY fault ... that way,)
+(you know where to send flames if needed ... .)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+
+      **************************************
+      * the following is repeated 31 times *
+      * with 8 bytes description for 1 smp *
+******************************************************
+                                                     *
+  0 (00h)      2         Sample Size / 2             *
+  2 (02h)      1         Finetune (0 -> F)           *
+  3 (03h)      1         Volume (0 - 40h)            *
+  4 (04h)      2         Loop Start / 2              *
+  6 (06h)      2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+
+248 (F8h)      1         (NOP) Number of pattern to play
+249 (F9h)      1         "NoiseTracker" byte (set to 7Fh)
+250 (FAh)   512 (200h)   Tracks table. In fact, it's four (4) tables of
+                         128 (80h) bytes each, where 128 is the number
+                         of pattern position. So, it's four tables for
+                         the four voices. These tables contain the numbers
+                         of tracks for each voice. (1st value is 0)
+
+762 (2FAh)  128*NOP      Tracks "data". It's 64 values (2 bytes each) which
+                         refer to the following table. (1st value is 0)
+
+762+
+(128*NOP)      4         (SIZ) Size of the "reference table".
+
+763+
+(128*NOP)
++4            SIZ        "Reference table". Hard to find a name in fact :(.
+                         Well, this table contains the real tracks data. It's
+                         filled with the standard ptk four bytes description
+                         for one note. As an example, let's suppose the Track
+                         "data" value is 00-01, then, its real value will be
+                         the second block of four bytes in this table.
+                         A quick calculation shows that it can be very
+                         expensive because there's around 4,5 million
+                         possibilities ... (36*31*16*256).
+
+      * Here's a quick description of these four bytes (like ptk ...)
+
+         _____byte 1_____   byte2_    _____byte 3_____   byte4_
+        /                 /        /                 /      
+       0000          0000-00000000  0000          0000-00000000
+ 
+       Upper four    12 bits for    Lower four    Effect command.
+       bits of sam-  note period.   bits of sam-
+       ple number.                  ple number.
+ 
+      Note period table
+       C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+       C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+       C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+ 
+
+
+ Follow Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## ProPacker v3.0 format
+##
+@NODE PP3 "* Format ProPacker v3.0 *"
+
+ProPacker v3.0
+Created by C Estrup / Static Bytes (1994)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(All right, writing my name like that means that if there's)
+(something wrong in this file, it is MY fault ... that way,)
+(you know where to send flames if needed ... .)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+
+      **************************************
+      * the following is repeated 31 times *
+      * with 8 bytes description for 1 smp *
+******************************************************
+                                                     *
+  0 (00h)      2         Sample Size / 2             *
+  2 (02h)      1         Finetune (0 -> F)           *
+  3 (03h)      1         Volume (0 - 40h)            *
+  4 (04h)      2         Loop Start / 2              *
+  6 (06h)      2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+
+248 (F8h)      1         (NOP) Number of pattern to play
+249 (F9h)      1         "NoiseTracker" byte (set to 7Fh)
+250 (FAh)   512 (200h)   Tracks table. In fact, it's four (4) tables of
+                         128 (80h) bytes each, where 128 is the number
+                         of pattern position. So, it's four tables for
+                         the four voices. These tables contain the numbers
+                         of tracks for each voice. (1st value is 0)
+
+762 (2FAh)  128*NOP      Tracks "data". It's 64 values (1 word each) which
+                         refer to the following table. (1st value is 0).
+                         Beware coz each value is *4 !.
+
+762+
+(128*NOP)      4         (SIZ) Size of the "reference table".
+
+763+
+(128*NOP)
++4            SIZ        "Reference table". Hard to find a name in fact :(.
+                         Well, this table contains the real tracks data. It's
+                         filled with the standard ptk four bytes description
+                         for one note. As an example, let's suppose the Track
+                         "data" value is 00-01, then, its real value will be
+                         the second block of four bytes in this table.
+                         A quick calculation shows that it can be very
+                         expensive because there's around 4,5 million
+                         possibilities ... (36*31*16*256).
+
+      * Here's a quick description of these four bytes (like ptk ...)
+
+         _____byte 1_____   byte2_    _____byte 3_____   byte4_
+        /                 /        /                 /      
+       0000          0000-00000000  0000          0000-00000000
+ 
+       Upper four    12 bits for    Lower four    Effect command.
+       bits of sam-  note period.   bits of sam-
+       ple number.                  ple number.
+ 
+      Note period table
+       C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+       C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+       C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+ 
+
+ Follow Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+
+##
+## Digital Illusions format
+##
+@NODE DI "* Format Digital Illusions *"
+
+Digital Illusion format
+Created by TSL (the Silents) for Digital Illusion (1991)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(All right, writing my name like that means that if there's)
+(something wrong in this file, it is MY fault ... that way,)
+(you know where to send flames if needed ... .)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           2          Number of sample [NOS]
+  2           4          Address of pattern table (in the file !) [1]
+  6           4          Address of pattern data (in the file !)  [2]
+ 10 (Ah)      4          Adresss of sample data (in the file !)
+
+      ***************************************
+      * the following is repeated NOS times *
+      * with 8 bytes description for 1 smp  *
+******************************************************
+                                                     *
+ 14 (Eh)       2         Sample Size / 2             *
+ 16 (10h)      1         Finetune (0 -> F)           *
+ 17 (11h)      1         Volume (0 - 40h)            *
+ 18 (12h)      2         Loop Start / 2              *
+ 20 (14h)      2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+10+NOS*8     NOP*2       pointer table on pattern
+                         NOP = Number of pattern (REAL!!!)
+                         (this is a table containing the addresses)
+                         (IN THE FILE of each pattern data)
+                         (several ways to get its size ...)
+                         ( -> read 'til you reach the Address of)
+                         (   the pattern table)
+                         ( -> read all through pattern table and)
+                         (   get the highest pattern to play, then)
+                         (   read this number of word ... safer !)
+
+[1]           NOP        Pattern order table
+[1]+NOP        1         $FF (terminates pattern order table)
+[2]           ???        pattern data ...
+
+
+ we get something like that
+
+ pattern 0 :
+ row 0 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 1 | voice 1 | voice 2 | voice 3 | voice 4 |
+ row 2 ...
+ row 63| voice 1 | voice 2 | voice 3 | voice 4 |
+ pattern 1 :
+ ...
+
+ the size of each pattern is variable. it can be between 256 (100h)
+and 768 (300h)
+
+ if bit 7 of first byte is set to 1 : two cases
+
+*first case
+
+  0000 0000  0000 0000  0000 0000
+  ||    ||      | |  |  |       |
+ -| \\  /  \\    /   \\/    \\     /
+|  sample relativ effect  effect
+|  number  note           value
+|         number
+|------------description bit set to 1
+
+*second case
+
+  0000 0000  all bits are set to 1 ($ff) then it's an empty voice
+  |          meaning for Ptk 4 empty bytes.
+  |
+  |------------description bit set to 1
+
+ if bit 7 of first byte is set to 0 : one case
+
+  0000 0000  0000 0000
+  ||    ||      | |  |
+ -| \\  /  \\    /   \\/
+|  sample relativ  effect
+|  number  note
+|         number
+|------------description bit set to 0
+
+
+relative note number: (ProTracker)
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes : (Digital Illusion)
+
+C-1 to B-1 : 01,02,03,04,05,06,07,08,09,0a,0b,0c
+C-2 to B-2 : 0d,0e,0f,10,11,12,13,14,15,16,17,18
+C-3 to B-3 : 19,1a,1b,1c,1d,1e,1f,20,21,22,23,24
+
+
+
+ Follows Sample datas stored like ProTracker.
+@ENDNODE
+
+##
+## Module Protector format
+##
+@NODE ModProt "* Format Module Protector *"
+
+Module Protector format
+Created by Matrix / LSD (David Counter 1992)
+Analysed by Asle / ReDoX (asle@warka.com)
+
+(All right, writing my name like that means that if there's)
+(something wrong in this file, it is MY fault ... that way,)
+(you know where to send flames if needed ... .)
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+
+NOTE: Gryzor states there can be an ID at the beginning
+     of a Module Protector packed file. Now, in the small
+     exemple written in Pro-Wizard doc, there IS a 'TRK1'
+     ID in the header and all the description below is
+     starting right after ... just add 4 bytes at each
+     offset if the ID is there :). (Hi nicolas)
+
+      **************************************
+      * the following is repeated 31 times *
+      * with 8 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 0             2         Sample Size / 2             *
+ 2             1         Finetune (0 -> F)           *
+ 3             1         Volume (0 - 40h)            *
+ 4             2         Loop Start / 2              *
+ 6             2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+248 ($F8)      1         Size of pattern table
+249 ($F9)      1         NoiseTracker restart byte ($7F)
+250 ($FA)   128 ($80)    Pattern table
+378 ($17A)     ?         Pattern datas
+                          (Pattern datas are stored like Ptk)
+                          (one pattern is 1024 ($400) bytes).
+
+
+ Follow the Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+##
+## Polka Packer format
+##
+@NODE Polka "* Format Polka Packer *"
+
+Polka Packer format (also called Polka Runner by NoiseConverter ...)
+Created by ??? / Polka Brothers '94
+Analysed by Asle / ReDoX (asle@warka.com)
+
+[not so much of an analyze .. mind :) ... it was done in 1 minute]
+[with the help of ProWizard by Gryzor of course :)]
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           14h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 14h          12h        Sample Name                 *
+ 26h           4         Sample adress (memory)      *
+ 2Ah           2         Sample Size / 2             *
+ 2Ch           1         Finetune (0 -> F)           *
+ 2Dh           1         Volume (0 - 40h)            *
+ 2Eh           2         Loop Start / 2              *
+ 30h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+3B6h           1         Number of pattern to play
+3B7h           1         7Fh (set that way for some
+                         OLD NoiseTracker replayers )
+3B8h         80h         pattern table
+
+438h           3         "PWR."  ID string
+43Ch           ?         Pattern datas.
+
+ each pattern takes 400h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\       /  \\       /   |   \\  /  \\       /
+ relative    sample     |  effect  effect
+   note      number   unused       value
+  number     0 -> 1f
+
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (POLK):
+
+C-1 to B-1 : 02,04,06,08,0a,0c,0e,10,12,14,16,18
+C-2 to B-2 : 1a,1c,1e,20,22,24,26,28,2a,2c,2e,30
+C-3 to B-3 : 32,34,36,38,3a,3c,3e,40,42,44,46,48
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE
+
+
+
+##
+## Hornet Packer format
+##
+@NODE HRT "* Format Hornet Packer *"
+
+Hornet Packer format
+Created by Hornet / Alcatraz
+Analysed by Asle / ReDoX (asle@warka.com)
+
+[not so much of an analyze .. mind :) ... it was done in 1 minute]
+[with the help of ProWizard by Gryzor of course :)]
+
+
+Offset    size (byte)    Comment
+------    -----------    -------
+  0           14h        Title
+
+      ***************************************
+      * the following is repeated 31 times  *
+      * with 30 bytes description for 1 smp *
+******************************************************
+                                                     *
+ 14h          12h        Sample Name                 *
+ 26h           4         Sample adress (memory)      *
+ 2Ah           2         Sample Size / 2             *
+ 2Ch           1         Finetune (0 -> F)           *
+ 2Dh           1         Volume (0 - 40h)            *
+ 2Eh           2         Loop Start / 2              *
+ 30h           2         Loop Size / 2               *
+                                                     *
+******************************************************
+
+3B6h           1         Number of pattern to play
+3B7h           1         7Fh (set that way for some
+                         OLD NoiseTracker replayers )
+3B8h         80h         pattern table
+
+438h           3         "HNT!"  ID string
+43Ch           ?         Pattern datas.
+
+ each pattern takes 400h bytes
+ row 00 | channel 1 | channel 2 | channel 3 | channel 4 |
+ row 01 | channel 1 | channel 2 | channel 3 | channel 4 |
+  ...
+ row 63 | channel 1 | channel 2 | channel 3 | channel 4 |
+
+ each channel is coded that way :
+
+ 0000 0000  0000 0000  0000 0000  0000 0000
+ \\       /  \\       /   |   \\  /  \\       /
+  sample     relative   |  effect  effect
+  number      note    unused       value
+   *2 !      number
+
+
+relative note number (PTK):
+
+C-1 to B-1 : 856,808,762,720,678,640,604,570,538,508,480,453
+C-2 to B-2 : 428,404,381,360,339,320,302,285,269,254,240,226
+C-3 to B-3 : 214,202,190,180,170,160,151,143,135,127,120,113
+
+becomes (HNT):
+
+C-1 to B-1 : 02,04,06,08,0a,0c,0e,10,12,14,16,18
+C-2 to B-2 : 1a,1c,1e,20,22,24,26,28,2a,2c,2e,30
+C-3 to B-3 : 32,34,36,38,3a,3c,3e,40,42,44,46,48
+
+
+ Follows Sample datas stored like ProTracker.
+Nothing is packed..
+@ENDNODE

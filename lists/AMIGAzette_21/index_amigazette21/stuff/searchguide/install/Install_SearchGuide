@@ -1,0 +1,174 @@
+; $VER: Install_SearchGuide 0.8.2.1 (30.11.96) by Gérard Cornu ;-)
+
+;-- Language specific string definitions --------------------------------------
+
+; ENGLISH -----------------------------
+(procedure P_english (
+    (set #MSG_DESTINATION (cat "Where would you like SearchGuide to be installed?\n"
+                          "(It is recommanded to put it in your \"C:\" directory, otherwise"
+                          " you'll have to put the full path in your \"Search\" button's links).\n"
+                          "(NO drawer will be created)"))
+    (set #MSG_COPYING "Going to copy %s to %s.")
+    (set #MSG_WHATCATS "Select the language(s) you want to have Catalog files for:")
+    (set #MSG_WHATDOC "Install the documentation in AmigaGuide\nformat for this language:")
+    (set #MSG_NONE "none")
+    (set #MSG_WHEREDOC "Where shall I put the documentation?")
+    (set #MSG_OVERWRITE "\n\n\n\n\n%s already exists.\nOverwrite?")
+    (set #MSG_YES "Yes")
+    (set #MSG_NO "No")
+    (set #MSG_THANKS "\n\nThanks for installing %s.")
+    (set #catalogs %000)
+))
+
+; FRANÇAIS ----------------------------
+; Translation by Gérard Cornu ;-)
+(procedure P_français (
+    (set #MSG_DESTINATION (cat "Où désirez-vous installer SearchGuide?\n"
+                               "(Il est recommandé de sélectionner le répertoire \"C:\", sinon"
+                               " il vous faudra indiquer le chemin complet dans vos liens de boutons"
+                               " de recherche).\n"
+                               "(AUCUN tiroir ne sera créé)"))
+    (set #MSG_COPYING "Prêt â copier %s vers %s.")
+    (set #MSG_WHATCATS "Selectionnez le(s) langage(s) pour lesquels vous désirez des fichiers catalogues:")
+    (set #MSG_WHATDOC "Installation de la documentation au format\nAmigaGuide pour ce langage:")
+    (set #MSG_NONE "aucun")
+    (set #MSG_WHEREDOC "Où dois-je mettre la documentation?")
+    (set #MSG_OVERWRITE "\n\n\n\n\n%s existe déjà.\nDois-je l'écraser?")
+    (set #MSG_YES "Oui")
+    (set #MSG_NO "Non")
+    (set #MSG_THANKS "\n\nMerci d'avoir installé %s.")
+    (set #catalogs %0000010)
+))
+;------------------------------------------------------------------------------
+
+(if (= @language "english")  (P_english))
+(if (= @language "français") (P_français))
+(if (= @user-level 0) (set #catalogs %1111111))
+
+(set #docdir "HELP:")
+
+(set #destination
+   (askdir
+      (prompt #MSG_DESTINATION)
+      (help @askdir-help)
+      (default "C:")
+   )
+)
+
+(set @default-dest #destination)
+
+(copyfiles  (prompt (#MSG_COPYING "SearchGuide" @default-dest))
+            (help @copyfiles-help)
+            (source "/SearchGuide")
+            (dest @default-dest)
+            (nogauge)
+)
+
+(set #installed 1)
+
+(if (exists "LOCALE:" (noreq))
+    (
+        (set #catalogs
+            (askoptions (prompt #MSG_WHATCATS)
+                        (help @askoptions-help)
+                        (choices "deutsch" "français" "italiano" "nederlands" "norwegian" "polish" "swedish" "español")
+                        (default #catalogs))
+        )
+        (if (BITAND #catalogs %00000010)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/français/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/français")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+        (if (BITAND #catalogs %00000001)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/deutsch/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/deutsch")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+        (if (BITAND #catalogs %00000100)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/italiano/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/italiano")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+        (if (BITAND #catalogs %00001000)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/nederlands/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/nederlands")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+        (if (BITAND #catalogs %00010000)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/norsk/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/norsk")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+›       (if (BITAND #catalogs %00100000)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/polski/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/polski")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+›       (if (BITAND #catalogs %01000000)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/svenska/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/svenska")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+›       (if (BITAND #catalogs %10000000)
+            (copyfiles  (help @copyfiles-help)
+                        (source "/Catalogs/español/SearchGuide.catalog")
+                        (dest "LOCALE:Catalogs/español")
+                        (nogauge)
+                        (optional "nofail"))
+        )
+    
+    )
+)
+
+
+(set #docdir
+   (askdir (prompt #MSG_WHEREDOC)
+           (help @askdir-help)
+           (default #docdir)
+   )
+)
+
+(copyfiles  (help @copyfiles-help)
+            (source "/SearchGuide.Guide")
+            (dest #docdir)
+            (newname "SearchGuide.guide")
+            (infos)
+            (optional "nofail")
+            (nogauge)
+)
+
+; Choose default tool for guide, depending on user's OS version
+(set #osversion  (/ (getversion) 65536))
+(if (>= #osversion 39)
+   (set #reader "MultiView") 
+   (set #reader "AmigaGuide")
+)
+
+(if (exists (tackon #docdir "SearchGuide.guide.info") (noreq))
+    (
+        (tooltype   (dest (tackon #docdir "SearchGuide.guide"))
+                    (noposition) (setdefaulttool #reader))
+         
+    )
+)
+
+(if (= 1 #installed)
+   (exit (#MSG_THANKS @app-name))
+   (exit (quiet))
+)
+
+

@@ -1,0 +1,2562 @@
+                                  Chapter 3
+
+                              PLAYFIELD HARDWARE
+
+
+INTRODUCTION
+The screen display consists of two basic parts, playfields, which are
+sometimes called backgrounds, and sprites, which are easily movable graphics
+objects. This chapter describes how to directly access hardware registers to
+form playfields.
+
+                          - Playfield Hardware 33 -
+
+
+                              ABOUT THIS CHAPTER
+
+This chapter begins with a brief overview of playfield features,
+including definitions of some fundamental terms, and continues with the
+following major topics:
+
+o Forming a single "basic" playfield, which is a playfield the same size
+as the display screen. This section includes concepts that are fundamental
+to forming any playfield.
+
+o Forming a dual-playfield display in which one playfield is superimposed
+upon another. This procedure differs from that of forming a basic
+playfield in some details.
+
+o Forming playfields of various sizes and displaying only part of a larger
+playfield.
+
+o Moving playfields by scrolling them vertically and horizontally.
+
+o Advanced topics to help you use playfields in special situations.
+
+For information about movable sprite objects, see Chapter 4, "Sprite
+Hardware." There are also movable playfield objects, which are
+subsections of a playfield. To move portions of a playfield, you use a
+technique called playfield animation, which is described in Chapter 6,
+"Blitter Hardware".
+
+PLAYFIELD FEATURES
+The Amiga produces its video displays with raster display techniques. The
+picture you see on the screen is made up of a series of horizontal video
+lines displayed one after the other. Each horizontal  video line is made up
+of a series of pixels. You create a graphic display by defining one or more
+bit-planes in memory and filling them with "1"s and "0"s The combination of
+the "1"s and "0"s will determine the colors in your display.
+
+Each line represents one sweep of an electron beam which is "painting"
+the picture as it goes along.
+
+        ________________________________________
+  |    |                                        |
+  |    |  --->----->----->----->----->---->---  |
+  |    |  ____________________________________  |
+  |    |  ____________________________________  |
+  |    |  ____________________________________  |
+  |    |            __________________          |
+  |    |            __________________          |
+  |    |                                        |
+  |    |              VIDEO PICTURE             |
+  |    |            __________________          |
+  |    |            __________________          |
+  |    |  ____________________________________  |
+  |    |  ____________________________________  |
+  |    |  _____________________________________ |
+  |    |  ____________________________________  |
+ \ /   |________________________________________|
+
+
+         FIGURE 3-1:  How the Video display picture is produced
+
+
+      VIDEO PICTURE    The video beam produces each line by sweeping
+                       from left to right. It produces the full screen by
+                       sweeping the beam from the top to the bottom,
+                       one line at a time.
+
+                        - 34 Playfield Hardware -
+
+
+The video beam produces about 262 video lines from top to bottom, of
+which 200 normally are visible on the screen with an NTSC system. With a
+PAL system, the beam produces 312 lines, of which 256 are normally
+visible. Each complete set of lines (262/NTSC or 312/PAL) is called a
+display field. The field time, i.e. the time required for a complete
+display field to be produced, is approximately 1/60th of a second for an
+NTSC system and approximately 1/50th of a second for PAL. Between display
+fields, the video beam traverses the lines that are not visible on the
+screen and returns to the top of the screen to produce another display
+field.
+
+The display area is defined as a grid of pixels. A pixel is a single
+picture element, the smallest addressable part of a screen display. The
+drawings below show what a pixel is and how pixels form displays.
+
+   _______________________
+  |       _               |
+  |      |_| <----------------------- The picture is formed from many
+  |               _       |           elements.  Each element is called
+  |             _|_|_     |           a pixel.
+  |            |_|_|_|    |
+  |            |_|_|_| <------------- Pixels are used together to build
+  |_______________________|           larger graphic objects.
+
+   ___________________________     ____________________________
+  |                           |   |                            |
+  |                           |   |                            |
+  | <------ 320 pixels -----> |   | <------ 640 pixels ------> |
+  |                           |   |                            |
+  |                           |   |                            |
+  |                           |   |                            |
+  |                           |   |                            |
+  |___________________________|   |____________________________|
+
+  In normal resolution mode,      In high resolution mode,
+  320 pixels fill a horozontal    640 pixels fill a horozontal
+  line.                           line.
+
+
+                      FIGURE 3-2: What Is a Pixel?
+
+
+The Amiga offers a choice in both horizontal and vertical resolutions.
+Horizontal resolution can be adjusted to operate in low resolution or
+high resolution mode. Vertical resolution can be adjusted to operate in
+interlaced or non-interlaced mode.
+
+                        - Playfield Hardware 35 -
+
+
+o In low-resolution mode, the normal playfield has a width of 320 pixels.
+
+o High-resolution mode gives finer horizontal resolution 640 pixels in the
+same physical display area.
+
+o In non-interlaced mode, the normal NTSC playfield has a height of 200
+video lines. The normal mal PAL screen has a height of 256 video lines.
+
+o Interlaced mode gives finer vertical resolution 400 lines in the same
+physical display area in NTSC and 512 for PAL.
+
+These modes can be combined, so you can have, for instance, an
+interlaced, high-resolution display.
+
+Note that the dimensions referred to as "normal" in the previous
+paragraph are nominal dimensions  and represent the normal values you
+should expect to use. Actually, you can display larger playfields; the
+maximum dimensions are given in the section called "Bit-Planes and
+Playfields of All Sizes." Also, the dimensions of the playfield in memory
+are often larger than the playfield displayed on the screen. You choose
+which part of this larger memory picture to display by specifying a
+different size for the display window.
+
+A playfield taller than the screen can be scrolled, or moved smoothly, up
+or down. A playfield wider than the screen can be scrolled horizontally,
+from left to right or right to left. Scrolling is described in the
+section called "Moving (Scrolling) Playfields."
+
+In the Amiga graphics system, you can have up to thirty-two different
+colors in a single playfield, using normal display methods. You can
+control the color of each individual pixel in the playfield display by
+setting the bit or bits that control each pixel. A display formed in this
+way is called a bit-mapped display.
+
+For instance, in a two-color display, the color of each pixel is
+determined by whether a single bit is on or off. If the bit is 0, the
+pixel is one user-defined color, if the bit is 1, the pixel is another
+color. For a four-color display, you build two bit-planes in memory. When
+the playfield is displayed, the two bit-planes are overlapped, which
+means that each pixel is now two bits deep. You can combine up to five
+bit-planes in this way. Displays made up of three, four, or five bit-
+planes allow a choice of eight, sixteen, or thirty-two colors,
+respectively.
+
+The color of a pixel is always determined by the binary combination of
+the bits that define it. When the system combines bit-planes for display,
+the combination of bits formed for each pixel corresponds to the number
+of a color register. This method of coloring pixels is called color
+indirection. The Amiga has thirty-two color registers, each containing
+bits defining a user selected color (from a total of 4,096 possible
+colors).
+
+Figure 3-3 shows how the combination of up to five bit-planes forms a
+code that selects which one of the thirty-two registers to use to display
+the color of a playfield pixel.
+
+                        - 36 Playfield Hardware -
+
+   _______________________________
+  |      _
+  |     |_|  Bit plane 5
+  |   ____________________________          __
+  |  |     _                               |0 |_     --------
+  |  |    |_|  Bit plane 4                 |_|0 |_          |
+  |  |   _________________________           |_|1 |_        \__ See below
+  |  |  |    _                                 |_|1 |_      /
+  |  |  |   |_|  Bit plane 3                     |_|1 |     |
+  |  |  |   ______________________                 |__| -----
+     |  |  |   _
+     |  |  |  |_|  Bit plane 2
+     |  |  |   ___________________
+        |  |  |  _
+        |  |  | |_|  Bit plane 1
+        |  |  |
+           |  |  ^
+           |  |  |
+              |  |
+              |  \-------------- One pixel
+
+
+     Bits from
+     planes
+     5,4,3,2,1
+                 Color Registers
+              _______________________
+             |                       |
+      00000  |                       |
+             |_______________________|
+             |                       |
+      00001  |                       |
+             |_______________________|
+             |                       |
+      00010  |                       |
+             |_______________________|
+             |                       |
+      00011  |                       |
+             |_______________________|
+             |                       |
+      00100  |                       |
+             |_______________________|
+             |                       |
+      -----  |           |           |
+             |           |           |
+             |           |           |
+      -----  |           |           |
+             |           |           |
+             |           |           |
+      -----  |          \|/          |
+             |_______________________|
+             |                       |
+      11000  |                       |
+             |_______________________|
+             |                       |
+      11001  |                       |
+             |_______________________|
+             |                       |
+      11010  |                       |
+             |_______________________|
+             |                       |
+      11011  |                       |
+             |_______________________|
+             |                       |
+      11100  |                       |
+             |_______________________|
+             |                       |
+      11101  |                       |
+             |_______________________|
+             |                       |
+      11110  |                       |
+             |_______________________|
+             |                       |
+      11111  |                       |
+             |_______________________|
+
+
+                FIGURE 3-3: How Bit-planes Select a Color
+
+
+Values in the highest numbered bit-plane have the highest significance in
+the binary number. As shown in Figure 3-4, the value in each pixel in the
+highest-numbered bit-plane forms the leftmost digit of the number. The
+value in the next highest-numbered bit-plane forms the next bit, and so
+on.
+
+                        - Playfield Hardware 37 -
+
+
+Sample data for 4 pixels
+
+   a   b   c   d
+
+   1   1   0   0             Data in Bit-Plane 5 Most Significant
+   1   0   1   0             Data in Bit-Plane 4
+   1   0   0   1             Data in Bit-Plane 3
+   0   1   1   1             Data in Bit-Plane 2
+   0   0   1   0             Data in Bit-Plane 1 Least Significan
+
+   a  Value 6  COLOR6
+   b  Value 11 COLOR11
+   c  Value 18 COLOR18
+   d  Value 28 COLOR28
+
+        FIGURE 34: Significance of Bit-Plane Data in Selecting Colors
+
+
+You also have the choice of defining two separate playfields, each formed
+from up to three bit planes. Each of the two playfields uses a separate
+set of eight different colors. This is called dual-playfeld mode.
+
+FORMING A BASIC PLAYFIELD
+
+To get you started, this section describes how to directly access
+hardware registers to form a single basic playfield that is the same
+size as the video screen. Here, "same size" means that the playfield is
+the same size as the actual display window. This will leave a small
+border between the playfield and the edge of the video screen. The
+playfield usually does not extend all the way to the edge of the physical
+display.
+
+To form a playfield, you need to define these characteristics:
+
+o Height and width of the playfield and size of the display window (that
+is, how much of the playfield actually appears on the screen).
+
+o Color of each pixel in the playfield.
+
+o Horizontal resolution.
+
+                          - 38 Playfield Hardware -
+
+
+o Vertical resolution, or interlacing.
+
+o Data fetch and modulo, which tell the system how much data to put on a
+horizontal line and how to fetch data from memory to the screen.
+
+In addition, you need to allocate memory to store the playfield, set
+pointers to tell the system where to find the data in memory, and
+(optionally) write a Copper routine to handle redisplay of the playfield.
+
+HEIGHT AND WIDTH OF THE PLAYFIELD
+To create playfield that is the same size as the screen, you can use a
+width of either 320 pixels or 640 pixels, depending upon the resolution
+you choose. The height is either 200 or 400 lines for NTSC, 256 or 512
+lines for PAL, depending upon whether or not you choose interlaced mode.
+
+BIT-PLANES AND COLOR
+You define playfield color by:
+
+1. Deciding how many colors you need and how you want to color each pixel.
+
+2. Loading the colors into the color registers.
+
+3. Allocating memory for the number of bit-planes you need and setting a
+pointer to each bit-plane.
+
+4. Writing instructions to place a value in each bit in the bit-planes to
+give you the correct color.
+
+Table 3-1 shows how many bit-planes to use for the color selection you need.
+
+
+                   Number of  Number of
+                    Colors    Bit-Planes
+
+                     1- 2         1
+                     3- 4         2
+                     5- 8         3
+                     9-16         4
+                    17-32         5
+
+                  TABLE 3-1: Colours in a single playfield.
+
+                          - Playfield Hardware 39 -
+
+
+THE COLOR TABLE
+The color table contains 32 registers, and you may load a different color
+into each of the registers. Here is a condensed view of the contents of the
+color table:
+
+     TABLE 3-2: Portion of the Color Table
+
+    Register Name  Contents          Meaning
+
+       COLOR00     12 bits   User-defined color for The
+                             background area and borders.
+
+       COLOR01     12 bits   User-defined color number 1
+                             (For example, the alternate color
+                             selection for a two-color playfield).
+
+       COLOR02     12 bits   User-defined color number 2.
+
+       etc
+
+       etc
+
+       COLOR31     12 bits   User-defined color number 31.
+
+COLOR00 is always reserved for the background color. The background color
+shows in any area on the display where there is no other object present
+and is also displayed outside the defined display window, in the border
+area.
+
+NOTE
+If you arc using the optional genlock board for video input from a camera,
+VCR, or laser disk, the background color will be replaced by the incoming
+video display.
+
+Twelve bits of color selection allow you to define, for each of the 32
+registers, one of 4,096 possible  colors, as shown in Table 3-3.
+
+                          - 40 Playfield Hardware -
+
+
+ÿÿ       Table 3-3: Contents of the Color Registers
+
+           Bits
+
+     Bits 15 -12 Unused
+     Bits 11 - 8 Red
+     Bits  7 - 4 Green
+     Bits  3 - 0 Blue
+
+ÿTable 3-4 shows some sample color register bit assignments and the
+resulting colors. At the end of the chapter is a more extensive list.
+
+
+       Table 3-4: Sample Color Register Contents
+
+    Contents of the             Resulting
+    Color Register                Color
+
+        $fff                      White
+        $6fe                      Sky blue
+        $db9                      Tan
+        $000                      Blackÿ
+
+ÿSome sample instructions for loading color registers are shown below:
+
+    LEA    CUSTOM,a0               ; Get base address of custom hardware...
+    MOVE.W #$FFF,COLOR00(a0)       ; Load white into color register 0
+    MOVE.W #$6FE,COLOR01(a0)       ; Load sky blue into color register 1
+
+ÿNOTE
+ÿThe color registers are write-only. Only by looking at the screen can you
+find out the contents of each color register. As a standard practice, then,
+for these and certain other write-only registers, you may wish to keep a
+"back-up" RAM copy. As you write to the color register itself, you should
+update this RAM copy. If you do so, you will always know the value each
+register contains.
+
+SELECTING THE NUMBER OF BIT-PLANES
+ÿAfter deciding how many colors you want and how many bit-planes are required
+to give you those colors, you tell the system how many bit-planes to use.
+
+                         - Playfield Hardware 41 -
+
+
+You select the number of bit-planes by writing the number into the
+register BPLCON0 (for Bit Plane Control Register 0) The relevant bits are
+bits 14, 13, and 12, named BPU2, BPU1, and BPU0 (for "Bit Planes Used").
+Table 3-5 shows the values to write to these bits and how the system
+assigns bit-plane numbers.
+
+      Table 3-5: Setting the Number of Bit-Planes
+
+            Number of   Name(s) of
+     Value  Bit-Planes  Bit-Planes
+
+      000     None *
+      001       1       PLANE 1
+      010       2       PLANES 1 and 2
+      011       3       PLANES 1 - 3
+      100       4       PLANES 1 - 4
+      101       5       PLANES 1 - 5
+      110       6       PLANES 1 - 6 **
+      111       7       Value not used.
+
+* Shows only a background color; no playfield is visible.
+
+** Sixth bit-plane is used only in dual-playfield mode and in hold-and-
+modify mode (described in the section called "Advanced Topics").
+
+NOTE
+The bits in the BPLCON0 register cannot be set independently. To set any one
+bit, you must reload them all.
+
+The following example shows how to tell the system to use two low-
+resolution bit-planes.
+
+    MOVE.W #$2200,BPLCON0+CUSTOM ; Write to it
+
+Because register BPLCON0 is used for setting other characteristics of the
+display and the bits are not independently settable, the example above
+also sets other parameters (all of these parameters are described later
+in the chapter).
+
+o Hold-and-modify mode is turned off.
+
+o Single-playfield mode is set.
+
+o Composite video color is enabled. (Not applicable in all models.)
+
+                          - 42 Playfield Hardware -
+
+
+o Genlock audio is disabled.
+
+o Light pen is disablcd.
+
+o Interlaced mode is disabled.
+
+o Extemal resynchronization is disabled. (genlock)
+
+SELECTING HORIZONTAL AND VERTICAL RESOLUTION
+Standard home television screens are best suited for low-resolution
+displays. Low-resolution mode providcs 320 pixels for each horizontal
+line. High-resolution monochrome and RGB monitors can produce displays in
+high-resolution mode, which provides 640 pixels for each horizontal line.
+If you define an object in low-resolution mode and then display it in
+high-resolution mode, the object will be only half as wide.
+
+To set horizontal resolution mode, you write to bit 15, HIRES, in
+register BPLCON0:
+
+    High-resolution modeÑwrite 1 to bit 15.
+    Low-resolution modeÑwrite 0 to bit 15.
+
+Note that in high-resolution mode, you can have up to four bit-planes in
+the playfield and, therefore, up to 16 colors.
+
+Interlaced mode allows twice as much data to be displayed in the same
+vertical area as in non-interlaced mode. This is accomplished by doubling
+the number of lines appearing on the video screen. The following table
+shows the number of lines required to fill a normal, non-overscan
+screen.
+
+      Table 3-6: Lines in a Normal Playfield
+
+                    NTSC PAL
+     -----------------------
+     Non-interlaced 200  256
+     Interlaced     400  512
+
+In interlaced mode, the scanning circuitry vertically offsets the start
+of every other field by half a scan line.
+
+                        - Playfield Hardware 43 -
+
+
+line 1_________________________
+   | _________________________ |\
+   | _________________________ | \
+   |        _________          |  \
+   |         Field 1           |   \   __________________
+   |        _________          |    \ |___|______________|___Line 1
+   | _________________________ |     >|___|______________|___
+   | _________________________ |    / |   |              |   Line 2
+   |___________________________|   /  |   | Video display|
+                                  /   |   |  (400 lines) |
+line 1_________________________  /    |   |              |
+   | _________________________ |      |__\|/_____________|
+   | _________________________ |
+   |        _________          |
+   |         Field 2           |      (same physical space as used
+   |        _________          |       by a 200 line noninterlaced
+   | _________________________ |       display)
+   | _________________________ |
+   |___________________________|
+
+
+                         FIGURE 3-5: Interlacing
+
+
+Even though interlaced mode requires a modest amount of extra work in
+setting registers (as you will see later on in this section), it provides
+fine tuning that is needed for certain graphics effects. Consider the
+diagonal line in Figure 3-6 as it appears in non-interlaced and
+interlaced modes. Interlacing eliminates much of the jaggedness or
+"staircasing" in the edges of the line.
+
+
+        SEE FIGURE 3-6: Effect of Interlaced Mode on Edges of Objects
+
+
+When you use the special blitter DMA channel to draw lines or polygons
+onto an interlaced playfield, the playfield is treated as one display,
+rather than as odd and even fields. Therefore, you still get the smoother
+edges provided by interlacing.
+
+                        - 44 Playfield Hardware -
+
+
+To set interlaced or non-interlaced mode, you write to bit 2, LACE, in
+register BPLCON0:
+
+    Interlaced mode write 1 to bit 2.
+    Non-interlaced mode write 0 to bit 2.
+
+As explained above in "Setting the Number of Bit-Planes," bits in BPLCON0
+are not independently settable.
+
+The following example shows how to specify high-resolution and interlaced
+modes.
+
+    MOVE.W #$A204,BPLCON0+CUSTOM ; Write to it
+
+The example above also sets the following parameters that are also
+controlled through register BPLCON0:
+
+o High-resolution mode is enabled.
+
+o Two bit-planes are used.
+
+o Hold-and-modify mode is disabled.
+
+o Single-playfield mode is enabled.
+
+o Composite video color is enabled.
+
+o Genlock audio is disabled.
+
+o Light pen is disabled.
+
+o Interlaced mode is enabled.
+
+o External resynchronization is disabled.
+
+The amount of memory you need to allocate for each bit-plane depends upon
+the resolution modes you have selected, because high-resolution or
+interlaced playfields contain more data and require larger bit-planes.
+
+                          - Playfield Hardware 45 -
+
+
+ALLOCATING MEMORY FOR BIT-PLANES
+After you set the number of bit-planes and specify resolution modes, you
+are ready to allocate memory. A bit-plane consists of an end-to-end
+sequence of words at consecutive memory locations.  When operating under
+the Amiga operating system, use a system call such as AllocMem() to
+remove a block of memory from the free list and make it available to the
+program. If the machine has been taken over, simply reserve an area of
+memory for the bit-planes. Next, set the bit plane pointer registers
+(BPLxPTH/BPLxPTL) to point to the starting memory address of each bitplane
+you are using. The starting address is the memory word that contains the
+bits of the upper left-hand corner of the bit-plane.
+
+Table 3-6 shows how much memory is needed for basic playfields. You may
+need to balance your color and resolution requirements against the amount
+of available memory you have.
+
+      Table 3-7: Playfield Memory Requirements, NTSC
+
+                                             Number of Bytes
+             Picture Size     Modes           per Bit-Plane
+
+             320 X200      Low-resolution,        8,000
+                           non-interlaced
+
+             320 X 400     Low-resolution,       16,000
+                           interlaced
+
+             640 X 200     High-resolution,      16,000
+                           non-interlaced
+
+             640 X 400     High-resolution,      32,000
+                           interlaced
+
+                          - 46 Playfield Hardware -
+
+
+Table 3-8: Playfield Memory Requirements, PAL
+
+                                          Number of Bytes
+             Picture Size     Modes           per Bit-Plane
+
+             320 X 256     Low-resolution,        8,192
+                           non-interlaced
+
+             320 X 512     Low-resolution,       16,384
+                           interlaced
+
+             640 X 256     High-resolution,      16,384
+                           non-interlaced
+
+             640 X 512     High-resolution,      32,768
+                           interlaced
+
+NTSC EXAMPLE OF BIT PLANE SIZE
+For example, using a normal, NTSC, low-resolution, non-interlaced display
+with 320 pixels across each display line and a total of 200 display lines,
+each line of the bit-plane requires 40 bytes (320 bits divided by 8 bits per
+byte = 40). Multiply the 200 lines times 40 bytes per line to get 8,000
+bytes per bit-plane as given above.
+
+A low-resolution, non-interlaced playfield made up of two bit-planes
+requires 16,000 bytes of memory area. The memory for each bit-plane must
+be continuous, so you need to have two 8,000-byte blocks of available memory.
+Figure 3-7 shows an 8,000-byte memory area organized as 200 lines of 40 bytes
+each, providing 1 bit for each pixel position in the display plane.
+
+                          - Playfield Hardware 47 -
+
+
+   _____________                            _____________
+  | | | | | | | |  _____________________\  | | | | | | | |
+  |_|_|_|_|_|_|_|                       /  |_|_|_|_|_|_|_|
+  Mem. Location N                          Mem. location N+38
+
+   _____________                            _____________
+  | | | | | | | |  _____________________\  | | | | | | | |
+  |_|_|_|_|_|_|_|                       /  |_|_|_|_|_|_|_|
+  Mem. Location N+40          |            Mem. location N+78
+                              |
+                              |
+                              |
+                              |
+   _____________             \|/            _____________
+  | | | | | | | |  ___________V_________\  | | | | | | | |
+  |_|_|_|_|_|_|_|                       /  |_|_|_|_|_|_|_|
+  Mem. Location N+7960                     Mem. location N+7998
+
+
+          FIGURE 3-7: Memory Organization for a Basic Bit-Plane
+
+
+Access to bit-planes in memory is provided by two address registers,
+BPLxPTH and BPLxPTL, for each bit-plane (12 registers in all). The "x"
+position in the name holds the bit-plane number; for example BPL1PTH and
+BPL1PTL hold the starting address of PLANE 1. Pairs of registers with
+names ending in PTH and PTL contain 19-bit addresses. 68000 programmers
+may treat these as one 32-bit address and write to them as one long word.
+You write to the high-order word, which is the register whose name ends
+in "PTH."
+
+The example below shows how to set the bit-plane pointers. Assuming two
+bit-planes, one at $21000 and the other at $25000, the processor sets
+BPL1PT to $21000 and BPL2PT to $25000. Note that this is usually the
+Copper's task.
+
+;
+; Since the bit plane pointer registers are mapped as a full 680x0 long-
+; word data, we can store the addresses with a 32-bit move...
+;
+    LEA    CUSTOM,a0               ; Get base address of custom hardware...
+    MOVE.L $21000,BPL1PTH(a0)      ; Write bit-plane 1 pointer
+    MOVE.L $25000,BPL2PTH(a0)      ; Write bit-plane 2 pointer
+
+Note that the memory requirements given here are for the playfield only.
+You may need to allocate  additional memory for other parts of the
+display, sprites, audio, animation and for your application programs.
+Memory allocation for other parts of the display is discussed in the
+chapters describing those topics.
+
+                          - 48 Playfield Hardware -
+
+
+CODING THE BIT-PLANES FOR CORRECT COLORING
+After you have specified the number of bit-planes and set the bit-plane
+pointers, you can actually write the color register codes into the bit-
+planes.
+
+A ONE-OR TWO-COLOR PLAYFIELD
+For a one-color playfield, all you need do is write "0"s in all the bits of
+the single bit-plane as shown in the example below. This code fills a low-
+resolution bit-plane with the background color (COLOR00) by writing all "0"s
+into its memory area. The bit-plane starts at $21000 and is 8,000 bytes long.
+
+        LEA    $21000,a0        ; Point at bit-plane
+        MOVE.W #2000,d0         ; Write 2000 longwords = 8000 bytes
+LOOP:   MOVE.L #0,(a0)+         ; Write out a zero
+        dbra   d0,LOOP          ; Decrement counter and loop until done
+
+For a two-color playfield, you define a bit-plane that has "0"s where
+you want the background color and "1"s where you want the color in
+register 1. The following example code is identical to the last example,
+except the bit-plane is filled with $FF00FF00 instead of all 0's. This
+will produce two colors.
+
+         LEA    $21000,a0       ; Point at bit-plane
+         MOVE.W #2000,d0        ; Write 2000 longwords = 8000 bytes
+LOOP:    MOVE.L #$FF00FF00,(a0)+ ; Write out $FF00FF00
+         DBRA   d0,LOOP         ; Decrement counter & loop until done
+
+A PLAYFIELD OF THREE OR MORE COLORS
+For three or more colors, you need more than one bit-plane. The task here
+is to define each bit-plane in such a way that when they are combined for
+display, each pixel contains the correct combination of bits. This is a
+little more complicated than a playfield of one bit-plane. The following
+examples show a four-color playfield, but the basic idea and procedures
+are the same for playfields containing up to 32 colors.
+
+Figure 3-8 shows two bit-planes forming a four-color playfield:
+
+                          - Playfield Hardware 49 -
+
+
+                     SEE FIGURE 3-8: Combining Bit-planes
+
+
+You place the correct "1"s and "0"s in both bit-planes to give each pixel
+in the picture above the correct color.
+
+In a single playfield you can combine up to five bit-planes in this way.
+Using five bit-planes allows a choice of 32 different colors for any
+single pixel. The playfield color selection charts at the end of this
+chapter summarize the bit combinations for playfields made from four and
+five bit-planes.
+
+DEFINING THE SIZE OF THE DISPLAY WINDOW
+After you have completely defined the playfield, you need to define the
+size of the display  window, which is the actual size of the on-screen
+display. Adjustment of display window size affects the entire display
+area, including the border and the sprites, not just the playfield. You
+cannot display objects outside of the defined display window. Also, the
+size of the border around the playfield depends on the size of the
+display window.
+
+The basic playfield described in this section is the same size as the
+screen display area and also the same size as the display window. This is
+not always the case; often the display window is smaller than the actual
+"big picture" of the playfield as defined in memory (the raster). A
+display window that is smaller than the playfield allows you to display
+some segment of a large
+
+                          - 50 Playfield Hardware -
+
+
+playfield or scroll the playfield through the window. You can also define
+display windows larger than the basic playfield. These larger playfields
+and different-sized display windows are described in The section below
+called "Bit-Planes and Display Windows of All Sizes."
+
+You determine the size of the display window by specifying the vertical
+and horizontal positions at which the window starts and stops and writing
+these positions to the display window registers. The resolution of
+vertical start and stop is one scan line. The resolution of horizontal
+start and stop is one low-resolution pixel. Each position on the screen
+defines the horizontal and vertical position of some pixel, and this
+position is specified by the x and y coordinates of the pixel. This
+document shows the x and y coordinates in this form: (x,y). Although the
+coordinates begin at (0,0) in the upper left-hand corner of the screen,
+the first horizontal position normally used is $81 and the first vertical
+position is $2C. The horizontal and vertical starting positions are the
+same both for NTSC and for PAL.
+
+The hardware allows you to specify a starting position before ($81,$2C),
+but part of the display may not be visible. The difference between the
+absolute starting position of (0,0) and the normal starling position of
+($81,$2C) is the result of the way many video display monitors are
+designed. To overcome the distortion that can occur at the extreme edges
+of the screen, the scanning beam sweeps over a larger area than the front
+face of the screen can display. A starting position of ($81,$2C) centers
+a normal size display, leaving a border of eight low-resolution pixels
+around The display window. Figure 3-9 shows the relationship between the
+normal display window, the visible screen area, and the area actually
+covered by the scanning beam.
+
+
+             (0,0)
+            /      ($81,$2C)
+           /______/____________________________
+          |   ___/__________________________   |
+          |  |  /_________________________  |\ |
+          |  | |   /\                     | | \|
+          |  | |<--|-------320----------->| |  \
+          |  | |   |                      | |  |\
+          |  | |   |200                   | |  | \Visible screen
+          |  | |   |                      | |  |          bounderies
+          |  | |   |                      | |  |
+          |  | |___\/_____________________| |  |
+          |  |__\________________________/__|  |
+          |______\_____________________ /______|
+                  \                    /
+                   \_____Display _____/
+                    window starting &
+                    stopping positions
+
+
+              FIGURE 3-9: Positioning the On-screen Display
+
+                          - 51 Playfield Hardware -
+
+
+SETTING THE DISPLAY WINDOW STARTING POSITION
+A horizontal starting position of approximately $81 and a vertical
+starting position of approximately $2C ccnters the display on most
+standard television screens. If you select high-resolution mode (640
+pixls horizontally) or interlaced mode (400 lines NTSC, 512 PAL) the
+starting position does not change. The starting position is always
+interpreted in low-resolution, non-interlaced mode. In other words, you
+select a starting position that represents the correct coordinates in
+low-resolution, non-interlaced mode.
+
+The register DIWSTRT (for "Display Window Start") controls the display
+window starting position. This register contains both the horizontal and
+vertical components of the display window starting positions, known
+respectively as HSTART and VSTART. The following example sets DIWSTRT for
+a basic playfield. You write $2C for VSTART and $81 for HSTART.
+
+    LEA    CUSTOM,a0               ; Get base address of custom hardware...
+    MOVE.W #$2C81,DIWSTRT(a0)      ; Display window start register...
+
+SETTING THE DISPLAY WINDOW STOPPING POSITION
+You also need to set the display window stopping position, which is the
+lower right-hand corner of the display window. If you select high-
+resolution or interlaced mode, the stopping position does not change.
+Like the starting position, it is interpreted in low-resolution, non-
+interlaced mode.
+
+The register DIWSTOP (for Display Window Stop) controls the display
+window stopping position. This register contains boLh the horizontal and
+vertical components of the display window stopping positions, known
+respectively as HSTOP and VSTOP. The instructions below show how to set
+HSTOP and VSTOP for the basic playfield, assuming a starting position of
+($81,$2C). Note that the HSTOP value you write is the actual value minus
+256 ($100). The HSTOP position is restricted to the right-hand side of
+the screen. The normal HSTOP value is ($1C1) but is written as ($Cl).
+HSTOP is the same both for NTSC and for PAL.
+
+The VSTOP position is restricted to the lower half of the screen. This is
+accomplished in the hardware by forcing the MSB of the stop position to
+be the complement of the next MSB. This allows for a VSTOP position
+greater than 256 ($100) using only 8 bits. Normally, the VSTOP is
+set to ($F4) for NTSC, ($2C) for PAL.
+
+    The normal NTSC DIWSTRT is ($2C81).
+    The normal NTSC DIWSTOP is ($F4C1).
+
+    The normal PAL DIWSTRT is ($2C81).
+    The normal PAL DIWSTOP is ($2CC1).
+
+                        - 52 Playfield Hardware -
+
+
+The following example sets DIWSTOP for a basic playfield to $F4 for the
+vertical position and $C1 for the horizontal position.
+
+    LEA    CUSTOM,a0               ; Get base address of custom hardware...
+    MOVE.W #$F4C1,DIWSTOP(a0)      ; Display window stop register...
+
+
+      Table 3-9: DIWSTRT AND DIWSTOP Summary.
+
+            -Nominal Values-    -Possible Values-
+              NTSC     PAL         MIN     MAX
+    DIWSTRT:
+      VSTART  $2C      $2C         $00     $FF
+      HSTART  $81      $81         $00     $FF
+
+    DIWSTOP:
+      VSTOP   $F4      $2C (=$12C) $80     $7F (=$17F)
+      HSTOP   $C1      $C1         $00 (=$100) $FF (=$1FF)
+
+TELLING THE SYSTEM HOW TO FETCH AND DISPLAY DATA
+After defining the size and position of the display window, you need to
+give the system the on screen location for data fetched from memory. To
+do this, you describe the horizontal positions where each line starts and
+stops and write these positions to the data-fetch registers. The data-
+fetch registers have a four-pixel resolution (unlike the display window
+registers, which have a one-pixel resolution). Each position specified is
+four pixels from the last one. Pixel 0 is position 0; pixel 4 is position
+1, and so on.
+
+The data-fetch start and display window starting positions interact with
+each other. It is recom mended that data-fetch start values be restricted
+to a programming resolution of 16 pixels (8 clocks in low-resolution
+mode, 4 clocks in high-resolution mode). The hardware requires some time
+after the first data fetch before it can actually display the data. As a
+result, there is a difference between the value of window start and data-
+fetch start of 4.5 color clocks.
+
+    The normal low-resolution DDFSTRT is ($0038).
+    The normal high-resolution DDFSTRT is ($003C).
+
+Recall that the hardware resolution of display window start and stop is
+twice the hardware resolution  of data fetch:
+
+          $81
+          ---  -8.5=$38
+           2
+
+
+          $81
+          ---  -4.5=$3c
+           2
+
+                          - Playfield Hardware 53 -
+
+
+The relationship between data-fetch start and stop is;
+
+    DDFSTRT = DDFSTOP-(8*(word count-1))for low resolution
+
+    DDFSTRT = DDFSTOP-(4*(word count-2))for high resolution
+
+The normal low-resolution DDFSTOP is ($00D0). The normal high-resolution
+DDFSTOP is ($00D4)
+
+The following example sets data-fetch start to $0038 and data-fetch stop
+to $00D0 for a basic playfield.
+
+    LEA    CUSTOM,a0               ; Point to base hardware address
+    MOVE.W #$0038,DDFSTRT(a0)      ; Write to DDFSTRT
+    MOVE.W #$00D0,DDFSTOP(a0)      ; Write to DDFSTOP
+
+You also need to tell the system exactly which bytes in memory belong on
+each horizontal line of the display. To do this, you specify the modulo
+value. Modulo refers to the number of bytes in memory between the last
+word on one horizontal line and the beginning of the first word on the
+next line. Thus, the modulo enables the system to convert bit-plane data
+stored in linear form (each data byte at a sequentially increasing memory
+address) into rectangular form (one "line" of sequential data followed
+by another line). For the basic playfield, where the playfield in memory
+is the same size as the display window, the modulo is zero because the
+memory area contains exactly the same number of bytes as you want to
+display on the screen. Figures 3-10 and 3-11 show the basic bit-plane
+layout in memory and how to make sure the correct data is retrieved.
+
+The bit-plane address pointers (BPLxPTH and BPLxPTL) are used by the
+system to fetch the data to the screen. These pointers are dynamic; once
+the data fetch begins, the pointers are continuously incremented to point
+to the next word to be fetched (data is fetched two bytes at a  time).
+When the end-of-line condition is reached (defined by the data-fetch
+register, DDFSTOP) the modulo is added to the bit-plane pointers,
+adjusting the pointer to the first word to be fetched for the next
+horizontal line.
+
+Data for Line 1:
+Location:            START      START+2      START+4    .....START+38
+                    Leftmost    Next Word    Next Word     Last Display
+                  Display Word                                 Word
+                                                                 ^
+Screen data fetch stops (DDFSTOP) for                            |
+each horizontal line after the last word  <----------------------|
+on the line has been fetched.
+
+Figure 3-10: Data Fetched for the First Line When Modulo = 0
+
+                          - 54 Playfield Hardware -
+
+
+After the first line is fetched, the bit-plane pointers BPLxPTH and
+BPLxPTL contain the value START+40. The modulo (in this case, 0) is added
+to the current value of the pointer, so when the pointer begins the data
+fetch for the next line, it fetches the data you want on that line. The
+data for the next line begins at memory location START+40.
+
+Data for Line 2:
+Location:            START+40    START+42     START+44   .....START+78
+                     Leftmost    Next Word    Next Word     Last Display
+                   Display Word                                 Word
+
+    Figure 3-11: Data Fetched for the Second Line When Modulo = 0
+
+
+Note that the pointers always contain an even number, because data is
+fetched from the display a word at a time.
+
+There are two modulo registers, BPL1MOD for the odd-numbered bit-planes
+and BPL2MOD for the even-numbered bit-planes. This allows for differing
+modulos for each playfield in dual-playfield mode. For normal
+applications, both BPL1MOD and BPL2MOD will be the same.
+
+The following example sets the modulo to 0 for a low-resolution playfield
+with one bit-plane. The bit-plane is odd-numbered.
+
+    MOVE.W #0,BPL1MOD+CUSTOM     ; Set modulo to 0
+
+DATA FETCH IN HIGH-RESOLUTION MODE
+When you are using high-resolution mode to display the basic playfield,
+you need to fetch 80 bytes for each line, instead of 40.
+
+MODULO IN INTERLACED MODE
+For interlaced mode, you must redefine the modulo, because interlaced mode
+uses two separate scannings of the video screen for a single display of the
+playfield. During the first scanning, the odd-numbered lines are fetched to
+the screen; and during the second scanning, the even-numbered lines are
+fetched.
+
+                         - Playfield Hardware 55 -
+
+
+The bit-planes for a full-screen-sized, interlaced display are 400 NTSC
+(512 PAL), rather than 200 NTSC (256 PAL), lines long. Assuming that the
+playfield in memory is the normal 320 pixels wide, data for the
+interlaced picture begins at the following locations (these are all byte
+addresses):
+
+        Line 1 START
+        Line 2 START+40
+        Line 3 START+80
+        Line 4 START+120
+
+and so on. Therefore, you use a modulo of 40 to skip the lines in the
+other field. For odd fields, the bit-plane pointers begin at START. For
+even fields, the bit-plane pointers begin at START+40
+
+You can use the Copper to handle resetting of the bit-plane pointers for
+interlaced displays.
+
+DISPLAYING AND REDISPLAYING THE PLAYFIELD
+You start playfield display by making certain that The bit-plane pointers
+are set and bit-plane DMA is turned on. You turn on bit-plane DMA by
+writing a 1 to bit BPLEN in the DMACON (for DMA control) register. See
+Chapter 7, "System Control Hardware," for instructions on setting this
+register.
+
+Each time The playfield is redisplayed, you have to reset the bit-plane
+pointers. Resetting is necessary because the pointers have been
+incremented to point to each successive word in memory and must be
+repointed to the first word for the next display. You write Copper
+instructions to handle the redisplay or perform this operation as part of
+a vertical blanking task.
+
+ENABLING THE COLOR DISPLAY
+The stock A1000 has a color composite output and requires bit 9 set in
+BPLCON0 to create a color composite display signal. Without the addition
+of specialized hardware, the A500 and A2000 cannot generate color
+composite output.
+
+NOTE
+The color burst enable does not affect the RGB video signal. RGB video is
+correctly generated regardless of the output of the composite video signal.
+
+                         - 56 Playfield Hardware -
+
+
+BASIC PLAYFIELD SUMMARY
+The steps for defining a basic playfield are summarized below:
+
+1. Define Playfield Characteristics
+
+   a. Specify height in lines:
+
+      o For NTSC:
+
+        * 200 for non-interlaced mode.
+
+        * 400 for interlaced mode.
+
+      o For PAL:
+
+        * 256 for non-interlaced mode.
+
+        * 512 for interlaced mode.
+
+
+    b. Specify width in pixels:
+
+      o 320 for low-resolution mode.
+
+      o 640 for high-resolution mode.
+
+
+    c. Specify color for each pixel:
+
+      o Load desired colors in color table registers.
+
+      o Define color of each pixel in terms of the binary value that points
+        at the desired color register.
+
+      o Build bit-planes.
+
+      o Set bit-plane registers.
+
+        * Bits 12-14 in BPLCON0 - number of bit-planes (BPU2 - BPU0).
+
+        * BPLxPTH - pointer to bit-plane starting position in memory (written
+          as a long word).
+
+                         - 57 Playfield Hardware -
+
+    d. Specify resolution:
+
+      o Low resolution:
+
+        * 320 pixels in each horizontal line.
+
+        * Clear bit 15 in register BPLCON0 (HIRES).
+
+      o High resolution:
+
+        * 640 pixels in each horizontal line.
+
+        * Set bit 15 in register BPLCON0 (HIRES).
+
+    e. Specify interlaced or non-interlaced mode:
+
+      o Interlaced mode:
+
+        * 400 vertical lines for NTSC, 512 for PAL.
+
+        * Set bit 2 in register BPLCON0 (LACE).
+
+      o Non-interlaced mode:
+
+        * 200 vertical lines for NTSC, 256 for PAL.
+
+        * Clear bit 2 in BPLCON0 (LACE).
+
+2. Allocate Memory. To calculate data-bytes in the total bit-planes, use
+the following formula: Bytes per line * lines in playfield * number
+of bit-planes
+
+3. Define Size of Display Window.
+
+      o Write start position of display window in DIWSTRT:
+
+        * Horizontal position in bits 0 through 7 (low-order bits).
+
+        * Vertical position in bits 8 through 15 (high-order bits).
+
+      o Write stop position of display window in DIWSTOP:
+
+        * Horizontal position in bits 0 through 7.
+
+        * Vertical position in bits 8 through 15.
+
+                         - Playfield Hardware 58 -
+
+
+4. Define Data Fetch. Set registers DDFSTRT and DDFSTOP:
+
+      o For DDFSTRT, use the horizontal position as shown in "Setting the
+        Display Window Starting Position."
+
+      o For DDFSTOP, use the horizontal position as shown in "Setting the
+        Display Window Stopping Position."
+
+5. Define Modulo. Set registers BPL1MOD and BPL2MOD. Set modulo to 0 for
+non-interlaced, 40 for interlaced.
+
+6. Write Copper Instructions To Handle Redisplay.
+
+7. Enable Color Display. For the A1000: set bit 9 in BPLCON0 to enable
+the color display on a composite video monitor. RGB video is not
+affected. Only the A1000 has color composite video output, other machines
+cannot enable this feature using standard hardware.
+
+EXAMPLES OF FORMING BASIC PLAYFIELDS
+The following examples show how to set the registers and write the
+coprocessor lists for two different playfields.
+
+The first example sets up a 320 x 200 playfield with one bit-plane, which is
+located at $21000. Also, a Copper list is set up at $20000.
+
+This example relies on the include file "hw examples.i", which is found
+in Appendix J.
+
+    LEA    CUSTOM,a0                ; a0 points at custom chip
+    MOVE.W #$1200,BPLCON0(a0)       ; One bit-plane, enable composite color
+    MOVE.W #0,BPLCON1(a0)           ; Set horizontal scroll value to 0
+    MOVE.W #0,BPL1MOD(a0)           ; Set modulo to 0 for all odd bit-planes
+    MOVE.W #$0038,DDFSTRT(a0)       ; Set data-fetch start to $38
+    MOVE.W #$00D0,DDFSTOP(a0)       ; Set data-fetch stop to $D0
+    MOVE.W #$2C81,DIWSTRT(a0)       ; Set DIWSTRT to $2C81
+    MOVE.W #$F4C1,DIWSTOP(a0)       ; Set DIWSTOP to $F4Cl
+    MOVE.W #$0F00,COLOR00(a0)       ; Set background color to red
+    MOVE.W #$0FF0,COLOR01(a0)       ; Set color register 1 to yellow
+;
+;Fill bit-plane with $FF00FF00 to produce stripes
+;
+    MOVE.L #$21000,a1               ; Point at beginning of bit-plane
+    MOVE.L #$FF00FF00,d0            ; We will write $FF00FF00 long words
+    MOVE.W #2000,d1                 ; 2000 long words = 8000 bytes
+;
+LOOP:
+    MOVE.L d0,(a1)+                 ; Write a long word
+    DBRA   d1,LOOP                  ; Decrement counter and loop until done
+;
+; Set up Copper list at $20000
+;
+    MOVE.L #$20000,a1               ; Point at Copper list destination
+    LEA    COPPERL(pc).a2           ; Point a2 at Copper list data
+
+                         - Playfield Hardware 59 -
+
+
+CLOOP:
+    MOVE.L (a2),(a1)+               ; Move a word
+    CMPI.L #$FFFFFFFE,(a2)+         ; Check for last longword of Copper list
+    BNE    CLOOP                    ; Loop until entire copper list i9 moved
+;
+; Point Copper at Copper list
+;
+    MOVE.L #$20000,COP1LCH(a0)      ; Write to Copper location register
+    MOVE.W COPJMP1(a0),d0           ; Force copper to $20000
+;
+; Start DMA
+;
+    MOVE.W #(DMAF_SETCLR!DMAF_COPPER!DMAF_RASTER!DMAF_MASTER),DMACON(a0)
+                                    ; Enable bit-plane and Copper DMA
+    BRA ....                        ; Go do next task
+;
+; This is the data for the Copper list.
+;
+COPPERL:
+    DC.W BPL1PTH,$0002              ; Move $0002 to address $0E0 (BPL1PTH)
+    DC.W BPL1PTL,$1000              ; Move $1000 to address $0E2 (BPL1PTL)
+    DC.W $FFFF,$FFFE                ; End of Copper list
+;
+
+The second example sets up a high-resolution, interlaced display with one
+bitplane. This example also relies on the include file "hw_examples.i",
+which is found in Appendix J.
+
+    LEA    CUSTOM,a0                ; Address of custom chips
+    MOVE.W #$9204,BPLCON0(a0)       ; Hires, one bit-plane, interlaced
+    MOVE.W #0,BPLCON1(a0)           ; Horizontal scroll value 0
+    MOVE.W #80,BPL1MOD(a0)          ; Modulo = 80 for odd bit-planes
+    MOVE.W #80,BPL2MOD(a0)          ; Ditto for even bit-planes
+    MOVE.W #$003C,DDFSTRT(a0)       ; Set data-fetch start for hires
+    MOVE.W #$00D4,DDFSTOP(a0)       ; Set data-fetch stop
+    MOVE.W #$2C81,DIWSTRT(a0)       ; Set display window start
+    MOVE.W #$F4C1,DIWSTOP(a0)       ; Set display window stop
+;
+; Set up color registers
+;
+    MOVE.W #$000F,COLOR00(a0)       ; Background color = blue
+    MOVE.W #$0FFF,COLOR01(a0)       ; Foreground color = white
+
+;Set up bit-plane at S20000
+
+    LEA    $20000,a1                ; Point a1 at bit-plane
+    LEA    CHARLIST(pc),a2          ; a2 points at character data
+    MOVE.W #400,d1                  ; Write 400 lines of data
+    MOVE.W #20,d0                   ; Write 20 long words per line
+L1:
+    MOVE.L (a2),(a1)+               ; Write a long word
+    DBRA   d0,L1                    ; Decrement counter and loop until full
+
+    MOVE.W #20,d0                   ; Reset long word counter
+    ADDQ.L #4,a2                    ; Point at next word in char list
+    CMPI.L #$FFFFFFFF,(a2)          ; End of char list?
+    BNE    L2
+    LEA    CHARLIST(pc),a2          ; Yes, reset a2 to beginning of list
+L2:
+    DBRA   d1,L1                    ; Decrement line counter and loop until
+                                    ; done
+;
+; Start DMA
+;
+                          - 60 Playfield Hardware -
+
+
+        MOVE.W #(DMAF_SETCLR!DMAF_RASTER!DMAF_MASTER),DMACON(a0)
+                         ; Enable bit-plane DMA only, no Copper
+
+; Because this example has no Copper list, it sits in a
+; loop waiting for the vertical blanking interval. When it
+; comes, you check the LOF ( long frame  bit in VPOSR. If
+; LOF = 0, this is a short frame and the bit-plane pointers
+; are set to point to S20050. If LOF = 1, then this is a
+; long frame and the bit-plane pointers are set to point to
+; $20000. This keeps the long and short frames in the
+; right relationship to each other.
+
+VLOOP:
+    MOVE.W INTREQR(a0),d0           ; Read interrupt requests
+    AND.W  #$0020,d0                ; Mask off all but vertical blank
+    BEQ    VLOOP                    ; Loop until vertical blank comes
+    MOVE.W #$0020,INTREQ(a0)        ; Reset vertical interrupt
+    MOVE.W VPOSR(a0),d0             ; Read LOF bit into d0 bit 15
+    BPL    VL1                      ; If LOF = 0, jump
+    MOVE.L #$20000,BPL1PTH(a0)      ; LOF = 1, point to $20000
+    BRA    VLOOP                    ; Back to top
+VL1:
+    MOVE.L #$20050,BPL1PTH(a0)      ; LOF = 0, point to $20050
+    BRA    VLOOP                    ; Back to top
+;
+; Character list
+;
+CHARLIST:
+    DC.L   $18FC3DF0,$3C6666D8,$3C66C0CC,$667CC0CC
+    DC.L   $7E66C0CC,$C36666D8,$C3FC3DF0,$00000000
+    DC.L   $FFFFFFFF
+
+                          - 61 Playfield Hardware -
+
+
+FORMING A DUAL-PLAYFIELD DISPLAY
+For more flexibility in designing your background display, you can
+specify two playfields instead of one. In dual-playfield mode, one
+playfield is displayed directly in front of the other. For example, a
+computer game display might have some action going on in one playfield in
+the back-ground, while the other playfield is showing a control panel in
+the foreground. You can then change either the foreground or the
+background without having to redesign the entire display. You can also
+move the two playfields independently.
+
+A dual-playfield display is similar to a single-playfield display,
+differing only in these aspects:
+
+o Each playfield in a dual display is formed from one, two or three bit
+planes.
+
+o The colors in each playfield (up to seven plus transparent) are taken
+from different sets of color registers.
+
+o You must set a bit to activate dual-playfield mode.
+
+Figure 3-12 shows a dual-playfield display.
+
+In Figure 3-12, one of the colors in each playfield is "transparent" (color
+0 in playfield 1 and color 8 in playfield 2). You can use transparency to
+allow selected features of the background playfield to show through.
+
+In dual-playfield mode, each playfield is formed from up to three bitplanes.
+Color registers 0 through 7 are assigned to playfield 1, depending upon how
+many bit-planes you use. Color registers 8 through 15 are assigned to
+playfield 2.
+
+BIT-PLANE ASSIGNMENT IN DUAL-PLAYFIELD MODE
+
+The three odd-numbered bit-planes (1, 3, and 5) are grouped together by
+the hardware and may be used in playfield 1. Likewise, the three even-
+numbered bit-planes (2, 4, and 6) are grouped together and may be used in
+playfield 2. The bit-planes are assigned alternately to each playfield,
+as shown in Figure 3-13.
+
+NOTE
+In high-resolution mode, you can have up to two bit-planes in each playfield,
+bit-planes 1 and 3 in playfield 1 and bit-planes 2 and 4 in playfield 2.
+
+                          - 62 Playfield Hardware -
+
+
+                  SEE FIGURE 3-12: A dual Playfield display.
+
+
+                          - Playfield Hardware 63 -
+
+
+ Number of Bitplanes
+    "turned on"          Playfield 1*       Playfield 2*
+
+         0                   None               None
+
+                          __________
+         1               |1         |
+                         |__________|
+                          __________         __________
+         2               |1         |       |2         |
+                         |__________|       |__________|
+                          __________         __________
+         3               |1 ________|_      |2         |
+                         |_|3         |     |__________|
+                           |__________|
+                          __________         __________
+         4               |1 ________|_      |2 ________|_
+                         |_|3         |     |_|4         |
+                           |__________|       |__________|
+                          __________         __________
+         5               |1 ________|_      |2 ________|_
+                         |_|3 ________|_    |_|4         |
+                           |_|5         |     |__________|
+                             |__________|
+                          __________         __________
+         6               |1 ________|_      |2 ________|_
+                         |_|3 ________|_    |_|4 ________|_
+                           |_|5         |     |_|6         |
+                             |__________|       |__________|
+
+     *NOTE:  Either playfield may be placed "in front of" or
+             "behind" the other using the "swap-bit"
+
+
+       FIGURE 3-13: How Bitplanes are assigned to duel playfields.
+
+
+                          - 64 Playfield Hardware -
+
+
+COLOR REGISTERS IN DUAL-PLAYFIELD MODE
+When you are using dual playfields, the hardware interprets color numbers for
+playfield 1 from the bit combinations of bit-planes 1, 3, and 5. Bits from
+PLANE 5 have the highest significance and form the most significant digit of
+the color register number. Bits from PLANE O have the lowest significance.
+These bit combinations select the first eight color registers from the color
+palette as shown in Table 3-10.
+
+    Table 3-10: Playfield 1 Color Registers Low-resolution Mode
+
+             PLAYFIELD 1
+
+          Bit           Color
+      Combination      Selected
+
+          000      Transparent mode
+          001           COLOR1
+          010           COLOR2
+          011           COLOR3
+          100           COLOR4
+          101           COLORS
+          110           COLOR6
+          111           COLOR7
+
+The hardware interprets color numbers for playfield 2 from the bit
+combinations of bit-planes 2, 4, and 6. Bits from PLANE 6 have the highest
+significance. Bits from PLANE 2 have the lowest significance. These bit
+combinations select the color registers from the second eight colors in the
+color table as shown in Table 3-11.
+
+    Table 3  Playfield 2 Color Registers Low-resolution Mode
+
+             PLAYFIELD 2
+
+          Bit           Color
+      Combination      Selected
+
+          000      Transparent mode
+          001           COLOR09
+          010           COLOR10
+          011           COLOR11
+          100           COLOR12
+          101           COLOR13
+          110           COLOR14
+          111           COLOR15
+
+                          - Playfield Hardware 65 -
+
+
+Combination 000 selects transparent mode, to show the color of whatever
+object (the other playfield, a sprite, or the background color) may be
+"behind" the playfield.
+
+Table 3-12 shows the color registers for high-resolution, dual-playfield
+mode.
+
+    Table 3-12: Playfields 1 and 2 Color Registers- High-resolution Mode
+
+            PLAYFIELD 1
+
+          Bit           Color
+      Combination      Selected
+
+          00       Transparent mode
+          01            COLOR1
+          10            COLOR2
+          11            COLOR3
+
+            PLAYFIELD 2
+
+          Bit           Color
+      Combination      Selected
+
+          00        Transparent mode
+          01            COLOR09
+          10            COLOR10
+          11            COLOR11
+
+DUAL-PLAYFIELD PRIORITY AND CONTROL
+Either playfield 1 or 2 may have priority; that is, either one may be
+displayed in front of the other. Playfield 1 normally has priority. The
+bit known as PF2PRI (bit 6) in register BPLCON2 is used to control
+priority. When PF2PRI = 1, playfield 2 has priority over playfield 1.
+When PF2PRI = 0, playfield 1 has priority.
+
+You can also control the relative priority of playfields and sprites.
+Chapter 7, "System Control Hardware" shows you how to control the priority
+of these objects.
+
+You can control the two playfields separately as follows:
+
+o They can have different-sized representations in memory, and different
+portions of each one can be selected for display.
+
+o They can be scrolled separately.
+
+                          - 66 Playfield Hardware -
+
+
+NOTE
+You must take special care when scrolling one playfield and holding the
+other stationary. When you are scrolling low-resolution playfields, you must
+fetch one word more than the width of the playfield you are trying to scroll
+(two  words more in high-resolution mode) in order to provide some data to
+display, when the actual scrolling takes place. Only one data-fetch start
+register and one data-fetch stop register are available, and these are
+shared by both playfields. If you want to scroll one playfield and hold
+the other, you must adjust the data-fetch start and data-fetch stop to
+handle the playfield being scrolled. Then, you must adjust the modulo and
+the bit-plane pointers of the playfield that is not being scrolled to
+maintain its position on the display. In low-resolution mode, you adjust
+the pointers by -2 and the modulo by -2. In high-resolution mode, you adjust
+the pointers by -4 and the modulo by -4.
+
+ACTIVATING DUAL PLAY-FIELD MODE
+Writing a 1 to bit 10 (called DBLPF) of the bit-plane control register
+BPLCON0 selects dual-playfield mode. Selecting dual-playfield mode changes
+both the way the hardware groups the bit-planes for color interpretation
+all odd-numbered bit-planes are grouped together and all even-numbcrcd
+bit-planes are grouped together, and the way hardware can move the
+bit-planes on the screen.
+
+DUAL PLAYFIELD SUMMARY
+The steps for defining dual playfields are almost the same as those for
+defining the basic playfield.  Only in the following steps does the dual-
+playfield creation process differ from that used for the basic playfield.
+
+o Loading colors into the registers. Keep in mind that color registers 0-7
+are used by playfield 1 and registers 8 through 15 are used by playfield
+2 (if there are three bit-planes in each playfield).
+
+o Building bit-planes. Recall that playfield 1 is formed from PLANES 1, 3,
+and 5 and playfield 2 from PLANES 2, 4, and 6.
+
+o Setting the modulo registers. Write the modulo to both BPLlMOD and
+BPL2MOD as you will be using both odd- and even-numbered bit-planes.
+
+These steps are added:
+
+o Defining priority. If you want playfield 2 to have priority, set bit 6
+(PF2PRI) in BPLCON2 to 1.
+
+o Activating dual-playfield mode. Set bit 10 (DBLPF) in BPLCON0 to 1.
+
+                          - Playfield Hardware 67 -
+
+
+BIT-PLANES AND DISPLAY WINDOWS OF ALL SIZES
+
+You have seen how to form single and dual playfields in which the playfield
+in memory is the same size as the display window. This section shows you
+how to define and use a playfield whose big picture in memory is larger
+than the display window, how to define display windows that are larger or
+smaller than the normal playfield size, and how to move the display window
+in the big picture.
+
+WHEN THE BIG PICTURE IS LARGER THAN THE DISPLAY WINDOW
+If you design a memory picture larger than the display window, you must
+choose which part of it to display. Displaying a portion of a larger
+playfield differs in the following ways from displaying the basic
+playfields described up to now:
+
+o If the big picture in memory is larger than the display window, you must
+respecify the modulos. The modulo must be some value other than 0.
+
+o You must allocate more memory for the larger memory picture.
+
+SPECIFYING THE MODULO
+For a memory picture wider than the display window, you need to respecify
+the modulo so that the correct data words are fetched for each line of the
+display. As an example, assume the display window is the standard 320 pixels
+wide, so 40 bytes are to be displayed on each line. The big picture in
+memory, however, is exactly twice as wide as the display window, or 80
+bytes wide. Also, assume that you wish to display the left half of the big
+picture. Figure 3-14 shows the relationship between the big picture and the
+picture to be displayed.
+
+                          - 68 Playfield Hardware -
+
+
+
+        START                                                START+78
+              -------------------------------------------------
+              |      Width of the Bit-Plane Defined in RAM    |
+              |                       |                       |
+              | Width of defined      |                       |
+              | screen on which       |                       |
+              | bit-plane data is     |                       |
+              | to appear             |                       |
+              |                       |                       |
+              -------------------------------------------------
+
+Figure 3-14: Memory Picture Larger than the Display
+
+Because 40 bytes are to be fetched for each line, the data fetch for line 1
+is as shown in Figure 3-15.
+
+Data for Line 1:
+
+Location:            START      START+2      START+4    .....START+38
+                    Leftmost   Next Word    Next Word      Last Display
+                  Display Word                                Word
+                                                                ^
+Screen data fetch stops (DDFSTOP) for                           |
+each horizontal line after the last word -----------------------|
+on the line has been fetched.
+
+Figure 3-15: Data Fetch for the First Line When Modulo = 40
+
+
+At this point, BPLxPTH and BPLxPTL contain the value START+40. The modulo,
+which is 40, is added to the current value of the pointer so that when it
+begins the data fetch for the next line, it fetches the data you intend for
+that line. The data fetch for line 2 is shown in Figure 3-16.
+
+                          - Playfield Hardware 69 -
+
+
+Data for Line 2:
+
+Location:         START+80    START+82   START+84...    START+118
+                  Leftmost   Next Word   Next Word     Last Display
+                Display Word                               Word
+
+Figure 3-16: Data Fetch for the Seeond Line When Modulo = 40
+
+To display the right half of the big picture, you set up a vertical blanking
+routine to start the bit-plane pointers at location START+40 rather than
+START with the modulo remaining at 40. The data layout is shown in Figures
+3-17 and 3-18.
+
+Data for Line 1:
+
+Location             START+40   START+42   START-44...   START+78
+                     Leftmost   Next Word  Next Word   Last Display
+                   Display Word                             Word
+
+    FIGURE 3-17: Data Layout for First Line Right Half of Big Picture
+
+
+Now, the bit-plane pointers contain the value START+80. The modulo (40) is
+added to the pointers so that when they begin the data fetch for the second
+line, the correet data is fetehed.
+
+Data for Line 2:
+
+Location:           START+120   START+122   START+124...   START+158
+                     Leftmost   Next Word   Next Word     Last Display
+                   Display Word                               Word
+
+   FIGURE 3-18: Data Layout for Second Line Right Half of Big Picture
+
+Remember, in high-resolution mode, you need to fetch twice as many bytes as
+in low-resolution mode. For a normal-sized display, you fetch 80 bytes for
+each horizontal line instead of 40.
+
+                          - 70 Playfield Hardware -
+
+
+SPECIFYING THE DATA FETCH
+The data-fetch registers specify the beginning and end positions for data
+placement on each horizontal line of the display. You specify data fetch in
+the same way as shown in the section called "Forming a Basic Playfield."
+
+MEMORY ALLOCATION
+For larger memory pictures, you need to allocate more memory. Here is a
+formula for calculating memory requirements in general:
+
+bytes per line * lines in playfield * # of bit-planes
+
+Thus, if the wide playfield described in this section is formed from two bit-
+planes, it requires:
+
+80 * 200 * 2 = 32,000 bytes of memory
+
+Recall that this is the memory requirement for the playfield alone. You need
+more memory for any sprites, animation, audio, or application programs you
+are using.
+
+SELECTING THE DISPLAY WINDOW STARTING POSITION
+The display window starting position is the horizontal and vertical
+co-ordinates of the upper left-hand corner of the display window. One
+register, DIWSTRT, holds both the horizontal and vertical coordinates, known
+as HSTART and VSTART. The eight bits allocated to HSTART are assigned to the
+first 256 positions, counting from the leftmost possible position. Thus, you
+can start the display window at any pixel position within this range.
+
+                          - Playfield Hardware 71 -
+
+
+FULL SCREEN AREA
+
+                 0                  255                 361
+                ---------------------------------------------
+                |                    |                      |
+                |  HSTART of DISPLAY |                      |
+                |  WINDOW occurs in  |                      |
+                |  this region.      |                      |
+                |                    |                      |
+                ---------------------------------------------
+
+          Figre 3-19: Display Window Horizontal Starting Position
+
+The eight bits allocated to VSTART are assigned to the first 256 positions
+counting down from the top of the display.
+
+FULL SCREEN AREA
+                --------------------------------------------- 0
+                |                                         ^ |
+                |                                         | |
+                |                  Vstart of display window |
+                |                     occurs in this region |
+                |                                       __v_|___255
+                |                             (NTSC)____________262
+                |                                           |
+                ---------------------------------------------
+
+          Figre 3-20: Display Window Vertical Starting Position
+
+
+Recall that you select thc values for the starting position as if the
+display were in low-resolution, non-interlaced mode. Keep in mind, though,
+that for interlaced mode the display window should be an even number of
+lines in height to allow for equal-sized odd and even fields.
+
+To set the display window starting position, write the value for HSTART
+into bits 0 through 7 and the value for VSTART into bits 8 through 15 of
+DIWSTRT.
+
+                          - 72 Playfield Hardware -
+
+
+SELECTING THE STOPPING POSITION
+The stopping position for the display window is the horizontal and vertical
+coordinates of the lower right-hand corner of the display window. One
+register, DIWSTOP, contains both coordinates, known as HSTOP and VSTOP.
+
+See the notes in the "Forming a Basic Playfield" section for instructions on
+setting these registers.
+
+
+FULL SCREEN AREA
+
+                 0                  255                 361
+                ------------------------------------------------
+                |                      |                       |
+                |                      |   HSTOP of DISPLAY    |
+                |                      |   WINDOW occurs in    |
+                |                      |   this region.        |
+                |                      |                       |
+                ------------------------------------------------
+
+Figure 3-21: Display Window Horizontal Stopping Position
+
+
+Select a value that represents the correct position in low-resolution,
+non-interlaced mode.
+
+                          - Playfield Hardware 73 -
+
+
+FULL SCREEN AREA
+                --------------------------------------------- 0
+                |                                           |
+                |          _________________________________|___128
+                |     Vstop of display                      |
+                |     window occurs in                      |
+                |     the region. |             (NTSC)______|___262
+                |                 |                         |
+                |                 |                         |
+                ---------------------------------------------
+
+          Figre 3-20: Display Window Vertical Stopping Position
+
+
+To set the display window stopping position, write HSTOP into bits 0 through
+7 and VSTOP into bits 8 through 15 of DIWSTOP.
+
+MAXIMUM DISPLAY WINDOW SIZE
+The maximum size of a playfield display is determined by the maximum number
+of lines and the maximum number of columns. Vertically, the restrictions are
+simple. No data can be displayed in the vertical blanking area. The
+following table shows the allowable vertical display area.
+
+    Table 3-13: Maximum Allowable Vertical Screen Video
+
+      Vertical Blank     NTSC                    PAL
+
+         Start            0                       0
+         Stop             $15 (21)                $1D (29)
+
+                          NTSC      NTSC          PAL       PAL
+                         Normal    Interlaced    Normal Interlaced
+      Displayable lines
+       of screen video    241       483           283       567
+                                    =525-(21*2)             =625-(29*2)
+
+Horizontally, the situation is similar. Strictly speaking, the hardware sets
+a rightmost limit to DDFSTOP of ($D8) and a leftmost limit to DDFSTRT of
+($18).  This gives a maximum of 25 words fetched in low-resolution mode. In
+high-resolution mode the maximum here is 49 words,
+
+                          - 74 Playfield Hardware -
+
+
+because the rightmost limit remains ($D8) and only one word is fetched at
+this limit. However, horizontal blanking actually limits the displayable
+video to 368 low-resolution pixels (23 words). These numbers are the same
+both for NTSC and for PAL. In addition, it should be noted that using a
+data-fetch start earlier than ($38) will disable some sprites.
+
+    Table 3-14: Maximum Allowable Horizontal Screen Video
+
+                           LoRes          HiRes
+
+      DDFSTRT (standard)   $0038          $003C
+      DDFSTOP (standard)   $00D0          $00d4
+
+      DDFSTRT (hw limits)  $0018          $0018
+      DDFSTOP (hw limits)  $00D8          $00D8
+
+      max words fetched    25             49
+      max display pixels   368 (low res)
+
+MOVING (SCROLLING) PLAYFIELDS
+
+If you want a background display that moves, you ean design a playfield
+larger than the display window and scroll it. If you are using dual
+playfields, you can scroll them separately.
+
+In vertical scrolling, the playfield appears to move smoothly up or down on
+the screen. All you need do for vertical scrolling is progressively increase
+or decrease the starting address for the bit-plane pointers by the size of a
+horizontal line in the playfield. This has the effect of showing a lower or
+higher part of the pieture each field time.
+
+In horizontal scrolling the playfield appears to move from right-to-left or
+left-to-right on the screen. Horizontal scrolling works differently from
+vertical scrolling you must arrange to fetch one more word of data for each
+display line and delay the display of this data.
+
+For either type of scrolling, resetting of pointers or data-fetch registers
+can be handled by the Copper during the vertical blanking interval.
+
+VERTICAL SCROLLING
+You can scroll a playfield upward or downward in the window. Each time you
+display the playfield, the bit-plane pointers start at a progressively higher
+or lower place in the big picture in memory. As the value of the pointer
+increases, more of the lower part of the picture is shown and the picture
+appears to scroll upward. As the value of the pointer decreases, more of the
+upper part
+
+                          - Playfield Hardware 75 -
+
+
+is shown and the picture scrolls downward. On an NTSC system, with a display
+that has 200 vertical lines, each step can be as little as 1/200th of the
+screen. In interlaced mode each step could be 1/400th of the screen if clever
+manipulation of the pointers is used, but it is recommended that scrolling be
+done two lines at a time to maintain the odd/even field relationship.
+Using a PAL system with 256 lines on the display, the step can be 1/256th of
+a screen, or 1/512th of a screen in interlace.
+
+
+                     SEE FIGURE 3-23: Vertical Scrolling
+
+
+To set up a playfield for vertical scrolling you need to form bit-planes tall
+enough to allow for the amount of scrolling you want, write software to
+calculate the bit-plane pointers for the scrolling you want, and allow for
+the Copper to use the resultant pointers.
+
+Assume you wish to scroll a playfield upward one line at a time. To
+accomplish this, before each field is displayed, the bit-plane pointers have
+to increase by enough to ensure that the pointers begin one line lower each
+time. For a normal-sized, low-resolution display in which the modulo is 0,
+the pointers would be incremented by 40 bytes each time.
+
+                          - 76 Playfield Hardware -
+
+
+HORIZONTAL SCROLLING
+You can scroll playfields horizontally from left to right or right to left
+on the screen. You control the speed of scrolling by specifying the amount
+of delay in pixels. Delay means that an extra word of data is fetched but
+not immediately displayed. The extra word is placed just to the left of the
+window's leftmost edge and before normal data fetch. As the display shifts
+to  the right, the bits in this extra word appear on-screen at the
+left-hand side of the window as bits on the right-hand side disappear
+off-screen. For each pixel of delay, the on-screen data shifts one pixel to
+the right each display field. The greater the delay, the greater the speed
+of scrolling. You can have up to 15 pixels of delay. In high-resolution
+mode, scrolling is in increments of 2 pixels. Figure 3-24 shows how the
+delay and extra data fetch combine to cause the scrolling effect.
+
+To set up a playfield for horizontal scrolling, you need to;
+
+o Define bit-planes wide enough to allow for the scrolling you need.
+
+o Set the data-fetch registers to correctly place each horizontal line,
+including the extra word, on the screen.
+
+o Set the delay bits.
+
+o Set the modulo so that the bit-plane pointers begin at the correct word for
+each line.
+
+o Write Copper instructions to handle the chanes during the vertical blanking
+interval.
+
+SPECIFYING DATA FETCH IN HORIZONTAL SCROLLING
+The normal data-fetch start for non-scrolled displays is ($38). If horizontal
+scrolling is desired, then the data fetch must start one word sooner
+(DDFSTRT = $0030). Incidentally, is will disable sprite 7. DDFSTOP remains
+unchanged. Remember that the settings of the data-fetch registers affect both
+playfields.
+
+SPECIFYING THE MODULO IN HORIZONTAL SCROLLING
+As always, the modulo is two counts less than the difference between the
+address of the next word you want to fetch and the address of the last word
+that was fetched. As an example for horizontal scrolling, let us assume a 40-
+byte display in an 80-byte "big picture." Because horizontal scrolling
+requires a data fetch of two extra bytes, the data for each line will be 42
+bytes long.
+
+                          - Playfield hardware 77 -
+
+
+                    SEE FIGURE 3-24: Horizontal Scrolling
+
+
+                          - 78 playfield hardware -
+
+
+              START                START+38               START+78
+                 ______________________________________________
+                |                      |                       |
+                |  Display             |                       |
+                |  window              |                       |
+                |  width               |                       |
+                |                      |                       |
+                |                      |                       |
+                |                      |                       |
+                | <--------- Memory Picture Width -----------> |
+                |______________________|_______________________|
+
+Figure 3-25: Memory Picture Larger Than the Display Window
+
+Data for Line 1:
+
+       Location:     START     START+2      START+4...   START+40
+                   Leftmost   Next Word    Next Word    Last Display
+                 display word                               word
+
+Figure 3-26: Data for Line 1 - Horizontal Scrolling
+
+At this point, thc bit-plane pointers contain the value START+42. Adding the
+modulo of 38 gives the correct starting point for the next line.
+
+Data for Line 2:
+
+       Location:    START+80   START+82    START+84    START+120
+                    Leftmost   Next Word  Next Word  Last Display
+                  Display Word                           word
+
+            FIGURE 3-27: Data for Line 2 Horizontal Scrolling
+
+
+In thc BPLxMOD registers you set the modulo for each bit-plane used.
+
+                          - Playfield Hardware 79 -
+
+
+SPECIFYING AMOUNT OF DELAY
+The amount of delay in horizontal scrolling is controlled by bits 7-0 in
+BPLCON1. You set the delay seperatly for each playfield; bits 3-0 for
+playfield 1 (bit-planes 1, 3, and 5) and bits 7-4 for playfield 2 (bit-planes
+2, 4, and 6).
+
+NOTE
+Always set all six bits, even if you have only one playfield. Set 3-0 and
+7-4 to the same value if you are using only one playfield.
+
+The following example sets the horizontal scroll delay to 7 for both
+playfields.
+
+    MOVE.W #$77,BPLCON1+CUSTOM
+
+SCROLLED PLAYFIELD SUMMARY
+The steps for defining a scrolled playfield are the same as those for
+defining the basic playfield, except for the following steps:
+
+o Defining the data fetch. Fetch one extra word per horizontal line and start
+it 16 pixels before the normal (unscrolled) data-fetch start.
+
+o Defining the modulo. The modulo is two counts less than when there is no
+scrolling.
+
+These steps are added:
+
+o For vertical scrolling, reset the bit-plane pointers for the amount of the
+scrolling increment. Reset BPLxPTH and BPLxPTL during the vertical blanking
+interval.
+
+o For horizontal scrolling, specify the delay. Set bits 7-0 in BPLCON1 for
+0 to 15 bits of delay.
+
+                          - 80 Playfield Hardware -
+
+
+ADVANED TOPICS
+
+This section describes features that are used less often or are optional.
+
+INTERACTIONS AMONG PLAYFIELDS AND OTHER OBJECTS
+Playfields share the display with sprites. Chapter 7, "System Control
+Hardware," shows how playfields can be given different video display
+prioities relative to the sprites and how playfields can collide with
+(overlap) the sprites or each other.
+
+HOLD-AND-MODIFY MODE
+This is a special mode that allows you to produce up to 4,096 colors on the
+screen at the same time. Normally, as each value formed by the combination
+of bit-planes is selected, the data contained in the selecled color register
+is loaded into the color output circuit for the pixel being written on the
+screen. Therefore, each pixel is colored by the contents of the selected
+color register.
+
+In hold-and-modify mode, however, the value in the color output circuitry is
+held, and one of the three components of the color (red, green, or blue) is
+modified by bits coming from certain preselected bit-planes. After
+modification, the pixel is written to the screen.
+
+The hold-and-modify mode allows very fine gradients of color or shading to be
+produced on the screen. For example, you might draw a set of 16 vases, each a
+different color, using all 16 colors in the color palette. Then, for each
+vase, you use hold-and-modify to very finely shade or highlight or add a
+completely different color to each of the vases. Note that a particular hold-
+and-modify pixel can only change one of the three color values at a time.
+Thus, the effect has a limiled control.
+
+In hold and modify mode, you use all six bit-planes. Planes 5 and 6 are used
+to modify the way bits from planes 1- 4 are treated, as follows:
+
+o If the 6-5 bit combination from planes 6 and 5 for any given pixel is 00,
+normal color selection procedure is followed. Thus, the bit combinations from
+planes 4-1, in that order of significance, are used to choose one of 16 color
+registers (registers 0 - 15).
+
+o If only five bit-planes are used, the data from the sixth plane is
+automatically supplied with the value as 0.
+
+o If the 6-5 bit combination is 01, the color of the pixel immediately to the
+left of this pixel is duplicatcd and then modified. The bit-combinations from
+planes 4-1 are used to replace the four "blue" bits in the corresponding color
+register.
+
+                          - Playfield Hardware 81 -
+
+
+o If the 6-5 bit combination is 10, the color of the pixel immediately to the
+left of this pixel is duplicated and then modified. The bit-combinations from
+planes 4 -1 are used to replace the four "red" bits.
+
+o If the 6-5 bit combination is 11, the color of the pixel immediately to the
+left of this pixel is duplicated and then modified. The bit-combinations from
+planes 4 -1 are used to replace the four "green" bits.
+
+Using hold-and-modify mode, it is possible to get by with defining only one
+color register, which is COLOR0, the color of the background. You treat the
+entire screen as a modification of that original color, according to the
+schcme above.
+
+Bit 11 of register BPLCON0 selects hold-and-modify mode. The following bits
+in BPLCON0 must be set for hold-and-modify mode to be active:
+
+o Bit HOMOD, bit 11, is 1.
+
+o Bit DBLPF, bit 10, is 0 (single-playfield mode specified).
+
+o Bit HIRES, bit 15, is 0 (low-resolution mode specified).
+
+o Bits BPU2, BPUI, and BPU0 - bits 14, 13, and 12, are 101 or 110 (five or
+six bit-planes active).
+
+The following example code generates a six-bit-plane display with hold-and-
+modify mode tumed on. All 32 color registers are loaded with black to prove
+that the colors are being generated by hold-and-modify. Thc equates are the
+usual and are not repeated here.
+
+; First, set up the control registers.
+;
+    LEA    CUSTOM,a0                 ; Point a0 at custom chips
+    MOVE.W #$6A00,BPLCON0(a0)        ; Six bit-planes, hold-and-modify mode
+    MOVE.W #0,BPLCON1(a0)            ; Horizontal scroll = 0
+    MOVE.W #0,BPL1MOD(a0)            ; Modulo for odd bit-planes = 0
+    MOVE.W #0,BPL2MOD(a0)            ; Ditto for even bit-planea
+    MOVE.W #$0038,DDFSTRT(a0)        ; Set data-fetch start
+    MOVE.W #$00D0,DDFSTOP(a0)        ; Set data-fetch stop
+    MOVE.W #$2C81,DIWSTRT(a0)        ; Set display window start
+    MOVE.W #$F4C1,DIWSTOP(a0)        ; Set display window stop
+;
+;Set all color registers = black to prove that hold-and-modify mode is working
+;
+    MOVE.W #32,d0                    ; Initialize counter
+    LEA    CUSTOM+COLOR00,a1         ; Point al at first color regiater
+CREGLOOP:
+    MOVE.W #$0000,(a1)+              ; Write black to a color register
+    DBRA   d0,CREGLOOP               ; Decrement counter and loop til done
+;
+; Fill six bit-planes with an easily recognizable pattern.
+;
+; NOTE: This is just for example use. Normally these bit planes would
+;       need to be allocated from the system MEMF_CHIP memory pool.
+;
+
+                          - 82 Playfield Hardware -
+
+
+    MOVE.W  #2000,d0                ; 2000 longwords per bit-plane
+    MOVE.L  #$21000,a1              ; Point a1 at bit-plane 1
+    MOVE.L  #$23000,a2              ; Point a2 at bit-plane 2
+    MOVE.L  #$25000,a3              ; Point a3 at bit-plane 3
+    MOVE.L  #$27000,a4              ; Point a4 at bit-plane 4
+    MOVE.L  #$29000,a5              ; Point a5 at bit-plane 5
+    MOVE.L  #$2B000,a6              ; Point a6 at bit-plane 6
+FPLLOOP:
+    MOVE.L  #$55555555,(a1)+        ; Fill bit-plane 1 with $55555555
+    MOVE.L  #$33333333,(a2)+        ; Fill bit-plane 2 with $33333333
+    MOVE.L  #$0F0F0F0F,(a3)+        ; Fill bit-plane 3 with $0F0F0F0F
+    MOVE.L  #$00FF00FF,(a4)+        ; Fill bit-plane 4 with $00FF00FF
+    MOVE.L  #$CF3CF3CF,(a5)+        ; Fill bit-plane 5 with $CF3CF3CF
+    MOVE.L  #$3CF3CF3C,(a6)+        ; Fill bit-plane 6 with $3CF3CF3C
+    DBRA    d0,FPLLOOP              ; Decrement counter & loop till done
+;
+; Set up a Copper list at $20000.
+;
+; NOTE: As with the bit planes, the copper list location should be allocated
+;       from the system MEMF_CHIP memory pool.
+;
+    MOVE.L #$20000,a1               ; Point al at Copper list dest
+    LEA    COPPERL(pc),a2           ; Point a2 at Copper list image
+CLOOP:
+    MOVE.L (a2),(a1)+               ; Move a long word
+    CMPI.L #$FFFFFFFE,(a2)+         ; Check for end of Copper list
+    BNE    CLOOP                    ; Loop until entire Cop list moved
+;
+;Point Copper at Copper list
+;
+    MOVE.L #$20000,COP1LCH(a0)      ; Load Copper jump register
+    MOVE.W COPJMP1(a0),d0           ; Force load into Copper P.C.
+;
+; Start DMA.
+;
+    MOVE.W #$8380,DMACON(a0)        ; Enable bit-plane and Copper DMA
+
+    BRA ....next stuff to do
+;
+; Copper list for six bit-planes. Bit-plane 1 is at $21000; 2 is at $23000;
+; 3 is at $25000; 4 is at $27000; 5 is at $29000; 6 is at $2B000.
+;
+; NOTE: These bit-plane addresses are for example purposes only.
+;       See note above.
+;
+COPPERL:
+    DC.W   BPL1PTH,$0002            ; Bit-plane 1 pointer = $21000
+    DC.W   BPL1PTL,$1000
+    DC.W   BPL2PTH,$0002            ; Bit-plane 2 pointer = $23000
+    DC.W   BPL2PTL,$3000
+    DC.W   BPL3PTH,$0002            ; Bit-plane 3 pointer = $25000
+    DC.W   BPL3PTL,$5000
+    DC.W   BPL4PTH,$0002            ; Bit-plane 4 pointer = $27000
+    DC.W   BPL4PTL,$7000
+    DC.W   BPL5PTH,$0002            ; Bit-plane 5 pointer = $29000
+    DC.W   BPL5PTL,$9000
+    DC.W   BPL6PTH,$0002            ; Bit-plane 6 pointer = $2B000
+    DC.W   BPL6PTL,$B000
+    DC.W   $FFFF,$FFFE              ; Wait or the impossible, i.e., quit
+
+                          - Playfield Hardware 83 -
+
+
+FORMING A DISPLAY WITH SEVERAL DIFFERENT PLAYFIELDS
+The graphics library provides the ability to split the screen into several
+"ViewPorts", each with its own colors and resolutions. See the Amiga ROM
+Kernel Manual for more information.
+
+USING AN EXTERNAL VIDEO SOURCE
+An optional board that provides genlock is available for the Amiga. Genlock
+allows you to bring in your graphics display from an extemal video source
+(such as a VCR, camera, or laser disk player). When you use genlock, the
+background color is replaced by the display from this external video source.
+For more information, see the instructions furnished with the optional board.
+
+SUMMARY OF PLAYFIELD REGISTERS
+This section summarizes the registers used in this chapter and the meaning
+of their bit settings. The color registers are summarized in the next
+section. See Appendix A for a summary of all registers.
+
+BPLCON0 - Bit Plane Control
+
+NOTE
+Bits in this register cannot be independently set.
+
+    Bit 0 - unused
+
+    Bit 1 - ERSY (extemal synchronization enable)
+        1 = Extemal synchronization enabled (allows genlock synchronization
+            to occur)
+        0 = Extemal synchronization disabled
+
+    Bit 2 - LACE (inerlace enable)
+        1 = interlaced mode enabled
+        0 = non-interlaced mode enabled
+
+    Bit 3 - LPEN (light pen enable)
+
+    Bits 4-7 not used (make 0)
+
+                          - 84 Playfield Hardware -
+
+
+    Bit 8 - GAUD (genlock audio enable)
+        1 = Genlock audio enabled
+        0 = Genlock audio disabled (in blanking periods, this bit goes out
+            on the pixel switch
+
+    Bit 9 - COLOR ON (color enable)
+        1 = composite video color-burst enabled
+        0 = composite video color-burst disabled
+
+   Bit 10 - DBLPF (double-playfield enable)
+        1 = dual playfields enabled
+        0 = single playfield enabled
+
+   Bit 11 - HOMOD (hold-and-modify enable)
+        1 = hold-and-modify enabled
+        0 = hold-and-modify disabled
+
+   Bits 14, 13,12 - BPU2, BPU1, BPU0
+        Number of bit-planes used.
+
+        000 = only a background color
+        001 = 1 bit-plane, PLANE 1
+        010 = 2 bit-planes, PLANES 1 and 2
+        011 = 3 bit-planes, PLANES 1- 3
+        100 = 4 bit-planes, PLANES 1- 4
+        101 = 5 bit-planes, PLANES 1- 5
+        110 = 6 bit-planes, PLANES 1- 6
+        111 not used
+
+   Bit 15 - HIRES (high-resolution enable)
+        1 = high-resolution mode
+        0 = low-resolution mode
+
+BPLCON1 - Bit-plane Control
+
+   Bits 3-0 - PF1H(3-0)
+        Playfield 1 delay
+
+   Bits 7-4 - PF2H(3-0)
+        Playfield 2 delay
+
+   Bits 15-8 not used
+
+                          - Playfield Hardware 85 -
+
+
+BPLCON2 - Bit-plane Control
+
+   Bit 6 - PF2PRI
+
+           1 = Playfield 2 has priority
+           0 = Playfield 1 has priority
+
+   Bits 0-5 Playfield sprite priority
+
+   Bits 7-15 notused
+
+DDFSTRT - Data-fetch Start
+   (Beginning position for data fetch)
+
+   Bits 15-8 - not used
+
+   Bits  7-2 - pixel position H8-H3
+
+   Bits  1-0 only respected in HiRes Mode.
+
+   Bits  1-0 - not used
+
+DDFSTOP - Data-fetch Stop
+   (Ending position for data fetch)
+
+   Bits 15-8 - not used
+
+   Bits 7-2 - pixel position H8-H3
+       Bit H3 only respected in HiRes Mode.
+
+   Bits 1-0 - not used
+
+BPLxPTH - Bit-plane Pointer
+   (Bit-plane pointer high word, where x is the bit-plane number)
+
+BPLxPTL - Bit-plane Pointer
+   (Bit-plane pointer low word, where x is the bit-plane number)
+
+DIWSTRT - Display Window Start
+   (Starting vertical and horizontal coordinates)
+
+   Bits 15-8 - VSTART (V7-V0)
+   Bits 7-0 - HSTART (H7-H0)
+
+                        - 86 Playfield Hardware -
+
+
+DIWSTOP - Display Window Stop
+   (Ending vertical and horizontal coordinates)
+
+   Bits 15-8 - VSTOP (V7-V0)
+
+   Bits 7-0 - HSTOP (H7-H0)
+
+BPL1MOD - Bit-plane Modulo
+   (Odd-numbered bit-planes, playfield 1)
+
+BPL2MOD - Bit-plane Modulo
+   (Even-numbered bit-planes, playfield 2)
+
+SUMMARY OF COLOR SELECTION
+
+This section contains summaries of playfield color selection including color
+register contents, example colors, and the differences in color selection in
+high-resolution and low-resolution modes.
+
+COLOR REGISTER CONTENTS
+Table 3-15 shows the contents of each color register. All color registers are
+write-only.
+
+    TABLE 3-15: Colour register contents
+
+         Bits         Contents
+
+         15-12   (Unused - set to 0)
+         11- 8          Red
+          7- 4          Green
+          3- 0          Blue
+
+                        - Playfield Hardware 87 -
+
+
+SOME SAMPLE COLOR REGISTER CONTENTS
+Table 3-16 shows a variety of colors and the hexadecimal values to load into
+the color registers for these colors.
+
+Table 3-16: Some Register Values and Resulting Colors
+
+    Value  Color                   Value  Color
+
+    $FFF   White                   $1FB   Light aqua
+    $D00   Brick red               $6FE   Sky blue
+    $F00   Red                     $6CE   Light blue
+    $F80   Red-orange              $00F   Blue
+    $F90   Orange                  $61F   Bright blue
+    $FB0   Golden orange           $06D   Dark blue
+    $FD0   Cadmium yellow          $91F   Purple
+    $FF0   Lemon yellow            $ClF   Violet
+    $BF0   Lime green              $FlF   Magenta
+    $8E0   Light green             $FAC   Pink
+    $0F0   Green                   $DB9   Tan
+    $2C0   Dark green              $C80   Brown
+    $0B1   Forest green            $A87   Dark brown
+    $0BB   Blue green              $CCC   Lightgrey
+    $0DB   Aqua                    $999   Medium grey
+                                   $000   Black
+
+COLOR SELECTION IN LOW-RESOLUTION MODE
+Table 3-17 shows playfield color selection in low-resolution mode. If the
+bit combinations from the playfields are as shown, the color is taken from
+the color register number indicated.
+
+                          - 88 Playfield Hardware -
+
+
+    Table 3-17: Low-resolution Color Selectlon
+
+             Singe Playfield             Dual Playfields
+     Normal Mode        Hold-and-modify Mode            Color Register
+ (Bit-planes 5,4,3,2,1)  (Bit-planes 4,3,2,1)               Number
+
+                                           Playfield 1
+                                         Bit-planes 5,3,1
+
+        00000                   0000                000            0 *
+        00001                   0001                001            1
+        00010                   0010                010            2
+        00011                   0011                011            3
+        00100                   0100                100            4
+        00101                   0101                101            5
+        00110                   0100                110            6
+        00111                   0111                111            7
+
+                                           Playfield 2
+                                         Bit-planes 6,4,2
+
+        01000                   1000                000 **         8
+        01001                   1001                001            9
+        01010                   1010                010           10
+        01011                   1011                011           11
+        01100                   1100                100           12
+        01101                   1101                101           13
+        01110                   1110                110           14
+        01111                   1111                111           15
+        10000                    |                   |            16
+        10001                    |                   |            17
+        10010                    |                   |            18
+        10011                    |                   |            19
+        10100                   NOT                 NOT           20
+        10101                   USED                USED          21
+        10110                    IN                  IN           22
+        10111                   THIS                THIS          23
+        11000                   MODE                MODE          24
+        11001                    |                   |            25
+        11010                    |                   |            26
+        11011                    |                   |            27
+        11100                    |                   |            28
+        11101                    |                   |            29
+        11110                    |                   |            30
+        11111                    |                   |            31
+
+* Color register 0 always defines the background color.
+
+** Selects "transparent" mode instead of selecting color register 8.
+
+                          - Playfield Hardware 89 -
+
+
+COLOR SELECTION IN HOLD-AND-MODIFY MODE
+In hold-and-modify mode, the color register contents are changed as shown
+in Table 3-18. This mode is in effect only if bit 10 of BPLCON0 = 1.
+
+    Table 3-18: Color Selection in Hold-and-modify Mode
+
+      Bitplane 6  Bitplane 5                       Result
+
+        0           0       Normal operation     (use color register itself)
+        0           1       Hold green and red    B = Bit-plane 4-1 contents
+                    0       Hold green and blue   R = Bit-plane 4-1 contents
+                            Hold blue and red     G = Bit-plane 4-1 contents
+
+COLOR SELECTION IN HIGH-RESOLUTION MODE
+Table 3-19 shows playfield color selection in high-resolution mode. If
+the bit-combinations from the playfields are as shown, the color is taken
+from the color register number indicated.
+
+                          - 90 Playfield Hardware -
+
+
+    Table 3-19 High-resolution Color Selectinn
+
+                    Single                    Dual        Color
+                  Playfield                Playfields    Register
+              Bit-planes 4,3,2,1                          Number
+
+                                          Playfield 1
+                                         Bit-planes 3,1
+
+                     0000                     00 *          0 **
+                     0001                     01            1
+                     0010                     10            2
+                     0011                     11            3
+                     0100                     |             4
+                     0101                   NOT USED        5
+                     0110                 IN THIS MODE      6
+                     0111                     |             7
+
+                                          Playfield 2
+                                        Bit-planes 4.2
+
+                     1000                      00 *          8
+                     1001                      01            9
+                     1010                      10           10
+                     1011                      11           11
+                     1100                      |            12
+                     1101                   NOT USED        13
+                     1110                 IN THIS MODE      14
+                     1111                      |            15
+
+* Selects "transparent" mode.
+
+* Color register 0 always defines the background color.
+
+                           - Playfield Hardware 91 -
+
+End.

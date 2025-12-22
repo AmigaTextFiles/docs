@@ -1,0 +1,182 @@
+
+Changes from V38 to V39
+=======================
+
+Explanation:
+· "beauty changes" to the include-files
+- changes in implementation
+* what that means for currently existing "V38 style" programs
+# recommended use for new "V39 aware" programs
+
+
+AllocI2C(delaytype,name)(D0,A1)
+-------------------------------
+
+- Is being called automatically every time a new client opens the library.
+- Allocates the hardware to the library itself, not to the client, so the
+  A1 parameter is ignored.
+- Delay by means of the "timer.device" is no longer implemented, because
+  the new method of timing (idle CIA reads, which are slow on all Amigas)
+  is both precise and efficient. So the D0 parameter is ignored, too.
+# Don't use this function. If you want to have more than one try to
+  allocate the hardware, rather close the library and open it again. To
+  find out whether the hardware was successfully allocated (or why not),
+  just look at the error codes returned by SendI2C/ReceiveI2C.
+
+I HAD to ignore the delaytype argument. At first I thought it might be
+helpful to interpret the delay value set by old style programs.  But that
+isn't true, because delay type and value aren't set simultaneously, and
+that means, not necessarily by the same program.
+
+
+FreeI2C()
+---------
+
+- Is being called automatically every time a client closes the library, but
+  does nothing while other clients have the library still open.
+* Obviously FreeI2C() can *fail* now, if more than one client has the
+  library open. That's bad if a program thinks it has e.g. returned the
+  hardware to the printer and then tries to print something.
+# Don't use this function. If you want to be nice while you do not need
+  the I²C bus for some time, rather close the library and open it again
+  later. If the system really needs the allocated hardware back
+  immediately, call ShutDownI2C(), but read the notes on that function!
+
+An implementation of FreeI2C() that returns the hardware unconditionally,
+the way ShutDownI2C() does now, wouldn't have been a good solution. It
+would make old style programs, which call FreeI2C() when they quit, look
+like rotten bastards.
+So the current implementation at least allows peaceful coexistence. And
+if you've got a veteran program that really relies on FreeI2C() never to
+fail, just make sure you have no other I²C applications running at the
+same time.
+
+
+InitI2C()
+---------
+
+- Is being called automatically every time a new client opens the library,
+  but NOT after an explicit call to AllocI2C().
+# Use this function only, if you've called AllocI2C() explicitly. But you're
+  not supposed to do that, anyway.
+
+
+SetI2CDelay(ticks)(D0)
+----------------------
+
+· Has been renamed from formerly SetDelay.
+- Now returns the old delay value, too, and doesn't change the current
+  value at all, if I2CDELAY_READONLY is specified.
+- The delay value will always be translated to a loop of read accesses to
+  a CIA register in every SCL pulse.  These are slow (somewhere about a
+  microsecond), because of the dreadfully low clock rate that the Amiga
+  supplies to its CIAs.
+* When using DELAY_LOOP, the new delay method may look like power brakes:
+  old delay values will be much too high.
+* When using DELAY_TIMER with the recommended value of 10, the bus will
+  be running too slow, too.
+# You need not look at the return value, it's only useful to "spy" at the
+  delay value set by other programs.
+
+
+SendI2C(addr,number,data)(D0,D1,A1)   and
+-----------------------------------
+ReceiveI2C(addr,number,data)(D0,D1,A1)
+--------------------------------------
+
+· Type of <number> is now "UWORD" ("int" was ambiguous).
+- The return value has been expanded from UBYTE to ULONG to supply
+  additional error information.
+- Both functions are protected by a semaphore now. That's why more than one
+  client at a time may use the library now, without them knowing about each
+  other.  (Of course, if two or more programs perform write accesses to the
+  same I²C address, this will still lead to problems.)
+- The LSB in <addr> is automatically corrected to form a valid read/write
+  address (foolproof).
+* Caution: When recompiling v38 style programs using the new header files,
+  error checking will most likely fail:  When considered as a ULONG, the
+  return values are now always non-zero (i.e. "success").
+# Application programs don't have to examine the error code in detail. They
+  should look at its low-order byte, and if it's zero (i. e. "error"), they
+  can let I2CErrText() do the rest (see example at the end of this file).
+# Obviously you can now use the same symbolic constant to address a chip for
+  both read and write.
+
+
+GetI2COpponent()
+----------------
+
+No changes.
+
+
+
+New Functions in V39
+====================
+
+See "i2c.doc".
+
+
+
+Examples
+========
+
+A minimal I²C program in the old style:
+
+#define PCF8574_R 0x41
+#define PCF8574_W 0x40
+
+main()
+    {
+    char i2cdata[ 10 ];
+
+    if( (I2C_Base=OpenLibrary( "i2c.library", 37 )) == NULL )
+        return 10;
+    AllocI2C( DELAY_TIMER, "Charlie" );
+    InitI2C();
+    SetDelay( 10 );
+    if( !SendI2C( PCF8574_W, 1, i2cdata ) )
+        printf( "I²C failure!\n" );
+    if( !ReceiveI2C( PCF8574_R, 1, i2cdata ) )
+        printf("I²C failure!\n");
+    FreeI2C();
+    CloseLibrary( I2C_Base );
+    }
+
+
+
+And the same for V39:
+
+#define PCF8574 0x40
+
+main()
+    {
+    char i2cdata[10];
+    ULONG err;
+
+    if( (I2C_Base=OpenLibrary( "i2c.library", 39 )) == NULL )
+        return 10;
+    err = SendI2C( PCF8574, 1, i2cdata );
+    if( (err & 0xff)==0 )
+        printf( "I²C failure: %s!\n", I2CErrText( err ) );
+    err = ReceiveI2C( PCF8574, 1, i2cdata );
+    if( (err & 0xff)==0 )
+        printf( "I²C failure: %s!\n", I2CErrText( err ) );
+    CloseLibrary( I2C_Base );
+    }
+
+
+
+Summary
+=======
+
+A lot of neat stuff is new:  Automatic initialization during OpenLibrary,
+less trouble with the proper bus timing, better error diagnosis and the
+foolproof R/W address bit.  And most important, better support for I²C buses
+with more than one chip attached:  Each chip may now be controlled by a
+program of its own, and the programs will multitask nicely without even
+realizing they are not alone on the bus.
+
+Existing binaries will continue to work, but be careful when recompiling
+old sources with the new headers. See the notes on SetI2CDelay, SendI2C
+and ReceiveI2C.
+

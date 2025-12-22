@@ -1,0 +1,244 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                18.Teil...
+
+So jetzt erstmal wieder was zum Bueffeln, ein etwas schwieriges
+unterfangen. Wenn wir es aber beherrschen dann ist die grosse Lernphase der
+Kunst des Introprogrammirens leider schon vorbei.
+Kommen wir zu einem Chip des Amigas dem er einen grossen teil seiner
+Grafischen moeglichkeiten verdankt.
+
+17.Der Blitter
+
+Vielleicht habt ihr schon irgendwelche Schauermaerchen ueber den Blitter
+gehoert, und ich gebt auch zu das es ziemlich Haarig ist in erstmal zu
+verstehen. Aber wenn man das gefressen hat dann ist er relativ einfach. Und
+die wirklich schweren Sachen machen wir ja jetzt noch nicht. Ich meine
+jetzt VectorenGrafik und solche Tollen sachen Wie Filled Bobs, oder Sogar
+Stencil Bobs. Auch werden wir nicht versuchen neue rekorde zu brechen,
+obwohl das jeder der ihn beherscht versucht, wir wollen einfach nur ein
+bisschen Kopieren und so...
+
+Erstmal: Wofuer ist der Blitter eigentlich da ?
+
+Nun im Amiga ist er fuer die Textausgabe da, er zeichnet die Fenster und
+schaufelt beim laden von Programmen die Daten aus den puffern in den
+Arbeitsspeicher, und decodiert sie gleichzeitig. Ganz schoen wichtig das
+Ding, oder ?
+
+Ja wichtig ist er, und schnell - Er kopiert mit einer Geschwindigkeit von
+
+        16 Millionen Punkten in der Sekunde
+
+Das ist verdammt schnell, ich glaube der Prozessor liegt knapp unter einer
+Millionen. Also liegt es doch auf der Hand das wir den fuer uns Arbeiten
+lassen.
+
+Wie sprechen ich den Blitter an ?
+Ganz einfach ueber die Hardwareregister, von denen wir schon soviele kennen
+und schaetzen gelernt haben. Fuer alles moegliche gibt es Register. Die
+Aufgabe von uns ist nur diese register richtig zu initialisieren, den rest
+macht der Blitter ganz alleine.
+
+Was uns am Blitter interressiert, ist das kopieren mit ihm.
+
+Nun dafuer stellt und der Blitter 3 Quellbereiche und 1 Zielbereich zur
+verfuegung.
+Man kann immer nur von Quellbereich in Zielbereich Schreiben, deswegen
+heissen sie auch so.
+Das Heisst von A,B,C, so heissen die Quellen, nach D, so heisst das Ziel.
+
+Allerding kann man auch die Quellen miteinander verknuepfen, aber das
+Spaeter. Uns Interresiert einfaches kopieren.
+
+Der Blitter braucht zum Kopieren einige Angaben, die Operation und das
+Ausmass betreffend.
+
+Erstmal muss er wissen, welche seiner Kanaele daran beteiligt ist. D ist
+meistens dabei, und A wenn es ums einfaches kopieren geht auch. Sagen wir
+also A und D.
+Dann muss man eingeben ob irgendwelche verknuepfungen waehrend der Aktion
+durchgefuehrt werden sollen. Das ist in unserem Fall ja nicht der Fall.
+
+Dann muessen wir dem Blitter sagen wo der bereich ist von dem wir die
+Daten abholen, das ist der Quellbereich. Da setzen wir mal $50000 ein.
+
+Nun kommt der Zielbereich, D genannt, dort setzen wir mal $60000 ein.
+
+Als letztes muss der Blitter noch wissen wieviel er von dort nach da
+kopieren soll. Sobald wir das eingegeben haben startet er auch die Aktion,
+denn das register indem die Angabe ueber die Groesse liegt ist ein
+Stroberegister (Sprich: Strohp) Das heisst, bei Schreibzugriff wird
+gleichzeitig eine Aktion gestartet. In dem Fall ist es der Blitter.
+
+Mit diesem Register fuer die laenge ist es aber etwas schwerer da man nicht
+einfach eingibt `So 100000 Bytes`, sondern man muss in gedanken aus der
+Anzahl der Bytes ein Rechteck bauen, und dem Register die Seitenlaenge A
+und B uebergeben. In manchen Faellen reicht es wenn wir die Quadratwurzel
+ziehen, und eine Grade zahl rauskommt. Bei 100 oder 10000 waere das zum
+Beispiel der fall. Aber das sind halt die Ausnahmen, also schauen wir mal
+wie wir das machen koennen.
+
+Bis auf eine Ausnahme arbeitet der Blitter nur mir Woertern, also muessen
+wir den bereich den wir kopieren wollen in Woertern angeben.
+Also, wenn wir z.b 30000 Bytes von $50000 nach $60000 kopieren wollen dann
+muessen wir den Bereich ungefaehr so definieren
+
+        300 Zeilen zu 100 Bytes bzw. 50 Woertern
+
+das heisst 300*50, sind 30000, so einfach ist das.
+Der Bereich ist aber Beschraenkt, die maximale Zeilenzahl betraegt 1024
+Zeilen, wobei man da 0 als Zeilen zahl angeben muss, die nimmt er dann als
+1024, da 0 ja eine Unsinnige angabe waere. Die maximale Breite betraegt 64
+Woerter, wobei wieder das mit der 0 ist. Wir koennen also mit einem Schlag
+128 KB durch den Speicher Schleudern, anders kann man es nicht mehr
+ausdruecken. Diese laengen und breiten angaben muessen wir aber auch
+irgendwie unterbringen in dem Registers unterbringen. Die ersten 6 Bits
+sind die Breite, und die restlichen 10 sind fuer die laenge.
+
+Wichtig ist aber wie wir die Masse da rein kriegen, einfach 300 * 50 kann
+man ja nicht schreiben, dann waere das System mit dem rechteckigen bereich
+wieder hin. Also muessen wir die LaengenBits auch noch oben schieben.
+Stellen wir uns das Leere BLTSIZE register , so heisst es naemlich, mal
+bildlich vor.
+
+        I Zeilen  I Breite
+        0000000000000000
+        I         I
+
+Schreiben wir einfach mal die Zeilen zahl 9 rein. Mit Move.w #$9,Bltsize
+
+        I Zeilen  I Breite
+        0000000000001001
+        I         I
+
+So jetzt steht die laenge aber in den Registern fuer die Breite, wie
+kriegen wir die rueber. Ganz einfach, mal 64, dann wird naehmlich alles nur
+um 6 Bit nach oben gesetzt. Also es sieht dann so aus
+
+        I Zeilen  I Breite
+        0000001001000000
+        I Zeilen  I
+
+Naja, und weiter...Hmmm ich will euch nicht damit Qualen, es waeren
+ziemlich aufwendige rechnungen um die Sachen vom Programm da reinzusetzen.
+Erstmal reicht es wenn wir das vom Seka machen lassen. Bei unserem Beispiel
+saehe die Initialisierung des BLTSIZE registers ungefaehr so aus.
+
+        Move.w #300*64+50,BLTSIZE
+
+So einfach ist das....
+
+Damit haetten wir schon alle schritte die fuer ein Kopieraktion noetig
+waeren beisammen. Schreiben wir sie mal auf, mit SourceCode-beispiel.
+
+Quelle A und Ziel D angeben, keine Verknuepfung.
+
+        Move.w #%0000100111110000,BLTCON0
+
+Adresse der Quelle A angeben
+
+        Move.l #$50000,BLTAPT
+
+Adresse des Ziels D angeben
+
+        Move.l #$60000,BLTDPT
+
+Laenge und Breite angeben, und gleichzeitig Aktion starten
+
+        Move.w #300*64+50,BLTSIZE
+
+Damit waere die Sache dann fertig...Komplett ist der Aufruf allerdings noch
+nicht. Es fehlen noch ein paar sachen die sehr viele moeglichkeiten
+mitsichbringen, aber beim normalen Kopieren nur hindern.
+
+Da waeren erstmal die Modulowerte fuer die Quelle und das Ziel.
+Ja, die Modulos mit denen wir bei den Bitplanes schon so toll arbeiten
+konnten, hat der Blitter auch. Sie geben an wieviel Bytes, hier ist die
+Ausnahme von der ich Sprach, nach jeder zeile uebersprungen werden sollen.
+Es gibt sie fuer die Quellbereiche A,B und C sowie fuer den Zielbereich D.
+Wir muessen diese Register natuerlich auf 0 setzen, damit es wirklich eine
+Kopie gibt.
+
+Desweiteren sind da BLTAFWM und BLTALWM. Sie sind fuer das erste und das
+letzte worte jeder zeile zustaendig. Mit ihnen kann man eine And Maske
+ueber eben diese beiden Woerter legen. Die And funktion kennt ihr ja schon,
+deshalb will ich das hier auch niocht nochmal erklaeren.
+Also, die muessen wir natuerlich vollschreiben, alles gesetzt brauchen wir.
+
+Und dann als letztes muessen wir natuerlich auf den Blitter warten bis das
+er fertig ist, denn sonst waere jede weitere Initialisierung sinnlos, denn
+wenn er arbeitet nimmt er keine Befehle entgegen.
+
+So wie warten wir den auf den Blitter ?
+Ganz einfach, im DMACON register gibt ja auch den Blitterkanal, solange der
+Blitter arbeitet wird der kanal geschlossen. Wir koennen das zwar nicht im
+DMACON register erfahren, da es ja kein Leseregister ist. Aber wofuer gibt
+es das DMACONR register. Dort fragen wir einfach das Bit 6 ab. Es gibt noch
+eine Zweite moeglichkeit, aber die ich hier vorgestellt habe benutze ich
+selbst schon immer und habe da nie Schwierigkeiten mit gehabt. Also eine
+Komplette Kopierroutine sieht dann so aus.
+
+        Move.w #$ffff,BLTAFWM           ; Maske fuer erstes Wort
+        Move.w #$ffff,BLTALWM           ; Maske fuer letztes Wort
+        Move.w #$0000,BLTAMOD           ; Modulo Register A auf Null
+        Move.w #$0000,BLTDMOD           ; Modulo Register D auf Null
+        Move.w #%0000100111110000,BLTCON0
+                                        ; Bereiche anschalten, und
+                                        ; moegliche Verknuepfungen anmelden
+        Move.l #$50000,BLTAPT           ; Quelladresse angeben
+        Move.l #$60000,BLTDPT           ; Zieladresse angeben
+        Move.w #300*64+50,BLTSIZE       ; Groesse der Operation, und Los
+WaitBlitter:
+        Btst #6,DMACONR                 ; Bit vom DMA.Kanal testen.
+        Bne.s WaitBlitter               ; Nicht gedrueckt -> Zurueck
+        Rts                             ; Gedrueckt -> Raus
+
+So, das ist ein Kompletter aufruf zu einer Kopieraktion des Blitters.
+
+Allerdings im loeschen ist er auch einsame Spitze. Man muss im da nur sagen
+wo der zu loeschende liegt, und das er nur mit dem Zielbereich arbeiten
+soll. Ein Aufruf der den Blitter veranlasst das ebenkopierte jetzt zu
+loeschen saehe dann so aus.
+
+        Move.w #%0000000100000000,BLTCON0
+        Move.l #$50000,BLTDPT
+        Move.w #300*64+50,BLTSIZE
+WaitBlitter:
+        Btst #6,DMACONR
+        Bne.s WaitBlitter
+        Rts
+
+So, das sind die ersten anwendungsgebiete des Blitter, es gibt aber noch
+sehr viele mehr.
+
+Bevor ich mich im naechsten Teil so langsam an die Bobs, und an das Thema
+Laufschrift heranwage, zeige ich euch gerade noch wie man mit dem Blitter
+invertiert.
+
+        Move.w #%0000100100001111,BLTCON0
+        Move.l #$60000,BLTAPT
+        Move.l #$60000,BLTDPT
+        move.w #300*64+50,BLTSIZE
+WaitBlitter:
+        Btst #6,DMACONR
+        Bne.s WaitBlitter
+        Rts
+
+Zu beachten ist das Quelle und Ziel dieselbe Adresse erhalten, da die
+Operation sehr kompliziert ist.
+
+Was noch wichtig ist das ihr die Interrupts und das Taskswitching
+ausschaltet, denn der Blitter wird halt immer benutzt, und dann muesste man
+immer warten. Wenn wir allerdings den Rest abschalten macht der Blitter nor
+noch seine Aufgabe zuende, und gehoert dann sofort uns. Deshalb muessen wir
+bei einen Programm das den Blitter benutzt, immer ganz am anfang auf den
+Blitter warten, damit wir dann richtig loslegen koennen.
+Allerdings habe ich das jetzt etwas schlecht angefangen, da man die
+WaitBlitterschleife immer vor den Aufruf setzt, damit das Programm was den
+Blitter braucht schonmal weiter arbeitet, und erst auf den Blitter wartet
+wenn es ihn wieder braucht...Alles Klor ?
+
+Bis die tage...
+
+                Jeff Kandle

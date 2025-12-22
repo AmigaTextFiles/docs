@@ -1,0 +1,408 @@
+;	Installer-script for LCDaemon
+
+;---------------------------------------------------------------------
+;	InstallerFX logo
+;---------------------------------------------------------------------
+(onerror (CLEANUP))
+(procedure CLEANUP (delete "t:logo" "t:logo.prefs"))
+(copyfiles (source "VomitInc.iff") (dest "t:") (newname "logo"))
+(textfile (dest "t:logo.prefs") (append "5115") (safe))
+(run "run InstallerFX t:logo")
+(
+
+;---------------------------------------------------------------------
+;	Message texts
+;---------------------------------------------------------------------
+
+(set @appname "LCDaemon")
+(set #welcome-text (cat
+	"Welcome to the LCDaemon installation.\n"
+	"Please select the level of control you wish "
+	"to exert over the installation process."
+))
+(set #askdir-text (cat
+	"Please specify the location where the LCDaemon "
+	"directory should be created."
+))
+(set #askdirutilities-text (cat
+	"Please specify the location where the LCDaemon "
+	"support utilities should be placed."
+))
+(set #askbooldeveloper-text (cat
+	"Do you wish to install the developer files\n"
+	"to create your own LCDaemon client programs?"
+))
+(set #askbooldeveloper-help (cat
+	"The LCDaemon C includes will be installed in your "
+	"standard include directories, and the example sources "
+	"will be installed in the LCDaemon installation "
+	"directory."
+))
+(set #alreadyinstalled-text (cat
+	"A LCDaemon-installation is already present in this directory, "
+	"and will be overwritten. Please abort the installation now if you "
+	"do not wish this to happen."
+))
+(set #askdirincludes-text (cat
+	"Please select the directory where your C-includes are installed. "
+	"The lcd.h include file will be installed in the selected directory."
+))
+(set #askoptionswannado-text
+	"Please select the actions you wish to perform."
+)
+(set #askoptionswannadoinstall-text
+	"Install LCDaemon"
+)
+(set #askchoicestartuptype-text (cat
+	"Do you wish to run LCDaemon automatically "
+	"at startup, or start it manually?"
+))
+(set #askchoicestartuptype-help (cat
+	"If you select \"manually\", no modifications "
+	"will be made to your system. This is the "
+	"preferred setting for testing LCDaemon."
+))
+(set #askchoiceuserstartup-text
+	"Start using user-startup"
+)
+(set #askchoicewbstartup-text
+	"Start using WBStartup"
+)
+(set #askchoicemanually-text
+	"Start manually"
+)
+(set #askoptionswannadoconfigure-text
+	"Configure LCDaemon"
+)
+(set #askoptionswannadouninstall-text
+	"Uninstall LCDaemon (unimplemented)"
+)
+(set #asknumberoflines-text (cat
+	"Please specify the number of lines "
+	"your LCD screen has.\n"
+	"(LCDaemon option HEIGHT)"
+))
+(set #asknumberofcharacters-text (cat
+	"Please specify the number of characters "
+	"your LCD screen has.\n"
+	"(LCDaemon option WIDTH)"
+))
+(set #askdriverlib-text (cat
+	"Please indicate which driver library you wish to use."
+))
+(set #askchoiceconfigmode-text (cat
+	"Which configuration type do you wish to use for "
+	"the parameters you are about to give?"
+))
+(set #askchoiceconfigmode-help (cat
+	"Three configuration types are possible, two of which are selectable.\n\n\n"
+	"Configuration through environment variables is advised when "
+	"you have only one LCD display (which should be the case for nearly anyone)\n\n"
+	"Icon-tooltypes override the previous.\n\n"
+	"Command-line options can be used for configuration early in the "
+	"startup-sequence, but you'll have to configure this manually."
+))
+(set #askdriverlib-help (cat
+	"Two driver libraries are currently available.\n\n"
+	"lcdguppy.library :\n"
+	" The Grand Unified Parallel Port driver librarY. This library\n"
+	" handles the Amiga parallel port, the Multifacecard II\n"
+	" and Multifacecard III.\n\n"
+	"lcdwindow.library :\n"
+	" The Amiga Window driver, allowing you to test LCDaemon\n"
+	" without actually building a display."
+))
+(set #copyfileslcd-text (cat
+	"Please wait while copying the main LCDaemon files..."
+))
+(set #copyfiles-text (cat
+	"Please wait while copying files..."
+))
+(set #copyfileslcd-help (cat
+	"Relax and sit back."
+))
+(set #userstartup-text (cat
+	"I'm about to add the \"lcd\"-command to the "
+	"user-startup file. If you want to perform this "
+	"step yourself (perhaps you want to add additional "
+	"startup parameters?) here's your chance to skip "
+	"this step."
+))
+
+;---------------------------------------------------------------------
+;	Procedures
+;---------------------------------------------------------------------
+
+(procedure P_nextcomplete (
+	(set #completionlevel (+ #completionlevel #completionstep))
+	(complete #completionlevel)
+))
+
+;---------------------------------------------------------------------
+;	Main script:	Installation-questions
+;---------------------------------------------------------------------
+
+(set #completionlevel 0)(set #completionlevel 0)(set #completionstep 2)
+(complete 0)
+
+(welcome #welcome-text)
+
+(set #wannado (askoptions
+	(prompt #askoptionswannado-text)
+	(help @askoptions-help)
+	(choices #askoptionswannadoinstall-text #askoptionswannadoconfigure-text #askoptionswannadouninstall-text)
+	(default 3)
+))
+(set #wannainstall (in #wannado 0))
+(set #wannaconfigure (in #wannado 1))
+
+(if #wannainstall (
+
+	(set #lcdaemon (askdir 
+		(prompt #askdir-text) (help @askdir-help) (default @default-dest)
+	))
+	(set @default-dest (tackon #lcdaemon "LCDaemon/"))
+	(if (NOT (exists @default-dest))(
+		(makedir @default-dest
+			(infos)
+		)
+		(copyfiles
+			(prompt #copyfiles-text)
+			(help @copyfiles-help)
+			(source "/")
+			(choices "LCDaemon.info")
+			(dest #lcdaemon)
+			(infos)
+		)
+	)(
+		(message #alreadyinstalled-text)
+	))
+	(P_nextcomplete)
+	(set #startuptype (askchoice
+		(prompt #askchoicestartuptype-text)
+		(help #askchoicestartuptype-help)
+		(choices #askchoiceuserstartup-text #askchoicewbstartup-text #askchoicemanually-text)
+		(default 2)
+	))
+	(P_nextcomplete)
+
+	(set #developer (askbool
+		(prompt #askbooldeveloper-text)
+		(help #askbooldeveloper-help)
+		(default 1)
+	))
+
+	(P_nextcomplete)
+
+	(if #developer
+		(
+			(set #include (askdir
+				(prompt #askdirincludes-text)
+				(help @askdir-help)
+				(default "INCLUDE:")
+			))
+		)
+	)
+
+	(P_nextcomplete)
+
+	(set #utilities (askdir
+		(prompt #askdirutilities-text)
+		(help @askdir-help)
+		(default (tackon @default-dest "Utilities/"))
+		(newpath)
+	))
+	(if(NOT(exists #utilities))
+		(makedir #utilities)
+	)
+	(if (exists "Utilities/")
+		(copyfiles
+			(prompt #copyfiles-text)
+			(help @copyfiles-help)
+			(source "")
+			(choices "Utilities.info")
+			(dest (tackon #utilities "/"))
+			(infos)
+		)
+	)
+
+	(P_nextcomplete)
+)(;else if not(#wannainstall)
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+))
+
+;---------------------------------------------------------------------
+;	Main script:	Configuration-questions
+;---------------------------------------------------------------------
+
+(if #wannaconfigure
+	(
+		(set #configmode (askchoice
+			(prompt #askchoiceconfigmode-text)
+			(help #askchoiceconfigmode-help)
+			(choices "Env-variables" "Icon-tooltypes")
+			(default 0)
+		))
+		(set #numberoflines (asknumber
+			(prompt #asknumberoflines-text)
+			(help @asknumber-help)
+			(range 1 4)
+			(default 2)
+		))
+		(P_nextcomplete)
+		(set #numberofcharacters (asknumber
+			(prompt #asknumberofcharacters-text)
+			(help @asknumber-help)
+			(range 8 80)
+			(default 20)
+		))
+		(P_nextcomplete)
+		(set #driverlib (askchoice
+			(prompt #askdriverlib-text)
+			(help #askdriverlib-help)
+			(choices "lcdguppy.library" "lcdwindow.library" "Default")
+			(default 0)
+		))
+	)
+)(;else if not(#wannaconfigure)
+		(P_nextcomplete)
+		(P_nextcomplete)
+)
+
+(P_nextcomplete)
+
+;---------------------------------------------------------------------
+;	Main script:	Installation
+;---------------------------------------------------------------------
+(if(= #startuptype 1)
+	(
+		(set #lcd-dest "Sys:WBStartup/")
+		(set #lib-dest "LIBS:")
+	)
+;else
+	(
+		(set #lcd-dest @default-dest)
+		(set #lib-dest (tackon @default-dest "Libs/"))
+	)
+)
+(if #wannainstall (
+	(copyfiles	;	Main LCD program
+		(prompt #copyfileslcd-text)
+		(help #copyfileslcd-help)
+		(source "lcd")
+		(dest #lcd-dest)
+		(infos)
+		(noposition)
+	)
+	(P_nextcomplete)
+	(if (NOT (exists #lib-dest (noreq)))
+		(makedir #lib-dest)
+	)
+	(copyfiles
+		(prompt #copyfileslibs-text)
+		(help #copyfileslibs-help)
+		(source "Programmer/Driver")
+		(pattern "lcd#?.library")
+		(dest #lib-dest)
+	)
+	(P_nextcomplete)
+	(makedir (tackon @default-dest "Docs/"))
+	(copyfiles
+		(prompt #copyfiles-text)
+		(help @copyfiles-help)
+		(source "Docs/")
+		(dest (tackon @default-dest "Docs/"))
+		(infos)
+		(all)
+	)
+	(copyfiles
+		(prompt #copyfiles-text)
+		(help @copyfiles-help)
+		(source "")
+		(choices "Docs.info")
+		(dest @default-dest)
+		(infos)
+	)
+	(P_nextcomplete)
+	(if #developer (
+		(makedir (tackon @default-dest "Programmer/"))
+		(copyfiles
+			(prompt #copyfiles-text)
+			(help @copyfiles-help)
+			(source "Programmer/")
+			(dest (tackon @default-dest "Programmer/"))
+			(infos)
+			(all)
+		)
+		(copyfiles
+			(prompt #copyfiles-text)
+			(help @copyfiles-help)
+			(source "")
+			(choices "Programmer.info")
+			(dest @default-dest)
+			(infos)
+		)
+	))
+	(P_nextcomplete)
+	(copyfiles
+		(prompt #copyfiles-text)
+		(help @copyfiles-help)
+		(source "Utilities/")
+		(all)
+		(dest #utilities)
+		(infos)
+	)
+)(;else if not #wannainstall
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+	(P_nextcomplete)
+))
+(if #wannaconfigure (
+	(select #configmode
+		(;Env-var
+			(textfile (dest "ENVARC:LCDaemon/WIDTH")
+				(append #numberofcharacters)
+			)
+			(textfile (dest "ENVARC:LCDaemon/HEIGHT")
+				(append #numberoflines)
+			)
+			(if (NOT (= #driverlib 2))(
+					(textfile (dest "ENVARC:LCDaemon/DRIVERLIB")
+						(append (select #driverlib "lcdguppy.library" "lcdwindow.library"))
+					)
+				)
+			)
+		)
+		(;Icon-tt
+			(tooltype (dest (tackon #lcd-dest "lcd"))
+				(confirm)
+				(settooltype "WIDTH" (cat #numberofcharacters))
+				(settooltype "HEIGHT" (cat #numberoflines))
+				(if (NOT (= #driverlib 2))(
+					(settooltype "DRIVERLIB" (select #driverlib "lcdguppy.library" "lcdwindow.library"))
+				))
+			)
+		)
+	)
+))
+(if (= #startuptype 0) (
+	(startup "LCDaemon"
+		(prompt #userstartup-text)
+		(help @startup-help)
+		(command (cat "run <>nil: " (tackon #lcd-dest "lcd")))
+		(confirm)
+	)
+))
+;---------------------------------------------------------------------
+
+(complete 100)
+; End of installation
+
+(CLEANUP)
+)

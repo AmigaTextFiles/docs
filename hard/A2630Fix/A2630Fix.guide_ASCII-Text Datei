@@ -1,0 +1,303 @@
+@DATABASE "a2630fix"
+
+
+@node Main "A2630Fix.guide"
+                     A2630 Fix V1.1 (6-Sep-96)
+
+@{" Introduction                         " link "INTRO"}
+@{" c:cpu                                " link "SOFT"}
+@{" RAM test / monitor                   " link "MONITOR"}
+@{" U300 patch                           " link "U300"}
+@{" Turning resistors                    " link "WRONGRESI"}
+@{" Memory connectors                    " link "MCONNECT"}
+@{" Display flicker fix                  " link "FLICKER"}  NEW!
+@{" Jumper settings                      " link "JUMPERS"}  NEW!
+@{" Other sources of information         " link "OTHERSOURCES"}
+
+
+
+
+@endnode
+
+
+@node INTRO  "Introduction"
+This short guide should offer you some possible solutions if you
+have any problems with your A2630.
+I had problems with constant crashes and so I started
+collecting patches and tried one after another. My problem was
+a non-working a2091/a2630-combination.
+A few things to remember:
+- If your system is working, do not fix it
+- I am not a hardware expert, I have just collected these things
+  and cannot guarantee for them. USE AT YOUR OWN RISK!
+
+I am very sorry, but I do not know the original authors of all
+patches, so if any of the patches helps to solve your problem you may
+give thanks and praises to the unknown net-man.
+
+
+
+Please send me a mail if you find any bugs in this guide or if you
+have some more information:
+
+tiemant@uni-muenster.de
+
+or
+
+Stefan Tiemann
+Heisstr. 20a
+D-48145 Muenster
+Germany
+@endnode
+
+
+@node SOFT  "c:cpu"
+You may try first various combinations for the c:cpu options.
+Maybe something like "cpu nocache" or "cpu fastrom" can solve
+your problems, although it might give a worse performance. The
+cpu command and its options are described in the DOS book that
+comes with your Amiga.
+@endnode
+
+
+@node MONITOR  "RAM test / monitor"
+Maybe your problems come from one or more bad ram chips. You may
+use a ram test program, which can be found somewhere on aminet.
+You can also use the built-in ram test of the a2630. To use it
+you have to start the monitor of the a2630:
+- reset your amiga, hold down the right mouse button and press "shift-M"
+  before the amiga boots again
+- after the monitor has started you can get a command list with "?"
+- type "i" to get information about your system, most important is
+  the address of your a2630 memory, which is from 00200000 to
+  00600000 on my system (the last number might be 00400000 if you
+  have only 2MB of ram on your a2630)
+- type "t 200000 600000" (replace with the addresses of your board) to
+  start the memory test. The test will show the number of passes (first
+  number) and the value which is currently written to and read from ram.
+  You should let the test run for several minutes, better hours if you
+  have the time, memory errors do not show up every time a defective
+  ram is used. If it finds an error then it will print a third number
+  and make a line feed. So you can let the test run unattended and look
+  later for the result.
+@endnode
+
+
+@node U300  "U300 patch"
+You might add 1K from pin 10 to 14 at U300 on the a2630. This is
+often done if the board is used with more than 25MHz, but
+might fix problems even with the original clock of 25MHz.
+You can find U300 in the middle of the board, if you look for it left
+below the jumpers.
+
+@endnode
+
+
+@node WRONGRESI  "Turning Resistors"
+This patch finally solved my problems. But I do not know if
+it would have helped me, if I had not applied the other patches
+(U300, U605 - see below) before. I asked Dave Haynie about this
+patch and you can read his answer below, he explains more than I
+am able to understand:)
+If you want to use this fix, you have to turn around the 4 resistor
+packages RP104-RP107 on your board. Three (RP104, RP106, RP107)
+can be found in the lower left part of the board, below the
+shield cover. RP105 is just below the right memory connector at
+the top of the board. If you do not find them on the board, you
+may try to locate them in figure E.1 in your A2630 manual. Now
+look if they have their common pin on the same side as the drawing
+on the board suggests. If not, you might turn them around...
+
+
+------------------------------------------------------------------------
+Subject: Re: A2630 fix question
+
+> I had lots of problems with my 2000/Rev4.3, A2091, A2630Rev9.2
+> setup until someone told me, that there were some resistor packages
+> soldered in the wrong orientation on the A2630 (RP104-RP107). I
+> looked at the board and I saw, that they had their common pin
+> on the other side than the drawing on the board (now I know what
+> it is good for:))
+
+That's odd...
+
+> My question: Was there any good reason for turning the RPs or was it
+> just an error that happened during the production of the board?
+
+I suppose it might have been intentional. I didn't do it that way, but
+I didn't really touch the A2630 after Rev 6. Pretty much everything
+done after that was to FCC certification. It's possible that these
+resistors, which I believe I had in there for data bus pullups, were
+switched around to act as pulldowns. If you lay out the resistor pack
+footprint right, you have +5V at pin 1, Ground on the last pin, and so
+you can get "proper" behavior with either orientation. I've been been
+a big fan of pulldowns on bipolar logic (typically, bipolar output
+stages can drive a great deal of current low, but not so much high),
+but they do tend to limit the peak voltage, and occasionally over-peak
+spikes, when a signal swings high. This is good for FFC certification,
+and not bad for typical system operation in most cases. Apparently you
+have found one of the cases in which pulldowns can be a problem.
+
+Or perhaps you're trying a complex fix for a simple problem already
+solved in most systems. I don't know what you had failing, but if it's
+DMA between the A2091 and A2630, there's a known problem on some A2000
+motherboards. Certain vendors versions of the 74ALS245 chip used at
+U605 on the A2000 motherboard cause a problem, a potential glitch on
+the BAS* (buffered address strobe) line of the Zorro II bus, during
+DMA turnaround (when the A2091 drops the bus and the A2000 logic picks
+it back up). This glitch is nicely shaped into a pulse by the ALS245's
+schmitt input, but that pulse on AS* is ignored on the motherboard,
+it's not long enough to usually affect the 7MHz logic on the A2000. It
+is long enough to mess with the 25MHz logic on the A2630, however. To
+fix this, you add a 1K pullup between pins 11 and 20 on U605 (which
+you'll find between the CPU and first Zorro slots).
+
+Maybe changing the A2630 resistor packs to pullups helps, too, I never
+really looked at the problem. But this resistor fix makes a very big
+difference, you might want do it even if your system is working find
+now, just to be safe.
+
+						-Dave Haynie
+-------------------------------------------------------------------------------
+@endnode
+
+
+@node MCONNECT "Memory connectors"
+Every A2630 has two memory connectors (CN300, CN301) for expanding the
+board with a daughter board that can contain more RAM. These connectors
+should be placed on the back of the board ("solder side"), but on
+some A2630s they are placed on the same side as all the other parts.
+Moving them from the front to the back should allow you to use one of
+the overpriced memory boards.
+If you do not want to use such a board, than you could let the connectors
+on either side, because it should not give any problems.
+
+@endnode
+
+
+@node FLICKER  "Display flicker fix"
+@{I}(The following article is from Joerg Hilsebecher. First comes the german,
+then the english version. If you have any further questions then see
+his e-mail address below.)@{UI}
+
+@{U}Bildschirmflackern mit A2630@{UU}
+
+Die Story:
+
+Beim Betrieb einer A2630 enstehen (un-)regelmaessig flackernde, horizontale
+Streifen auf dem Bildschirm, vor allem bei hohem DMA/Floppy-Betrieb. Die
+Ursache hierfuer duerfte der hohe Stromverbrauch der A2630 sein. Deshalb
+koennte der hier vorgeschlagene Hack auch bei aehnlichen Problemen mit
+anderen Turbo-Karten im A2000 (hat ausser mir noch jemand einen?) hilf-
+reich sein.
+
+Als die Streifen bei mir auftraten, habe ich alle gaengigen Hinweise hierzu
+ausprobiert (direkte Kabel zum CPU-Slot, keramische Puffer-Kondensatoren am
+Video-Hybrid, ...). Leider hat nichts davon wesentlich geholfen.
+
+Nach einigem herumprobieren habe ich dann doch noch eine Ursache und die
+zugehoerige Loesung gefunden: Neben dem Video-Hybrid - seltsamer Baustein,
+eine Laengsseite mit Pins, sieht aus wie (und ist) eine kleine,
+Kunststoff-ueberzogene Platine - sitzen zwei Puffer-ElKos (470uF), die auf
+meiner Platine mit C214 und C226 bezeichnet sind. Der gleiche Hybrid sitzt
+aber auch auf der A2320 (und anderen Flicker-Fixern?). Diese hatte ich
+probeweise mit 1000uF-Versionen ersetzt. Das half etwas. Nach dem Motto
+"Viel hilft viel!" habe ich jetzt zwei 4700uF Versionen eingebaut -
+und die Streifen sind weg.
+
+
+Kurz:
+
+Man nehme zwei ElKos 4700uF, 16V, radial/stehend und ersetze damit
+die beiden Elkos (470uF) neben dem Video-Hybrid. Fertig.
+
+
+@{U}Short & englich (?):@{UU}
+
+This hack is aimed to remove the flickering lines on the screen that may
+occur when some board draws a high current from the motherboard - like the
+A2630. A reason for the flickering may be an unstable power supply to the
+hybrid video components which can be found on the motherboard or some
+flickerfixers (e.g. the A2320). The hybrid video "chip" is a small printed
+circuit board which is sealed in plastic and is mounted by a row of pins, it
+carries on one side. Next to the hybrid two capacitors of 470uF can be
+found, which should stabalize the hybrid's supply. Use two larger electrolytic
+capacitors of 4700uF, 16V to replace the small ones. That should do it.
+Bye the way: Solder at Your own risk!
+
+
+Weiterhin gilt: NO RISK - NO FUN  --  LOETEN AUF EIGENES RISIKO
+
+Zu Risiken und Nachwirkungen lesen Sie bitte Ihre Garantie-Urkunde und
+befragen sie Ihren autorisierten Commodore->AmigaTechnologies->ViScorp
+->EagleComputer Vetragshaendler.
+
+
+Autor: Joerg.Hilsebecher@Urz.Uni-Heidelberg.de
+
+
+
+@endnode
+
+
+@node JUMPERS  "Jumper settings"
+Here are the jumper settings from the manual. Disabling RAM can come
+in handy if you have bad rams on the board or if your hd-controller
+crashes in dma-mode. Also, if you want to install a gfx-board or
+something which takes lots of autoconfig-space (limited to 8MB)
+then you can disable some of the RAM (all or 2MB), but better
+throw out all of the old 16Bit RAM, because that is much
+slower. Anyway, good for quick testing ...
+
+
+
+JP202 CRYSTAL BRIDGE
+two rightmost pins: FPU/CPU run with same clock (default)
+two leftmost pins: seperate FPU clock installed
+
+J301 MEG4
+set: 2MB RAM expected
+off: 4MB RAM expected
+
+J302 B2000
+set: removed 68000 expected (must be set on old german A2000)
+off: 68000 on motherboard installed (default)
+
+J303 AUTO
+set: disable A2630 RAM
+off: autoconfig A2630 RAM (default)
+
+J304 OSMODE
+set: boot UNIXX
+off: boot AmigaDOS (default)
+@endnode
+
+
+@node OTHERSOURCES "Other sources of information"
+
+
+Walter Harms, who has also contributed some of the patches presented here,
+has collected most of the important patches for the A2000 and some other
+background information about it (and the A1000!). Visit his www-pages:
+
+   http://www.uni-oldenburg.de/~u173034
+
+   Walter.Harms@arbi.informatik.uni-oldenburg.de
+
+
+
+Interesting stuff is spread all over aminet, but check out especially
+the hard/hack directory. (Note: the RAM-Hack is no longer available)
+
+   aminet/hard/hack/
+
+
+
+
+Lots of hardware patches/infos for all Amigas are on the
+MeetingPearls 3 CD-ROM (some are only in german):
+
+   Meeting_Pearls_III:pearls/text/Hardware
+
+
+@endnode

@@ -1,0 +1,50 @@
+DIST= README AmigaFAQ.guide AmigaFAQ.dvi AmigaFAQ.doc AmigaFAQ.texinfo \
+      #?-e.texinfo POST DMakefile src/addtoc.c txt/#?
+
+GDIST= READMEg AmigaFAQg.guide AmigaFAQg.dvi AmigaFAQg.doc AmigaFAQg.texinfo \
+       #?-g.texinfo POSTg DMakefile src/addtoc.c src/convert.c txt/#?
+
+MAKEINFO=makeinfo
+ADDTOC=bin/addtoc
+RM=Delete quiet
+MV=Move
+LHA=lha a -r
+
+all: AmigaFAQ.dvi AmigaFAQ.guide AmigaFAQ.doc AmigaFAQg.dvi AmigaFAQg.guide AmigaFAQg.doc
+	$(RM) #?.aux #?.cp #?.cps #?.fn #?.ky #?.log #?.pg #?.toc #?.tp #?.vr
+
+dist: all
+	$(RM) AmigaFAQ.lha AmigaFAQg.lha
+	$(LHA) AmigaFAQ.lha $(DIST)
+	$(LHA) AmigaFAQg.lha $(GDIST)
+
+clean:
+	$(RM) AmigaFAQ.?? AmigaFAQ.aux AmigaFAQ.cps AmigaFAQ.log AmigaFAQ.toc
+
+AmigaFAQ.dvi: AmigaFAQ.texinfo
+	tex AmigaFAQ.texinfo
+	texindex AmigaFAQ.cp
+	tex AmigaFAQ.texinfo
+
+AmigaFAQg.dvi: AmigaFAQg.texinfo
+	gtex AmigaFAQg.texinfo
+	texindex AmigaFAQg.cp
+	gtex AmigaFAQg.texinfo
+
+AmigaFAQ.guide AmigaFAQg.guide: AmigaFAQ.texinfo AmigaFAQg.texinfo
+	$(MAKEINFO) --amiga-39 --fill-column 76 --output %(left) %(right)
+	$(ADDTOC) %(right) GFILE %(left)
+	$(MV) %(left).new %(left)
+
+AmigaFAQ.doc: AmigaFAQ.texinfo
+	$(MAKEINFO) --amiga --no-headers --fill-column 76 --output %(left) %(right)
+	$(ADDTOC) %(right) DFILE %(left)
+	$(MV) %(left).new %(left)
+
+AmigaFAQg.doc: AmigaFAQg.texinfo
+	$(CONVERT) AmigaFAQg.texinfo AmigaFAQgc.texinfo
+	$(MAKEINFO) --amiga --no-headers --output %(left) AmigaFAQgc.texinfo
+	$(ADDTOC) AmigaFAQgc.texinfo DFILE %(left)
+	$(RM) AmigaFAQgc.texinfo
+	$(MV) %(left).new %(left)
+

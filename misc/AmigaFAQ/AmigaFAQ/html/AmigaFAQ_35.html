@@ -1,0 +1,72 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQ.texinfo on 26 September 1995 -->
+
+<TITLE>Amiga-FAQ - Missing functions</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQ_34.html">Pragmas</A>
+&gt;&gt; <A HREF="AmigaFAQ_36.html">Which functions</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX78"></A>
+<A NAME="IDX79"></A>
+<A NAME="IDX80"></A>
+<A NAME="IDX81"></A>
+<A NAME="IDX82"></A>
+<H2><A NAME="SEC35" HREF="AmigaFAQ_toc.html#SEC35">My Compiler/Linker is complaining about missing symbol xxx.</A></H2>
+First be sure, that the function is really missing: For example floating
+point functions are in a special link library and you need a linker option
+like <SAMP>`-lm'</SAMP> to include it into your program. Another
+possibility would be that you are using a library function and didn't
+notice it. This might lead to a missing library base, <SAMP>`IntuitionBase'</SAMP>
+for example. In that case
+just put something like
+<PRE>
+    struct Library *IntuitionBase;
+</PRE>
+somewhere in the global part of your program. (Don't forget to call
+OpenLibrary() and CloseLibrary! :-)
+<P>
+However, you could as well use a function which really isn't present
+in your library at all. If you have, for example, an amiga.lib from
+2.0 you would hardly find the locale functions or the pool memory
+functions. <A NAME="FOOT6" HREF="AmigaFAQ_foot.html#FOOT6">(6)</A>
+Best solution is to get the NDU (see  <A HREF="AmigaFAQ_27.html#SEC27">Where do I get the Amiga includes?</A>), but you
+probably don't want to wait for it. In that case you have to find
+what kind of function you are missing.
+<UL>
+<LI>Simple library functions (Examples: <SAMP>`exec/AllocPooled'</SAMP>,
+<SAMP>`locale/OpenCatalogA'</SAMP>) can be called with pragmas. However, you
+need informations on the name of the library base and where to put the
+arguments. See  <A HREF="AmigaFAQ_34.html#SEC34">What are pragmas?</A>.
+<LI>Tag functions are mostly just stub functions which call library
+functions. If you have, for example, <SAMP>`dos/AllocDosObject'</SAMP> which
+expects a constant and a pointer to an array of tags, you have the
+varargs version <SAMP>`AllocDosObjectTags'</SAMP> which expects tags on the
+stack as well! Just create the following function:
+<PRE>
+    #include &#60;clib/dos_protos.h&#62;
+    #include &#60;pragmas/dos_pragmas.h&#62;	/*  Probably wrong name */
+
+    void *AllocDosObjectTags(ULONG objtype, Tag tag1, ...)
+    { return(AllocDosObject(objtype, (struct TagItem *) &#38;tag1);
+    }
+</PRE>
+<LI>Some functions still remain: Amiga.lib has some functions which
+are really doing valuable things and not just call a library: The
+BOOPSI functions (<SAMP>`DoMethod'</SAMP>, <SAMP>`DoSuperMethod'</SAMP>) the memory
+pool functions (<SAMP>`LibAllocPooled'</SAMP>, <SAMP>`LibCreatePool'</SAMP>, which are
+replacements of 3.0 functions). The only way to replace these is to get
+equivalents. The AmigaFAQ archive contains some of them (DoMethod,
+DoSuperMethod and HookEntry) in the
+<TT>`programmer'</TT> directory as well as the most common pragma files and some
+examples of varargs functions. See  <A HREF="AmigaFAQ_89.html#SEC89">The Amiga-FAQ archive</A>.
+</UL>
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQ_34.html">Pragmas</A>
+&gt;&gt; <A HREF="AmigaFAQ_36.html">Which functions</A>
+</I></PRE>

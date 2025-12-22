@@ -1,0 +1,370 @@
+\documentstyle[11pt]{article}
+\pagestyle{plain}
+
+\textwidth 6.5 in
+\oddsidemargin 0 in
+\evensidemargin 0 in
+\topmargin -1 in
+\textheight 9.5 in
+
+\begin{document}
+
+\begin{center}
+\LARGE\bf The Commodore Amiga: An Overview \\
+\Large\it Daniel J.\ Barrett, barrett@cs.umass.edu \\
+\Large\it March 27, 1992 \\
+\end{center}
+
+\parskip 4pt
+
+\section{Introduction}
+
+The Commodore Amiga personal computer was introduced in early 1985.  It has
+a sophisticated, multitasking operating system, a choice of several user
+interfaces, dedicated coprocessors for graphics and sound, NTSC and PAL video
+compatibility, and many other features.
+
+This document gives a brief overview of the Amiga:  its hardware,
+operating system(s), user interfaces, and other features.
+
+\section{Hardware}
+
+\begin{center}
+\begin{tabular}{|l|p{4in}|}
+\hline
+CPU:		& 680x0 series (68000, 68020, 68030, 68040, 68060). \\
+\hline
+Coprocessors:	& Several, including a graphics blitter. \\
+\hline
+Interfacing:	& SCSI, serial port, parallel port, mouse/joystick ports. \\
+\hline
+Maximum RAM:	& 1700 megabytes, with room for 18 megabytes on motherboard
+		  (Amiga 3000).  All Amigas support at least 8 MB RAM.\\
+\hline
+Graphics RAM:	& Up to 2 megabytes.  Automatically used as general-purpose
+		  RAM if necessary. \\
+\hline
+Audio:		& 4-channel, 8-bit, stereo sound chip. \\
+\hline
+Video:		& NTSC and PAL compatible for broadcast use in the USA
+		  and Europe. \\
+\hline
+DMA:		& Used for floppy and hard disk access, audio,
+		  and various other things. \\
+\hline
+Bus:		& Proprietary 16 or 32-bit, high-bandwidth.  \\
+\hline
+Processor slot:	& A faster processor may be plugged in, overriding the
+		  internal CPU. \\
+\hline
+Expandability:	& Depends on Amiga model.  2000, 3000 and 4000-series have
+		  internal expansion space and card slots.  500-series
+		  has external bus connector. \\
+\hline
+Mouse:		& 2 or 3 button. \\
+\hline
+\end{tabular}
+\end{center}
+
+
+\section{User Interfaces}
+
+The Amiga comes with two user interfaces:
+
+\begin{itemize}
+\item	Workbench:  a graphic user interface with menus and icons.
+\item	Shell:  a command-line interface.
+\end{itemize}
+
+\noindent
+Unlike on many other personal computers, the Amiga user interfaces are
+merely ordinary application programs, so it is convenient for a programmer
+to supply his/her own.  There are also hooks for replacing the system Shell
+with one's own, so other programs will use it.
+
+
+\section{Operating Systems}
+
+In addition to its own operating system, the Amiga also can run the
+following:
+
+\begin{itemize}
+\item	AT\&T UNIX System V Release 4.
+\item	Apple Macintosh (hardware emulator).
+\item	MS-DOS (hardware or software emulator).
+\item	MINIX.
+\item	Commodore 64 (software emulator).
+\item	Atari ST (software or hardware emulator).
+\end{itemize}
+
+\noindent
+Some of these operating systems can be run concurrently with the Amiga OS.
+
+
+\section{The Amiga Operating System}
+\subsection{Kernel}
+
+At the heart of the operating system is the multitasking Exec.  It handles
+scheduling, interrupts, and the usual things one would expect.  Exec is much
+smaller than the UNIX kernel, since many related features such as device
+drivers are relegated to another part of the system.
+
+Unlike task switchers and ``cooperative multitasking'' systems found on
+other popular PC's, the Exec is a full-fledged preemptive multitasking
+system.
+
+
+\subsection{Processes}
+
+Both processes and tasks (lightweight processes) are supported.
+
+
+\subsection{Inter-process Communication}
+
+There are two forms of IPC:
+
+\begin{itemize}
+\item	Internal message-passing mechanism.
+\item	ARexx, for users.
+\end{itemize}
+
+\subsubsection{Message-Passing and Notification}
+Amiga processes communicate by message-passing.  A process registers with
+the operating system to receive certain classes of messages, and the messages
+are routed to the process when they occur.
+
+A typical Amiga application program reflects this message-passing structure,
+shown in the following pseudocode:
+
+\begin{verbatim}
+    while (1)
+    {
+            mask    = Wait(port);       /* Wait for a message.  Non-busy-wait. */
+            message = GetMessage(mask); /* What message arrived? */
+            class   = message->class;   /* Save important message info. */
+            Reply_To_Message(message);
+            switch (class)
+            {
+                    case MOUSE_MOVE:                        ...
+                    case WINDOW_RESIZE:                     ...
+                    case FILE_WAS_MODIFIED:                 ...
+                    case CONTROL_C_WAS_PRESSED:             ...
+                    case USER_CHANGED_SYSTEM_COLORS:        ...
+                    case MY_OWN_SPECIALLY_DEFINED_MESSAGE:  ...
+                    ...
+            }
+    }
+\end{verbatim}
+
+Many routine messages such as window resizings may be handled by the
+operating system rather than the application.  See Section~\ref{intuition}
+for more information.
+
+\subsubsection{ARexx}
+
+ARexx is an interpreted programming language for IPC.  Users write ARexx
+``scripts'' that allow applications from different vendors to communicate by
+messages.  Here are some practical examples.
+
+\begin{enumerate}
+\item	A word processor invokes another vendor's spelling checker and
+	saves any misspelled words in a third vendor's database.
+
+\item	An integrated programming/documentation environment could be
+	created, consisting of a text editor, compiler, debugger, \LaTeX,
+	and a DVI-file previewer, all written by different vendors.
+
+\item	A non-Postscript paint program could be made to save its data in
+	Postscript format, by piping its output through a Postscript
+	converter program before it reaches the disk.  This action can be
+	made transparent by binding it to the {\bf Save} menu item.
+
+\item	A telecommunications program could use ARexx as its internal
+	scripting language for automated uploads and downloads.
+
+\item	A multimedia application could use ARexx to control a laser disc
+	player and a sampled-sound playback program.
+\end{enumerate}
+
+\noindent
+Currently, there are over 140 applications that support ARexx.
+
+
+\subsection{Programmer's Interface}
+\label{intuition}
+
+{\it Intuition\/} is a layer of software that can handle certain tasks
+automatically, freeing application programs from some mundane
+responsibilities.  Applications need not be notified when windows are
+resized, refreshed, moved to the front/back, activated or deactivated,
+iconified, and so on.  (Of course, applications may still choose to handle
+these events themselves.)  This is in direct contrast to operating systems
+like the Macintosh's, in which the application must respond to every event.
+
+
+\subsection{Filesystem}
+
+Multiple types of filesystems are supported, and their differences are
+hidden from the user via a flexible device system.
+(See Section~\ref{devicedrivers}.)
+
+
+\subsection{Networking}
+
+The following are available as options:
+
+\begin{itemize}
+\item	Ethernet
+\item	TCP/IP
+\item	NFS
+\item	X window system
+\item	Arcnet
+\end{itemize}
+
+
+\subsection{Shared Libraries}
+
+The Amiga has reentrant runtime libraries which may be opened and used by
+any application programs.  This decreases the size of executable programs
+and the kernel.  Many of the features mentioned in this document are
+supported by one or more of these libraries.
+
+
+\subsection{Devices}
+\label{devicedrivers}
+
+All devices are accessed in a consistent manner by both users and
+programmers.  For example, sending output to a file is accomplished using
+the same commands as sending it to a window (the window is created
+automatically if necessary), the parallel port, the internal speech
+synthesizer, a pipe, or any other device.
+Both synchronous and asynchronous I/O are supported by all devices.
+
+A flexible device driver system allows multiple filesystems to be accessed
+via the same physical device.  For example, when the floppy disk is referred
+to as device DF0, an Amiga filesystem is used.  When accessed as MS0, an
+MS-DOS filesystem is used.  The user may install new filesystems simply by
+editing a ``Mountlist'' file and then executing the {\bf mount} command.  (Of
+course, new filesystems must be written by a programmer.)
+
+New device drivers may be installed simply by placing them into the DEVS:
+directory and issuing the {\bf mount} command.  No recompilation of the
+kernel is needed.
+
+Interesting note:  when examined closely, device drivers and shared
+libraries are almost identical internally.
+
+
+\subsection{Input Handlers}
+
+Through the use of a feature called Commodities Exchange, all input
+(keyboard, mouse, joystick, etc.) can be passed through a chain of programs
+and interpreted before it reaches the user interface.  This chain can be
+defined, configured, and reordered by the user.  Sample programs in the
+chain might be screen blankers, mouse pointer accelerators, window shufflers,
+etc.
+
+
+\section{Screens And Windows}
+
+The Amiga graphic environment consists of 1 or more {\it screens\/}
+containing zero or more {\it windows\/}.
+A screen typically fills the entire computer monitor (though this is not
+necessary) and contains information like:
+
+\begin{itemize}
+\item	Number of bitplanes.
+\item	Resolution (\# pixels horizontally \& vertically).
+\item	Color table.
+\item	Fonts.
+\end{itemize}
+
+\noindent
+Each window on the screen inherits these properties.
+
+While many other GUI's support multiple windows, they traditionally have
+only 1 screen.  On the Amiga, multiple screens may be displayed
+simultaneously, each with its own depth, resolution, colors, etc.  Like
+windows, screens may be dragged and shuffled in front/back of each other.
+
+Applications may designate their screens as {\it private\/} or {\it
+public\/}.  A public screen permits other applications to open their windows
+on it, giving the user the power to construct multiple work environments.
+
+
+\section{Graphics}
+
+The Amiga's color palette contains 16777216 different colors.
+Depending on the desired resolution and number of bitplanes, either
+2, 4, 8, 16, 32, 64, 128, 256, 4096 or 262144 of
+these colors may be displayed simultaneously.
+
+The native Amiga hardware supports many graphics resolutions, both
+interlaced (for compatibility with NTSC video devices) and non-interlaced.
+All resolutions can have any number of bitplanes.
+Some sample resolutions are
+
+\begin{itemize}
+\item	640x400 non-interlaced.
+\item	320x400 non-interlaced.
+\item	960x480 interlaced.
+\end{itemize}
+
+Amiga graphics can use full overscan, so the image goes all the way to
+the edges of the monitor, with no ``dead area'' surrounding the image.
+
+Third-party products exist for 24-bit graphics.
+
+
+\section{Application-Independent Printing}
+
+The Amiga uses a printer driver system to hide the details of printing from
+all applications.  The user installs the appropriate driver for his/her
+printer, and all applications use it transparently by sending data to the
+PRT (printer) device.  If desired, this driver system is easily bypassed by
+sending data directly to the SER (serial) or PAR (parallel) device.
+
+
+\section{Standard File Formats}
+
+The {\it Interchange File Format\/} (IFF) gives applications a standard file
+format for graphics, animations, sampled sound, MIDI data, and other types
+of information.  It can handle both linear and hierarchical data, and is
+easily extensible.  Developers can register new IFF formats with Commodore.
+A shared library, {\bf iffparse.library}, provides functions for manipulating
+IFF data.
+
+
+\section{Conclusion}
+
+The name ``Commodore'' has long been associated with game computers.  This
+is unfortunate, because the Amiga is far more than that.  This image,
+combined with Commodore's inept marketing department, has kept the Amiga from
+mainstream acceptance in the United States.  In spite of this, over 3
+million Amigas have been sold worldwide, essentially by word-of-mouth, and
+it has become the most popular computer in the video industry.
+
+
+\section{Selected References}
+
+\begin{itemize}
+\item	{\it The Amiga Technical Reference Series, 3rd edition\/} by
+	Commodore, published by Addison-Wesley.  This includes:
+
+	\begin{enumerate}
+	\item\it	The Amiga ROM Kernel Manual:  Libraries
+	\item\it	The Amiga ROM Kernel Manual:  Devices
+	\item\it	The Amiga ROM Kernel Manual:  Includes and Autodocs
+	\item\it	The Amiga Hardware Reference Manual
+	\item\it	The Amiga User Interface Style Guide
+	\end{enumerate}
+
+\item	{\it The AmigaDOS Manual, 3rd Edition\/} by Commodore, published by
+	Bantam.
+
+\item	{\it Using ARexx On The Amiga}, published by Abacus.
+\end{itemize}
+
+
+\end{document}
+

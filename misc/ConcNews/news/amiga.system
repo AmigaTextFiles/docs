@@ -1,0 +1,1281 @@
+Article 23100 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cbmvax!jesup
+From: jesup@cbmvax.commodore.com (Randell Jesup)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: bad bug in v37 Ram-Handler
+Message-ID: <37601@cbmvax.commodore.com>
+Date: 7 Dec 92 00:47:29 GMT
+References: <paulk.2kio@terapin.com>
+Reply-To: jesup@cbmvax.commodore.com (Randell Jesup)
+Organization: Commodore, West Chester, PA
+Lines: 22
+
+paulk@terapin.com (Paul Kienitz) writes:
+>Why are soft links still not supported by the MakeLink command?  Could
+>it be because they still crash sometimes?
+
+	That's one reason.  Others include the fact that they screw up
+C: commands and MatchFirst/MatchNext, and they design has a problem that
+needs to be fixed with relative paths, and they've never had any serious
+testing.  I think that's enough reason to list them as not supported.
+
+>They seem to work just fine with the V37 ROM filesystem ... but in RAM:
+>they are buggy.
+
+>Is this fixed in V39?
+
+	Yes - they're ifdefed out.
+
+-- 
+To be or not to be = 0xff
+-
+Randell Jesup, Jack-of-quite-a-few-trades, Commodore Engineering.
+{uunet|rutgers}!cbmvax!jesup, jesup@cbmvax.cbm.commodore.com  BIX: rjesup  
+Disclaimer: Nothing I say is anything other than my personal opinion.
+
+Article 2237 of comp.sys.amiga.introduction:
+Path: cs.chalmers.se!chalmers.se!sunic!mcsun!uunet!news.smith.edu!sophia.smith.edu!jfieber
+From: jfieber@sophia.smith.edu (John Fieber)
+Newsgroups: comp.sys.amiga.introduction
+Subject: Re: How should I organize a hard drive?
+Message-ID: <1992Oct15.154039.19608@sophia.smith.edu>
+Date: 15 Oct 92 15:40:39 GMT
+References: <1992Oct15.045910.22574@leland.Stanford.EDU>
+Sender: root@sophia.smith.edu (Operator)
+Organization: Smith College
+Lines: 87
+
+In article <1992Oct15.045910.22574@leland.Stanford.EDU> dvoelker@leland.Stanford.EDU (David Voelker) writes:
+>     I've just acquired a 120MB hard drive, after having none at all.  
+>I'd appreciate some advice on the best way to configure the drive, and
+
+I would say to have at least 2 partitions.  One for the system
+software and your basically stable applications and one for your
+personal work files. 
+
+
+There is also something to be said for keeping the original setup
+of the system directories intact and having your own
+customizations separate.  For one thing, it makes upgrading the
+OS a *lot* easier.  Also, some things just break when they don't
+find things where they expect them.  All your own customizations,
+programs and stuff should go somewhere else.  This is simple to
+do under 2.0, maybe a little more inconvenient under 1.3.
+
+My boot drive is 40 meg with the "stock" 2.0 installed - only one
+or two minor changes.  This is automatically assigned to SYS:.
+Then I have a subdirectory called "local" and contains a
+duplicate of the standard directories, but not the files; things
+like c, devs, libs, s, utilities, fonts, etc.  This directory is
+assigned as LOCAL:.  Anything that *I* add to the system goes
+into the LOCAL: directories, not the SYS: directories.  
+
+To make it all work more or less transparently, I have a small
+script that is called near the beginning of the startup-sequence:
+
+-----8<----------------------------------------------
+; local-assigns
+;
+; This script makes adding extensions to the system easier through
+; the use of multiple assigns.  The normal SYS: directory structure
+; is duplicated in the directory assigned to LOCAL:.  Any new
+; keyboards, printer drivers, libraries, fonts and such should be added
+; to the LOCAL: directories.
+
+; This points to the `local' directory
+Assign LOCAL: SYS:Local
+
+Assign >NIL: FONTS:    LOCAL:Fonts         SYS:Fonts
+Assign >NIL: DEVS:     LOCAL:Devs          SYS:Devs
+Assign >NIL: LIBS:     LOCAL:Libs          SYS:Libs
+Assign >NIL: L:        LOCAL:L             SYS:L
+Assign >NIL: C:        LOCAL:C             SYS:C
+Assign >NIL: S:        LOCAL:S             SYS:S
+-----8<----------------------------------------------
+
+This way, if I want to add something, I can say something like 
+
+  copy whizbang.library LIBS: 
+
+and it goes into the LOCAL:libs director, and does not clutter
+the SYS:libs directory.  Same goes for programs in C: and others.
+This makes it much easier to figure out what things are "stock"
+and what things are your "extensions" to the system.  Of course,
+the big hitch is for 1.3 users who can't assign more than one
+directory to a logical name.
+
+After a couple years of hopelessly messy hard drives, I devised
+this organization and have been using it for about a month now
+and I think it works very well.
+
+As for partitioning your work directories, that is harder to give
+advice one.  One thing to consider is making a small partition
+for testing of "dangerous" things that could possibly corrupt
+your hard drive.  The destruction of such a partition will
+probably cause much less greif than the destruction of your main
+work partition or system partition.
+
+Also, invest in a good backup program and a pile of floppy disks.
+Then work out a strategy for what should be backed up when.  This
+brings up another slight advantage to having partitions.  If you have a
+distinct "system" partition, chances are it will be fairly static
+and won't need frequent backups.  On the other hand, your work
+partition may need it often.
+
+I hope this info helps.  I'm sure others have good ideas as well.
+
+-john
+
+
+
+
+
+-- 
+===jfieber@sophia.smith.edu==================================================
+
+
+Article 2238 of comp.sys.amiga.introduction:
+Path: cs.chalmers.se!chalmers.se!sunic!mcsun!uknet!stl!bnrgate!corpgate!news.utdallas.edu!convex!convex!darwin.sura.net!zaphod.mps.ohio-state.edu!sol.ctr.columbia.edu!eff!news.byu.edu!news.mtholyoke.edu!nic.umass.edu!dime!barrett
+From: barrett@astro.cs.umass.edu (Daniel Barrett)
+Newsgroups: comp.sys.amiga.introduction
+Subject: Re: How should I organize a hard drive?
+Message-ID: <54842@dime.cs.umass.edu>
+Date: 15 Oct 92 19:41:50 GMT
+References: <1992Oct15.045910.22574@leland.Stanford.EDU> <1992Oct15.154039.19608@sophia.smith.edu>
+Sender: news@dime.cs.umass.edu
+Reply-To: barrett@astro.cs.umass.edu (Daniel Barrett)
+Organization: BLAZEMONGER INCORPORATED
+Lines: 51
+
+In article <1992Oct15.154039.19608@sophia.smith.edu> jfieber@sophia.smith.edu (John Fieber) writes:
+>In article <1992Oct15.045910.22574@leland.Stanford.EDU> dvoelker@leland.Stanford.EDU (David Voelker) writes:
+>I would say to have at least 2 partitions.  One for the system
+>software and your basically stable applications and one for your
+>personal work files. 
+
+	That is good advice.  I use 4 partitions modeled somewhat after
+the UNIX philosophy:
+
+	SYS:	6MB	Commodore's supplied system software
+	USR:	100MB	Programs and their necessary support files.
+	HOME:	80MB	My files
+	TMP:	10MB	Temporary workspace for downloaded files,
+			quick hacks, etc.  Lots of turnover (created
+			and deleted files).
+
+>There is also something to be said for keeping the original setup
+>of the system directories intact and having your own
+>customizations separate.
+>Then I have a subdirectory called "local" and contains a
+>duplicate of the standard directories, but not the files; things
+>like c, devs, libs, s, utilities, fonts, etc.  This directory is
+>assigned as LOCAL:.  Anything that *I* add to the system goes
+>into the LOCAL: directories, not the SYS: directories.  
+
+	I do this also, using WShell 2.0's "PathHandler" which is 
+similar to, but more powerful than, the Assign method John described.
+It is SO helpful to have your local stuff separate from the OS stuff.
+
+>Assign >NIL: LIBS:     LOCAL:Libs          SYS:Libs
+>This way, if I want to add something, I can say something like 
+>  copy whizbang.library LIBS: 
+>and it goes into the LOCAL:libs director, and does not clutter
+>the SYS:libs directory.
+
+	What a simple and wonderful idea, putting the "local" directory
+first!  I am shocked it never occurred to me.  I have the system
+directory first, and I keep having to move things around when a program
+creates a file (like "S:foobar.init").
+
+>Also, invest in a good backup program and a pile of floppy disks.
+
+	Or invest in a tape drive or other backup device.  Mine was worth
+every penny of the $350 I spent on it.
+
+                                                        Dan
+
+ //////////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+| Dan Barrett -- Dept of Computer Science, Lederle Graduate Research Center |
+| University of Massachusetts, Amherst, MA  01003  --  barrett@cs.umass.edu |
+ \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\/////////////////////////////////////
+
+Article 30169 of comp.sys.amiga.misc:
+Path: cs.chalmers.se!news.chalmers.se!sunic!uunet!gatech!howland.reston.ans.net!sol.ctr.columbia.edu!ira.uka.de!smurf.sub.org!news
+From: Christoph <c_feck@informatik.uni-kl.de>
+Newsgroups: comp.sys.amiga.misc
+Subject: 3.0 is NOT 2.1+AGA! (was Re: Installing WB 3.0 on an Amiga 500?)
+Date: 20 Apr 1993 08:08:08 +0200
+Organization: Smurf-O-Box Karlsruhe, FRG
+Lines: 88
+Message-ID: <9304192320.aa07631@poker.informatik.uni-kl.de>
+NNTP-Posting-Host: smurf.sub.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+
+[...]
+
+Differences between AmigaOS Release 2.1 and AmigaOS Release 3.0:
+
+(listed in the order they sprang to my mind :)
+
+- Support for AGA chipset (obviously...) esp. for Sprites
+- Enhanced performance and reliability (thousands of fixes!!!)
+- New data types system with AmigaGuide, text, picture and sound data types
+- MultiView replacing Display as a general file/clipboard viewer
+- New BOOPSI pointer, colorwheel and gradientslider objects
+- New directory caching file systems (DOS4, DOS5)
+- Screen, Workbench, and window backdrop picture and pattern
+- System supplied and customizable 'busy pointer'
+- Palette sharing, support for 96 bit colors
+- Complete new Palette Preferences allows customization of GUI colors
+- Interleaved bitmaps for improved speed on deep displays
+- Much improved and fixed GadTools for better 'look and feel'
+- Faster memory allocation routines
+- New memory handlers for "poor man's" virtual memory
+- Support for future OwnerID/GroupID and related protection bits
+- DOS allows early abort of ExAll call
+- Asynchronous WB Info requester, callable by applications
+- New commands for ASL and Easy requesters (from Shell)
+- PAL/NTSC bootup switch along with enhanced bootup menu
+- HDToolBox uses GadTools and other fixes
+- Screen attachement (AKA screen families)
+- MUCH faster layers (i.e. windows :)
+- Timed alert for GURU (reboots automatically)
+- New SAD (Standard Amiga Debugger?) replaces ROMWack
+- Exec supports memory pools (FAAST!)
+- New message based semaphore system (can be used with old semaphores)
+- Some forward thinking functions in gfx to support RTG
+- Faster console (bitplane masking!) and fixes
+- Support for graphic tablets
+- 'NewLook' menus with scaled Amiga and checkmark images
+- Much improved QBlit() system
+- ...
+
+Anything forgotten? (Mail me, I'm compiling a *complete* list :)
+
+Christoph 'Pepo' Feck, TowerSystems.
+
+Article 25908 of comp.sys.amiga.programmer:
+Path: cs.chalmers.se!chalmers.se!sunic!uunet!ukma!cs.widener.edu!dsinc!bagate!cbmvax!jesup
+From: jesup@cbmvax.commodore.com (Randell Jesup)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Info about _real_ semantics of hard/softlinks in AmigaOS
+Keywords: softlinks hardlinks links
+Message-ID: <38985@cbmvax.commodore.com>
+Date: 6 Feb 93 00:49:54 GMT
+References: <1993Feb3.150820.18164@fy.chalmers.se>
+Reply-To: jesup@cbmvax.commodore.com (Randell Jesup)
+Organization: Commodore, West Chester, PA
+Lines: 64
+
+lundgren@fy.chalmers.se (Lars Lundgren) writes:
+>I'd like to see someone with some knowledge explain
+>what hardlinks (and the rudimentary softlinks) are like
+>in the present AmigaOS. As an example, I give my impression
+>of the semantics of UNIX hardlinks:
+
+>Do Amiga hardlinks break these rules? I got the impression
+>by testing the other day, that the following semantics rule:
+>
+>x When you do a link from a to b, all you do is create
+>  a copy 'b' of 'a', with just one little pecularity - it
+>  doesn't occupy any disk space until you change either
+>  'a' or 'b'...
+
+	No.  They work like Unix hardlinks.  The one major difference is
+that Lock()ing b, then doing NameFromLock() will give a (assuming you made
+a hardlink from b to a).  We hope to eventually (not soon) remove this
+difference.  Modifying the data of a or b will change it for both, just like
+in Unix.
+
+	The one problem you can have is that many editors save via: delete/
+create, or rename/create/delete.  Obviously these "break" the hardlink.  If
+they do an Open(...,MODE_NEWFILE), or use SetFileSize(fh,0,OFFSET_BEGINNING)
+before writing the new data, then there's no problem.
+
+>With hardlinks, you can in fact change the contents of a file
+>without touching it. Will notification still work? Will I get
+>notified of changes to 'a' if I change 'b'?
+
+	Notification _should_ work, but I'm not sure it's ever been tested,
+and I would actually expect some bugs given the lack of testing.  Notification
+is more likely to work on hardlinks in ram:, but still no guarantee.
+
+>What about protection bits, file dates? Are they concidered
+>belonging  to the file name or to the data itself?
+
+	The date should be shared.  The protection bits should be separate
+for each link.
+
+>Internally, AmigaDOS seems to differ files and hardlinks to files.
+>If I delete the original file in this case, will the link auto-
+>magically be tranformed to have the status of a real file?
+
+	Yes.
+
+>Softlinks. I realize that they are broken, and that implementing them
+>will cause severe problems with a system with multiple filesystems
+>like the Amiga. But just _how_ broken are they right now?
+
+	They don't work in ram:.  In the ROM fs, they work to some degree
+if you use absolute paths, though matchfirst/next and most dos commands can
+get confused trying to deal with them.
+
+>And why can't I get softlinks to work when part of a longer path?
+
+	Use absolute paths when setting them up.
+
+-- 
+GNU Emacs is a LISP operating system disguised as a word processor.
+ - Doug Mohney, in comp.arch
+
+Randell Jesup, Jack-of-quite-a-few-trades, Commodore Engineering.
+jesup@cbmvax.commodore.com  BIX: rjesup  
+Disclaimer: Nothing I say is anything other than my personal opinion.
+
+Article 28888 of comp.sys.amiga.programmer:
+Path: cs.chalmers.se!chalmers.se!sunic!uunet!zaphod.mps.ohio-state.edu!rpi!ghost.dsi.unimi.it!spisser
+From: spisser@ghost.dsi.unimi.it (reinhard spisser)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Recently released AmigaGuide package vs. c: IPrefs on A4000
+Message-ID: <1993Apr5.100025.20162@ghost.dsi.unimi.it>
+Date: 5 Apr 93 10:00:25 GMT
+References: <1993Mar31.064249.408@lmpsbbs.comm.mot.com> <1pf4a0INN3lo@mercury.kingston.ac.uk> <1993Apr2.161006.28392@lmpsbbs.comm.mot.com>
+Organization: Computer Science Dep. - Milan University
+Lines: 48
+
+rittle@supra.comm.mot.com (Loren James Rittle) writes:
+
+>In fact, it is odd, both versions have feature sets that the other
+>lacks.  EG: amigaguide.library v39 that came with the A4000 lacks:
+>navigation menu strip,
+>shift-click to open document in other window,
+>double click on any word tries to locate a match in the XREF,
+>tab to move to next button,
+>shift-tab to move to last button,
+>new look scroll bar,
+>mark and select all menu items are ghosted
+
+Some of the features of V34 AG were stripped since V39 AG was written using
+GadTools (sigh), which does not allow certain operation on gadgets ecc.
+
+>The recently release amigaguide.library lacks:
+>multi-font support,
+>auto wrap,
+>new highlight styles
+
+>I sure I missed some other differences, but you get the idea.  It appears
+>that two different paths of development have occured on amigaguide.library.
+
+The first released AG was the AG 34 version (only for developers). Then
+they developed AG39, stripping out some very nice features impossible to
+implement with gadgtools. 
+
+IMHO, they decided to release to the public AG, so all users can have it.
+They will continue to develop only the V39 version.
+
+>One added nice 3.0 features (font support), the other added nice general
+>features (tab, shift-click, double click).
+
+>I would really like to see an update to the v39 amigaguide.library that
+>contains all the nice features in the package just released (v34?).  There
+>are currently many reasons to want to run the v34 version on an A4000.
+
+I use the V34 amigaguide.library under 3.0. Multiview uses the amigaguide.datatype
+so you can`t replace it with the older version.
+
+Article 26481 of comp.sys.amiga.misc:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uknet!str-ccsun!corpach!cnbp41
+From: cnbp41@ccsun.strath.ac.uk (Ian MacIntyre)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Stupid Workbench 2.1 and path command!
+Message-ID: <C1M7M5.Asu@ccsun.strath.ac.uk>
+Date: 29 Jan 93 12:20:28 GMT
+References: <1993Jan27.170837.24522@cs.mun.ca>
+Sender: news@ccsun.strath.ac.uk (News account )
+Reply-To: cnbp41@ccsun.strath.ac.uk
+Organization: Strathclyde University Computer Centre.
+Lines: 30
+Nntp-Posting-Host: corpach
+
+In article 24522@cs.mun.ca, thom@cs.mun.ca (Thomas Clancy) writes:
+> One thing I dislike about the 2.1 Workbench is:
+>  
+>  Using the PATH command seems to be restricted to the individual
+>  shell.
+>   
+>   ie: If you open a shell and type PATH DH0:test/ add or PATH DH0:test add
+>   ,it adds it alright... but, then open another shell and type "path" the
+>   previous added directory has vanished! 8-)
+> 
+>   The only way to get around it is to modify the Startup-Sequence or
+>   the User-Startup file. It seems to remember things that were setup
+>   during the boot. 8-)
+> 
+> 
+> Thomas
+> 
+> Perhaps I am doing something wrong... perhaps not...
+
+
+Try typing
+            loadwb path
+
+from the first shell you opened. This forces the WB to read in the new paths
+(I think)
+
+
+Ian MacIntyre
+Email at cnbp41@uk.ac.strath.ccsun  until June 1993,
+                                    when I become an ex-student
+
+
+Article 31780 of comp.sys.amiga.misc:
+Path: cs.chalmers.se!news.chalmers.se!sunic!pipex!uknet!sersun1!essex.ac.uk!colej
+From: colej@essex.ac.uk
+Newsgroups: comp.sys.amiga.misc
+Subject: <Definitive Answer to the def_kick.info Problem>
+Message-ID: <10096@sersun1.essex.ac.uk>
+Date: 28 May 93 08:00:53 GMT
+Sender: news@sersun1.essex.ac.uk
+Reply-To: colej@essex.ac.uk ()
+Distribution: world
+Organization: University of Essex, Colchester, UK
+Lines: 20
+
+Right, to get a different disk icon to appear when you insert a 'bad' disk
+into the drive...  (Well it`s nice when I`m using PC0: and DF0: is of course
+not recognised)
+
+1) Load icon edit
+2) Design your disk... (Or adapt the default one - select type to disk
+                        and hit new)
+3) Save your disk as default
+4) Go to shell
+5) type:         cd envarc:sys
+6) type:         copy def_disk.info def_kick.info
+7) load your favourite binary file editor...
+   for me:    zap def_kick.info
+8) Change offset $30 to 7  (It is currently 1)
+9) Reboot and insert a 'duff' disk and watch the correct icon appear.
+
+Hope this solves the problems....
+
+Justin.
+
+
+Article 2390 of comp.sys.amiga.applications:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nac.no!nntp-oslo.uninett.no!ffi.no!peh
+From: peh@ffi.no (Per Espen Hagen)
+Newsgroups: comp.sys.amiga.applications
+Subject: Re: PageStream and Bitmap fonts
+Date: 13 Jan 1994 08:51:50 GMT
+Organization: Forsvarets forskningsinstitutt, Kjeller, Norge
+Lines: 32
+Distribution: world
+Message-ID: <2h3236$8eg@ratatosk.uninett.no>
+References: <99797@cup.portal.com> <stephenk.01sl@mkiisys3.adsp.sub.org>
+NNTP-Posting-Host: globus.ffi.no
+
+In article <stephenk.01sl@mkiisys3.adsp.sub.org>, stephenk@mkiisys3.adsp.sub.org (Stephen Kurlow) writes:
+> 
+> One thing I wondered with font sizes is:
+> 
+> Doesn't the font system on Amiga only allow you to specify a font
+> height? So how do you handle when printing to say an Epson LQ1050
+> in 180x180 and 360x180? Because for the latter case you want the
+> font same height but twice the width because of increased
+> resolution right? You do not use some routine to scale the 180x180
+> used font upto 360x180 or something do you? I'd hope somehow
+> could use Intellifont thing to render a font for twice width. I'd
+> really appreciate info on how this all works!!! :-)
+
+RTFM... it's all in the "Workbench 3.0" manual...
+
+Intellifont supports an environment variable specifying the aspect ratio
+of the font. This is also useful if you use something as weird as a
+Euro36:SuperHiRes Workbench (1448x200, almost 6:1 pixel aspect ratio!)
+
+Can't remember the name of the variable off-hand, but I *know* it's in
+the manual, under the "Intellifont" entry.
+
+Environment variables can of course be changed (and are evaluated) on-the-fly,
+so there should be no problems if you need more than one aspect ratio during
+the same session.
+
+
+-- 
+Per Espen Hagen        per.e.hagen@ffi.no     Tel: +47 63807653     //
+Senior Scientist     Image Processing Group      NDRE, Norway     \X/
+
+This sentence contradicts itself -- no actually it doesn't (Hofstadter)
+
+
+Article 2464 of comp.sys.amiga.applications:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!uunet!zib-berlin.de!uniol!caty!aworld!roderick!klaatu
+From: KLAATU@RODERICK.zer.de
+Message-ID: <2yotQk6Ev7@RODERICK.zer.sub.org>
+Newsgroups: comp.sys.amiga.applications
+Subject: Re^2:We need TRUE multiple assigns
+Date: Fri, 14 Jan 94 03:04:00 CET
+Lines: 72
+
+On Mi 12.01.1994 at 00:20:00 wrote user PETS%MUNTA.CS.MU.OZ.AU@AWORLD.zer.sub.org
+under the subject 'Re^1:We need TRUE multiple assigns':
+
+PE> I'd really like to say that that should be configurable when you set
+PE> up the multi assign.  It would be nice if you could nominate any of
+PE> the directories in the multi assign as the one in which new files
+PE> should be created.  But this could have unfortunate consequences when
+PE> a file by that name already exists earlier in the multi assign than
+PE> the place where new files are created.  In that case, you'd create a
+PE> new file, but when you read it, you'd see the old file.  The new one
+PE> would fall into a sort of black hole:  it would be there, but hidden
+PE> by an older file.
+PE>
+PE> So I guess the multi assign needs to create new files the way it does
+PE> now: in the first constituent directory.  This guarantees that the new
+PE> file will be seen, meeting my goal that an assign should act just like
+PE> a directory, to the extent possible.
+PE>
+PE> There is a problem here, though.  A program that loads a file into
+PE> memory, makes some changes, and then writes the file back to disk,
+PE> e.g. a text editor, may have some problems.  If it reads the file from
+PE> the second directory in the assign, but writes it back into the first,
+PE> then it has in effect moved the file from one directory to another.
+PE> For example, if S: is assigned to bench:s and sys:s in that order, and
+PE> you edit s:startup-sequence, many editors would write your
+PE> startup-sequence to bench:s.  Of course, when your startup-sequence is
+PE> read, your multi assign for S: isn't set up yet, so the new
+PE> startup-sequence is not used.
+PE>
+PE> One solution to this would be for the multi assign to search the
+PE> constituent directories for a file of the same name as the file to be
+PE> created, and always write the file there.  This would give the correct
+PE> behavior, but seems kind of kludgey to me.  Still, it might be the
+PE> best solution, as it doesn't require programs to do anything special.
+PE>
+PE> It would help for the multi assign device/handler/file system to
+PE> respond to a call to Parent() by returning a lock on the directory in
+PE> which the file really lives.  This is probably what it ought to do
+PE> anyway.  In this case, constructing the full name from the locked file
+PE> would give its true name, and opening *this* file for writing will
+PE> write the file in the right place.  I doubt many programs do this,
+PE> though.  It's certainly not "the unix way."
+
+Sorry for the long quoting, but you'll understand, when i say this:
+
+There is real Multiple assign handler already: pathmanager taken from the
+WShell- distribution.
+
+It handels multiple assigns in an own device. If you read such a assign, you'll
+get the first, visible file. Which is first depends of the entries in the
+assign-statement. if you write to this assign, the file is created in the first
+reachable directory. EXCEPT if the file allready exists in another directory.
+
+So i have set up my S: as follows:
+
+assign S: path:config:,OSX:script,sys:s
+
+this means i write first in an directory called config: (another assign though),
+which is handy for all the programs that still use S: for configs and not ENV:.
+Then i have some Shell-Script-files in the chain and at last the original
+s-directory.
+
+When i edit my startup-sequence it is rewritten in sys:s, not in config: because
+it pre-exists there. If i create a new file and save it to s: it actually gets
+created in config:
+
+I use this goody since several years, actually since the time when my used bought
+copy of WShell 1.3 broke under 2.04 and 3.0. It still works well under the
+highest OS.
+
+
+-- The Answer V3.00
+
+
+Article 5594 of comp.sys.amiga.misc:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!vixen.cso.uiuc.edu!uxa.cso.uiuc.edu!n-dade
+From: n-dade@uxa.cso.uiuc.edu ()
+Newsgroups: comp.sys.amiga.misc,netcom.software.amiga
+Subject: Re: Help Pipe
+Date: 1 Feb 1994 12:02:17 GMT
+Organization: University of Illinois at Urbana
+Lines: 21
+Message-ID: <2ilgc9$474@vixen.cso.uiuc.edu>
+References: <1994Jan25.011926.20712@lugb.latrobe.edu.au> <1994Jan27.190335.3373@Informatik.TU-Muenchen.DE> <rfoyCKBoH6.9oE@netcom.com> <fletcherCKCvvw.4p8@netcom.com> <inf01.760005961@apollo23>
+NNTP-Posting-Host: uxa.cso.uiuc.edu
+
+inf01@apollo23.uni-trier.de (Hans-Joerg Frieden) writes:
+
+>fletcher@netcom.com (F. Sullivan Segal) writes:
+
+>Is it possible to use the unix style piping like
+>ls | less
+>under the normal commodore shell? Has someone written a patch for this. I don't want to 
+> [...]
+
+Yes, you can have unix style pipes with the AmigaDOS shell. It seems that
+the hooks are there, but C= never enabled it in the end. What you need to
+do is:
+
+1) get fish/ff774/ExtraCmds.lha from aminet, and put the pipe command in c:
+2) add the line
+set _pchar |
+to s:shell-startup, or early in s:user-startup
+
+This works for me under WB 2.1; I don't know if this still works under 3.x.
+
+-Nicolas Dade / n9rzb / nicolas-dade@uiuc.edu
+
+
+Article 5672 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!sun4nl!sci.kun.nl!severus.mbfys.kun.nl!rhialto
+From: rhialto@mbfys.kun.nl (Olaf Seibert)
+Subject: Re: Problem with softlinks
+Message-ID: <CKyD0K.4Ky@sci.kun.nl>
+Keywords: Makelink, softlink, delete
+Sender: news@sci.kun.nl (News owner)
+Nntp-Posting-Host: severus.mbfys.kun.nl
+Organization: University of Nijmegen, The Netherlands
+References: <1994Feb8.165613.16041@uts.uni-c.dk>
+Date: Wed, 9 Feb 1994 10:26:43 GMT
+Lines: 18
+
+In <1994Feb8.165613.16041@uts.uni-c.dk> thomas@mat.dth.dk (Thomas Sepstrup Nielsen) writes:
+>The REAL PROBLEM is that I cannot delete the soft-link again.  I have
+>tried just about everything (I think :).
+
+As far as I've tried, you can't usually delete a softlink if it
+does not point to something else (that you must be able to delete).
+This seems to be because the Delete command locks the link to see if
+it exists and is deletable. But of course it will lock the object
+pointed to instead (if that exists).
+
+The solution: use a program that bypasses all checks and just calls
+the DOS function DeleteFile() (or whatever it was called). That works
+just fine.
+
+-Olaf.
+--
+___ Olaf 'Rhialto' Seibert       D787B44DFC896063 4CBB95A5BD1DAA96 
+\X/ I can bicycle on both sides of the road - rhialto@mbfys.kun.nl
+
+
+Article 7052 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!news.funet.fi!nntp.hut.fi!nntp.hut.fi!oahvenla
+From: oahvenla@snakemail.hut.fi (Osma Ahvenlampi)
+Newsgroups: comp.sys.amiga.programmer,comp.sys.amiga.applications,comp.sys.amiga.hardware,comp.sys.amiga.misc
+Subject: Re: Redirect Parallel port output
+Date: 08 Mar 1994 08:21:32 GMT
+Organization: Helsinki University of Technology, Finland
+Lines: 77
+Distribution: inet
+Message-ID: <OAHVENLA.94Mar8102132@beta.hut.fi>
+References: <CM7JG6.192@crash.cts.com>
+NNTP-Posting-Host: beta.hut.fi
+In-reply-to: uzun@crash.cts.com's message of Sat, 5 Mar 1994 19:57:41 GMT
+Xref: dd.chalmers.se comp.sys.amiga.programmer:7052 comp.sys.amiga.applications:4072 comp.sys.amiga.hardware:9779 comp.sys.amiga.misc:7476
+
+In article <CM7JG6.192@crash.cts.com> uzun@crash.cts.com (Roger Uzun) writes:
+
+>Is there a way to get AmigaDOS 3.X to use a device other than
+>parallel.device for the parallel printer port?
+
+The following is taken from the GVP ioExtender review by J.P.Hillenburg
+(jph@anaconda.bloomington.in.us), originally in comp.sys.amiga.reviews:
+
+-----------------cut here-----------------cut here----------------
+
+NEW INFORMATION [UPDATE:]
+
+        Since writing the ioExtender review, I have corrected the problems
+with selecting a proper printer.device.  I have found out that Commodore did
+provide a means for doing this, but there is no direct way to do it.  I
+accomplished it by hex-editing the file ENV:Sys/printer.prefs.
+
+        Also note that the following is totally applicable to other parallel
+devices.
+
+0) Copy your file ENVARC:Sys/printer.prefs to a safe place, so you can
+   restore it if something goes wrong.
+
+1) Find a decent hex editor, preferably FileX.  Make sure that the text
+   column is 16 characters wide.  (It doesn't have to be, but makes things
+   much easier for our purposes.)
+
+2) Look for the word 'PUNT' in the text column. Place your cursor on the P,
+   and then go down exactly two rows.  You can then type the name of your
+   parallel device, without the .device. (e.g. "gvppar")
+
+        [MODERATOR'S NOTE:  "Go down two rows" in this case means "move
+        forward 32 characters," since each row contains 16 characters in
+        Joseph's example.  This information may help you if you are using
+        a hex editor other than FileX.  - Dan]
+
+3) Once you have tested printing to make sure it works, run SYS:Prefs/Printer
+   and SAVE the preferences.  This will copy it to ENVARC:, and at the same
+   time, verifying your changes.
+
+        Here is a hex listing of my printer.prefs file:
+
+0000: 464F524D 0000009A 50524546 50524844    FORM....PREFPRHD     
+0010: 00000006 00000000 00005054 58540000    ..........PTXT..     
+0020: 00400000 00000000 00000000 00000000    .@..............     
+0030: 00004570 736F6E58 00000000 00000000    ..EpsonX........     
+0040: 00000000 00000000 00000000 00000000    ................     
+0050: 00000000 00020042 00000000 0005004B    .......B.......K     
+0060: 00005055 4E540000 00380000 00000000    ..PUNT...8......     
+0070: 00000000 00000000 00000000 00000000    ................     
+0080: 00006776 70706172 00000000 00000000    ..gvppar........     
+0090: 00000000 00000000 00000000 00000000    ................     
+00A0: 0000                                   ..                   
+
+        Here is my modified printer.prefs file uuencoded, for those too lazy
+to do the above themselves:
+
+begin 777 env:sys/printer.prefs
+M1D]230   )I04D5&4%)(1     8       !05%A4    0               X
+M      !%<'-O;E@                                       ( 0@  X
+M    !0!+  !054Y4    .                                &=V<'!AX
+;<@                                  X
+ X
+end
+
+
+--
+Joseph Hillenburg (xterm), NPS Technologies, Bloomington, Indiana
+UUCP: jph@anaconda.bloomington.in.us      \ /  Long live the Hornet
+My BBS: The Wrong Number BBS, w/BMS  +----o0o----+
++1 812 332 7379 (V.32bis)
+
+-----------------cut here-----------------cut here----------------
+
+--
+Osma Ahvenlampi - oahvenla@snakemail.hut.fi - finger or mail for PGP key
+WWW homepage: http://www.tky.hut.fi/.publish/oahvenla
+
+
+Article 12384 of comp.sys.amiga.hardware:
+Path: dd.chalmers.se!news.chalmers.se!sunic!aun.uninett.no!trane.uninett.no!eunet.no!EU.net!dkuug!dkuug!ic.dk!scala!awk
+Date: Sun, 17 Apr 94 15:58:42  GMT+1
+Newsgroups: comp.sys.amiga.hardware
+Subject: Re: Hide a device icon?
+Distribution: world
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+X-GateSoftware: XEchoGate 1.0
+From: awk@scala.ping.dk (Alex Kristensen)
+Message-ID: <awk.099t@scala.ping.dk>
+Organization: SCALA BBS Denmark
+Lines: 22
+
+
+In a message of 17 Apr 94 Mike Austin wrote about Hide a device icon?:
+
+ MA> Plainly put, is there any way to hide a device's icon on the Workbench?
+
+ MA> I want to set up a Temp: partition, but I don't want that on my
+ MA> Workbench. Thanks...
+
+All you have to do is to put an 'Assign Temp: DISMOUNT' in your User-Startup.
+If you still want to refer to the partition as Temp:, you have to assign it to
+the device name after the dismount. If the device name of your Temp: partition
+were DH2:, it would look like this in your User-Startup:
+
+...
+Assign Temp: DISMOUNT
+Assign Temp: DH2:
+...
+
+Alex Kristensen
+
+... The greatest of faults is to be conscious of none
+-- Via Xenolink 1.90
+
+
+Article 9251 of comp.sys.amiga.misc:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!warwick!kinguni!vulture!cs_e445
+From: cs_e445@king.ac.uk (vlod)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Iconizing
+Date: 18 Apr 1994 10:07:11 GMT
+Organization: Kingston University
+Lines: 24
+Message-ID: <2otm4f$17g@mercury.king.ac.uk>
+References: <1994Apr17.123900.20269@leeds.ac.uk>
+NNTP-Posting-Host: vulture.dcs.king.ac.uk
+X-Newsreader: TIN [version 1.1 PL8]
+
+C Knee (csc2l2bi@gps.leeds.ac.uk) wrote:
+: Is there a commodity (or whatever) that will iconize windows down to an icon?
+: I mean a real icon - not the title bar or just a small window, but a user
+: configurable image.  If you've ever used 4Dwm on the SGs, you'll know what I'm
+: on about.  If there is such a beast let me know; if there is'nt, does someone
+: feel like writing it?
+
+: 	-Chris
+
+The program you want is called 'Iconify'. Another program I know
+adds a menu item in your TOOLS menu instead of an icon and is called
+'Menufy'. You might want to check that out.
+
+Both are in the fish disks and available at your nearest aminet site.
+Regards..
+
+Vlod		...in sunny London, England.
+-Amiga Advocate
+
+|~~~~~///~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|
+|    ///   "Amiga - The Choice for TNG"   			  |
+|\\\///    "Lets face it, anything else ISN'T worth considering!" |
+|_\XX/_____________________________________________________________|
+
+
+Article 8681 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!dd.chalmers.se!not-for-mail
+From: lundgren@dd.chalmers.se (Lars Lundgren)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Icons and Assigns
+Date: 7 Apr 1994 18:36:12 +0200
+Organization: Chalmers University of Technology, Sweden
+Lines: 45
+Message-ID: <2o1cps$r9c@sauron.dd.chalmers.se>
+References: <1994Apr6.120442.13878@imada.ou.dk>
+NNTP-Posting-Host: sauron.dd.chalmers.se
+
+In article <1994Apr6.120442.13878@imada.ou.dk>,
+Bjorn Reese <breese@imada.ou.dk> wrote:
+>I'm looking for, or in case it doesn't exist, urging someone to write,
+>two small utilities which I have been missing very much lately.
+>
+...
+
+>2) Saving to assigns
+>
+>Many applications insist on storing their pref/config files in S:.
+>I don't want them there (in fact I have locked my workbench partition
+>- virus paranoia,) so I've made and "assign S: <somewhere> add"
+>where they can be. Once the files have been put in the additional S:
+>everything works fine until I want to save them again; then they end
+>up in my initial S:. What I need is an utility to redirect them to
+>the proper place.
+
+Don't do an Assign ADD, do an Assign. Like I do:
+
+Assign S: Data:Sys/S Work:Sys/S SYS:S
+
+Writes will go to Data:Sys/S... This trick actually came from
+someone on the net, whose name I've forgotten.
+
+I've tried to keep stuff out of SYS: myself by using assigns,
+but partly failed; had to put datatypes and dosdrivers in SYS:
+I can't believe there are people who put all their programs in Sys:C ;
+C: is for commodore-supplied cli programs.
+
+>
+>BTW, this reminds me that I also want the various file-requesters (ASL,
+>Reqtools...) to display the contents of all directories linked to an
+>assign.
+
+There's a thing called "Path-handler", which came with WShell 2.0.
+You can for example do
+assign q: PATH:SYS:C,RAM:
+dir q:
+
+and a listing will come up of all files in C: _and_ RAM:, unless there
+are duplicate names. I don't know how well it works, and I know
+it wasn't exactly what you wanted...
+
+Jorgen
+
+
+Article 37766 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!xlink.net!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Here's a GREAT IDEA for a new WORKBENC
+Message-ID: <1993Oct25.135628@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <2a8h4q$l12@tuegate.tue.nl> <2aaba5INN69q@dubhe.anu.edu.au>
+Date: Mon, 25 Oct 1993 12:56:28 GMT
+Lines: 16
+
+In article <2aaba5INN69q@dubhe.anu.edu.au>, tayschon@mehta.anu.edu.au (Sam Taylor) writes:
+>
+> Why don't Commodore define a set of standard icons for each of the
+> datatypes, and set the default tool for those objects as being 
+> "Multiview" for instance?  That way, you wouldn't need a million and
+> one useless .info files - you could simple double-click on any file
+> and have multiview open it up for you.  Just a thought...
+
+If you save an object with MultiView, it tries to access the .info
+file in ENV:sys/def_<type>.info, e.g. if you save a ILBM, it uses
+ENV:sys/def_ilbm.info as the icon.  Place MultiView as a default
+tool there, and off you go!  However, every other program should
+use this too!
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 15007 of comp.sys.amiga.hardware:
+Newsgroups: comp.sys.amiga.hardware
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!purdue!mozo.cc.purdue.edu!mentor.cc.purdue.edu!tna
+From: tna@mentor.cc.purdue.edu (Trevor Andrews)
+Subject: Re: OS3.1 & CD ROM support
+Sender: news@mozo.cc.purdue.edu (USENET News)
+Message-ID: <Cq7qqr.AsJ@mozo.cc.purdue.edu>
+Date: Sun, 22 May 1994 16:49:39 GMT
+References: <2rnqrb$g9d@seralph0.essex.ac.uk>
+Organization: Purdue University
+Lines: 20
+
+In article <2rnqrb$g9d@seralph0.essex.ac.uk> walaj@essex.ac.uk (Waland J F) writes:
+>
+>When we all have OS3.1 and nice fast CD-Roms, and (assuming we have an AGA machine)
+>how is the 1 KByte of backed up ram going to be supported...?
+>Will it be possible to 'assign' the ram to a file for example?
+>
+>jon
+>
+>-- 
+>Jonathan Waland        University of Essex, UK       walaj@essex.ac.uk
+>                      (short and to the point!)
+
+The nonvolatile.library handles this memory.  On a non-CD32 you can set
+a location for it with env:sys/nv_location  such as work:nonvalatile  which
+would offourse be a directory....
+
+-- 
+  "Make up your own mind."      What I have well performed in grace approve,
+   //   Amiga 4000/040 18Meg    Where I have erred, correct me in your love.
+ \X/    AmigaOS 3.0               twelfth-century historian Henry of Huntingdon
+
+
+Article 13612 of comp.sys.amiga.misc:
+Path: dd.chalmers.se!news.chalmers.se!sunic!ugle.unit.no!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!newsserver.jvnc.net!netnews.upenn.edu!netaxs.com!adrn
+From: adrn@netaxs.com (Adrian Demarais)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Ultimate AmigaDOS enhancements?
+Date: 4 Jun 1994 06:56:13 GMT
+Organization: Netaxs BBS and shell accounts!
+Lines: 65
+Message-ID: <2sp8id$f6b@netaxs.com>
+References: <CquoDo.86A@midge.bath.ac.uk>
+NNTP-Posting-Host: access.netaxs.com
+X-Newsreader: TIN [version 1.2 PL2]
+
+Elof: Amiga Advocate (en2prmm@midge.bath.ac.uk) wrote:
+: I have an A4000/030 and I am trying to customise AmigaDOS to produce the 
+: ultimate OS.  I have an ulterior motive: I am trying to impress my friend
+: (who owns an Acorn Archimedes) with the Amigas general wonderfulness.  
+: Therefore I would be grateful to hear what programs other people are 
+: using.  I currently have the following:
+
+: MagicWB: New icons, patterns, fonts.
+: MUI: OO system to create and maintain GUI's
+: CTM: Patch cycle gadgets to give drop-down menus
+: Toolsdaemon 2.1: Add tools to the WB menus
+: Kingcon 1.3: Shell enhancer w/ filename completion + much more
+: Icon Manager: Give iconless files icons according to filetype
+: Magic Menu: Popup menus, nice new look
+: Addpower: Multipurpose utility
+
+: Can anyone add to this list?  
+
+
+  I like the ParM/BrowserII combo. The same handler takes care of
+menuing for both, and adds mouse acceleration, pointer blanking,
+window to front/back clicking, and screen flipping by mouse click,
+sunmouse, etc.  Browser II is the superior file management util, with
+as many windows open as you want, filetype recognition, internal
+multitasking (continue while file copying is proceeding, etc), window
+iconification, etc. Browser II's windows are app-windows, so you can
+drag a disk or drawer icon from WB into them to open them within
+Browser.
+
+  Which reminds me, the Iconify/menufy package is nice. A
+ctrl-double.click collapses a window into a small icon (or menu entry)
+on WB, saving much more space than a mininized window, and looking
+better at the same time.
+
+  An impressive screen blanker is important. I'm using Garshneblanker,
+but Midnight sounds good also, with some new modules recently posted
+such as Flying Toilets. A blanker that comes with Garshneblanker will
+run the command of your choice, so you could use a slide show or
+animation as a blanker.  I've seen another blanker do this, but
+Garshneblanker's one will run a second command to stop the process. If
+you grab breakname while you're at it, so that you can kill the
+process without knowing its number (almost impossible to know in
+advance), it should work witth everything you can throw at it.
+
+  Lastly, if you use public screens at all, PubUtils will open new
+public screens for you, oversized autoscrolling ones if you wish. I'm
+running Workbench on a 1600 x 1000 Super72 screen, and Terminus on a
+850 x 600 Super72 opened by Openscreen from the PubUtils package. I
+used CliAnywhere to induce Terminus to open on this screen as if it
+were the Workbench screen, so that now any program that would have
+opened on WB, will open here instead, IF it's the frontmost
+screen. That is the way public screens SHOULD have been designed,
+instead of this stupid MSoft-like "Make default/shanghai on"
+nonsense. If you get PubUtils, also get SM (screenmanager). It
+performs the same function as openscreen, but will also tell you the
+screenmode ID numbers needed to open the more exotic screen types
+(such as Super72). You can then use the number SM gives you (in hex)
+in Openscreen, once you convert it to decimal.  The problem SM has is
+that it won't open an autoscrolling screen, making anything larger
+than the default overscan size useless. Personally, I think one of the
+most impressive things Amiga can do is run a large, autoscrolling
+screen.  Macs & X-Windows boxes have screens you can push windows off
+the edges of, but still limit you to the real estate you see. Only
+Amiga lets you move off the edges...
+
+
+Article 10847 of comp.sys.amiga.programmer:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!uknet!warwick!not-for-mail
+From: cstaebi@csv.warwick.ac.uk (Ralf)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Loadwb
+Date: 16 May 1994 17:51:33 +0100
+Organization: University of Warwick, Coventry, UK
+Lines: 17
+Message-ID: <2r88al$b@lily.csv.warwick.ac.uk>
+References: <2r7ca3INNaqq@maz4.sma.ch> <1994May16.091932.7542@odin.diku.dk>
+NNTP-Posting-Host: lily-fddi.csv.warwick.ac.uk
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+
+In article <1994May16.091932.7542@odin.diku.dk>,
+	bekgaard@diku.dk (Rene B|kgaard Hansen) writes:
+
+>>How can I inhibit the execution of WBStartup files ? (other than removing from
+>>the directory)
+>
+>You could rename WBStartup.
+
+	I had cause to do this myself recently, and the easiest way is to
+assign SYS: to somewhere else, for example to RAM: somewhere early in the
+startup before the LoadWB. You should be able to put it in the user-startup.
+  ____      ____      _         _ ____                                       __
+ _\__ \    _\__ \    / \       / \\__/                                      ///
+/ \_/ /_  / \_/  \  /  /      /  /___          Ranulf Doswell              /// 
+\   __  \ \   __  \ \  \    _ \  \\_/                                 __  ///  
+ \  \ \  \ \  \ \  \ \  \__/ \ \  \       cstaebi@csv.warwick.ac.uk   \\\///   
+  \_/  \_/  \_/  \_/  \______/  \_/       (until end of June only.)    \XX/    
+
+
+Article: 47443 of comp.sys.amiga.misc
+Path: news.chalmers.se!sunic!ugle.unit.no!trane.uninett.no!nntp.uio.no!ifi.uio.no!sics.se!eua.ericsson.se!erinews.ericsson.se!cnn.exu.ericsson.se!convex!cs.utexas.edu!howland.reston.ans.net!gatech!news-feed-1.peachnet.edu!news.duke.edu!news.mathworks.com!usenet.eel.ufl.edu!usenet.cis.ufl.edu!caen!msuinfo!harbinger.cc.monash.edu.au!news.uwa.edu.au!DIALix!melbourne.DIALix.oz.au!not-for-mail
+From: bytey@melbourne.DIALix.oz.au (Chris Hames)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Mounting a PC partition with CrossDOS
+Date: 15 Nov 1994 14:21:50 +1100
+Organization: DIALix Services, Melbourne, Australia.
+Lines: 24
+Sender: bytey@melbourne.DIALix.oz.au
+Message-ID: <3a99ge$e4p$1@melbourne.DIALix.oz.au>
+References: <OuZJv*P30@wolf359.exile.org>
+X-Newsreader: NN version 6.5.0 #59 (NOV)
+
+Eric@wolf359.exile.org (Eric Edwards) writes:
+
+>I have a hard drive that is shared between my Amiga 3000 and PC clone via
+>the SCSI bus.
+
+>I want to mount the MSDOS partition on the Amiga side.  I have CrossDOS. 
+>This shouldn't be a problem.  But I can't get it to work!
+
+The main things to remember when trying to read a real IBM harddrive
+with CrossDOS mountlist entry are:-
+
+1.  Get the mount parameters from HDToolBox/ChangeDriveType/DefineNew/
+ReadConfiguration, if the number of heads * blockspertrack does not equal
+blockspercylinder then set heads(surfaces) to one and use blockspercylinder
+as BlocksPerTrack in the mount entry.
+
+2. Use DosType=0x4d534800.
+
+3. End the mount name in C eg "PCC:" for the first partition D for the
+next etc.
+
+Regards,
+-- 
+Chris Hames    bytey@melbourne.dialix.oz.au
+
+
+Article: 47799 of comp.sys.amiga.misc
+Path: news.chalmers.se!sunic!pipex!howland.reston.ans.net!usc!crash!cg57.esnet.com!wolf359!Eric
+From: Eric@wolf359.exile.org (Eric Edwards)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Mounting a PC partition with CrossDOS
+Message-ID: <YWvMv*Y50@wolf359.exile.org>
+Date: Sun, 20 Nov 1994 02:02:36 GMT
+References: <OuZJv*P30@wolf359.exile.org> <3a99ge$e4p$1@melbourne.DIALix.oz.au>
+Organization: Engineers in Exile
+X-Newsreader: Arn V1.03a
+Lines: 34
+
+In article <3a99ge$e4p$1@melbourne.DIALix.oz.au>, Chris Hames writes:
+
+> The main things to remember when trying to read a real IBM harddrive
+> with CrossDOS mountlist entry are:-
+> 
+> 1.  Get the mount parameters from HDToolBox/ChangeDriveType/DefineNew/
+> ReadConfiguration, if the number of heads * blockspertrack does not equal
+> blockspercylinder then set heads(surfaces) to one and use blockspercylinder
+> as BlocksPerTrack in the mount entry.
+
+I've tried doing this but the PC partition uses a different cylinder size.  
+HDtoolbox reports 1 head and 604 blocks/track.  The PC partioning software
+reports 17 heads and 62 blocks per track or 1054 blocks/cylinder.  I have
+tried using HDtoolbox's numbers and just enough cylinders to contain the
+PC partion.  I still get "Not a fileSystem device"
+
+> 2. Use DosType=0x4d534800.
+
+Did that but thanks for clearifying the point.  The mountlist for the PC
+floppies uses DosType=0x4d534400.
+ 
+> 3. End the mount name in C eg "PCC:" for the first partition D for the
+> next etc.
+
+Er, why?  The name of the mount name would seem to be irrelivent.  Is
+CrossDos being very weird?
+
+This is CrossDOS from the AmigaOS 2.1 distribution.  It isn't different
+from "real" CrossDOS is it?
+
+----
+Eric Edwards: Bang= cg57.esnet.com!wolf359!eric Domain= eric@exile.org
+Remember the home hobbyist computer: Born 1975, died April 29, 1994
+
+
+Article: 47800 of comp.sys.amiga.misc
+Path: news.chalmers.se!sunic!pipex!howland.reston.ans.net!news.cac.psu.edu!usenet
+From: D6B@ECL.PSU.EDU (Dan E Babcock)
+Newsgroups: comp.sys.amiga.misc
+Subject: Re: Mounting a PC partition with CrossDOS
+Date: 20 Nov 1994 10:04:57 GMT
+Organization: Penn State Engineering Computer Lab
+Lines: 24
+Distribution: world
+Message-ID: <3an709$nas@hearst.cac.psu.edu>
+References: <OuZJv*P30@wolf359.exile.org> <3a99ge$e4p$1@melbourne.DIALix.oz.au>
+NNTP-Posting-Host: ecld.psu.edu
+X-News-Reader: VMS NEWS 1.24
+In-Reply-To: bytey@melbourne.DIALix.oz.au's message of 15 Nov 1994 14:21:50 +1100
+
+In <3a99ge$e4p$1@melbourne.DIALix.oz.au> bytey@melbourne.DIALix.oz.au writes:
+
+- The main things to remember when trying to read a real IBM harddrive
+- with CrossDOS mountlist entry are:-
+- 
+- 1.  Get the mount parameters from HDToolBox/ChangeDriveType/DefineNew/
+- ReadConfiguration, if the number of heads * blockspertrack does not equal
+- blockspercylinder then set heads(surfaces) to one and use blockspercylinder
+- as BlocksPerTrack in the mount entry.
+
+This should not be neccessary. As long as lowcyl=0, CrossDOS will read the
+drive partition table and adjust its internal parameters appropriately.
+i.e. you don't have to set those mountlist parameters to anything in
+particular.
+ 
+- 2. Use DosType=0x4d534800.
+- 
+- 3. End the mount name in C eg "PCC:" for the first partition D for the
+- next etc.
+
+Correct.
+
+Dan
+
+
+Article: 42549 of comp.sys.amiga.misc
+Path: news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!ieunet!maths.tcd.ie!not-for-mail
+From: ecarroll@maths.tcd.ie (Eddy Carroll)
+Newsgroups: comp.sys.amiga.misc,comp.sys.amiga.programmer
+Subject: Re: ASCII-only Print Driver needed
+Date: 7 Sep 1994 14:23:59 +0100
+Organization: Dept. of Maths, Trinity College, Dublin, Ireland.
+Lines: 16
+Message-ID: <34ketf$mfb@walton.maths.tcd.ie>
+References: <Cvoq4C.9B0@cruzio.com> <1994Sep6.094839.3170@iglou.com>
+NNTP-Posting-Host: walton.maths.tcd.ie
+Keywords: 2.04
+Xref: news.chalmers.se comp.sys.amiga.misc:42549 comp.sys.amiga.programmer:38447
+
+jasnider@iglou.iglou.com (Jill A. Snider) writes:
+>>I want to put PJL(HP PCL5) ESC-sequences into text files.  The LaserJet
+>>drivers do not feed these through intact.  
+>
+>   Pat (J.A.'s roommate) says: send the escape sequences direct to the 
+>parallel port, rather than through the printer driver thus: 
+>      copy escape-sequence to PAR:
+
+Another alternative is to simply use PRT:RAW instead of PRT: -- this will
+transfer all codes through unchanged, and automatically use the parallel
+or serial device, as selected by preferences.
+
+Eddy
+-- 
+Eddy Carroll        ----* Essex MUD Wizard  | "You haven't lived until you've
+Internet: ecarroll@maths.tcd.ie             |  died in MUD!" -- Richard Bartle
+
+
+Article: 37430 of comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!sun4nl!hacktic!aobh.hacktic.nl!Maarten
+Date: Wed, 24 Aug 94 18:51:15  GMT+1
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Mounting second ram: drive
+Distribution: world
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: 8bit
+X-GateSoftware: XEchoGate 1.3
+From: Maarten@aobh.hacktic.nl (Maarten Ter Mors)
+Message-ID: <Maarten.08o3@aobh.hacktic.nl>
+Organization: Amiga Online Bs Heemstede, +31-23-282002/470739
+Lines: 36
+
+O, MY GAWD !  It can't be Matthias Fleischer, who writes to All ?! And it's
+about Mounting second ram: drive too !
+
+
+ MF> Subject says it all:
+ MF> Is it possible to mount a second ram: drive ? (not the fixed-sized rad:,
+ MF> but the one that is mounted
+ MF>  automatically at system startup)
+
+ MF> I tried a mountlist entry with
+ MF> filesystem = ram  (This is the name of the handler AFAIK) stack = 4096
+ MF> globvec = 0 (tried out -1, too)
+
+Almost right.  Try :
+
+    Handler=ram-handler
+    Stack=4096
+    GlobVec=0
+
+That should do it.  It's been awhile since I did this myself (way back in the
+good old KS1.3 days), but I remember you had to relabel the new drive before
+you loaded Workbench.  There will be conflicts otherwise. So, assuming your
+second RAM drive is called RAM1:, use :
+
+; setting up the new ramdrive
+Mount RAM1:
+Relabel RAM1: "Second RAM drive"
+
+
+G'bye then,
+
+  /|/|       ___  /|/|            EMAIL ADDRESS CHANGED (AGAIN) !! :
+ / / |aarten |er / / |ors      email: maarten.ter.mors@aobh.xs4all.nl
+
+

@@ -1,0 +1,1533 @@
+Abstract
+
+This document attempts to provide some background information on the
+inner workings of the graphics library monitor data base, in specific
+how monitor drivers work (the files in DEVS:Monitors). The information
+contained herein should be considered as "curiosity" and not as
+technical documentation - the information on the display info database
+was not made publicly available by CBM, and probably for a reason. You
+may very well understand why after reading this.... There are
+indications that attempts were made to replace or update it, and the
+database as we find it as part of V40 of graphics has a couple of
+issues that seemed to have given enough motivation to keep its
+workings private and closed.
+
+Hence, readers beware! What you find here may be not as useful as it
+may sound. It just attempts to throw some light on the inner
+"workings" (or "non-workings") of graphics, and should not be
+understood as a reliable technical documentation.
+
+This is more an essay on the internals of graphics than a technical
+manual, and you might rather want to read it for your entertainment
+than to derive any work on the (rather unstable) grounds of graphics.
+
+In particular, this document may contain inaccuracies, is certainly
+incomplete and may be even plain wrong. Unfortunately, there is no
+(other?) documentation on the display info data base, and no such
+documentation existed, not even internally at CBM.
+
+
+I) The graphics display info data base
+
+Graphics maintains a list of the "graphics modes" it knows about in
+GfxBase->DisplayInfoDataBase, the structure of which will be explained
+in the following paragraphs. Information within this database - or
+rather, information *derived* from the contents of this database - are
+available through GetDisplayInfoData(), which is a publicly available
+LVO in graphics. This is the preferred and recommended source of
+information.
+
+The database is organized as a tree structure, with the root node
+pointed to by GfxBase-> DisplayInfoDataBase, organized in a structure
+as follows:
+
+struct RecordNode
+{
+    struct RecordNode *rcn_Succ;    /* next sibling */
+    struct RecordNode *rcn_Pred;    /* previous sibling */
+    struct RecordNode *rcn_Child;   /* subtype of record */
+    struct RecordNode *rcn_Parent;  /* supertype of record */
+};
+
+rcn_Succ/rcn_Pred link nodes on the same level of the tree, rcn_Child
+points to potential children, if present, and rcn_Parent points to the
+parent node, if available. On the first level of the tree, we find
+information on monitors. Display modes of each monitor are children of
+the corresponding monitor. The nodes are here not part of an exec
+"List" structure, hence the last node has its rcn_Succ pointer set to
+NULL instead of pointing into the List structure as it would for exec
+lists. Similarly, the first RecordNode has rcn_Succ set to zero.
+
+In fact, the "RecordNode" is part of a larger structure, namely the
+DisplayInfoRecord:
+
+struct DisplayInfoRecord
+{
+    struct RecordNode  rec_Node;
+    UWORD              rec_MajorKey;
+    UWORD              rec_MinorKey;
+    struct TagItem     rec_Tag;     /* { TAG_DONE, 0 } or { TAG_MORE, &data } */
+    ULONG              rec_Control;
+    ULONG              (*rec_get_data)();
+    ULONG              (*rec_set_data)();
+    struct Rectangle   rec_ClipOScan;
+    ULONG              reserved[2];
+};
+
+rec_MajorKey and rec_MinorKey "enumerate" the branches of the tree and
+relate directly to the ModeID of a monitor or the monitor ID. On the
+first level of the tree, namely the monitors, the "MajorKey" is zero,
+and the "MinorKey" is the Monitor ID, e.g. "1" for NTSC, "2" for PAL,
+and "0" for the system default monitor. On the second level of the
+tree, the MajorKey is the MinorKey of its parent, namely the monitor
+ID, and the MinorID is the mode ID. Hence, "(rec_MajorKey << 16) |
+rec_MinorKey" gives the full mode ID of a mode.  The information here
+is used to locate a mode easily within the database.
+
+rec_Control are the mode bits as interpreted by the graphics
+library. It looks here to find certain mode properties, such as LACE,
+HAM, DUALPF, and it is a copy of the display info structure we will
+discuss below. Or rather, the internal documentation of graphics
+states that "rec_Control" is used for this very purpose, but, in fact,
+the field is completely unused in V40. Graphics deposits mode
+information there, and then leaves it alone.
+
+rec_get_data() and rec_set_data() are, in principle, functions a user
+could set in case graphics retrieves information from the
+corresponding node, or updates information of the corresponding
+mode. However, as the display info database is undocumented, there is
+little use for that. They are called - with arguments on the stack -
+as such:
+
+(*ufunc)(&dinfo,&a,&b,&tagID,&ID,&c,&d,&result);
+
+where "*ufunc" is the function pointer from the structure, "&dinfo" is
+the pointer to the above structure, "a" is a pointer to the source of
+the information (i.e. the function gets a pointer to the pointer"),
+"b" the size in bytes of information to retrieve, "c" the target and
+"d" the target buffer size, "tagID" identifies the type of information
+to retrieve - this is identical to the "tagID" parameter of
+GetDisplayInfoRecord() and "ID" is identical to the last parameter of
+GetDisplayInfoData(). "result" is supposed to be updated by the
+function, i.e. by the number of bytes copied out of or into the
+structure.
+
+rec_ClipOScan is a hot-fix that was added to the game rather late by
+CBM and limits the display clips to some maximum legal values (as the
+internal document puts it). It was put there work around issues in
+some games. It is not directly related to the text, maximum and video
+overscan limits of a mode. Instead, it rather restricts them by 
+additional clipping.
+
+Apparently, we still miss the actual data on the monitors. This
+information enters the game by the harmlessly looking rec_Tag field in
+a "screwy" way. Whenever some "real beef" information is to be added
+to a node in the display info tree, it does so by setting the
+rec_Tag.ti_Tag field to TAG_MORE, and setting the address of the tag
+to the target structure which, at first sight, looks like a tag
+list. The are five types of information that can be associated to a
+node like this: "DisplayInfo", "MonitorInfo", "DimensionInfo",
+"NameInfo" and "VecInfo", corresponding to the DTAG_DIMS tags you find
+in graphics/displayinfo.h.
+
+Each of these information sources start with a "Query Header":
+
+struct QueryHeader
+{
+        ULONG   StructID;       /* datachunk type identifier */
+        ULONG   DisplayID;      /* copy of display record key   */
+        ULONG   SkipID;         /* TAG_SKIP -- see tagitems.h */
+        ULONG   Length;         /* length of local data in double-longwords */
+};
+
+which is also documented in graphics/displayinfo.h. The
+rec_Tag.ti_Data pointer points exactly to the "QueryHeader", which is
+just a tag list in disguise. "StructID" is one of the DTAG_xxxx tags
+from graphics/displayinfo.h, and identifies the type of data
+associated to a DisplayInfoRecord, and DisplayID is identical to the
+displayinfo mode ID and replicated here once again. The "SkipID" is
+nothing but TAG_SKIP, i.e. it reassembles another tag, that skips over
+the actual data, and length is the amount of data to skip over, or
+rather the size of the data that follows in units of sizeof(struct
+TagItem), which amounts to 8 bytes.
+
+The data structures graphics gives away, i.e. "struct DisplayInfo",
+"struct MonitorInfo", "struct DimensionInfo", "struct NameInfo" and
+"struct VecInfo" re-assemble this nicely:
+
+struct NameInfo
+{
+        struct  QueryHeader Header;
+        UBYTE   Name[DISPLAYNAMELEN];
+        ULONG   reserved[2];          /* terminator */
+};
+
+The query header here has a struct ID of DTAG_NAME, the DisplayID is
+copied over, SkipID is TAG_SKIP, and Length is actually the ti_Data
+value of a tag item starting at SkipID which skips over
+"NameInfo.Name". What is called "reserved" in the above structure is
+just the continuation of the tag list starting at
+"DisplayInfoRecord.rec_Tag", as such another TagItem in disguise, and
+is initialized to "TAG_DONE", terminating the list. As soon as new
+information enters the display info tree, it is changed to "TAG_MORE",
+and the second reserved field is pointing to the next information
+associated to the node.
+
+This sounds easy enough, but is however, only half of the
+truth. Graphics does not pass out its internal structures so easily,
+and instead uses internal structures of the names "RawDisplayInfo",
+"RawMonitorInfo", "RawDimensionInfo", "RawNameInfo" and "RawVecInfo"
+that are "cooked" to the above structures after they have been copied
+to the user supplied buffer of GetDisplayInfoData(). This cooking
+scales some values for the DimensionInfo at the time of writing, but
+other receipts would be possible, even by the user through
+rec_get_data() or rec_set_data() that modify the structure in some
+way.
+
+Hence, what is attached to a DisplayInfoRecord is one or more of the
+raw structures mentioned above, and not the externally visible
+structures documented in graphics/displayinfo.h.
+
+In particular, a first level DisplayInfoRecord has always a
+"RawMonitorInfo" structure attached to it as it represents a monitor,
+or rather, information on the monitor, and a second level
+DisplayInfoRecord keeps all the other structures as they represent
+information of a particular mode of the monitor they are part of.
+
+We go now through these structures one by one.
+
+I.1) RawMonitorInfo
+
+This is the information attached in the form of a tag list to the
+first level of the DisplayInfoDataBase. It represents a monitor, bare
+any mode information:
+
+struct RawMonitorInfo
+{
+        struct  QueryHeader   Header;
+        struct  MonitorSpec  *Mspc;
+        Point   ViewPosition;
+        Point   ViewResolution;
+        struct  Rectangle ViewPositionRange;
+        UWORD   TotalRows;
+        UWORD   TotalColorClocks;
+        UWORD   MinRow;
+        WORD    Compatibility;
+        struct  Rect32  TxtOScan;
+        struct  Rect32  StdOScan;
+        Point   MouseTicks;
+        Point   DefaultViewPosition;
+        ULONG   PreferredModeID;
+        ULONG   reserved[2];    /* tag end substitute */
+};
+
+"Header" is just a tag list that contains the TagID of this structure,
+and a TAG_SKIP that skips over the body of the structure up to the
+"reserved" field, as explained above. MonitorSpec points to the
+MonitorSpec structure documented in graphics/monitorspec.h, more on
+this below.
+
+ViewPosition is used to "uncook" information in case the MonitorInfo
+is changed from outside through the SetDisplayInfoData(). This is a
+private LVO in graphics discussed below that allows to modify data in
+the database. It is used to adjust the view position of the monitor
+globally, or rather, to adjust the overscan positions of all modes of
+this monitor.
+
+ViewResolution provides the pixel sizes in units CBM did not document
+- it is not the resolution, unlike what the text says. It is
+documented in graphics/displayinfo.h as "ticks per pixel", whatever a
+tick is. It is neither clear which mode this relates to.  One way or
+another, the numbers are used to scale the overscan parameters when
+"uncooking" monitor information. For the PAL monitor, the "view
+resolutions" are 44/44, for DblNTSC they are 44/52.
+
+ViewPositionRange is the range within which a view can be moved. The
+MinX value is the first 140ns (Low-Res) pixel that can possibly be
+visible. Which pixel that is depends on whether the hardware is AA or
+ECS, and is even hardware dependent. The monitor drivers go through a
+lot of hoops to compute it. In particular, for AGA machines it also
+depends whether graphics should work around an Alice bug. If so, the
+value is set to a higher value such that the border remains blank, but
+scrolling works right. If not so, a lower value becomes acceptable,
+the autoscroll screens will show defects, but less border is visible.
+The MinY value is the first visible row after a vertical blank, namely
+29 for PAL and 21 for NTSC.
+
+Similarly, MaxX and MaxY are the maximal positions for the view. The
+numbers are computed here such that a screen of the nominal size of
+the mode has its last line visible on the screen. For example, for a
+NTSC screen, the nominal height is 400 lines, for a PAL screen it is
+512 lines. The maximal view position is now set such that a screen of
+the nominal dimensions ends at the bottom-most or rightmost visible
+position of the monitor before blanking begins.
+
+TotalRows is the height of a frame in scan-lines, including the
+blanking period, counted in interleaved (full frame) scans. For PAL,
+this is 312 lines, for NTSC, 262 lines.  TotalColorClocks is the width
+of the frame in cycles of the color carrier signal of the TV norm,
+including the blanking. A NTSC and a PAL line has 226 color clocks
+according to the monitor drivers. While NTSC has long and short lines,
+only a single length is recorded here.
+
+MinRow is again the first visible line of a frame, and for all
+practical purposes set to the same value as
+ViewPositionRange.MinX. The latter is used for view position clipping,
+the former is only a information provided to the user of the display
+info database.
+
+Compatibility is a value that indicates which other monitors this
+monitor is compatible to, and hence, which screens (or rather,
+ViewPorts) can be mixed on the same view. Values are listed in
+graphics/displayinfo.h, indicating that 0 allows mixing of monitors of
+the same compatibility, i.e. native Amiga monitors, 1 shows that the
+monitor can only be used with modes of the same monitor, and -1 that
+it cannot be mixed at all. Graphics has no indication which modes can
+be mixed with which other modes beyond this type of bare-bone
+compatibility indication.
+
+TxtOScan and StdOScan are the default overscan regions, but not given
+in pixels, but in units of the display resolution. The units for this
+scaling come from the RawDimensionInfo.Resolution field, though, and
+not from the monitor.
+
+If the user now requests to retrieve a DimensionInfo - which looks
+different from the RawDimensionInfo shown below - overscan values in
+the returned DimensionInfo are "cooked" from the raw values in the
+database by dividing the raw values by the resolution values of the
+RawDisplayInfo discussed below, namely RawDisplayInfo.Resolution.x and
+RawDisplayInfo.Resolution.Y. This way, only one set of rectangles need
+to be stored in the data base, and the rectangles are then scaled to
+pixel values according to the resolution of the corresponding mode ID.
+
+MouseTicks keeps a scaling value for the mouse pointer velocity. This
+is typically identical to the numbers in the Resolution.
+
+PreferredModeID only seems to be used and present for the OverScan
+prefs, and contains the mode ID the overscan prefs uses for computing
+resolutions and presenting the overscan adjustment screen. Graphics
+itself does not care about its value.
+
+Finally, reserved[2] is a TagList, and contains TAG_DONE at the end of
+the information attached to a node, or TAG_MORE if additional
+information sources follow.
+
+I.2) RawDisplayInfo
+
+This is the internal look-alike of the DisplayInfo structure of
+graphics/displayinfo.h.  It keeps values that are specific to a
+particular mode of the monitor and as such are attached to the second
+level RecordNodes of the display info data base, not to the first
+level which represents the monitor. The structure looks as follows:
+
+struct RawDisplayInfo
+{
+        struct  QueryHeader Header;
+        UWORD   NotAvailable;
+        ULONG   PropertyFlags;
+        Point   Resolution;
+        UWORD   PixelSpeed;
+        UWORD   NumStdSprites;
+        UWORD   PaletteRange;
+        Point   SpriteResolution;
+        ULONG   ModeID;
+        UBYTE   RedBits;
+        UBYTE   GreenBits;
+        UBYTE   BlueBits;
+        UBYTE   pad2[5];
+        ULONG   reserved[2];    /* tag end substitute */
+};
+
+This is almost identical to the "external" function which does not
+have the ModeID member, though - in fact - it is still carried over
+without change to the external DisplayInfo structure.
+
+QueryHeader is as above a mock-up TagList that skips over the body of
+the structure, right to the "reserved" field which is another tag,
+either TAG_DONE if this is the last information associated to the
+RecordNode, or TAG_MORE if there are more pieces of information.
+
+NotAvailable encodes whether a specific mode has been disabled. It is
+zero if the mode is available. DI_AVAIL_NOCHIPS indicates that a mode
+is not available because it requires capabilities beyond the display
+hardware of the board, i.e. AA modes on an ECS board will have this
+flag set. DI_AVAIL_NOMONITOR is initially set by the system as long as
+no monitor has been associated to a mode. DI_AVAIL_NOTWITHGENLOCK
+indicates that the system found an external genlock connected to the
+computer, and the mode would not work with this genlock. For example,
+if the system is genlocked to PAL, anything but a PAL mode will not
+work.
+
+While the above provides the availability of a mode, PropertyFlags
+indicates the properties of the mode. They are all listed in
+graphics/displayinfo.h and hence are fully documented - there is
+nothing new to find here. Indicators such as HAM, LACE or possibility
+to drag screens are listed here.
+
+Resolution, unlike the name suggests, is not the resolution, but the
+size of the pixels of this mode in units that I am not aware of. These
+are the same units already used for the ViewResolution of the
+monitor. According to these units, a PAL Hi-Res Lace screen has pixel
+dimensions of 22x22, and a NTSC Hi-Res Lace screen has pixel
+dimensions of 22x26.  These are also the dimensions that go into the
+MouseTicks value of RawMonitorInfo by default.
+
+For a non-lace screen, the vertical pixel dimension ("resolution") is
+multiplied by two as pixels become higher, for a low-res screen the
+horizontal pixel size is scaled by two as pixels become wider. Note
+again that this is not a "resolution", unlike the name suggests.
+
+PixelSpeed is the pixel speed in nanoseconds. A standard low-res PAL
+mode has a pixel speed of 140ns, a high-res screen of 70ns and a
+super-hires of 35ns.
+
+NumStdSprites is the number of sprites that are available, or would be
+available if DMA would not steal sprite channels. For native modes,
+this field is always 8.
+
+PaletteRange is the range or resolution of the palette, i.e. it is 2
+to the power of bits in a palette entry, or at least it should. For
+OCS and ECS, this is just fine as we have 4096 colors, i.e. 4 bits per
+gun for regular modes, and 64 colors, i.e. 2 bits per gun, for
+superhires modes. For AGA, we have 2^24 bits, clearly too much to fit
+into a 16 bit field. Oh well, the system just sets this field to
+0xffff then.
+
+ModeID is almost, but not quite the lower 16 bits of the
+DisplayID. Quite like the pre-1.3 modes, it does not enumerate modes
+in an "arbitrary" fashion, but enumerates hardware settings which may
+or may not "by pure chance" be identical to the lower 16 bits of the
+DisplayID. The difference becomes important for double scan modes. In
+the display info data base, the 640x400 DblNTSC resolution is
+identified as a HIRES mode as it has a high-res resolution of 640
+pixels, but internally, it uses the SUPERHIRES mode of Denise as it
+requires 35ns pixels.  Hence, ModeID has the SUPERHIRES flag set, but
+the DisplayID does not.
+
+RedBits, GreenBits and BlueBits give, finally, a somewhat more
+reliable information on the size of the palette than PaletteRange as
+it lists the bit resolution of the D/A converters of Denise in this
+particular mode. Depending on the mode, this may be 2 (SUPERHIRES on
+ECS), 4 (ECS modes) or 8 (AGA modes).
+
+
+I.3) RawDimensionInfo
+
+This is the display info data base internal representation of the
+DimensionInfo from graphics/displayinfo.h. Unlike the RawMonitorInfo,
+but quite like the RawDisplayInfo, it is not attached to the first
+level DisplayInfoRecord, i.e. the monitor, but rather RecordNodes at
+the second level, i.e. individual modes.
+
+struct RawDimensionInfo
+{
+        struct  QueryHeader Header;
+        UWORD   MaxDepth;
+        UWORD   MinRasterWidth;
+        UWORD   MinRasterHeight;
+        UWORD   MaxRasterWidth;
+        UWORD   MaxRasterHeight;
+        struct  Rect32  Nominal;
+        struct  Rect32  MaxOScan;
+        struct  Rect32  VideoOScan;
+        UBYTE   HWMaxDepth;
+        UBYTE   pad[5];
+        ULONG   reserved[2];    /* tag end substitute */
+};
+
+As for all other info structures, it starts with a tag list that is
+here called the QueryHeader. MaxDepth is the maximum number of
+bitplanes the corresponding mode supports. MinRasterWidth/Height are
+the minimum or maximum dimensions in pixels bitplanes from this mode
+support, or limitations that apply to off-screen bitmaps to be
+precise. The limitations are here either due to the display
+organization on one hand - as the blitter operates word-oriened, the
+minimum raster width is typically 16. The maximum is also constrained
+by the capabilities of the blitter. ECS blitters have longer count
+registers and can hence blit larget bitplanes. Depending on the Agnus
+on the system, the maximum raster dimension is either 1008x1024 or
+16368x16384. Note again that these are the dimension constraints of
+off-screen bitplanes, not of the displayable video regions.
+
+Those are encoded in the following three rectangles: Nominal is the
+recommended nominal overscan region, MaxOScan the maximal overscan
+region such that everything remains visible, and VideoOScan the
+maximal region the video hardware is able to generate, even though
+then parts of the screen may become invisible. The dimension
+information in this node are fixed, and not adjustable by the overscan
+prefs, but similar to the rectangles in the RawMonitorInfo, pre-scaled
+by the ViewResolution.
+
+HWMaxDepth is the maximum number of bitplanes the DMA logic of Agnus
+could fetch, given the constraints of the memory type available on the
+board. Quite inconsistently, it is set to 6 for ExtraHalfBright
+modes. Nevertheless, the value does not seem to be used anywhere in
+graphics, and it is neither exposed to the outside anywhere.
+
+Now, as you may have noticed, the DimensionInfo in
+graphics/displayinfo looks somewhat different:
+
+struct DimensionInfo
+{
+        struct  QueryHeader Header;
+        UWORD   MaxDepth;             /* log2( max number of colors ) */
+        UWORD   MinRasterWidth;       /* minimum width in pixels      */
+        UWORD   MinRasterHeight;      /* minimum height in pixels     */
+        UWORD   MaxRasterWidth;       /* maximum width in pixels      */
+        UWORD   MaxRasterHeight;      /* maximum height in pixels     */
+        struct  Rectangle   Nominal;  /* "standard" dimensions        */
+        struct  Rectangle   MaxOScan; /* fixed, hardware dependent    */
+        struct  Rectangle VideoOScan; /* fixed, hardware dependent    */
+        struct  Rectangle   TxtOScan; /* editable via preferences     */
+        struct  Rectangle   StdOScan; /* editable via preferences     */
+        UBYTE   pad[14];
+        ULONG   reserved[2];          /* terminator */
+};
+
+This is (again) by graphics generating the "external" DimensionInfo
+through "cooking" the internal RawDimensionInfo. The first fields up
+to MaxRasterHeight are copied over from the RawDimensionInfo, but
+Nominal, MaxOScan and VideoOScan are computed through division by
+RawDisplayInfo.Resolution from the internal RawDimensionInfo
+rectangles. As stated, these dimensions are fixed and cannot be
+changed by the Overscan preferences program.
+
+TxtOScan and StdOScan are different. They are derived by the "cooking
+function" of graphics from the RawMonitorInfo.TxtOScan and
+RawMonitorInfo.StdOScan rectangles. As for the above overscan regions,
+they are scaled (divided) by the Resolution values of the
+RawDisplayInfo.
+
+I.4) RawNameInfo
+
+This node is easily explained as it only contains a human-readable
+name of the RecordNode it is attached to. The raw structure looks like
+the structure exported through GetDisplayInfo():
+
+struct RawNameInfo
+{
+        struct  QueryHeader Header;
+        UBYTE   Name[DISPLAYNAMELEN];
+        ULONG   reserved[2];    /* tag end substitute */
+};
+
+As above, Header is a TagItem in disguise and jumps over the name, and
+reserved is another TagItem, either TAG_END or a TAG_MORE pointing to
+the next entry. Name is, quite obviously, the name of the mode as
+shown by the ScreenMode prefs.
+
+The only remarkable information on this node is that the boot menu
+does not create the names for the DblPAL and DblNTSC modes it injects
+into the system, hence this node may be missing for those modes. The
+names come then from the programs in DEVS:Monitors which takes them
+from the catalogs. The boot menu itself is not localized and hence
+does not know the final name of the mode.
+
+I.5) RawVecInfo
+
+This is a mysteriously named structure that is not at all explained by
+graphics/displayinfo.h and there denoted as "internal". If it is
+present, it allows to "overload" several internal graphics functions
+and allows some form of "entry level" RTG graphics. Unfortunately, it
+is by far not complete enough to abstract from all legacy nonsense in
+the system, so it does not allow abstraction from the blitter or the
+copper, for example. It does, however, allow to create custom copper
+lists as it hooks into graphics MakeVPort() function, and it also
+custom sprites.
+
+Here is the corresponding raw structure, which is identical to the
+"exported" function, i.e. no "cooking" takes place:
+
+struct RawVecInfo
+{
+        struct  QueryHeader Header;
+        APTR    Vec;
+        APTR    Data;
+        UWORD   Type;
+        UWORD   pad[3];
+        ULONG   reserved[2];
+};
+
+Similar to the above, the VecInfo is attached to the second level of
+the display info data base tree, hence to the modes, and QueryHeader
+and reserved are again TagItems jumping over the structure.
+
+APTR Vec is, in fact, a pointer to an internal structure that, even
+within the original graphics code, is not well represented, and
+accessed through a lot of casts. Instead of giving the internal CBM
+version, I provide a more fitting representation which is closer to
+how the "Vec" is actually used:
+
+typedef ULONG __stdargs MakeFunc(struct View *v, struct ViewPort *vp, struct ViewPortExtra *vpe);
+
+struct VecTable
+{
+  void __asm (*MoveSprite)(register __a0 struct ViewPort *,register __a1 struct SimpleSprite *,
+                           register __d0 UWORD x,register __d1 UWORD y);
+  void __asm (*ChangeSprite)(register __a0 struct ViewPort *,register __a1 struct SimpleSprite *,
+                             register __a2 USHORT *);
+  void __asm (*ScrollVP)(register __a0 struct ViewPort *);
+  MakeFunc    **BuildVP;
+  void __asm (*PokeColors)(register __a2 struct ViewPort *);
+  /* extendable */
+};
+
+As seen here, it consists of various function pointers, and one array,
+again of function pointers. The functions listed here are "hooks" for
+some graphics.library functions and overload or replace them in the
+presence of the VecTable.
+
+VecTable.MoveSprite() is called from graphics/MoveSprite() in case the
+current mode has a VecTable, and allows for hardware sprites of
+different nature. The same goes for VecTable.ChangeSprite(), which
+also overloads graphics/ChangeSprite(). Graphics systems like P96 hook
+in here to move and change the hardware sprites of their display
+logic.
+
+VecTable.ScrollVP() is a hook for the graphics.library ScrollVPort()
+function, which is responsible for hardware scrolling. It is
+intensively used to scroll autoscrolls screens around.  What this
+function does is that it peeks into the RasInfo of the viewport given
+as argument and recomputes the scroll registers and bitmap pointers to
+represent a scrolled ViewPort, often an intuition screen.
+
+VecTable.PokeColors() takes the colors from the ColorMap of ViewPort
+and, as the name suggests, pokes them into the copper map. It is the
+back-end function for SetRGB() and related functions in
+graphics. Again, rtg software such as P96 hooks in here to load colors
+into its hardware.
+
+Finally, BuildVP is an array of functions of the following kind:
+
+typedef ULONG __stdargs MakeFunc(struct View *v, struct ViewPort *vp, struct ViewPortExtra *vpe);
+
+except for the very first slot of the function, which has a different
+prototype. We come to that below. These functions are called, once in
+a row, in the graphics.library MakeVPort() function to build up a
+copper list for the mode. Hence, by a custom VecInfo, one can
+influence how the copper lists look like. They return 0 on success, or
+otherwise an error code of unknown nature. Typically, functions in
+here calculate the display window, the data fetch region, the scroll
+region, the moduli, the BPLCon register, then fill in colors into the
+copper list and finally clean up after the work. Functions are
+mode-specific, which is why we have the VecInfo here.
+
+The very first function has a different prototype, namely the
+following:
+
+typedef ULONG __stdargs InitFunc(struct View *, struct ViewPort *, struct ViewPortExtra **,
+                                 struct ProgInfo *pinfo,struct BuildData *bd);
+
+As the name suggests, it initializes the build process. As such, it
+takes two additional arguments, the "ProgInfo" and the "BuildData".
+
+The pointer to the ProgInfo structure is found in the RawVecInfo
+structure, there denoted as "Data", as it is one of the input data to
+the InitFunc():
+
+struct ProgInfo
+{
+        UWORD   bplcon0;        /* minimum needed for this mode */
+        UWORD   bplcon2;        /* has KILLEHB flag, PF2PRI, and SOGEN */
+        UBYTE   ToViewX;        /* convert from VP horizontal resoliution to View */
+        UBYTE   pad;
+        UWORD   Flags;          /* see below */
+        UWORD   MakeItType;
+        UWORD   ScrollVPCount;
+        UWORD   DDFSTRTMask;    /* for 1x, 2x or 4x */
+        UWORD   DDFSTOPMask;
+        UBYTE   ToDIWResn;      /* convert from the stored DisplayWindow resolution to hardware resolution */
+        UBYTE   Offset;         /* for calculating offsets */
+};
+
+as seen, it contains hardware-near register values that are required
+to facilitate the build process.  Flags is a bitmask containing the
+following values:
+
+#define PROGINFO_NATIVE         0x0001 /* set for all Amiga native modes */
+#define PROGINFO_VARBEAM        0x0002 /* BPLCON3_EXTBLNKEN must be set */
+#define PROGINFO_SHIFT3         0x0010 /* not actually used */
+#define PROGINFO_SHIFT5         0x0020 /* not actually used */
+#define PROGINFO_SCANDBL        0x0040 /* scan-doubled mode */
+#define PROGINFO_HAM            0x0080 /* HAM mode */
+
+ProgInfo.MakeItType I will explain below, it encodes several
+"templates" of possible MakeVPort() function arrays so the monitor
+drivers do not have to carry them around.
+
+Coming back to InitFunc() and BuildData: The latter is a structure
+InitFunc() has to fill in, and that is passed around to all subsequent
+maker functions. It becomes available to them through the struct
+ViewPortExtra *vpe argument, namely as
+
+struct BuildData *bd = (struct BuildData *)vpe->DriverData[0];
+
+The build data is, in principle, completely mode specific. Just too
+bad graphics allocates it itself with fixed size from its own
+stack. So, for the sake of completeness, let us document the BuildData
+of the system modes here:
+
+struct BuildData
+{
+        struct  Rectangle cliposcan;
+        struct  ProgInfo *pinfo;
+        struct  MonitorSpec *mspc;
+        struct  CopIns *c;
+        struct  CopIns *firstwait;
+        LONG    Offset;         /* in bitmap */
+        LONG    Offset2;        /* in 2nd bitmap */
+        UWORD   DiwStrtX;
+        UWORD   DiwStopX;
+        UWORD   DiwStrtY;
+        UWORD   DiwStopY;
+        UWORD   DDFStrt;
+        UWORD   DDFStop;
+        UWORD   Modulo;
+        UWORD   FnCount;
+        UWORD   bplcon0;
+        UWORD   bplcon1;
+        UWORD   bplcon2;        /* for Playfield Prioritys & for genloc stuff */
+        UWORD   bplcon3;        /* for genloc stuff */
+        UWORD   bplcon4;        /* colour table offsets */
+        UWORD   Modulo2;
+        UWORD   FMode;
+        UWORD   FudgedFMode;    /* for those oscan fudges */
+        UWORD   Index;          /* index into the LUTs */
+        UWORD   Cycle;          /* cycle type */
+        UWORD   FirstFetch;     /* first fetch needed */
+        BOOL    LHSFudge;       /* shows we need to fudge the LHS */
+        BOOL    RHSFudge;
+        UBYTE   Scroll;         /* for bplcon1 */
+        UBYTE   Flags;
+        UBYTE   Scroll2;
+        UBYTE   ToViewY;
+        UWORD   RGADiwStopYL;   /* DiwStopY written for Long Frame */
+        UWORD   RGADiwStopYS;   /* DiwStopY written for Short Frame */
+};
+
+Not unexpected, one finds the overscan and pointers to the copper list
+here, along with a lot of hardware-near information on the required
+register values. However, a custom InitFunc() function may use the
+same stack space as it pleases, all provided it does not write data
+beyond the size of the above structure.
+
+Going back to the RawVecInfo, one field remains to be explained, and
+this is RawVecInfo.Type. The purpose of the "type" field is to
+initialize the ProgInfo aka VecInfo->Data and Make functions, aka
+VecInfo->Vec members easily, so a Monitor driver does not have to
+carry all the tables around. In short, the "Type" enumerates various
+standard ProgInfo assignments a monitor driver can select from, so it
+does not have to hook its own functions into the VecInfo but rather
+selects from ROM-supplied default functions.
+
+Here is the list of "ROM supplied" ProgInfo templates.
+
+Type :	ProgInfo
+0    :	LoRes
+1    :	HiRes
+2    :	SuperHiRes
+3    :	LoRes HAM
+4    :	HiRes HAM
+5    :	SuperHiRes HAM
+6    :	LoRes EHB
+7    :	LoRes DualPF
+8    :	HiRes DualPF
+9    :	SuperHiRes DualPF
+10   :	LoRes DualPF2 (has also bit 6 of BPLCON2 set compared to DualPF)
+11   :	HiRes DualPF2
+12   :	SuperHiRes DualPF2
+13   :	Productivity
+14   :	Productivity HAM
+15   :	VGA ExtraLoRes
+16   :	VGA LoRes
+17   :	VGA ExtraLoRes HAM
+18   :	VGA LoRes HAM
+19   :	VGA ExtraLoRes EHB
+20   :	VGA ExtraLoRes DualPF
+21   :	VGA LoRes DualPF
+22   :	Productivity DualPF
+23   :	Productivity ExtraLoRes DualPF2
+24   :	VGA LoRes DualPF2
+25   :	Productivity DualPF2
+26   :	HiRes EHB
+27   :	SuperHiRes EHB
+28   :	VGA LoRes EHB
+29   :	VGA SuperLoRes EHB
+30   :	LoRes Dbl
+31   :	LoRes HAM Dbl
+32   :	LoRes EHB Dbl
+33   :	HiRes HAM Dbl
+
+These form, clearly, the basis for the workbench based monitor drivers
+which have "just" to select the proper ProgInfo, except for the A2024
+monitor which is really special.
+
+Now, finally, to ProgInfo.MakeItType. It complete in the last piece in
+the puzzle, namely how to initialize the VecTable, or equivalently,
+VecInfo.Vec. Again, the number is an index to enumerate various
+template types that will be listed here:
+
+MakeItType   	   :  		MakeVP function arrays
+0		   		standard VP make functions for
+		   		LoRes,HiRes,SuperHires,HAM,EHB
+				for AGA machines
+				
+1		   		used for DualPF and DualPF2 modes
+				in LoRes, HiRes and SuperHiRes
+				for AGA machines
+
+2				VP make functions for modes 
+				LoRes, HiRes, SuperHires, HAM, EHB
+				for ECS machines
+
+3				used for DualPF modes for ECS
+				machines
+
+4				VP make functions for LoRes, HiRes
+				HAM and EHB for OCS machines
+
+5				DualPF on OCS machines
+
+Hence, when setting up a VecTable for a custom monitor, one has "only"
+to select the right "ProgInfo" Type in the RawVecInfo.Type. A
+ready-made ProgInfo structure for most of the standard modes can then
+be found in GfxBase->ProgInfo + RawVecInfo.type. In the ProgInfo, the
+system will find the MakeItType, and from them the MakeVPort() vectors
+will be established.
+
+Unfortunately, the ProgInfo for some monitors is missing in the ROM,
+namely for the scan doubled monitors, and for the A2024 monitor. For
+the latter, even a proper MakeItType is missing, and the monitor
+driver places its own functions into the VecTable.
+
+Which brings us to the next point on the list:
+
+II.1) The Monitor
+
+Along with the display info data base, which keeps RawMonitorInfos,
+comes the monitor, which is pointed to by RawMonitorSpec->Mspc. When
+creating display modes, this pointer needs to be filled in. For some
+strange reason, the monitor partially replicates information in the
+RawMonitorSpec, but it is at least documented in
+graphics/monitor.h. Unfortunately, not much is said there about the
+meaning of the fields. Graphics keeps a list of all available monitors
+separate from the display info data base, again for unclear reasons,
+in GfxBase->MonitorList. This is a standard exec list, not a tree, and
+access to the list is protected through GfxBase->MonitorListSemaphore,
+unlike the display info database, for which there is no access
+mechanism at all.
+
+Here is the monitor structure:
+
+struct	MonitorSpec
+{
+    struct	ExtendedNode	ms_Node;
+    UWORD	ms_Flags;
+    LONG	ratioh;
+    LONG	ratiov;
+    UWORD	total_rows;
+    UWORD	total_colorclocks;
+    UWORD	DeniseMaxDisplayColumn;
+    UWORD	BeamCon0;
+    UWORD	min_row;
+    struct	SpecialMonitor	*ms_Special;
+    WORD	ms_OpenCount;
+    LONG (* __asm ms_transform)(register __a0 struct MonitorSpec * ,
+				register __a1 Point * ,
+				register __d0 UWORD ,
+				register __a2 Point * );
+    LONG (* __asm ms_translate)(register __a0 struct MonitorSpec * ,
+				register __a1 Point * ,
+				register __d0 UWORD ,
+				register __a2 Point * );
+    LONG (* __asm ms_scale)    (register __a0 struct MonitorSpec * ,
+				register __a1 Point * ,
+				register __d0 UWORD ,
+				register __a2 Point * );
+    UWORD	ms_xoffset;
+    UWORD	ms_yoffset;
+    struct	Rectangle	ms_LegalView;
+    LONG (* __asm ms_maxoscan) (register __a0 struct MonitorSpec * ,
+				register __a1 struct Rectangle * ,
+				register __d0 ULONG );/* maximum legal overscan */
+    LONG (* __asm ms_videoscan)(register __a0 struct MonitorSpec * ,
+				register __a1 struct Rectangle * ,
+				register __d0 ULONG );/* video display overscan */
+    UWORD	DeniseMinDisplayColumn;
+    ULONG	DisplayCompatible;
+    struct  	List DisplayInfoDataBase;
+    struct	SignalSemaphore DisplayInfoDataBaseSemaphore;
+    LONG	(*ms_MrgCop)();
+    LONG	(*ms_LoadView)();
+    LONG	(*ms_KillView)();
+};
+
+ms_Node is an extended Exec Node structure that includes also a
+"constructor" call that is useful to setup the
+data. GfxNew(MONITOR_SPEC_TYPE) provides a new monitor that still
+requires initialization. The structure itself is found in
+graphics/gfxnodes.h and looks fairly simple, the only remarkable
+structural element is its constructor declared as:
+
+LONG (* __asm   xln_Init)(register __a0 struct ExtendedNode *, register __d0 UWORD);
+
+where the UWORD argument provides additional flags for
+construction. We will see later how to make use of it to setup the
+monitor. In particular, depending on the flags, different defaults
+will be filled in. The flags passed in here will then end up in
+
+    monitor->ms_Flags
+
+and the following flags are currently defined:
+
+#define MSB_REQUEST_NTSC	0
+#define MSB_REQUEST_PAL		1
+#define MSB_REQUEST_SPECIAL	2
+#define MSB_REQUEST_A2024	3
+#define MSB_DOUBLE_SPRITES	4
+
+Apparently, the monitor has been designed independently from the
+display info data base as we find only flags for PAL, NTSC, and the
+scandoubler A2024 monitor. Of the flags, most of them are irrelevant
+today, except for default initialization, which can be either PAL or
+NTSC. This flag is otherwise ignored by the system. SPECIAL means that
+ms_Special is populated, and we come to that soon. DOUBLE_SPRITES
+enables larger sprites on AGA machines, and the only purpose the A2024
+flag seems to have is that in its presence WaitBOVP() works a little
+bit different. All the magic of special copper lists for the A2024
+monitor works today through the display info data base, and not
+through the monitor. Again, why CBM duplicated the databases remains
+unclear.
+
+ratioh and ratiov seem to have been designed to scale the width and
+height of a monitor relative to a default resolution. They are given
+in fixed point precision with four preshifted bits, or RATIO_FIXEDPART
+bits, as defined in graphics/monitor.h. They are initialized to 1:1
+scaling, and setting them to anything else does not seem to make much
+sense as this will only mess with the ddfstrt and ddfstop values when
+loading a monitor to the screen, values that are later on overwritten
+by the copper list anyhow.  So it seems like a forgotten artifact with
+little value today.
+
+total_rows and total_colorclocks should copy the values in the
+RawMonitorInfo and they are actually in use, but only by the "default"
+MakeVPort() init function that sits in the RawVecInfo. Its values are
+carried over into GfxBase->MaxDisplayRow, GBASE->MonitorVBlank, and it
+is also partially used by the copper list build up, intermixed with
+other sources, so it should better be used consistently. Again, this
+seems to be some legacy from older code someone forgot to factor out.
+
+DeniseMinDisplayColumn and DeniseMaxDisplayColumn are also copied into
+GfxBase when switching the monitor, and are also used by the "default"
+MakeVP() "vectors" to drive the build-up of the copper list. They are
+also used to drive the text and video overscan computing mechanisms of
+the monitor, which seems to be a second source of dimension
+information beyond the RawDimensionInfo().
+
+BeamCon0 does have some value as it is loaded into the hardware
+register of the same name as soon as the monitor is loaded into the
+view via LoadView(), and on every vertical blank as well. The copper
+is not used here.
+
+min_row drives again the "default" MaveVPort() vectors and there
+impacts the diwstrt register of the hardware. ChangeVPBitMap() and the
+double buffer info seem also to depend on it, rather than on the
+display info data base, but it should be good practice to keep it
+identical to RawMonitorInfo->MinRow. Why this exists twice and is read
+once from one and once from the other structure is again beyond my
+understanding.
+
+ms_Special points to an extended structure I will discuss below. Its
+purpose is mainly to modify some hardware registers as soon as the
+monitor is loaded. It does not exist for regular PAL and NTSC
+monitors.
+
+ms_OpenCount is just what the name suggests. It is incremented and
+decremented whenever a monitor is opened and closed. As graphics has
+no means to dispose a monitor, this field is otherwise unused. Maybe
+the plan was to allow removal of monitors from some outside program,
+but nothing like that is in existence today.
+
+The ms_transform, ms_translate and ms_scale functions are used - or
+rather - could be used to transform from and between abstract monitor
+coordinates. Currently these functions just copy the source point to
+the target point without any change. They are not used from anywhere
+in the system and look like another forgotten treasure.
+
+ms_xoffset and ms_yoffset are actually offsets that could be added or
+subtracted from coordinates by ms_translate(), if this function would
+use them. By default, they are left alone and are just another red
+herring in the monitor structure.
+
+ms_LegalView is the basis for the overscan system as offered by the
+monitor, and as left alone by the system. The ms_maxoscan() and
+ms_videoscan() deliver then the maximum and video overscan regions in
+the rectangle given as argument, for the display mode in the last
+argument. This information, however, is not necessarily in any
+relation to the overscan information recorded in the RawDimensionInfo
+and is computed from the values in the monitor. It should certainly
+not be used at all.
+
+DisplayCompatible is easily explained as it is not used at all. It
+seems like it was deprecated by the Compatibility field in the
+RawMonitorInfo - or was planned to replace it at some point.
+
+DisplayInfoDataBase looks as if it could be an important list of
+display information on the monitor, but it is not. It is just
+empty. Having the information on the monitor modes hooked in here
+would have even made some sense, probably the reason why CBM did not
+choose to handle it this way but rather create a second database in
+GfxBase->DisplayInfoDataBase which is populated by the real
+information.
+
+DisplayInfoDataBaseSemaphore shares the same legacy. It would be
+useful to get access to the list, but as there is nothing in it, it
+remains an - albeit initialized - semaphore for nothing.
+
+ms_MrgCop() is actually used, and it is called through the currently
+loaded monitor by the graphics.library MrgCop() function whose purpose
+is to merge the display, VSprite and user copper lists together. Why
+that should be mode dependent is beyond me, but we have it.  Why this
+is not a vector in the "RawVecInfo" but instead listed here is another
+mystery.
+
+ms_LoadView() is similarly in use by the graphics.library function of
+the same name. It loads a struct View of the monitor onto the display
+hardware and therefore serves actually some purpose. Again, this
+should probably be vectorized through the VecInfo and not the monitor.
+
+ms_KillView() is just the reverse. Before a new monitor is loaded onto
+the display hardware, the old one is removed first through this
+vector.
+
+II.2) The SpecialMonitor
+
+Some monitors are more special than others and have a non-NULL
+SpecialMonitor attached to it through the ms_Special pointer. Its
+structure is also documented in graphics/monitor.h and looks as
+follows:
+
+struct  SpecialMonitor
+{
+    struct      ExtendedNode    spm_Node;
+    UWORD       spm_Flags;
+    LONG        (*do_monitor)();
+    LONG        (*reserved1)();
+    LONG        (*reserved2)();
+    LONG        (*reserved3)();
+    struct      AnalogSignalInterval    hblank;
+    struct      AnalogSignalInterval    vblank;
+    struct      AnalogSignalInterval    hsync;
+    struct      AnalogSignalInterval    vsync;
+};
+
+Similarly to the monitor, the SpecialMonitor is also allocated through
+GfxNew(SPECIAL_MONITOR_TYPE) and includes some additional fields that
+extend the monitor.  Why it takes a second structure even though the
+ExtendedNode would have allowed to make even regular monitors special
+is again one of the open questions.
+
+Its most important field is the do_monitor() function which is called
+indirectly through LoadView, or rather through the default
+ms_LoadView() implementation the system loads into the Monitor upon
+its creation. What the default implementation of this function does is
+that it installs the hblank/vblank/hsync/vsync values into the ECS
+registers of the same name, and hence allows a monitor to derive from
+the OCS system timing.
+
+spm_Flags and the other functions seem to be unused.
+
+
+III) Writing your own monitor drivers
+
+A monitor driver - the programs that sit in DEVS:Monitors - now need
+to create all the entries and nodes of the graphics display info
+database, and potentially need to provide the hooks for
+graphics. Unfortunately, the steps one has to go through are some sort
+of "black magic", using undocumented LVOs of the graphics
+library. Given all the dependency on the inner (undocumented) workings
+of the library, this is probably not unexpected.
+
+While I will not provide a full-fledged monitor driver, this chapter
+attempts to go through all necessary steps for a typical monitor.
+
+III.1) The basics:
+
+First, monitor drivers check for system requirements. graphics V39 is
+the least supported version. Furthermore, the caller should check in
+GfxBase->GfxFlags whether the NEW_DATABASE flag (bit 0) is
+set. Apparently, CBM was already planning to deprecate the current
+database implementation (probably for good reason), and if this bit is
+set, we have "the new implementation" - which did not appear up to
+date and probably never will.
+
+First, make a best-effort attempt to ensure that nobody else is
+messing with the database at the same time. Graphics does not provide
+a semaphore to protect its database, but there is at least a semaphore
+that protect its monitors. As we need to create a monitor as well, get
+this semaphore, disable task switching and hope for the best:
+
+     ObtainSemaphore(GfxBase->MonitorListSemaphore);
+     Forbid();
+
+Unfortunately, that still doesn't ensure that a second task is busy
+parsing the display info data base right now as we are blocking it,
+and that it gets inconsistent results after we allow task switching
+again. Reading the database "works" without any Forbid() or semaphore
+locking, unfortunately.
+
+Then, one should check whether the monitor in question already exists,
+and if so, the driver should leave it alone and not attempt to
+duplicate the work. This is done by:
+
+#define EXTENDED_MODE 0x1000
+
+ULONG modeID = MONITOR_NUM << 16 | (MONITOR_NUM ? EXTENDED_MODE : 0);
+
+if (OpenMonitor(MONITOR_NAME,modeID))
+   abort;
+
+if (OpenMonitor(NULL,modeID))
+   abort;
+
+so first check whether it exists under the name, then whether the
+ModeID is already taken. MONITOR_NUM is the Id of the monitor you want
+to create, and modeID is just a "best guess" of a ModeId that is
+checked for a conflict.  The 0x1000 is set for all "extended"
+(non-default) monitors.
+
+A word of warning: As you see, graphics provides little - if none -
+protection against race conditions. Hence, in principle, any other
+task can add the same monitor at the same time and create a mess with
+the database. Probably this is the reason why CBM wanted to keep the
+details closed and planned the replacement of the database.
+
+III.2) Setting up the data base entries.
+
+The next step is to create all the RecordNodes of the display info
+data base discussed above. This requires a closed graphics library
+call which adds data to the database.  Here is the pragma for SAS/C
+and the prototype:
+
+#pragma libcall GfxBase AddDisplayInfoData 2e8 2109805
+struct DisplayInfoRecord * AddDisplayInfoData(struct DisplayInfoRecord * handle,
+                                              UBYTE * buf,
+                                              ULONG size,
+                                              ULONG tagID,
+                                              ULONG ID);
+
+We need to create two DisplayInfoRecords: One for the first level,
+where the RawMonitorInfo will go, and one for the second level, where
+the RawDisplayInfo will go. For the ease of presentation, error
+checking is omitted here. (The workbench monitor drivers are only
+moderately better designed...)
+
+     record = AllocMem(sizeof(struct DisplayInfoRecord), MEMF_PUBLIC | MEMF_CLEAR);
+     subrecord = AllocMem(sizeof(struct DisplayInfoRecord), MEMF_PUBLIC | MEMF_CLEAR);
+
+Then setup the keys and subkeys of the record. The record gets the
+monitor ID as minor key, the subrecord the mode ID as minor key:
+
+    record->rec_MinorKey    = MonitorID;
+    subrecord->rec_MinorKey = (PREFERRED_MODEID & 0xffff);
+
+PREFERRED_MODEID is the mode Id the overscan prefs will use. It is the
+subkey of the first record we create.
+
+Next is to create a RawMonitorInfo that reflects the monitor
+properties. Get the structure and clear it out:
+
+	struct RawMonitorInfo mntr;
+	memset(&mntr,0,sizeof(mntr));
+
+Fill in all the magic to make it look like a tag list. This tag list
+will go into the DisplayInfoRecord:
+
+	mntr.Header.StructID  = DTAG_MNTR; /* from graphics/displayinfo.h */
+	mntr.Header.DisplayID = ((MonitorID << 16) | EXTENDED_MODE); /* of course not the default monitor */
+	mntr.Header.SkipID    = TAG_SKIP;
+    	mntr.Header.Length    = RAWMNTR_SKIP; /* this is 9, i.e. 9 tags to the reserved[2] field */
+
+What follows is to populate all the fields of them monitor. They have
+been explained above and depend on the video hardware. The View
+Positition should just be set to the default, and the mode ID to the
+"preferred one". The standard overscan should be simply the text
+overscan. Everything else is up to you:
+
+    	mntr.ViewPosition     = mntr.DefaultViewPosition;
+	mntr.PreferredModeID  = PREFERRED_MODEID;
+	mntr.StdOScan	      = mntr.TxtOScan;
+
+Next step is to add this node to graphics. For that, we need to find
+the root of the display info database, which sits in
+GfxBase->DisplayInfoDataBase:
+
+	struct DisplayInfoRecord *root = GfxBase->DisplayInfoDataBase;
+
+Hook it in as last node, into the tree that starts at root, and make
+its major ID the minor ID of the parent:
+
+     	struct RecordNode **sibling = &(root->rcn_Child);
+
+	while(*sibling && (*sibling)->rcn_Succ)
+	    sibling = &(*sibling)->rcn_Succ;
+
+	record->rcn_Parent   = root;
+	record->rec_MajorKey = root->rec_MinorKey;
+
+	if (*sibling) {
+	   (*sibling)->rcn_Succ = record;
+	    record->rcn_Pred    = (*sibling);
+	} else {
+	    root->rcn_Child     = record;
+	    record->rcn_Pred    = NULL;
+	}
+
+In the very same way, the subrecord - still unpopulated, needs to be
+made the child of the record. Just set all the pointers right, as
+above.
+
+Next thing is to populate the "record". Now, here comes one
+inconsistency of the graphics system, namely in order to populate the
+monitor, we need to tell graphics to actually populate the subrecord
+"below" the monitor, i.e. the node that will carry mode
+information. Whenever graphics sees that we try to provide data of
+type DTAG_MNTR, it will grab the parent of the node we are claiming to
+modify. Strange, but such is live. This is what AddDisplayInfoData is
+good for:
+
+   	AddDisplayInfoData(subrecord, (UBYTE *)&mntr, sizeof(struct RawMonitorInfo), DTAG_MNTR, INVALID_ID);
+
+Note that in this call, graphics will allocate memory itself and will
+copy over the "RawMonitorInfo" structure into the memory allocated. So
+our own local copy "mntr" on the stack can go. No need to allocate
+memory for it.
+
+Next steps are to populate to all the subrecords with the modes. For
+that, it is best to loop over all vertical resolutions
+(progressive,interlace) and horizontal resolutions (highres, lowres)
+and add one resolution after another. Note that we already have our
+first subrecord created into which the first dataset can go. Within
+the loop over resolutions, add a loop over possible mode variations
+such as HAM, EHB or DualPlayfield.
+
+     	static const UWORD IDs[UNIQUEIDS] =
+    	{
+		0x1004,		/* normal */
+		0x1404,		/* dpf */
+		0x1444,		/* dpf2 */
+		0x1804,		/* ham */
+		0x1084,		/* ehb */
+        };
+	UWORD YDim, XDim, ID;
+	UWORD PixResY = PIX_RES_Y; /* whatever is apropriate */
+	for(YDim = LOW_Y_RESN; YDim <= IS_LACE; YDim++) {
+		 UWORD PixResX = PIX_RES_X;
+		 for(XDim = HIGH_X_RESN; XDim <= LOW_X_RESN; XDim++) {
+		 	  for (ID = 0; ID < UNIQUEIDS; ID++) {
+			      ULONG ThisID   = IDs[ID];
+			      ULONG bplcon0  = 1;
+			      UWORD MaxDepth = 2;
+			      
+Continuing in this loop should now compute the bplcon0 value,
+MaxDepth, potentially adjust the ID of the mode as needed and then
+create a new subrecord. The first subrecord as already been created
+above along with the monitor, so we only need one for the second and
+all further loop iterations.
+
+    	       	       	      if (subrecord == NULL) {
+			      	 subrecord = AllocMem(sizeof(struct DisplayInfoRecord), MEMF_PUBLIC | MEMF_CLEAR);
+				 
+Here, add the subrecord as child to the record as above, unless this
+already happened during the first loop.
+
+			      }
+
+Install all the keys to it:
+
+			      subrecord->rec_MinorKey = ThisID;
+			      subrecord->rec_MajorKey = record->rec_MinorKey;
+
+The next information we add to the record is the RawDimensionInfo. It
+does not matter too much in which order this information goes into the
+subrecord, but we have to start somewhere:
+
+   	       	    	      struct RawDimensionInfo dims;
+			      memset(&dims,0,sizeof(dims));
+
+Put together the header:
+
+			      dims.Header.StructID  = DTAG_DIMS;
+    			      dims.Header.DisplayID = ((MonitorID << 16) | ThisID);
+			      dims.Header.SkipID    = TAG_SKIP;
+			      dims.Header.Length    = RAWDIMS_SKIP; /* this is 8, i.e. 8 tags to the end */
+
+Fill in some basics. These might be mode dependent, so beware. The
+code below is just a demo and certainly not complete.
+     	
+			      dims.MaxDepth = dims.HWMaxDepth = MaxDepth;
+			      dims.MinRasterWidth  = 16;
+			      dims.MinRasterHeight = 1;
+			      dims.MaxRasterWidth  = (IsBigAgnus ? 16368 : 1008);
+			      dims.MaxRasterHeight = (IsBigAgnus ? 16384 : 1024);
+
+Fill in the overscan sizes as needed by the monitor.
+
+     	    	     	      dims.Nominal.MinX = (NOM_MINX * PIX_RES_X);
+			      dims.Nominal.MinY = (NOM_MINY * PIX_RES_Y);
+			      dims.Nominal.MaxX = ((NOM_MINX + NOM_WIDTH * PIX_RES_X) - 1);
+			      dims.Nominal.MaxY = ((NOM_MINY + NOM_HEIGHT * PIX_RES_Y) - 1);
+
+And similarly for all other overscan dimensions. Finally, add this to the DisplayInfoRecord:
+
+    	      	      	      AddDisplayInfoData(subrecord, (UBYTE *)&dims, sizeof(struct RawDimensionInfo),
+			      		         DTAG_DIMS, INVALID_ID);
+
+Next comes the RawDisplayInfo, with the header setup in the same way:
+
+     	       		      struct RawDisplayInfo disp;
+			      memset(&disp,0,sizeof(disp));
+			      disp.Header.StructID  = DTAG_DISP;
+    			      disp.Header.DisplayID = ((MonitorID << 16) | ThisID);
+			      disp.Header.SkipID    = TAG_SKIP;
+    			      disp.Header.Length    = RAWDISP_SKIP; /* this is 4, i.e. four tags to skip */
+
+Check whether the modes would be available on the hardware, and fill
+in the field, also check what the mode would be on the hardware,
+compute the property flags, the pixel speed, the resolution and the
+palette size. Details are again monitor dependent:
+
+      	      	  	      disp.NotAvailable = avail;
+			      disp.PropertyFlags = property;
+			      disp.Resolution.x = PixResX;
+			      disp.Resolution.y = PixResY;
+			      disp.PixelSpeed = ResnSpeeds[XDim]; /* 35,70 or 140 */
+			      disp.NumStdSprites = 8;
+			      disp.PaletteRange = palette;
+			      disp.SpriteResolution.x = SpriteResX;
+			      disp.SpriteResolution.y = SpriteResY;
+			      disp.ModeID = ((MONITOR_NUM << 16) | ModeID); /* This is the "mode" the hardware sees */
+			      disp.RedBits = disp->GreenBits = disp->BlueBits = 4;
+			      
+Add again the information to the record:
+
+    	      		      AddDisplayInfoData(subrecord, (UBYTE *)&disp, sizeof(struct RawDisplayInfo),
+			      		         DTAG_DISP, INVALID_ID);		
+
+Next comes the VecInfo. This is the trickiest part as it is very
+mode-dependent. For the standard modes, graphics already contains a
+useful list of ProgData in GfxBase->ProgData that are indexed by type,
+but for scandoubled modes, we need to create our own as the ROMs do not have
+the ProgInfo for them. But first, the RawVecInfo itself:
+
+       	   	    	      struct RawVecInfo vec;
+			      memset(&vec,0,sizeof(vec));
+			      
+			      vec.Header.StructID  = DTAG_VEC;
+    			      vec.Header.DisplayID = ((MonitorID << 16) | ThisID);
+			      vec.Header.SkipID    = TAG_SKIP;
+    			      vec.Header.Length    = RAWVEC_SKIP; /* this is 2, two tags to skip */
+
+The "type" is something we need to fill in anyhow. It should fit to
+the mode, and is take from the list above, depending on the mode:
+
+     	    	      	      vec.Type		   = VecTypes[ID][XDim]; /* a suitable array of types */
+
+Fill in the progdata. Depending on the type, GfxBase may already
+contain one, or we need to build one. Graphics has nothing for
+scandoubled modes ready to use.
+
+     	      	   	      struct ProgInfo *progdata;
+			      
+     	      	   	      if (YDim == SDBLED) {
+			      	 progdata = AllocMem(sizeof(struct ProgInfo), MEMF_PUBLIC | MEMF_CLEAR);
+				 progdata->bplcon0 = bplcon0;
+				 progdata->bplcon2 = BplCon2[ID];
+				 progdata->ToViewX = (2 - XDim); /* shift from pixel size to hardware scroll */
+				 progdata->Flags = (PROGINFO_NATIVE | PROGINFO_VARBEAM | PROGINFO_SCANDBL ); /* or similar */
+				 progdata->MakeItType = 0; /* or 1 for dualPF, Gfx will provide the MakeVP build vectors */
+				 progdata->ScrollVPCount = 6;
+				 progdata->DDFSTRTMask = 0xfff8;
+				 progdata->DDFSTOPMask = 0xfff8;
+				 progdata->ToDIWResn = XDim;
+				 progdata->Offset    = XDim;
+			      } else {
+			         progdata = GfxBase->ProgData + vec.Type;
+			      }
+
+MakeItType depends also on the machine, see above. It provides the
+list of functions MakeVP() requires for building the copper
+lists. Depending on the type, graphics will provide the functions for
+either AA, ECS or OCS, and regular or DualPF.
+
+Again, add the record to the database.
+
+       	       	      	      AddDisplayInfoData(subrecord, (UBYTE *)&vec, sizeof(struct RawVecInfo),
+			      		         DTAG_VEC, INVALID_ID);
+
+
+Last but not least, the baby needs a name:
+
+     	     	    	      struct RawNameInfo info;
+			      memset(&info,0,sizeof(info));
+			      info.Header.StructID  = DTAG_NAME;
+			      info.Header.DisplayID = ((MonitorID << 16) | ThisID);
+                              info.Header.SkipID    = TAG_SKIP;
+                              info.Header.Length    = 4;
+			      strncpy(info.Name,modeName,sizeof(info.Name));
+
+ModeName should be some variation of the monitor and the mode,
+e.g. "MyNewSuperMode HiRes". This name is shown in the screen mode
+preferences. Finally, add this to the subrecord again.
+
+   	    	       	      AddDisplayInfoData(subrecord, (UBYTE *)&info, sizeof(struct RawNameInfo),
+			      		         DTAG_NAME, INVALID_ID);
+
+Naming could also be done in a second, later loop over the data. Now,
+this modeID is complete, so we cannot use the same subrecord
+anymore. Make sure the next loop gets a new subrecord.
+
+   	      	       	      subrecord = NULL;
+
+Continue with the loop over IDs for this resolution, the X resolution
+and the Y resolution, and adjust the pixel sizes accordingly. Note
+that "resolution" is really bad naming.
+
+       	   	       	}
+			PixResX <<= 1;
+			SpriteResX <<= 1;
+		}
+		PixResY >>= 1;
+	}
+
+
+III.3) Adding a monitor
+
+This makes the display info data base complete, but we still need a
+monitor for it.  MonitorSpecs are allocated with GfxNew. Again, I will
+skip error handling here.
+
+	struct MonitorSpec *mspc;
+	mspc = (struct MonitorSpec *)GfxNew(MONITOR_SPEC_TYPE); /* comes from graphics/gfxnodes.h */
+
+Next, we have to initialize the monitorspec. The GfxNode we get has an
+init vector for it that has to be called. It requires a flags value
+that identifies the type of the monitor, in particular whether we want
+to use a custom timing and hence a "SpecialMonitor" structure attached
+to it, and PAL or NTSC timing. Let's assume we want it special and
+NTSC.
+
+	ULONG msflags = MSF_REQUEST_SPECIAL | MSF_REQUEST_NTSC;
+
+The flags we can set here are, from graphics/monitor.h:
+
+#define MSF_REQUEST_NTSC    1<<0		/* NTSC type of mode */
+#define MSF_REQUEST_PAL	    1<<1		/* PAL type of mode */
+#define MSF_REQUEST_SPECIAL 1<<2		/* add a special monitor, custom timing */
+#define MSF_REQUEST_A2024   1<<3		/* A2024 scandoubler */
+#define MSF_DOUBLE_SPRITES  1<<4		/* "big" sprites for AA modes */
+
+        typedef __asm GfxInitFunc(register __a6 struct GfxBase *gfx,register __a0 struct MonitorSpec *spec,
+		      		  register __d0 ULONG flags);
+
+	GfxInitFunc *init = (GfxInitFunc)(((struct ExtendedNode *)mspc)->xln_Init);
+	(*init)(GfxBase,mspc,msflags);
+
+This preps the monitor structure as necessary for the flags and
+already fills in a lot of defaults suitable for the particular monitor
+type. We can now carry over some settings if needed. These settings
+are taken from the icon of the workbench for all the monitor files in
+DEVS:Monitors.
+
+        struct SpecialMonitor *sm = mscp->ms_Special;
+	mspc->total_rows          = totalrows; /* from the icon ToolTypes */
+	mscp->total_colorclocks   = totalclocks;
+	mspc->min_row             = minrow;
+	mspc->BeamCon0            = beamcon0;
+	
+	mspc->DeniseMaxDisplayColumn = STANDARD_DENISE_MAX;
+	mspc->DeniseMinDisplayColumn = STANDARD_DENISE_MIN; /* from graphics/monitor.h */
+
+Additional settings can be made if the monitor is "special". Again,
+these settings come from the icon, though graphics already supplies
+defaults through the monitor init function. A couple of suitable
+settings for these are documented in graphics/monitor.h, but they
+could also come from the user:
+
+	if (sm) {
+	        sm->hblank.asi_Start    = HBSTRT;
+        	sm->hsync.asi_Start     = HSSTRT;
+		sm->hsync.asi_Stop      = HSSTOP;
+		sm->hblank.asi_Stop     = HBSTOP;
+		sm->vblank.asi_Start    = VBSTRT;
+		sm->vsync.asi_Start     = VSSTRT;
+		sm->vsync.asi_Stop      = VSSTOP;
+        	sm->vblank.asi_Stop     = VBSTOP;
+	}
+
+Finally, the monitor also needs a name itself:
+
+	mspc->ms_Node.xln_Name = AllocMem(strlen(name)+1,MEMF_PUBLIC));
+	strcpy(mspc->ms_Node.xln_Name,name);
+
+Once the monitor is done, add it to the list of monitors in GfxBase:
+
+        AddHead(&GfxBase->MonitorList, mspc);
+
+One final step is to do, namely to link the monitorspec to the
+RawMonitorInfo in the display info data base. Again, to simplify
+things, I leave out error handling:
+
+        struct MonitorInfo  querymonitor;
+	
+	GetDisplayInfoData(NULL ,(UBYTE *)&querymonitor,sizeof(*querymonitor),DTAG_MNTR,modeID);
+
+It does not really matter which mode we pick here as long as it fits
+to our monitor. Remember, the data for the monitor sits one level
+above the mode information, so we get the right RecordNode in the
+database given the monitor ID fits. Unfortunately, some information in
+the database exists twice: Once in struct Monitor, and once setup in
+the RawMonitorInfo. Carry this data now over from the MonitorSpec,
+i.e. what the user provided, into the data base, i.e. what the system
+requires:
+
+	querymonitor.TotalRows        = mspc->total_rows;
+	querymonitor.TotalColorClocks = mspc->total_colorclocks;
+	querymonitor.MinRow           = mspc->min_row;
+	querymonitor.ms_LegalView     = mntr->ViewPositionRange;
+
+Finally, but it back into the data base.
+
+	SetDisplayInfoData(NULL,(UBYTE *)&querymonitor,sizeof(*querymonitor),DTAG_MNTR, modeID);
+
+The above function is again a private function in graphics that
+requires a pragma and a prototype.  Here we have it:
+
+#pragma libcall GfxBase SetDisplayInfoData 2ee 2109805
+ULONG SetDisplayInfoData( DisplayInfoHandle handle, UBYTE * buf, ULONG size, ULONG tagID, ULONG displayID );
+
+Now, after this step, one could still hook in private functions into
+the RawVecInfo to become creative with the copper list.
+
+Now finally, we are done:
+
+        Permit();
+	ReleaseSemaphore(GfxBase->MonitorListSemaphore);
+
+IV) Conclusion
+
+The graphics monitor and display info database system seems to be some
+half-baked design that tried somehow to abstract away from the Amiga
+video circuit. Half-way because we have one half-complete system that
+consists of the Monitor and its Special companion that would be able
+to integrate well into the multitasking system of the Os, and another
+half-developed system, namely the now-existing display info data base,
+that can - however - only be updated and modified "with luck" as there
+is no access mechanism for it. It looks as if its development stopped
+right in the middle, and CBM did not publish the Monitor
+specifications because they thought the system as we find it today is
+somehow in the transition to something better. At least, this is my
+best guess given this engineering gemstone. In fact, any improvement
+on this system would be welcome as it consists of two inconsistent
+system parts that seem to work together just by chance.
+

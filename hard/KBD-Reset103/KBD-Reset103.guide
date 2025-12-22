@@ -1,0 +1,650 @@
+@database KBD-Reset103.guide
+@author "Michael Schulz"
+@$VER: KBD-Reset103 (08/03/97)
+@node Main "Info"
+
+       __ __  ____   ____          ______                        __
+      / // / / __ \\ / __ \\        / __  /                      _/ /_
+     / // / / /_/ // / / /       / /_/ / ______ ______ ______ /  __/
+    / _  / / __  // / / /______ /   __/ / ____// ____// ____/ / /
+   / /| | / /_/ // /_/ //_____// /\\ \\  / __/_ _\\__  // __/_  / /_
+  /_/ |_|/_____//_____/       /_/  \\_\\/_____//_____//_____/ /___/
+                                                            
+  Version 1.03 (08 Mar 1997)                                                           
+
+   _________________________________________________________                                                         
+
+            @{"Deutsche Anleitung" LINK "reset-d"}
+            @{"English documentation" LINK "reset-e"}
+
+
+            @{" " LINK "info-d"} Kontakt zum Author
+            @{" " LINK "info-e"} Contact the author
+
+            @{" " LINK "Credits"} Credits
+
+
+   _________________________________________________________
+   "Sorry for my English, but that's not my native language"
+   _________________________________________________________
+
+@ENDNODE 
+
+@NODE reset-d "Keyboardreset - deutsche Anleitung"
+
+ Problem_A:
+ ----------
+  Viele User, die ihren Amiga nachträglich in einen Tower eingebaut haben
+  benutzen eine externe A2/3/4000er Tastatur.
+
+  Das macht auch keine Probleme und der Anschluss ist ohne weitere Elektronik
+  machbar, nur funktioniert der bekannte "Affengriff" (Amiga-Amiga-CTRL) fuer
+  den Reset nicht mehr.
+
+
+ Loesung_A:
+ ----------
+  Siehe @{"meine" Link info-e} Schaltung. Diese laeuft im Moment erfolgreich unter folgender
+  Hardwarekonfig:  A1200/Eagle-Tower/A4000er-Tastatur.
+
+
+ Problem_B:
+ ----------
+  Ausserdem existieren div. Amigas, die beim Einschalten ihre Festplatten
+  nicht erkennen. (Da diese HD's zu lange brauchen um Hochzufahren.) Das
+  betrifft besonders Amigas die noch mit Kick 3.0 ausgeruestet sind.
+
+
+ Loesung_B:
+ ----------
+  Um dieses Problem zu beheben, habe ich einfach eine wetere RC-Kombination
+  eingebaut, welches das Hochfahren um ca. 5 Sekunden verlaengert.
+
+
+ Blockschaltbild
+ ===============
+
+  +-----------------+
+  | Amiga Tastatur  |
+  +-----------------+
+      |   |                KBDDATA
+      |   +-------------------------------+
+      |                                   |
+      |                    KBDCLK       +-------------------+
+      +---------------------------------| A1200 Motherboard |
+      |                                 +-------------------+
+  +-----------------+      KBDRESET       |
+  | meine Schaltung |---------------------+
+  +-----------------+
+      |
+        / ext.
+       /  Reset
+      |
+     -+-
+
+(+5V Betriebsspannungsversorgung und Masse nicht mitgezeichnet.)
+
+
+Standardschaltung OHNE Resetverzoegerung
+========================================
+
+         +5V
+          o
+          |
+         | | 100k
+         | |           Ge-Diode
+          |    |\\               ____          |\\           |\\
+KBDCLK >--+----| o--+---|<|-----____----+-----| o----------| \\    |\\
+ (IN)          |/   |  ____       1k    |     |/           |  o---| o--> KBDRES
+                    +--____-------------+        +-----+---| /    |/     (OUT)
+                        33k             |        |     |   |/
+                                      __|__+    | |10k   / externer
+                                 22uF _____     | |     /  Resetschalter
+                                        |        |     |
+                                      --+--      o   --+--
+                                                +5V
+
+Stueckliste
+-----------
+
+1* 74HCT132       (vierfach NAND Schmitt-Trigger)
+1* 22uF/6V        (Elko)
+1* 1K             (Widerstand)
+1* 10k            (Widerstand)
+1* 100K           (Widerstand)
+1* 33k            (Widerstand, Adjust)
+1* Germaniumdiode (z.B. OA90)
+1* Taster         (1*EIN) bei Bedarf/optional
+
+
+
+
+Schaltung MIT Resetverzoegerung
+===============================
+
+
+                                                         +-------+
+         +5V                                             |       |
+          o                                              |         /
+          |                                              |        / externer
+         | | 100k                                        |       |  Resetschalter
+         | |           Ge-Diode                          |     --+--
+          |    |\\              ____        |\\   ____     |  |\\
+KBDCLK >--+----| o--+---|<|----____---+----| o--____-----+--| \\    |\\
+ (IN)          |/   |  ____      1k   |    |/    10k        |  o---| o--> KBDRES
+                    +--____-----------+       +----------+--| /    |/     (OUT)
+                        33k           |       |          |  |/
+                                    __|__+    |          |
+                               22uF _____     | Si-Diode |
+                                      |       |          |
+                                    --+--     +-|>|-+  __|__+
+                                              |     |  _____ C Delay
+                                         330k| |    |    |    (22uF)
+                                             | |    |    |
+                                              |     |    |
+                                              +-----+    |
+                                              |          |
+                                              o        --+--
+                                             +5V
+
+Stueckliste
+-----------
+
+1* 74HCT132       (vierfach NAND Schmitt-Trigger)
+1* 22uF/6V        (Elko)
+1* 22uF/6V        (C Delay-Elko, groesserer Wert bewirkt laengere Verzoegerung)
+2* 1K             (Widerstand)
+1* 10k            (Widerstand)
+1* 33k            (Widerstand, Adjust)
+1* 100K           (Widerstand)
+1* 330k           (Widerstand)
+1* Germaniumdiode (z.B. OA90)
+1* Siliziumdiode  (z.B. 1N4148)
+1* Taster         (1*EIN) bei Bedarf/optional
+
+
+
+Pinbelegung 74HCT132            DIL 14 Gehaeuse von oben gesehen
+--------------------            --------------------------------
+
+   1----|\\                              +----o----+
+        | o---- 3                    1--|         |--14
+   2----|/                            --|         |--
+                                      --|  74HCT  |--
+                                      --|   132   |--
+   4----|\\                            --|         |--
+        | o---- 6                     --|         |--
+   5----|/                           7--|         |--8
+                                        +---------+
+
+   9----|\\
+        | o---- 8
+  10----|/
+
+
+  12----|\\
+        | o---- 11
+  13----|/
+
+ Pin 7  = GND
+ Pin 14 = +5V
+
+
+Hinweise
+========
+
+Der 74HCT132 ist ein High Speed CMOS-Baustein. Dieser kann NICHT durch einen
+74132 oder 74LS132 ersetzt werden. (Da deren Eingangsströme zu hoch sind.)
+
+Der externe Resettaster ist optional. Wenn er also nicht gebraucht wird, dann
+diesen einfach weglassen.
+
+Ich verwende eine Germaniumdiode, damit der Elko möglichst tief entladen wird.
+Wenn im Moment eine solche nicht verfügbar ist, dann tut es auch eine 1N4148
+oder jede andere Siliziumdiode. (Dadurch wird aber das Zeitverhalten der
+Schaltung etwas verändert.)
+
+Falls (durch eventuelle Bauteiltoleranzen) die Schaltung trotz korrekten
+Aufbaus nicht die gewünschte Funktion zeigt, dann den 33kOHM Widerstand
+(welcher in der Stueckliste mit "ADJUST" bezeichnet ist) durch einen
+KLEINEREN Wert ersetzen.
+
+Die Siliziumdiode dient zum Entladen des Elkos nachdem der Rechner
+ausgeschaltet wurde. Wenn diese Diode nicht vorhanden waere, dann wuerde
+sich der Elko ueber die interne Schutzschaltung, die jeder Eingang des
+74HCT132ers besitzt, entladen. Dafuer ist diese Schutzschaltung aber nicht
+ausgelegt und deshalb uebernimmt die von mir eingefuegte Diode diese
+Funktion.
+
+Die A2000er Tastatur ist mit derjenigen vom A3000er baugleich. Und die A4000er
+Tastatur hat im Gegensatz zu den vorher genannten nur KEINEN runden 5 poligen
+Diodenstecker, sondern einen MINI-DIN-Stecker. Ansonsten koennen aber alle
+drei Typen als externe Tastatur am A1200 verwendet werden.
+
+
+Anschluss am A1200 Motherboard
+==============================
+
+(Die folgenden Daten sind aus dem Archiv "1200ExKb.lha" der Aminet 5,
+ Verzeichnis "hard/hack" entnommen.)
+
+
+
+                                |||||||||||
+                              -+-----------+-
+                              -|           |-
+                              -|           |-
+                              -|   8520PL  |-
+                              -|           |-
+                              -|     U7    |-
+                              -|           |-
+                              -|           |-
+                              -|           |-
+                              -|     ^     |-
+                              -+-----------+-
+                                |||||||||||
+                                   ||
+                                   | \\KBDat (Leitung hier anlöten)
+        |||||||||||                |
+      -+-----------+-               \\KBClk (Leitung hier anlöten)
+      -|           |-
+      -|           |-
+      -| Keyboard  |---KBClk (Entlöten und Pin hochbiegen)              Floppy
+      -|  Micro.   |---KBDat (Entlöten und Pin hochbiegen)              Power
+      -|           |-
+      -|    U13    |-                                                   oooo
+      -|           |-               Zur                                 ||
+      -|           |-           Vorderseite                             ||
+   /---|     ^     |-               des            ====>             +5v/|
+   |  -+-----------+-              A1200                                 |
+   |    |||||||||||                 ||     (Betriebsspannung für         |
+   |                                ||     das Keyboard und meine    Gnd /
+   \\_KBReset (Leitung hier anlöten) ||     Schaltung)
+                                    ||
+                                    \\/
+
+
+Es folgen die Anschlußbelegungen der Amiga-Tastaturen
+-----------------------------------------------------
+
+A1000: (Anschluss von der Rueckseite der Tastatur)
+
+       (Buchse)                 +------+
+                                | |||| |        1=Gnd
+                                | 1234 |        2=KBClk
+                                |      |        3=KBDat
+                                +-+  +-+        4=+5v
+                                  +  +
+                                   ++
+
+A2000/3000:
+
+       (Buchse, von vorne         _ _
+        betrachtet)              / V \\
+                                |3   1|         1=KBClk
+                                | 5 4 |         2=KBDat
+                                |  2  |         3=Nicht belegt
+                                 \\___/          4=Gnd
+                                                5=+5v
+
+A4000:
+
+       (Buchse, von vorne
+        betrachtet)               _ _
+                                 / V \\
+                                |6   5|         1=KBDat
+                                |4   3|         2=Nicht belegt
+                                | 2 1 |         3=Gnd
+                                 \\___/          4=+5v
+                                                5=KBClk
+                                                6=Nicht belegt
+
+
+
+History
+=======
+
+V1.0        Erstes Aminet-Release................. (Aminet 14-CD)
+V1.01       Text etwas ueberarbeitet und ergaenzt. (Aminet 15-CD)
+V1.02       Englische Uebersetzung und Anschluss-
+            belegung fuer A4000 Keyboard-Stecker
+            beigefuegt............................ (Aminet 17-CD)
+V1.03       Schaltung zum verzoegerten Hochfahren
+            des Systems fuer langsame HD's einge-
+            fuegt. Text wiederum überarbeitet.
+
+
+@ENDNODE
+
+@NODE reset-e "Keyboardreset - english documentation"
+
+ The first problem:
+ ------------------
+  Many users equipped their Amiga 1200 with a bigger tower-case.
+  Some of them may want to use an A2/3/4000 keyboard.
+
+  This doesn't seem to make any problems, and the connection can be done
+  without an electronic work-around. However, the reset-key-combination
+  (Amiga-Amiga-Ctrl) won't work.
+
+
+ The solution:
+ -------------
+  @{"My" Link info-e} circuit. This one works fine with my configuration (A1200/Eagle-Tower/
+  A4000 keyboard).
+
+
+ The second problem:
+ -------------------
+  Maybe you own an Amiga equipped with a harddisk that takes too long
+  to spin up. If that's true, your Amiga will not recognize your boot
+  partition and the boot-screen appears.
+
+
+ The solution:
+ -------------
+  I have added a few components to delay the startup to give the harddisk
+  more time. (Kickstart 3.1 ROM maybe will do this as well)
+
+
+ Circuit-Overview
+ ================
+
+  +-----------------+
+  | Amiga keyboard  |
+  +-----------------+
+      |   |                KBDDATA
+      |   +-------------------------------+
+      |                                   |
+      |                    KBDCLK       +-------------------+
+      +---------------------------------| A1200 motherboard |
+      |                                 +-------------------+
+  +-----------------+      KBDRESET       |
+  | my circuit      |---------------------+
+  +-----------------+
+      |
+        / ext.
+       /  reset
+      |
+     -+-
+
+(+5V power and GND are not mentioned here.)
+
+
+Circuit without bootdelay
+=========================
+
+
+         +5V
+          |
+         | | 100k
+         | |          Ge-Diode
+          |    |\\               ____          |\\           |\\
+KBDCLK >--+----| o--+---|<|-----____----+-----| o----------| \\    |\\
+ (IN)          |/   |  ____       1k    |     |/           |  o---| o--> KBDRES
+                    +--____-------------+        +-----+---| /    |/     (OUT)
+                        33k             |        |     |   |/
+                                      __|__+    | |10k   / external
+                                 22uF _____     | |     /  reset switch
+                                        |        |     |
+                                      --+--      o   --+--
+                                                +5V
+
+part list
+---------
+
+1* 74HCT132        (quardruple schmitt NAND gate)
+1* 22uF            (electolytic capicator)
+1* 1K              (resistor)
+1* 10k             (resistor)
+1* 100K            (resistor)
+1* 33k             (resistor, maybe need to adjust)
+1* Germanium Diode (OA90 etc.)
+1* switch          (1*on), if needed/optional
+
+
+Circuit with bootdelay
+======================
+
+
+                                                         +-------+
+         +5V                                             |       |
+          o                                              |         /
+          |                                              |        / external
+         | | 100k                                        |       |  reset switch
+         | |           Ge-Diode                          |     --+--
+          |    |\\              ____        |\\   ____     |  |\\
+KBDCLK >--+----| o--+---|<|----____---+----| o--____-----+--| \\    |\\
+ (IN)          |/   |  ____      1k   |    |/    10k        |  o---| o--> KBDRES
+                    +--____-----------+       +----------+--| /    |/     (OUT)
+                        33k           |       |          |  |/
+                                    __|__+    |          |
+                               22uF _____     | Si-Diode |
+                                      |       |          |
+                                    --+--     +-|>|-+  __|__+
+                                              |     |  _____ C Delay
+                                         330k| |    |    |    (22uF)
+                                             | |    |    |
+                                              |     |    |
+                                              +-----+    |
+                                              |          |
+                                              o        --+--
+                                             +5V
+
+
+part list
+---------
+
+1* 74HCT132        (quardruple schmitt NAND gate)
+1* 22uF            (electolytic capicator)
+1* 22uF            (C delay electolytic capicator, bigger value results in longer delay)
+2* 1K              (resistor)
+1* 10k             (resistor)
+1* 33k             (resistor, maybe need to adjust)
+1* 100K            (resistor)
+1* 330k            (resistor)
+1* Germaniumdiode  (OA90 etc.)
+1* Siliziumdiode   (1N4148 etc.)
+1* switch          (1*ON) if needed/optional
+
+
+
+Circuit diagram 74HCT132            DIL 14 case, viewed from above
+------------------------            ------------------------------
+
+   1----|\\                              +----o----+
+        | o---- 3                    1--|         |--14
+   2----|/                            --|         |--
+                                      --|  74HCT  |--
+                                      --|   132   |--
+   4----|\\                            --|         |--
+        | o---- 6                     --|         |--
+   5----|/                           7--|         |--8
+                                        +---------+
+
+   9----|\\
+        | o---- 8
+  10----|/
+
+
+  12----|\\
+        | o---- 11
+  13----|/
+
+ Pin 7  = GND
+ Pin 14 = +5V
+
+
+
+Comments
+========
+
+The 74HCT132 is a high-speed CMOS-chip. This one cannot be replaced by a
+74132 or 74LS132 because of their high input-current !
+
+The external reset-button is optional. If it isn't needed, you may want
+to not use one.
+
+I use a germaniumdiode, to unload the electrolytic capicator as deep as
+possible. If this one isn't available, you can also use a 1N4148 or any
+other siliziumdiode. Remember that this will change the timing behaviour
+of the circuit.
+
+If the circuit does not work properly (due to component tolerances), you can
+try to change the 33KOhm Resistor, which is marked with "ADJUST" in the
+parts list, into a smaller one.
+
+The silizium-diode is applied to discharge the elko at power off.
+Without this diode the elko would be discharged over the internal
+protection circuit of the 132er. Maybe this would distroy the 132er.
+
+The A2000 and A3000 keyboards are the same. The only change regarding the
+A4000 is that its keyboard has a mini-DIN-plug instead of the standard 5-pin
+plug. However, all of these keyboards will work with the A1200.
+
+
+Connecting to the A1200 motherboard
+===================================
+
+(The following data has been taken out of the archive "1200ExKb.lha"
+from Aminet-CD 5, found in directory "hard/hack").
+
+
+                                |||||||||||
+                              -+-----------+-
+                              -|           |-
+                              -|           |-
+                              -|   8520PL  |-
+                              -|           |-
+                              -|     U7    |-
+                              -|           |-
+                              -|           |-
+                              -|           |-
+                              -|     ^     |-
+                              -+-----------+-
+                                |||||||||||
+                                   ||
+                                   | \\KBDat (solder the lead here)
+        |||||||||||                |
+      -+-----------+-               \\KBClk (solder the lead here)
+      -|           |-
+      -|           |-
+      -| Keyboard  |---KBClk (solder here and bend pin up)              Floppy
+      -|  Micro.   |---KBDat (solder here and bend pin up)              Power
+      -|           |-
+      -|    U13    |-                                                   oooo
+      -|           |-               To                                  ||
+      -|           |-              front                                ||
+   /---|     ^     |-               of             ====>             +5v/|
+   |  -+-----------+-             machine                                |
+   |    |||||||||||                 ||     (power for the                |
+   |                                ||     keyboard and my           Gnd /
+   \\_KBReset (solder the lead here) ||     circuit)
+                                    ||
+                                    \\/
+
+
+Here is a connection table of the available Amiga keyboards:
+------------------------------------------------------------
+
+A1000: (Connector on back of keyboard itself)
+
+        (female)                +------+
+                                | |||| |        1=Gnd
+                                | 1234 |        2=KBClk
+                                |      |        3=KBDat
+                                +-+  +-+        4=+5v
+                                  +  +
+                                   ++
+
+A2000/3000:
+
+        (female, viewed from
+         front)                   _ _
+                                 / V \\
+                                |3   1|         1=KBClk
+                                | 5 4 |         2=KBDat
+                                |  2  |         3=unused
+                                 \\___/          4=Gnd
+                                                5=+5v
+
+A4000:
+
+       (female, viewed from
+        front)
+                                  _ _
+                                 / V \\
+                                |6   5|         1=KBDat
+                                |4   3|         2=unused
+                                | 2 1 |         3=Gnd
+                                 \\___/          4=+5v
+                                                5=KBClk
+                                                6=unused
+
+History
+-------
+
+V1.0        First Aminet release. Only German doc... (Aminet 14-CD)
+V1.01       Only some text added.................... (Aminet 15-CD)
+V1.02       Added English translation and connection
+            table for the A4000 keyboard............ (Aminet 17-CD)
+V1.03       Added circuit for boot delay. Enhanced
+            text.
+
+@ENDNODE
+
+@NODE info-d "Kontakt zum Author" 
+
+ Diese Entwicklung ist Mailware.
+ -------------------------------
+
+ Wer diese Schaltung erfolgreich nachgebaut hat, der möge mir doch
+ bitte eine E-Mail schicken. Und zwar an:
+
+ M.Schulz@Freeway.shnet.org oder Orbital@T-Online.de
+
+ Mit den Hinweis wo diese Schaltung eingebaut wurde. Danke auch.
+
+ Unter Umständen lasse ich auch mich auch überreden und baue für Leute,
+ die sich dieses nicht zutrauen, diese Schaltung auf Lochraster nach. Weiteres
+ per E-Mail an die o.g. Adresse.
+
+ (Ausserdem kann mir natürlich auch jeder schreiben der sonst Fragen oder
+ Vorschläge hat.)
+
+@endnode
+
+@NODE info-e "Contact the author"
+
+ This "hack" is mailware!
+ ------------------------
+
+ If anyone tries to build it and succeeds, please send an E-mail to:
+
+ M.Schulz@Freeway.shnet.org or Orbital@T-Online.de
+
+ Please tell me where you use the circuit. Thank you.
+
+ If you after all don't succeed, I may (no guarantee) build it for you,
+ please contact me at the above adress. Of course, anyone with questions
+ or comments can write to me, too.
+
+@ENDNODE
+
+@Node "Credits"
+
+  @{b}Thank you so much@{ub} goes to :
+
+  Gunnar Schuster  ...   for translating moste of this guide to English
+
+  Stefan Schulz    ...   for helping me on this guide
+
+  Magnus Holmgren (for Visage),Petri Nordlund (for Executive),
+  Stefan Stuntz (for MUI),Ralph Seichter (for Zodiacs Point),
+  Olaf Barthel (for Term).Martin Berndt (for AmiCDFS)  ...
+
+  and all the people who did something for this great machine
+
+  Only Amiga makes it dreamable !
+
+@EndNode

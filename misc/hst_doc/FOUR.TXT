@@ -1,0 +1,792 @@
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                                                  CHAPTER 4
+                                                         INTERFACE CONTROLS
+
+
+          Use the commands explained in this chapter to select the modem's
+          operating characteristics at the terminal and link interfaces.
+          The commands apply to error and flow control, and to the speed-
+          select options at both interfaces.  For background information on
+          these features, see Appendix A.
+
+          NOTE:  When you change a setting during a session, the modem
+          retains that setting until you do one of the following:
+
+               o    Select a new setting.
+
+               o    Issue the ATZ command to reset the modem to its
+                    software defaults.  If DIP switch 10 is OFF, the modem
+                    resets to the defaults stored in nonvolatile memory
+                    (NRAM).  If DIP switch 10 is ON, the modem resets to
+                    the factory settings stored in read-only memory (ROM).
+
+                    Issuing the AT&F command resets the modem to its
+                    factory settings.
+
+               o    Turn the modem off.
+
+          TERMINOLOGY
+
+          For simplicity, references to a terminal in this chapter mean
+          both conventional terminals and microcomputers.
+
+          ARQ (automatic repeat request, i.e. retransmission) is the term
+          used by USRobotics in error control commands and response codes.
+
+          In summaries, the terminal is referred to as DTE (Data Terminal
+          Equipment), while the modem is referred to as DCE (Data
+          Communications Eqipment).  DTE/DCE indicates the terminal/modem
+          interface.
+
+          THROUGHPUT GUIDELINES
+
+          The following guidelines should help you to make the most of the
+          Courier HST modem's advanced performance features.  In many
+          instances, experimentation and experience will indicate what
+          works best for your applications.
+
+          1.   You'll attain optimal throughput under the following
+               conditions:
+
+               o    Your communications software allows fixing the DTE rate
+                    higher than the link rate, e.g., setting the
+
+                                                                         4-1
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                    terminal/software to 19.2K bps and setting the modem to
+                    &B1.
+
+                    If your software automatically switches bit rates to
+                    follow the connection (link) rate (9600, 2400, 1200 or
+                    300 bps), the modem must be set to &B0 for a variable
+                    DTE rate, and your throughput will be reduced.
+
+               o    The call is under error control Service Levels 3
+                    through 5, which includes data compression.  See
+                    Appendix A for comparative throughput information on
+                    each successive level.
+
+               o    Throughput is slightly higher for text files than for
+                    binary files such as .EXE or .COM files.  For a
+                    comparative table, see Appendix A.
+
+          2.   Files that are already compressed become larger when
+               subjected to further data compression.  An example is the
+               .ARC files downloaded from many BBS's.  Another is random 8-
+               bit binary files, which appear to the modem to be
+               compressed.  To avoid a decrease in throughput when
+               transferrring these and similar files, we recommend
+               disabling data compression (&K0).
+
+          3.   Many non-text files require a file transfer protocol, with
+               varying throughput results.  For example, certain public
+               domain file transfer protocols have the following effects:
+
+               XMODEM    Throughput is severely reduced, regardless of the
+                         Courier's performance features, due to XMODEM's
+                         short block lengths (128 bytes) and overhead
+                         (error control protocol information).
+
+               YMODEM    There is an improvement over XMODEM, due to larger
+                         block lengths (1k bytes), but throughput is still
+                         reduced by the protocol's error control overhead.
+
+               YMODEM-G and ZMODEM are better choices, YMODEM-G being the
+               most efficient.  These protocols assume the modems are
+               handling error control:  overhead is minimal, with
+               throughput almost equal to throughput with no file transfer
+               protocol.
+
+          ERROR CONTROL
+
+          While error control is optional, it should always be selected for
+          9600 bps sessions.  The error control protocol uses cyclic
+          redundancy checking for error detection, and an automatic repeat
+
+
+
+                                                                         4-2
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          request (ARQ) for retransmission of errored data blocks (or
+          frames).
+
+          ARQ Retry Timeout
+
+          It may happen that a retransmission request for the same frame
+          occurs repeatedly.  Ordinarily this is due to a serious
+          disturbance in the phone connection.  The retry maximum is 12,
+          after which the modems automatically hang up instead of running
+          up wasteful phone charges.  If the Courier hangs up and you don't
+          know why, query register S20 with this command:
+
+                    ATS20? <Enter>
+
+          If a code of 6 is returned, the modems reached the retry timeout
+          and hung up.  Place the call again; you'll more than likely get a
+          better connection.
+
+          Online Data Rate Fallback
+
+          On 9600-bps MNP connections, to help avoid an automatic
+          disconnect due to a retry timeout, the modems automatically fall
+          back to 7200 bps.  If necessary, they fall back again to 4800
+          bps.  As soon as they sense line improvements, the modems shift
+          back up to the next higher speed.
+
+          Online fallback is designed to keep you online at high speeds
+          despite phone line impairments.  This feature has the following
+          characteristics:
+
+               o    Online fallback has no effect on the DTE rate set with
+                    the &B command.
+
+               o    The link rate must be set to &N0 (variable rates).  If
+                    set to 9600 bps (&N6), the modem remains fixed at that
+                    rate.  A setting of 7200 bps (&N5) or 4800 bps (&N4)
+                    disables online fallback.
+
+               o    During retraining down to the next lower speed, the
+                    Modem Ready LED flashes.  In all other ways, the
+                    fallback is transparent to users.
+
+               o    The modem does not send result codes reflecting the
+                    rate changes.
+
+               o    Online fallback is distinct from the link negotiation
+                    fallback that makes the Courier HST compatible with
+                    most 300/1200/2400-bps modems.
+
+
+
+
+                                                                         4-3
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Error Control Modes (&Mn)
+
+          Under error control, the calling modem includes an error control
+          request in its link negotiation signals.  The answering modem may
+          or may not recognize the request.
+
+          NOTE:  Error control requires Transmit Data flow control,
+          preferably the &H1 setting.
+
+          &M0  
+
+          Normal Courier Mode, no error control.  Use this setting if
+          you're calling a non-MNP modem (2400/1200/300 bps), as the error
+          control request may be misinterpreted by the remote system and
+          prevent a connection.  Don't use this setting for 9600-bps calls.
+
+          &M1-3
+
+          These options are reserved for future use.
+
+          &M4  
+
+          Normal/ARQ Mode.  Default.  If the remote modem doesn't recognize
+          the Courier's error-control request, the Courier automatically
+          operates in Normal Mode (&M0).  Use this adaptive mode if error
+          control isn't crucial.
+
+          &M5
+
+          ARQ Mode.  If the remote modem doesn't recognize the error-
+          control request, the Courier HST hangs up.  Use this setting if
+          error control is an absolute requirement.
+
+          With Auto Answer
+
+          To use error control for incoming calls, set the modem for Auto
+          Answer and for either &M4 or &M5.  When calls come in, the
+          Courier HST goes off hook and responds to an error-control
+          request if one is sent.  If the Courier doesn't receive a request
+          and is set to Normal/ARQ Mode (&M4), it answers the call in
+          Normal Mode.  If it doesn't receive a request and is set to ARQ
+          Mode (&M5), it hangs up.
+
+          Data Compression Mode (&Kn)
+
+          Data compression is implemented through Level 5 of the error
+          control protocol, and only occurs if the modems can establish an
+          ARQ connection.  In addition to the obvious benefits to file
+          transfer, compression speeds up interactive applications by
+          filling the screen more quickly.  (Appendix A describes the ARQ-
+
+
+                                                                         4-4
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          connection sequence at all five protocol levels and includes a
+          comparative table for different types of compressed files.)
+
+          NOTE:  The modem should also be set for Transmit Data flow
+          control, preferably &H1.
+
+          &K0  
+
+          Data compression is disabled.  Some files should not be
+          compressed and require this setting.  See the throughput
+          guidelines at the beginning of this chapter.
+
+          &K1  
+
+          Auto enable/disable.  Default.  The Courier enables data
+          compression only if the DTE rate setting (&B) is higher than the
+          link rate (&N).  If the rates are the same, the application of
+          the compression algorithm may actually reduce throughput, to your
+          disadvantage.  If the remote modem doesn't recognize the request
+          for compression, the ARQ connection proceeds at the last
+          negotiated protocol level.
+
+          &K2  
+
+          Data compression is enabled.  Use this setting if you don't want
+          the modem to automatically disable compression.  If the remote
+          modem doesn't recognize the request for compression, the ARQ
+          connection proceeds at the last negotiated protocol level.
+
+          FLOW CONTROL
+
+          This feature controls the flow of data into and out of the
+          modem's Transmit and Receive data buffers, and is used for both
+          error controlled and normal connections.  Due to differing user
+          equipment requirements, however, the Courier is shipped with all
+          flow control options disabled.
+
+          Users at Hewlett Packard installations using the ENQ/ACK protocol
+          should note the HP settings, &I3 and &I4, described under
+          Received Data Software Control (&In).
+
+          NOTE:  Flow control of data from the DTE to the modem is required
+          under the circumstances described under Transmit Data Flow
+          Control (&Hn).  Received Data flow control is not as critical
+          unless, for example, you are writing incoming files to disk on a
+          slow computer.  For information on flow control concepts, refer
+          to Appendix A.
+
+
+
+
+
+                                                                         4-5
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Transmit Data Buffer Sizes
+
+          The size of the Transmit data buffer depends on whether the
+          connection is under error control or not, as follows.
+
+               o    ARQ connections:  3.5k bytes.
+
+               o    Non-ARQ connections:  1.5k bytes, allowing error
+                    control file transfer protocols such as XMODEM and
+                    YMODEM to be used without flow control.
+
+                    If bit 3 of S-register 15 is turned on, the non-ARQ
+                    buffer size is reduced to 128 bytes, for the
+                    convenience of some remote users of slower modems.  See
+                    S15 in Appendix B-5.
+
+          Received Data Buffer Size
+
+          The size of this buffer remains constant at 2k bytes.
+
+          Transmit Data Flow Control (&Hn)
+
+          This type of flow control is for data transmitted by the terminal
+          to the modem.  The modem monitors its buffer as data comes from
+          the terminal.  If the buffer approaches 90% capacity, the modem
+          signals the terminal to stop sending.  When the modem has sent
+          enough data over the link to half empty the buffer, it signals
+          the terminal to resume transmitting.
+
+          When it is Required
+
+          Transmit Data flow control should be enabled in the following
+          situations:
+
+               o    You're using error control (9600/2400/1200 bps), with
+                    or without data compression.
+
+               o    The rate at the terminal interface is higher than the
+                    link rate, e.g., the terminal's sending at 19.2k bps
+                    and the link rate is 9600 bps.
+
+               o    The volume of data transfer is high.
+
+          Hardware Control
+
+          The modem lowers the Clear to Send (CTS) signal on the RS-232C
+          interface (Pin 5) when its buffer nears 90% capacity.  The modem
+          raises CTS when the buffer is about half full.
+
+
+
+
+                                                                         4-6
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          NOTE:  If your terminal and communications software support CTS,
+          use hardware control as it is more efficient and doesn't affect
+          the data stream.
+
+          Warning
+
+          If you are using an XMODEM-type protocol to transfer binary
+          files, always use hardware flow control.  If your system doesn't
+          support CTS, disable flow control, and be sure the terminal and
+          link rates are equal by setting the modem to &B0 and &N0.
+
+          Software Control
+
+          The modem sends the conventional ASCII Transmit on/off (XON/XOFF)
+          characters, depending on how full the buffer is, as follows:
+
+               XON     <Ctrl>-Q    (ASCII 17 Decimal, 11 Hex)
+               XOFF    <Ctrl>-S    (ASCII 19 Decimal, 13 Hex)
+
+          The ASCII characters may be user-defined;  see S-registers S22
+          and S23 in Appendix B-5 and the ASCII chart in Appendix B-6 or on
+          the Quick-Reference card.
+
+          &H0  
+
+          Transmit Data flow control disabled.  Default.
+
+          &H1  
+
+          Hardware flow control.  Recommended setting.  Requires that your
+          terminal and software support CTS.  If your software requires,
+          turn off XON/XOFF signaling.
+
+          &H2  
+
+          Software flow control.  Requires that your software support
+          XON/XOFF signaling.
+
+          &H3  
+
+          Use both hardware and software flow control.  If you are unsure
+          about what your equipment supports, select this option.
+
+          Received Data Flow Control
+
+          Separate commands, &Rn (hardware) and &In (software), control the
+          flow of Received Data passed by the Courier to your DTE. If the
+          data rate at the DTE interface is 9600 or 19.2k bps, there may be
+          a need at times to signal the modem to temporarily stop passing
+          data, for example, to read what's on the screen.
+
+
+                                                                         4-7
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Hardware Control (&Rn)
+
+          If your terminal and software support Request to Send (RTS) on
+          the RS-232C interface (Pin 4) and RTS is not always high, the
+          terminal lowers RTS to signal the modem to stop passing it
+          received data, and raises RTS when it is ready to receive.
+
+          &R0  
+
+          Reserved.
+
+          &R1  
+
+          Ignore RTS.  Default.  This setting is required if your terminal
+          does not support RTS.
+
+          &R2  
+
+          Hardware flow control of received data enabled.  The modem only
+          sends data to the terminal when RTS is high.
+
+          Software Control (&In)
+
+          Use of this feature requires that your software support XON/XOFF
+          signaling (<Ctrl>-Q and <Ctrl>-S, respectively).
+
+          Warning
+
+          When software flow control is enabled, the modem looks for
+          <Ctrl>-S or <Ctrl>-Q characters.  If these characters occur in a
+          file, they will be misinterpreted as flow control characters.  We
+          recommend that, if possible, you select hardware flow control
+          instead.
+
+          NOTE:  Because of the risk described above, recommended settings
+          given below are only provided for those users who cannot use
+          hardware flow control.
+
+          &I0  
+
+          Disable XON/XOFF flow control of received data.  Default.
+          Recommended for non-ARQ (Normal Mode) calls, but see &I5.  This
+          option makes all characters, including control characters,
+          transparent to the modem.
+
+          &I1  
+
+          The Courier acts on your typed XON/XOFF signals, and passes them
+          to the remote computer.  Use in ARQ Mode only, but keep in mind
+          that the XON/XOFF signals sent to the remote computer may
+
+
+                                                                         4-8
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          interfere with XON/XOFF signaling occurring at the remote
+          computer/modem interface.  See &I2.
+
+          &I2  
+
+          The Courier acts on your XON/XOFF signals, but removes them from
+          the data stream instead of passing them to the remote computer.
+          This ensures that the remote computer does not confuse your
+          XON/XOFF signals with those from its attached modem.  This is the
+          recommended setting for ARQ Mode.
+
+          However, if the call is not under error control, there is no flow
+          control on the phone link.  If you send an XOFF to your modem and
+          it stops passing on data, there is no way to tell the remote
+          computer and modem to stop sending, and your modem's buffer may
+          overflow.  For more reliable control in non-ARQ Mode, see &I5.
+
+          &I3  
+
+          Hewlett Packard protocol--Host Mode.  Applies only to modems
+          attached to an HP mainframe.  See Appendix E-5.
+
+          &I4  
+
+          Hewlett Packard protocol--Terminal Mode.  Applies only to modems
+          attached to terminals in an HP system.  See Appendix E-5.
+
+          &I5  
+
+          This setting is particularly designed to enable flow control on
+          the phone link when the connection is not under error control.
+
+          At &I5, a Courier in ARQ Mode operates the same as it does when
+          set to &I2.  It acts on your XON/XOFF signals but doesn't pass
+          them to the remote system.  The error control protocol enables
+          the modems to control the flow of data on the phone link.
+
+          In non-ARQ Mode, a Courier set to &I5 operates as though flow
+          control were disabled (&I0) in respect to the local DTE
+          interface.  However, it looks to the phone line for incoming
+          XON/XOFF signals.  When the remote operator sends XON/XOFF
+          signals, the Courier either resumes or stops transmitting data
+          over the link and drops the signals from the data stream.
+
+          If both modems are set to &I5, operators at each end can signal
+          the remote modem to stop sending, thereby controllling the data
+          flow on the phone link and preventing their own modem's buffer
+          from overflowing.  At the DTE/DCE interfaces, the modems
+          independently control the flow of data through their Transmit
+          Data (&H) settings.
+
+
+                                                                         4-9
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          DATA RATE COMMANDS
+
+          These commands allow you to select variable or fixed data rates
+          at the DTE and link (modem-to-modem) interfaces.  The highest
+          possible rate at the DTE interface is 19.2k bps; the highest
+          possible rate at the link interface is 9600 bps.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         4-10
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Variable Rates
+
+          At the modem's default settings (&B0, &N0) the rates at the DTE
+          and link interfaces are the same and vary with each call, as
+          follows:
+
+               o    Initially the modem detects its rate from the rate at
+                    which the terminal sends it the AT command.  That rate
+                    is determined by the terminal or software setting.
+
+               o    When originating or answering a call, the Courier and
+                    the remote modem negotiate the highest possible link
+                    rate.  For example, if the terminal sends the AT
+                    command at 9600 bps and the Courier calls a modem
+                    operating at 1200 bps, the Courier automatically falls
+                    back to 1200 bps.  The Courier notifies the terminal of
+                    the adjustment by sending the result code CONNECT 1200.
+
+                    The Courier readjusts to the rate of the next AT
+                    command or, if auto answering a call, readjusts to the
+                    rate of the remote modem.  See Appendix E-2 for more
+                    details.
+
+          NOTE:  If your software switches its rate to match the connection
+          rate, reset the software for a higher speed call before dialing
+          again.  For example, if your modem and software dropped back to a
+          lower rate for the last call and you want to make a high-speed
+          call, first reset the software.  Otherwise your Dial command is
+          sent at the previous rate, and the remote 9600-bps modem drops
+          back to match your lower rate.
+
+          Fixed Rates
+
+          If your software supports fixed rates, you can fix the rate at
+          either the terminal or link interface, or both.  These settings
+          apply to both normal and error-control operations, but be sure to
+          enable Transmit Data (&H) flow control.
+
+          Maximum Throughput Settings   
+
+          For the greatest throughput, recommended settings (assuming
+          software allows fixing the DTE rate) are as follows:
+
+               Terminal/software:  19.2k bps (&B7)
+                           Modem:  Fixed DTE rate (&B1)
+                                   Variable link rate (&N0)
+                                   Data compression (&K1)
+                                   Transmit Data flow control (&H1, 2 or 3)
+
+
+
+
+                                                                         4-11
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          DTE Rate Select (&Bn)
+
+          Use this command to select variable or fixed rates at the
+          terminal interface.
+
+          &B0  Variable rates.  Default.  The terminal interface rate
+               follows the connection rate.  Requires &N0 for the link
+               rate:  the modem automatically adjusts to the rate of the
+               remote modem.
+
+          &B1  Fixed rate:  requires software support of this feature.
+               Allowable terminal/software settings are 19200, 9600, 7200,
+               4800, 2400, 1200, 300 bps.  Setting the terminal to 19.2k
+               bps enables the greatest throughput.
+
+          Link Rate Select (&Nn)
+
+          &N0  Variable operations.  Default.  The link rate varies
+               according to the modems' connection sequence.
+
+          &N1-6  Fixed link rate:  the modem only connects if the remote
+               modem is also operating at the same rate.  The setting may
+               be lower than or equal to the &B setting.  If lower than the
+               &B setting, enable Transmit Data (&H) flow control to
+               prevent the possibility of data loss.  Allowable rates are
+               as follows:
+
+               &N1  300 bps             &N4  4800 bps
+               &N2  1200 bps            &N5  7200 bps
+               &N3  2400 bps            &N6  9600 bps
+
+               If you wish, you can filter out calls at other than a
+               specific speed, for security or other reasons, by fixing the
+               link rate.
+
+          DSR OVERRIDE (&Sn)
+
+          The Data Set Ready (DSR) function (Pin 6 on the RS-232C
+          interface) is required on some systems to enable the modem to
+          signal the terminal when the modem is ready to answer a call.
+          Typically, DSR signaling is overridden.
+
+          &S0  DSR is always ON (override).  Default.
+
+          &S1  The modem controls DSR.
+
+
+
+
+
+
+
+                                                                         4-12
+
+
+
+

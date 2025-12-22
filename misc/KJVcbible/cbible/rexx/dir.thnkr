@@ -1,0 +1,105 @@
+/*                                                          */
+/* Directory listing program for Thinker                    */
+/*                                                          */
+/*     When used as a macro from Thinker, this program      */
+/*     adds a branch for the named directory (or current)   */
+/*     and builds a tree of branches naming all files and   */
+/*     directories.  The directory branches have labels     */
+/*     with the full path name of the directory and the     */
+/*     data in the statement is the short name.  For files  */
+/*     a two line statement is added with the first line    */
+/*     being the short file name and the second line is a   */
+/*     full link to that file.  Example                     */
+/*                                                          */
+/*                                                          */
+/*     (sys:devs)sys:devs                                   */
+/*        (sys:devs/keymaps)keymaps                         */
+/*           usa2~                                          */
+/*                  <sys:devs/keymaps/usa2,>                */
+/*           usa0~                                          */
+/*                  <sys:devs/keymaps/usa0,>                */
+/*        (sys:devs/Printers)Printers                       */
+/*           HP_PaintJet~                                   */
+/*                  <sys:devs/Printers/HP_PaintJet,>        */
+/*        clipboard.device                                  */
+/*                <sys:devs/clipboard.device,>              */
+/*        narrator.device                                   */
+/*                <sys:devs/narrator.devic,>                */
+/*                                                          */
+
+  parse arg dirname .
+options results
+trace off
+
+call addlib "rexxsupport.library",0,-30,0
+
+home=pragma('directory','')
+if dirname="" then dirname=home
+
+'get title'  /* get file name displayed in active window */
+			 /* this works when using either REXX or Thinker */ 
+			 /* as the port when the "dir" command is issued */
+if rc ~= 0 then return 1  /* must have active file */
+'get origin' result
+if rc ~= 0 then return 2  /* cant set file*/
+
+'get label first' dirname
+if rc ~= 0 then do
+	'get origin'
+	'add after same' '('dirname')'dirname
+end
+l=length(dirname)
+flag=0
+if substr(dirname,l,1) = ':' then flag=1
+
+call dodir dirname,dirname,flag
+return
+
+dodir: procedure
+   parse arg fullname,dirname,flag
+
+'get label first' fullname
+
+dirstr=showdir(fullname,'dir')
+nwords=words(dirstr)
+
+do i=1 to nwords by 1
+	name=word(dirstr,i)
+	if flag= 1 then
+		newfullname=fullname ||  name
+	else
+		newfullname=fullname || '/' || name
+	'get label first' newfullname
+	if rc ~= 0 then do
+		'get label first' fullname
+		'add after down' '('newfullname')'name
+	end
+	call dodir newfullname,name,0 
+end
+
+'get label first' fullname
+level='down'
+
+'get down'
+
+do while rc = 0 
+'get succeeding' 
+level='same' 
+end 
+
+dirstr=showdir(fullname,'file')
+nwords=words(dirstr)
+
+do i=1 to nwords by 1
+	name=word(dirstr,i)
+	
+	if flag= 1 then
+		newfullname=fullname || name
+	else
+		newfullname=fullname || '/' || name
+
+	'add after' level name '0A'X '     ' '<'newfullname',>'
+	level='same'
+end
+
+return 0

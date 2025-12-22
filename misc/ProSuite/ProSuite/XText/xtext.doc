@@ -1,0 +1,661 @@
+
+XText Programmer's Guide
+From the Amiga Programmer's Suite Book 1, by RJ Mical
+Copyright (C) 1986, 1987, Robert J. Mical
+
+
+
+The document is a programmer's guide to the XText routines.
+The main sections of this document are:
+
+        o  XTEXT INTRODUCTION 
+
+        o  XTEXT PROGRAMMER'S REFERENCE 
+
+        o  XTEXT TECHNICAL REFERENCE 
+
+        o  XTEXT FUNCTION CALLS 
+
+
+
+
+=============================================================================
+=== XTEXT INTRODUCTION ======================================================
+=============================================================================
+
+The XText routines have one purpose:  extra-fast text.  XText is 
+intended for Amiga programmers who want high-performance text and 
+are willing to pay for it.  The cost:  extra memory usage and fewer 
+text features.  What you get for your investment:  brute force 
+text rendering so fast it singes your eyelashes.
+
+The XText routines attempt to answer a need not satisfied by the 
+Amiga graphics library's Text() routine.  The Text() routine is a 
+very good, economical, general purpose text generator.  It handles 
+many special text features and uses the graphics library functions 
+and structures in the correct system way.  It obeys all the Amiga 
+rules of system decency and strives to keep its memory requirements 
+to an absolute minimum.  You can use the Text() routine to create 
+text that ranges from the plain to the fantastically fancy.  
+
+What you can't do with the Text() routine is create very simple text 
+that avoids the graphics library overhead and that skips its own 
+overhead by abandoning fancy features and economy in favor of speed.  
+
+The XText routines try to avoid as much system overhead as possible.  
+Wherever appropriate, XText uses memory to gain efficiency.  It 
+foregoes features such as proportional-width fonts and kerning in 
+favor of rendering speed.  It also short-circuits the graphics 
+library by going directly to the blitter to create the text (though 
+it does so in a system-honest fashion).  
+
+The XText routines have some limitations and drawbacks.  The only 
+fonts that XText handles are fixed-width at 8 bits wide, with no 
+overlap between characters.  If you want fancy algorithmic styles 
+like underlining, bold, and italics you have to pay for them by 
+expending RAM, and the cost is significant:  typically 2K or 4K of 
+RAM for each style of text.  Also, algorithmic styles take about 
+one second each for initial setup.  Italics don't look as good as 
+they do when created by the Text() routine, because the italicized 
+character must still fit in an 8-wide character cel (although you 
+can get around this problem by creating your own italics font).
+
+But though the cost of XText is significant, the benefit is 
+significant too:  regardless of the font, regardless of the 
+algorithmic style, XText() outputs characters to a Workbench 
+window at approximately 18,500 characters per second in the 
+fast fat mode, and 14,500 per second in slow slim mode.  
+By comparison, the Text() routine outputs characters at 
+approximately 3,800 per second, depending on what algorithmic 
+style you've selected (4,000 if plain text is selected).
+
+For those who have the memory to spare, XText provides a 
+high-performance alternative to normal Amiga text rendering.  
+
+
+
+
+
+=============================================================================
+=== XTEXT PROGRAMMER'S REFERENCE ============================================
+=============================================================================
+
+This section describes how programmers use the XText routines.
+
+An important note:  if you are using the Metacomco assembler when 
+compiling .asm files, you must comment out the definition of the 
+constant AZTEC in the xtext.i file.  If you are using the Aztec 
+assembler, you must define the constant named AZTEC in the xtext.i 
+file.  This is because the Aztec assembler uses some non-standard 
+syntax, so special steps must be taken to define things correctly.
+
+
+
+=== Plain XText Usage =======================================================
+
+Using basic XText is actually quite simple.
+
+The XText() routine requires an initialized XTextSupport structure 
+to do its work.  You get an XTextSupport structure by calling the 
+MakeXTextSupport() routine.  This routine allocates an XTextSupport 
+structure for you and initializes it such that if all you want to 
+do is create plain text, you can use the support structure as is.  
+
+The MakeXTextSupport() routine accepts an argument of note:  the 
+address of a TextAttr structure.  You use this argument to specify 
+the font to be used with your calls to XText().  With this argument 
+you can specify that the XText() routine will use a disk-based font 
+rather than the system's topaz.font.  You can use any 8-bit wide 
+font, even a font of your own design!
+
+Once you've gotten an XTextSupport structure from MakeXTextSupport(), 
+you create text by calling the XText() routine.  The arguments to 
+the XText() routine are simple; refer to the XText() autodoc header 
+for details.
+
+If you like, you can set FrontPen, BackPen and DrawMode in your 
+XTextSupport structure before you call XText().  The characters 
+normally are rendered in the FrontPen color.  The space around 
+the characters is rendered in the BackPen color.  The FrontPen is 
+initialized to 1 and the BackPen to 0, but you can change them to 
+anything you prefer.  The DrawMode works according to the DrawMode 
+rules as illuminated in the Text chapter of the ROM Kernel Manual.  
+Briefly:
+
+             Draw Mode   Result
+----------------------   ---------------------------------------------------
+                  JAM2   Normal text, overwrites everything
+                  JAM1   Overstrike text, writes only the character imagery
+            COMPLEMENT   Where there's character imagery, xor's background
+      JAM2 + INVERSVID   Normal text, pens reversed
+      JAM1 + INVERSVID   Writes blanks around character imagery in FrontPen
+COMPLEMENT + INVERSVID   Kind of a weird reverse exclusive-or
+
+
+Text clipping works like it does with the Text() routine, which is 
+to say that text clips fine with Intuition windows and doesn't clip 
+at all with graphics rastports that you create yourself.
+
+
+When you're done calling XText() (usually when your program is 
+terminating), you call UnmakeXTextSupport() to deallocate your 
+XTextSupport structure and all of the resources associated with it.
+
+And that's it!  Easy, eh?
+
+
+
+=== Advanced XText Techniques ===============================================
+
+When you call MakeXTextSupport() you get to preset the Flags variable 
+of your new XTextSupport structure before anything else is done with the 
+structure.  Mostly notably, you can preset the SLIM_XTEXT flag.  
+The SLIM_XTEXT flag allows you to specify that you want the slower, slimmer 
+XText technique, which uses half as much memory as the faster, fatter 
+XText technique but runs about 20% slower.
+
+
+If you want to have algorithmic styles for your text, you must create 
+them with calls to the MakeXTextFont() routine after you've gotten 
+an XTextSupport structure.
+
+To do this, you start with an initialized TextAttr structure.  
+Set the TextAttr's ta_Style field to the font attributes you want; 
+your choices are combinations of FSF_BOLD, FSF_UNDERLINED and FSF_ITALIC.  
+Then call MakeXTextFont() with the address of this TextAttr and the 
+address of your XTextSupport structure, along with a font select 
+index.  The font select index will be used to save the new font data 
+pointer in the XTextSupport's FontData[] array.
+
+Later, before calling XText(), you can set the XTextSupport variable 
+FontSelect to describe which of the fonts you want used for the 
+subsequent XText() calls.
+
+You find the FontSelect definitions in xtext.h.  They have names 
+like NORMAL_FONT, ULINE_FONT, and ITALIC_BOLD_FONT.  Of course 
+there's also the ever-popular ITALIC_ULINE_BOLD_FONT if you need 
+it, though this font tends to look as muddy as the name.
+
+Actually, the FontSelect definitions are just names for the indices 
+into the FontData[] array.  You can make up your own names if you 
+like.  Also, when calling MakeXTextFont(), you can have the TextAttr 
+refer to different fonts or any combination of fonts and styles.  
+It's up to you!  All XText expects is that FontSelect has a valid 
+index into FontData[].
+
+By the way, the MakeXTextSupport() routine initializes the entire 
+FontData[] array with the address of the NORMAL_FONT structure, so 
+if you make a mistake and select a font that you hadn't initialized 
+you'll get plain text.
+
+If you want, there's no restriction against creating multiple 
+XTextSupport structures to support multiple fonts.
+
+
+Italics are a problem.  The italics of a normal font are skewed 
+such that they cover more than 8 bits of character imagery.  As only 
+8 bits of the final imagery can be used, a decision has to be made 
+regarding which of the 8 bits will be used.  The default is defined 
+by the constant ITALIC_LEFT_EDGE, which describes the first column of 
+bits on the left that will be used for the final imagery.  If you 
+don't like how your italics look, you can try playing with the value 
+of this constant.
+
+
+Part of the XText speed is achieved by having a pre-initialized BitMap 
+in the XTextSupport structure.  If you're ever going to change the 
+OutputRPort pointer in your support structure, you must re-initialize 
+the TextBitMap.
+
+
+One last note:  in the XTextSupport structure is a Remember key, which 
+is used to track all of the memory allocations required to support 
+your XText usage.  You can use this key to make further allocations 
+as needed.  FreeRemember() is called with this key when you call 
+UnmakeXTextSupport().
+
+
+
+
+=============================================================================
+=== XTEXT TECHNICAL REFERENCE ===============================================
+=============================================================================
+
+This section presents a tutorial of how the XText() routine works.  
+It is meant to augment a reading of the xtext.asm file.  Maybe you can 
+learn something about pushing that old Amiga around!
+
+
+
+=== XText Theory of Operation ===============================================
+
+The XText theory is relatively simple.  It's all brute force and shortcuts.
+
+The characters are restricted to a width of exactly 8 bits.  This allows 
+character imagery to be handled as byte-sized quantities, which is a 
+very handy quantity for the Amiga to use.  You might think that the 
+68000 is employed to move the data around, but a further minor 
+requirement -- namely that all buffers must be an even number of 
+bytes wide -- allows the brute force of the blitter to assist in 
+blasting the text into the display.  
+
+To create a line of text, XText uses shortcut techniques to quickly 
+construct a bitmap that represents the text.  
+
+XText starts by building a single plane of normal character imagery 
+(character data bits set, background bits clear) in an imagery plane 
+called the NormalTextPlane.  This plane is built one of two ways:  
+the normal technique uses a word of data for each byte of character 
+imagery in order to utilize the blitter when building the 
+NormalTextPlane; the "slim" technique which uses the only a byte of 
+data for each byte of character imagery and uses the processor to 
+build the NormalTextPlane.  The actual mechanics of this is described 
+in detail below.  
+
+As needed, the NormalTextPlane is inverted (character bits clear, 
+background bits set) into the InvertedTextPlane.  These two planes 
+of text are then used with two other pre-initialized planes, the 
+AllClearPlane plane of all bits clear and AllSetPlane plane of 
+all bits set, to create the text display.  
+
+Using these four planes, one can construct a bitmap of all possible pen 
+settings for the foreground and background of the character imagery.  
+Consider this table of all possible combinations of corresponding bits 
+of the character and background colors:  
+
+    Foreground  Background
+       Bit          Bit
+      -----        -----
+        0            0        Use AllClearPlane
+        0            1        Use InvertedTextPlane
+        1            0        Use NormalTextPlane
+        1            1        Use AllSetPlane
+
+XText() plugs the plane pointers according to the above table into a 
+pre-initialized BitMap structure, and finally calls the graphics 
+library's BltBitMapRastPort() function to move the text into the 
+destination raster.  BltBitMapRastPort() works both with Intuition 
+windows and with rastports that have no associated layer 
+("roll your own" rasters).
+
+Actually, when the drawing mode is JAM1 the text must be "cookie cut" 
+into the background by using the NormalTextPlane as a mask for a call 
+to (grit your teeth here) BltMaskBitMapRastPort().  Because an extra 
+blitter source and extra handling is required by this routine, 
+performance is noticeably degraded.  Avoid JAM1 where possible.
+
+In any event, with so many of the pieces pre-initialized and with the 
+blitter whipped into a font frenzy, perhaps you can understand why 
+these routines work reasonably fast.
+
+Note that if the foreground and background pens are equal, the normal 
+and inverted planes don't need to be constructed as they'll never be 
+used.  An optimization that evolves out of this fact is that you can 
+fill a line or part of a line of your text with spaces (blank 
+characters) much more quickly by setting the foreground pen equal to 
+the background pen.  The trick with this optimization is to not spend 
+too much time detecting whether or not an area of text is all blank, 
+for you may lose the increased performance during the handling of 
+normal text lines.
+
+Actually, if the foreground and background pens are equal and therefore 
+a blank line will be output, it would be much more efficient to skip 
+all of this work and call the graphics library's RectFill() routine.  
+This is left as an exercise for the reader.
+
+A further optimization:  I'm guessing that many text calls will not 
+require the inverted plane, so it won't be made until it's needed.  
+If programmers follow the Intuition-encouraged standard of pen 1 for 
+foreground and pen 0 for background, then the bits are:    
+
+    Foreground pen (in binary) -- 00001
+    Background pen (in binary) -- 00000
+
+    Foreground  Background
+       Bit          Bit
+      -----        -----
+        0            0        Use AllClearPlane for plane 4
+        0            0        Use AllClearPlane for plane 3
+        0            0        Use AllClearPlane for plane 2
+        0            0        Use AllClearPlane for plane 1
+        1            0        Use NormalTextPlane for plane 0
+
+
+No need to invert here!  So the inverted plane would never be made.  
+In fact, if the text is *any* color against a background of zero, 
+this optimization works.  The cost of this technique is that I have 
+to check a flag once per time that I find an inverted bit plane is 
+called for (6 times maximum (though of course Dale would say 8 
+times maximum)), and the savings is in avoiding an unnecessary 
+inversion (big savings).
+
+Because the blitter is word-size oriented, in order to use the blitter 
+most efficiently this routine always works with character pairs while 
+building the buffers.  This allows the blitter to always pick up two 
+characters, use a byte from each, and write a single word.  No extra 
+checking needs to be done, no special handling of the odd character.  
+If you specify an odd number of characters, this routine will round 
+up the character count to the next higher even number and then build 
+the buffer with that many characters.  However, only the number of 
+characters you specify will actually be printed to the screen.  The 
+overhead cost to process the extra character is nominal, while the 
+performance improvement gained by using the blitter and skipping the 
+overhead is great.  
+
+
+The XText font imagery is laid out in one of two ways, depending on 
+whether you want fast fat XText or slow slim XText.  The fast fat 
+technique runs about 20% faster than the slow and slim.  Also, 
+fast fat XText uses twice as much memory as the slow slim way, 
+typically 4K of CHIP RAM for each algorithmic style as compared 
+with 2K.  You might be willing to expend the extra memory if you 
+want the extra performance.  You specify that you want the slimmer 
+XText by passing SLIM_XTEXT as one of the flags that you supply to 
+the MakeXTextSupport() routine.
+
+The fast fat XText technique is penny foolish but pound wise 
+(to mangle a cliche).  Again, one of the keys to this design is to 
+improve performance by leveraging off of the blitter's capabilities.  
+Each byte of character imagery is laid out in a word of memory where 
+the first byte contains the imagery and the second byte is blank.  
+Why spread the imagery out like this?  This allows the blitter to 
+always process two characters at a time, with the first character 
+loaded into the blitter's high byte and the second character 
+shifted right 8 bits into the low byte using the blitter's 
+delightfully fast barrel shifter.  The two characters are then laid 
+down in one stroke, thereby further minimizing computational overhead.  
+
+The drawback of this fast fat technique is that it requires twice as 
+much memory as a normal font.  The formula for font requirement is:  
+256 * character height * 2.  For example, to create an XText version 
+of topaz.font requires 256 characters * 8 rows * 2 bytes per row = 4096 
+bytes.  Do you think it's worth it?  
+
+The slim technique uses the processor to build the text plane, so 
+there is no blitter requirement of using one word for each byte of 
+image data.  It's byte for byte, which cuts memory usage in half.  
+But using the processor takes much longer than using the blitter 
+to build the text plane, typically a total of 20% longer.  
+
+
+
+
+=============================================================================
+=== XTEXT FUNCTION CALLS ====================================================
+=============================================================================
+
+CONTENTS:
+   MakeXTextFont()
+   MakeXTextSupport()
+   UnmakeXTextSupport()
+   XText()
+
+
+
+
+
+*** MakeXTextFont() ******************************************************
+
+
+NAME
+   MakeXTextFont  --  Make font imagery for the XText routines
+
+
+SYNOPSIS
+   UBYTE *MakeXTextFont(TextAttr, XTextSupport, Index);
+
+
+FUNCTION
+   This routine creates font imagery in the format that the XText()
+   routine uses.  It allocates the font data buffer and then constructs
+   the XText font imagery in this buffer using the imagery of the
+   font specified by the TextAttr argument.
+   
+   This routine is normally called by MakeXTextSupport().  You do not
+   need to use this routine unless you want to create fonts that
+   have special styles such as bold, underline, and italics.
+   
+   If all is successful, this routine writes the address of the font 
+   data buffer in the XTextSupport's FontData array at the Index position,
+   and returns the address of the new font data buffer.  
+   If anything goes wrong, the FontData array is unchanged and this 
+   routine returns NULL.
+   
+   You can specify font styles in your TextAttr structure.
+   If the TextAttr argument is equal to NULL, the system's 80-column 
+   "topaz.font" will be used instead.
+   
+   You must have called MakeXTextSupport() before calling this routine,
+   as this routine requires an initialized XTextSupport structure.
+   All memory allocations are attached to the XTextSupport structure's
+   Remember key.
+   
+   
+INPUTS
+   TextAttr = a pointer to a TextAttr structure specifying the font
+      to be used for this XText font imagery.  If the TextAttr
+      argument is equal to NULL, the system's 80-column "topaz.font"
+      will be used.
+   
+   XTextSupport = a pointer to an initialized XTextSupport structure,
+      which structure is created by a call to MakeXTextSupport().
+   
+   Index = index into the XTextSupport's FontData array for this font
+   
+   
+RESULT
+   Returns a pointer to the memory block that contains the font imagery.
+   If anything goes wrong (usually out of memory), returns NULL.
+   
+   
+EXAMPLE
+     struct XTextSupport *xtext;
+     struct TextAttr localTextAttr = { ... };
+     xtext = MakeXTextSupport(...);
+   [Make a BOLD font for XText() calls]
+     localTextAttr.ta_Style = FSF_BOLD;
+     MakeXTextFont(&localTextAttr, xtext, BOLD_FONT);
+   [Write some BOLD characters]
+     xtext->FontSelect = BOLD_FONT;
+     XText(...);
+
+BUGS
+   Well, if there is a bug it's a highly technical one that most
+   of you can ignore.  I'm not sure that it's entirely 100% for sure 
+   safe to work with DiskfontBase the way I have below and still expect
+   this program to be re-entrant.  It should be OK up to and including 
+   the 1.2 release of the system, but in the future this could cause
+   some very mysterioso bug.
+   
+   
+SEE ALSO
+   MakeXTextSupport(), XText(), UnmakeXTextSupport()
+
+
+
+
+
+*** MakeXTextSupport() ***************************************************
+
+NAME
+   MakeXTextSupport  --  Allocate and initialize XText Support data
+
+
+SYNOPSIS
+   struct XTextSupport *MakeXTextSupport(RastPort, TextAttr, 
+         MaxTextWidth, InitialFlags);
+
+
+FUNCTION
+   This routine allocates an XTextSupport structure and initializes
+   the structure for use by the XText routines.
+
+   The font specified by the TextAttr argument is opened.  If the
+   TextAttr arg is equal to NULL, the system font "topaz.font" is
+   opened instead.  If you are specifying a TextAttr, the font you
+   specify must have a character cel that is 8-bits wide.
+
+   Image data from this font is then used to create the special
+   font data used by the XText routines.  The address of this data
+   is put in the FontData variable of the XTextSupport structure,
+   as well as in all of the elements in the SpecialFontData array.
+
+   The MaxTextWidth argument describes the maximum number of 
+   characters that you will ever print at one time with the 
+   XText() routine.  Typically this number will be 80 or 40, 
+   depending on whether your display is high-res or low-res.  
+   This number should be an even number; if the number you 
+   supply is odd, the actual number used will be your number 
+   rounded up to the next even number.
+
+   The InitialFlags argument is used to preset your XTextSupport's
+   Flags variable before anything is done with the structure.  
+   See the file xtext.h for the definitions of the XTextSupport 
+   structure's Flags.
+
+   An InitialFlag of note is the SLIM_XTEXT flag, which you can 
+   set to define that you want the slim (and slow) XText technique 
+   to be used when the XText font data is created and when 
+   XText is rendered to the display.  The advantage of SLIM_XTEXT 
+   is that the technique requires half as much memory as the 
+   fast fat technique.  The disadvantage is that it runs about 
+   20% more slowly than fast fat XText.  
+
+   After you have called MakeXTextSupport(), you can use
+   the Remember key in the XTextSupport structure -- named
+   XTextKey -- for further memory allocations.  All memory
+   allocations made using XTextKey are freed when 
+   UnmakeXTextSupport() is called.
+
+
+INPUTS
+   RastPort = a pointer to the RastPort that will be the destination
+      for text created by the XText routines.  Typically, this
+      will be the RastPort of an Intuition window or screen
+      that you've opened.  For an example, see EXAMPLE below.
+
+   TextAttr = a pointer to a TextAttr structure specifying the font
+      to be used for this XText font imagery.  If the TextAttr
+      argument is equal to NULL, the system's 80-column "topaz.font"
+      will be used.
+
+   MaxTextWidth = Maximum number of characters per line.  This should 
+      be an even number, and if odd will be rounded up to the 
+      next even number.
+
+   InitialFlags = Flags that will be preset in your XTextSupport's
+      Flags variable before anything is done with the structure.  
+      See the file xtext.h for the definitions of the XTextSupport 
+      structure's Flags.
+
+
+RESULT
+   Returns the address of the XTextSupport structure, or NULL
+   if there were any problems (usually out of memory).
+
+
+EXAMPLE
+   window = OpenWindow( ... );
+   xtext = MakeXTextSupport(window->RPort, &DiskFontTextAttr, 80, NULL);
+   - or, as another example, open a 320 screen and ... -
+   screen = OpenScreen( ... );
+   xtext = MakeXTextSupport(&screen->RastPort, NULL, 40, SLIM_XTEXT);
+
+
+SEE ALSO
+   MakeXTextFont(), XText(), UnmakeXTextSupport()
+
+
+
+
+
+*** UnmakeXTextSupport() *************************************************
+
+NAME
+   UnmakeXTextSupport  --  Free the XTextSupport structure and buffers
+
+
+SYNOPSIS
+   UnmakeXTextSupport(XTextSupport)
+
+
+FUNCTION
+   Frees the XTextSupport structure and buffers.
+
+
+INPUTS
+   XTextSupport = pointer to an XTextSupport structure (typically
+              created by a call to MakeXTextSupport() )
+
+
+RESULT
+   None
+
+
+SEE ALSO
+   MakeXTextSupport()
+
+
+
+
+
+*** XText() **************************************************************
+
+NAME
+   XText  --  Write a line of text using the XText technique
+
+
+SYNOPSIS
+   XText(XTextSupport, Text, CharCount, XPos, YPos);
+
+
+FUNCTION
+   Writes a line of text using the parameters in the XTextSupport
+   structure.
+
+   The Text argument points to a line of text.  This text doesn't have
+   to be null-terminated.  CharCount describes how many characters
+   of Text should be printed.
+
+   The XPos and YPos values describe the top-left corner for the
+   text.  Note that this is different from the x and y coordinate
+   system used by the graphics library's Text() routine, where the
+   coordinates refer to the baseline of the text.
+
+   Before calling this routine you can set the FrontPen, BackPen, 
+   DrawMode and FontSelect in your XTextSupport structure.
+   Also, there are several other initializations that you may wish
+   to perform with your support structure.  Refer to the
+   XText Programmer's Guide for more information.
+
+
+INPUTS
+   XTextSupport = Pointer to an XTextSupport structure (typically
+      created by a call to MakeXTextSupport() )
+
+   Text = Pointer to the text that you want output.  This text
+      doesn't have to be null-terminated
+
+   CharCount = The number of characters to be printed
+
+   XPos, YPos = The position for the top-left corner of the output
+
+
+RESULT
+   None
+
+
+EXAMPLE
+   struct XTextSupport *xtext;
+   xtext = MakeXTextSupport(...);
+   xtext->FrontPen = 3;
+   xtext->BackPen = 2;
+   XText(xtext, "Hello World!", 12, 25, 87);
+
+
+SEE ALSO
+   MakeXTextSupport(), MakeXTextFont()
+
+
+
+

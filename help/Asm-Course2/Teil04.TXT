@@ -1,0 +1,271 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 4.Teil...
+
+So, O.K ich wollte euch ja erklaeren wie das mit dem Openlibrary geht.
+Es ist eine Funktion wie Forbid oder Permit, nur unterscheidet man sie,
+weil sie noch parameter zum arbeiten braucht, und zwar...
+
+In D0 die Versionsnummer der Library. Es koennte im laufe der zeit einer
+auf die Idee kommen, mal eine neue graphics.library zu schreiben,
+natuerlich kann man dann die alte nicht einfach weglassen, sondern sie muss
+weiter bestandteil des Amigas sein. Um sich nicht einen Neuen namen
+einfallen lassen zu muessen, gibt man einfach eine hoehere Versionsnummer
+an, und bekommt automatisch die Library die man will
+gibt man keine versionsnummer an, sucht der Amiga automatisch die erste aus
+und oeffnet sie.
+
+In A1 die Adresse, des Namens der Library. Man hat die Library`s nicht
+durchnummeriert weil ja immer wieder neue dazu kommen, deshalb gibt man ihr
+den namen, des gebietes in dem sie Eingesetzt wird. Findet der befehl diese
+Library nicht im Speicher dann sucht er im `LIBS` verzeichnis auf der Disk,
+erst wenn sie da nicht ist, gibt er einen FehlerCode zurueck. Falls das
+Oeffnen der Library erfolgreich war gibt der Befehl in D0 die Adresse
+zurueck an der die Library jetzt Betriebsbereit liegt.
+Diese Adresse, muessen wir uns merken, denn mit ihr muessen wir die
+Funktionen die wir aufrufen, aufrufen.
+
+Um z.b die Graphics.library zu oeffnen muesste dieses Programm geschrieben
+werden.
+
+
+Execbase = 4
+Openlibrary = -552
+
+Start:  Move.l Execbase,a6      ; Execbase als grundstock der Execlibrary
+        Clr.l d0                ; Version Egal
+        Move.l #gfxname,a1      ; Adresse wo der name der zu oeffnenden
+                                ; Library steht nach a1, muss mit 0 enden
+        Jsr Openlibrary(a6)     ; Oeffnen
+        Move.l d0,gfxbase       ; Basis der Graphics-library merken.
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+even
+Gfxbase:        dc.l 0
+
+Puuuhh, eine Menge neues, naja, das mit dem Oeffnen der Library muesste
+jetzt klar sein.....Also was haben wir neues. Erstmal der neue Assembler
+befehl `Clr`, duerfte eigentlich klar sein, Clr heisst Clear. Er loescht
+das Byte, Word oder Langword in der/dem angegebenen Adresse/Register, mehr
+nicht.
+
+So aber was da unter kommt ist Vielleicht etwas Schwieriger, aber sehr
+wichtig. Wie ihr in der zeile wo ich a1 die adresse des names gebe, sage
+ich #gfxname. Das heisst, die Adresse von dem Wort uebergeben. Der
+Unterschied zu einem Label besteht darin, das dieses graphics.library
+wirklich im Speicher steht, wollt ihr es sehen. Gut dann tippt das ab und
+assembliert es. Dann geht ihr in den kommando modus, und tippt `q start`
+und drueckt return, jetzt gibt der Seka einen Speicher auszug aus, und zwar
+genau 128 bytes nach dem label start. da unser programm aber nicht so lang
+ist koennen wir das wort graphics.library gut sehen. Alles O.K...
+
+Was noch neu ist, ist das reservieren, von langwoertern oder so, fuer einen
+ganz bestimmten Zweck. Bei meinem Beispiel wurde ein Langword reserviert,
+damit ich da die Adresse der graphics.library hineinschreiben. So muss ich
+kein kostbares register verschwenden, und da hat es einen sicheren platz.
+
+Ihr muesst allerdings zwischen Seka- und Assembler befehlen unterscheiden
+
+Dieses Dc.(b,w,l) ist ein Seka befehl, und tritt nicht im fertigen Programm
+auf. Genauso verhaelt es sich mit dem `Even` zwischen Gfxname und Gfxbase.
+
+Der Amiga kann keine Worter oder Langwoerter in Ungerade Adressen
+schreiben. Im normalfall interrssiert uns das auch nicht, da alle
+Befehle `Rund` sind. Aber der name `graphics.library` ist gerade, aber die
+null hinten dran macht es ungerade. dem Seka waere es Egal, er reserviert
+nur den Platz fuer ein langwort, da er aber weiss das der prozessor darauf
+allergisch reagieren wird, gibt er die fehlermeldung `word at Odd adress`
+aus. Dies verhindern wir indem wir mit dem Even befehl. ein fuellbyte
+einschieben, das den PC wieder gerade biegt.
+
+So alles verstanden...
+
+Nun dann wollenb wir mal dazu kommen was wir eigentlich von der
+graphicslibrary wollen.
+Funktionen wollen wir keine benutzen, sondern nur einen Wert.
+Der Amiga, so hatte ich euch schon erzaehlt merkt sich die Adresse der
+Ersten copperliste die er fuer das CLI errechnet hat, in einem Stueck
+speicher das vor den funktioen der graphicslibrary liegt, diese Tabelle ist
+vor vielen Library`s, und wir koennen sie einfach auslesen, wir muessen nur
+wissen was wir wollen, und wo das liegt.
+Also, wir wollen uns ja die adresse der ersten Copperliste holen...
+
+Und zwar steht dieser wert an der 38.sten stelle in dieser tabelle, da
+diese tabelle am anfang der library steht, brauchen wir nur 38 zu dem wert
+in d0 dazuzuzaehlen, und schon haben wir die adresse.
+
+Also, das war doch nicht schwer, oder ?
+
+O.k, jetzt kommt nur nur eins, bis wir Theoretisch schon eine Copperliste
+Kreieren koennen....Wie sage ichs dem Copper das er eine andere liste
+benutzen soll.
+Grossartig sagen muss ich im da nichts, denn der Copper ist so vergesslich
+das er sich jedesmal vor einem Bildschirmaufbau, die adresse der
+Copperliste die er zu bearbeiten hat aus den Registern Cop1lch und Cop1lcl
+holt.
+Sie liegen bei $dff080 und $dff082, man kann sie aber gemeinsam
+ansprechen, indem man einfach die adresse als langword nach $dff080
+schreibt, er verteilt dann die Bits schon richtig.
+Sobald er das naechste mal dieses Register ausliesst kriegt er unseren
+Wert, und arbeitet Anstandslos unsere Liste ab, dull wa ?
+
+Also, jetzt zum verstaendnis der letzen 100 zeilen mal ein kleines
+prograemchen, ist zwar noch nicht lauffaehig, ist ja auch nur
+anschauungsmodell, also nicht abtippen.
+
+Execbase = 4
+Openlibrary = -552
+CIAapra = $BFE001
+Cop1lc  = $DFF080
+Forbid = -132
+Permit = -138
+
+Start:  Move.l Execbase,a6      ; Vorbereitungen fuer Forbid und
+                                ; Openlibrary.
+        Jsr Forbid(a6)          ; Forbid
+        Clr.l d0                ; Versionsnummer Egal
+        Lea gfxname,a1          ; Name der zu oeffnenden Lib nach A1
+        Jsr Openlibrary(a6)     ; Graphics.library oeffnen
+        Move.l d0,gfxbase       ; Adresse der Lib merken
+
+        Move.l #$50000,Cop1lc   ; Adresse der neuen Copperliste nach Cop1lc
+
+Wait:   Btst #6,CIAapra         ; Kennt ihr schon
+        Bne.s wait
+
+        Move.l gfxbase,a0       ; Basisadresse nach a0
+        Move.l 38(a0),Cop1lc    ; 38. sten wert einfach nach Cop1lc
+                                ; schreiben
+        Jsr Permit(a6)          ; Multitasking erlauben
+        Clr.l d0                ; kein returncode
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+Gfxbase:        dc.l 0
+
+Ha, die Programme wachsen so langsam, viel sinn haben sie zwar noch nicht,
+aber das kommt doch.
+
+Das einzige was jetzt dazu kam war der Lea-befehl, er macht das selbe wie
+das was da vorher stand `Move.l #Gfxname,a1` nur halt kuerzer, denn er
+weiss das man ein Langwort braucht um eine Adresse zu benutzen, also muss
+man es nicht dahinter schreiben.
+
+Achja, den Jsr-befehl kennt ihr auch nicht, er ist das gegenstueck zu Rts,
+er merkt sich den aktuellen PC bevor er den neuen schreibt. Und da alle
+library funktionen mit `Rts` enden, knn ich ihn gut benutzen.
+
+So, da wir jetzt wissen wie das drum herum bei einer Coppeliste ist,
+koennen wir eigentlich mit der genauen beschreibung der befehle, und ihrer
+funktion, und wie man sie dem Copper gibt.
+
+7.Erstellen von Copperliste
+
+Eine kompletter befehl des Coppers besteht immer aus zwei woertern.
+Beim Move-befehl sieht es so aus das zuerst das register kommt was
+angesprochen werden soll, kommt. Und dann der Wert der da rein soll.
+
+Da der Copper nur die Register des Amigas ansprechen kann, muss kein
+komplettes langword als adresse benutzt werden es reicht der hintere teil.
+
+Fuer uns liegt Color00 in $DFF180, fuer den Copper liegt es in $0180.
+
+Also, ein Befehl der Copperliste der die farbe in Color00 auf gold setzt
+saehe im speicher so aus
+
+$01800fb0
+
+Die erste vier nibbles geben an welches register, und die zweiten welcher
+wert.
+
+Etwas anders ist es beim Wait befehl, der hat ein richtiges befehls Wort,
+naemlich $fffe. Er hat den wert den er bearbeitet vor sich stehen, wobei
+das erste Byte die Zeile, und das Zweite Byte der pixel in der Zeile.
+
+Der normale Wait befehl sieht also im Speicher so aus...
+
+$8054fffe
+
+Dieser Befehl wuerde bis zeile $80, und dem Pixel $54 warten und dann weiter
+machen.
+
+So, dann koennten wir ja jetzt etwas Copperlistenmaessiges auf die Beine
+stellen.
+Halt, eines noch...Das ende einer Copperliste markiert man mit $fffffffe.
+es stellt einen Wait befehl dar, dessen zeile niemals erreicht werden kann,
+weil es sie nicht gibt, also wartet der Copper unendlich. Solange er das
+Signal kriegt das ihn veranlasst die liste von neuem zu durchlaufen.
+
+Ich werde die Copperliste, auch wieder mit der reservierung funktion des
+Seka`s im Listing unterbringen, so das ihr da nach herzenlust dran
+rumprobieren koennt.....
+
+Doch hier erstmal, das erste vernuenftige Listing..
+
+
+Execbase = 4
+Openlibrary = -552
+CIAapra = $BFE001
+Cop1lc  = $DFF080
+Forbid = -132
+Permit = -138
+
+Start:  Move.l Execbase,a6      ; Vorbereitungen fuer Forbid und
+                                ; Openlibrary.
+        Jsr Forbid(a6)          ; Forbid
+        Clr.l d0                ; Versionsnummer Egal
+        Lea gfxname,a1          ; Name der zu oeffnenden Lib nach A1
+        Jsr Openlibrary(a6)     ; Graphics.library oeffnen
+        Move.l d0,gfxbase       ; Adresse der Lib merken
+
+        Move.l #copperliste,Cop1lc ; Adresse der Copperliste nach Cop1lc
+
+Wait:   Btst #6,CIAapra         ; Kennt ihr schon
+        Bne.s wait
+
+        Move.l gfxbase,a0       ; Basisadresse nach a0
+        Move.l 38(a0),Cop1lc    ; 38. sten wert einfach nach Cop1lc
+                                ; schreiben
+        Jsr Permit(a6)          ; Multitasking erlauben
+        Clr.l d0                ; kein returncode
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+even
+Gfxbase:        dc.l 0
+Copperliste:
+
+dc.w $0180,$0000
+dc.w $8001,$fffe
+dc.w $0180,$0f00
+dc.w $a00f,$fffe
+dc.w $0180,$0000
+
+copperlistenende:
+dc.l $-2                ; ende der copperliste , -2 = $fffffffe
+
+End:
+
+
+Es waere besser wenn ihr euch das rausschneidet, mit dem Editor und dann
+direkt in den Seka einladet, vergesst aber nicht das Suffix (.S)
+dranzuhaengen, sonst koennt ihr es nicht mit `R` einladen.
+
+So, zum listing...Eure eigenen ideen koennt ihr zwischen Copperliste und
+copperlistenende einfuegen.
+Dei $8001 bei dem Ersten Wait befehl habe ich gewaehlt damit ihr seht warum
+man sie normal nicht nimmt, da diese $8001 schon am rechten rand erscheint,
+um wirklich erst am Linken rand auf die neue farbe umzuschalten muesst ihr
+als Pixel position immer 0f benutzen, so wie beim Zweiten Wait befehl, da
+ist es ja $a00f...
+
+Eigentlich muesste das jetzt klar sein, falls nicht kann es nicht viel
+sein, also schreibt mir ruhig, ich habe immer ein offenes ohr...
+
+Beim Naechsten mal malen wir ein Bild mit Dpaint, und bringen es auf den
+Bildschirm, O.K ?
+
+bis denne
+
+                Jeff Kandle

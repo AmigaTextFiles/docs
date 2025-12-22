@@ -1,0 +1,154 @@
+@node Grafik
+@chapter Grafik
+@cindex Grafik
+Grafik ist eine der Stärken des Amiga. Warum hat es hier so wenig Fragen
+und Antworten?
+
+
+@menu
+* Chunky vs. Planar:: Was heißt Chunky- und Planar-Display?
+* Doublebuffering::  Was ist Doublebuffering?
+* Monitore:: Was für Monitore arbeiten am Amiga?
+@end menu
+
+
+@node Chunky vs. Planar
+@section Was heißt Chunky- und Planar-Display?
+@cindex Chunky
+@cindex Planar
+Einfach gesagt stehen die Bezeichnungen @code{chunky} und @code{planar}
+(Kürzel für @code{bitplanar}) für verschiedene Arten, graphische Daten im
+RAM des Computers zu speichern. Sie sind einfach zu verstehen, aber
+vielleicht etwas schwierig zu erklären.
+
+Die Anzeige eines Computers besteht aus einem Netz von Pixeln. Jedes Pixel
+kann man sich als eine Zahl denken, die für die Farbnummer des Pixels steht.
+Hier ist zum Beispiel eine ganz einfache Anzeige mit 4 Farben:
+
+@example
+   00302132
+@end example
+
+Der Amiga speichert dies im @code{bitplanaren} Modus, d.h. es werden
+verschiedene sogenannte Bitplanes verwendet, in denen zu jedem Pixel genau
+ein Bit gehört. Für eine Zahl zwischen 0 und 3 brauchen wir 2 Bits, also
+auch zwei Bitplanes, die dann so aussehen:
+
+@example
+   00100110    Dies ist Bitplane 0
+   00101011    Dies ist Bitplane 1
+   --------    Nun addieren wir sie, wobei wir die zweite mit 2
+   00302132    multiplizieren
+@end example
+
+Das ist also die gewünschte Grafik. Nun gäbe es aber natürlich auch eine
+andere Möglichkeit: Wir könnten die jeweils 2 Bits direkt hintereinander
+anordnen in sogenannten Chunks:
+
+@example
+   00 00 11 00 01 10 11 01 = 00302132
+@end example
+
+Dies ist das Prinzip des Chunky-Modus. Man kann im allgemeinen kaum sagen,
+daß eine dieser beiden Methoden besser oder schlechter ist. Allerdings haben
+natürlich beide ihre Vor- und Nachteile:
+
+Zunächst hat vielleicht jeder schon einmal gesehen, daß auf dem Amiga beim
+Scrollen von farbigem Text ein gewisses Flackern entsteht. Genauer gesagt
+ändern sich kurz die Farben. Was dabei passiert, ist, daß der Computer
+Bitplanes verschiebt, gleichzeitig aber dieselben Daten für die Anzeige
+verwendet werden. Wenn etwa gerade Bitplane 0 verschoben wurde, aber Bitplane
+1 noch nicht verschoben ist, so hätten wir kurzfristig im obigen Beispiel
+die folgende Anzeige:
+@example
+   01001100    Dies ist Bitplane 0 (nach links verschoben)
+   00101011    Dies ist Bitplane 1
+   --------    Nun addieren wir sie wieder
+   01203122
+@end example
+Sobald die zweite Bitplane ebenfalls verschoben ist, stimmt wieder alles,
+aber kurzfristig entsteht dabei eben jenes Flackern. Bei einer Chunky-Anzeige
+dagegen wäre eben nur ein Teil des Bildschirms schon verschoben und ein
+anderer Teil noch nicht.
+
+Umgekehrt ist es im Chunky-Modus schlecht möglich, mit beliebiger Anzahl
+von Farben zu arbeiten: Da ein Byte 8 Bits hat, gehören etwa bei 4 Farben zu
+jedem Byte 4 Pixel. Man muß also stets erst berechnen an welcher Stelle
+des Bytes die Informationen zu einem bestimmten Pixel sitzen. Das ist
+aufwendig. Noch schlimmer wird die Sache bei 8 Farben: Da beginnen die Pixel
+noch nicht mal an der gleichen Stelle. Das ist sehr umständlich und
+rechenzeitaufwendig. In der Praxis gibt es daher Chunky-Anzeigen nur im
+8-Bit-Modus (256 Farben) und im 24-Bit-Modus (16 Millionen Farben). Es ist
+allerdings möglich, daß die Anwender da gar nicht so unglücklich darüber
+sind@dots{}
+
+
+@node Doublebuffering
+@section Was ist Doublebuffering?
+@cindex Doublebuffering
+Bei animierter Grafik entsteht das Problem, daß gleichzeitig die Daten
+verändert und angezeigt werden. Dabei kommt es dann unweigerlich zu einem
+gewissen Flackern. (@pxref{Chunky vs. Planar})
+
+Die Lösung des Problems ist es, quasi zwei Bildschirme zu benutzen: Der
+eine wird immer angezeigt. Gleichzeitig wird auf dem anderen Bildschirm,
+der nicht angezeigt wird, das neue Bild gezeichnet. Es gibt kein Flackern,
+da die Grafik-Hardware nur auf das RAM des ersten Bildschirms zugreift und
+der Prozessor nur auf das des zweiten. Dann wird umgeschaltet und der zweite
+Bildschirm angezeigt. Auf dem ersten kann jetzt gezeichnet werden.
+
+
+@node Monitore
+@section Was für Monitore arbeiten am Amiga 1200 oder 4000?
+@cindex Monitore
+@cindex VGA
+@cindex Multiscan
+Monitore kann man klassifizieren nach der horizontalen Frequenz, die sie
+für ihre Anzeige benötigen. Fernseher und Commodore's 1084 benötigen z.B.
+etwa 15 kHz, VGA und SVGA benötigen mindestens etwa 30 kHz.
+Multisync-Monitore können verschiedene Frequenzen darstellen.
+
+Man kann also jeden dieser Monitore am A1200 verwenden, @strong{aber}:
+
+@itemize @minus
+@item
+Mit einem gewöhnlichen VGA/SVGA-Monitor kann man nur einige Anzeige-Modi
+(DblPal, DblNTSC und/oder Productivity, d.h. (320|640) x (256|512|1024)
+Pixel) verwenden. Dies ist großartig für die Workbench und die meisten
+ernsthaften Anwendungen, aber manche grafikorientierten Programme, vor allem
+Spiele laufen fast sicher nicht: Sie benutzen nämlich die Preferences nicht,
+übernehmen statt dessen einfach die Maschine und gehen von einem 15 kHz
+Monitor aus. Ferner kann man das Bootmenü nicht verwenden: Das arbeitet
+nämlich ebenfalls nur mit 15 kHz. Schließlich haben VGA-Monitore keine
+Lautsprecher und die VGA-artigen Modi unterstützen keine Genlocks.
+
+@item
+Das größte Problem eines 15 kHz-Monitors ist das ständige Flickern im
+Interlace-Modus. Ein kleiner Tip ist hier die Verwendung von NTSC anstelle
+von PAL. Dies erhöht die Refresh-Rate von 25 Hz auf 30 Hz, kostet allerdings
+einige darstellbare Zeilen. (Maximal möglich sind 482.) Die NTSC- und
+PAL-Modi sind aber nicht so schlecht, wie die Leute denken: Bei einem Monitor
+mit viel Phosphor (der also lange nachglüht) ist PAL-Laced einigermaßen
+akzeptabel und gibt eine Auflösung von 1448x566 in SuperHiRes. Mehr ist auf
+keinem AGA-Amiga möglich.
+
+@item
+Die beste Lösung sind die Multisync-Monitore, vorausgesetzt sie
+unterützen die Bereiche von 15-31 kHz Horizontal- und 50-72
+Vertikalfrequenz. Die 1940- und 1942-Monitore von Commodore sind
+nicht schlecht, allerdings etwas umständlich zu handhaben: Bei jedem
+Umschalten des Anzeige-Modus muß man nämlich auch die
+horizontale/vertikale Größe und den Offset von Hand
+einstellen. @footnote{Es gibt einen Patch, der dies auch ohne manuelle
+Eingriffe möglich macht. Siehe @file{os30/util/Monitor30Patch.lha} auf dem
+Aminet.} Geeignet sind z.B. auch der Mitsubishi EUM 1491 oder der EIZO
+9060S.
+
+Der Commodore 1960 hat nicht das Problem von 1940 oder 1942, ist aber auch
+teurer.
+@end itemize
+
+Für einen VGA/SVGA- oder Multisync-Monitor braucht man ein Kabel, das
+etwa 30 DM kostet.
+
+

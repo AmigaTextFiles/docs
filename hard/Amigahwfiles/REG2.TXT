@@ -1,0 +1,1130 @@
+                               APPENDIX A
+
+                  REGISTER SUMMARY - ALPHABETICAL ORDER
+
+
+This appendix contains the definitive summary. in alphabetical order, of
+the register set and the uses of the individual bits.
+
+                           - Appendix A 257 -
+
+
+The addresses shown here are used by the special chips (called "Agnus",
+"Denise", and "Paula") for transferring data among themselves. Also, the
+Copper uses these addresses for writing to the special chip registers. To
+write to these registers with the 68000, calculate the 68000 address
+using this formula:
+
+68000 address = (chip address) + $DFF000
+
+For example, for the 68000 to write to ADKCON (address = $09E), the
+address would be $DFF09E. No other access address is valid. Unused
+registers must not be accessed
+
+All bits marked as "unused" must be written as zeros. The value of any
+unused read bit must not be trusted. Registers are either read-only or
+write-only. Reading a write-only register will trash the register.
+Writing a read-only register will cause unexpected results.
+
+All of the "pointer" type registers are organized as 32 bits on a long
+word boundary. These registers may be written with one MOVE.L
+instruction. The lowest bit of all pointers must be written as zero. The
+custom chips can only access CHIP memory; using a non-CHIP address will
+fail (See the AllocMem() documentation or your compiler manual for more
+information on CHIP memory). Disk data, sprite data, bitplane data, audio
+data, copper lists and anything that will be blitted or accessed by
+custom chip DMA must be located in chip memory.
+
+When strobing any register which responds to either a read or a write,
+(for example copjmp2) be sure to use a MOVE.W, not CLR.W. The CLR
+instruction causes a read and a clear (two accesses) on a 68000, but only
+a single access on 68020 processors. This will give different results on
+different processors.
+
+                           - 258 Appendix A -
+
+
+                        Agnus/
+                  Read/ Denise/
+Regiter Addresses Write Paula                 Function
+--------------------------------------------------------------------
+
+ADKCON     09E      W     P             Audio, disk, control write
+ADKCONR    010      R     P             Audio, disk, control read
+
+BIT# USE
+--------------------------------------------------------------------
+
+15   SET/CLR   Set/clear control bit. Determines if bits written with a 1
+               get set or cleared. Blts written with a zero are always
+               unchanged.
+
+14-13 PRECOMP 1-0
+
+          CODE   PRECOMP VALUE
+          --------------------
+           00        none
+           01       140 ns
+           10       280 ns
+           11       560 ns
+
+
+12   MFMPREC   (1=MFM precomp 0-GCR precomp)
+11   UARTBRK   Forces a UART break (clear TXD) if true.
+10   WORDSYNC  Enable disk read synchronizing on a word equal to DISK
+               SYNC CODE, located in address (3F)*2.
+09   MSBSYNC   Enables disk read synchronizing on the MSB (most
+               significant bit). Apply type GCR.
+08   FAST      Disk data clck rate control 1-fast(2us) 0=slow(4us). (fast
+               for MFM, slow for MFM or GCR)
+
+07   USE3PN    Use audio channel 3 to modulate nothing.
+06   USE2P3    Use audio channel 2 to modulate period of channel 3.
+05   USE1P2    Use audio channel 1 to modulate period of channel 2.
+04   USE0P1    Use audio channel 0 to modulate period of channel 1.
+
+03   USE3VN    Use audio channel 3 to modulate nothing.
+02   USE2V3    Use audio channel 2 to modulate volume of channel 3.
+01   USE1V2    Use audio channel 1 to modulate volume of channel 2.
+00   USE0V1    Use audio channel 0 to modulate volume of channel 1.
+
+NOTE: If both period and volume are modulated on the same channel, the
+period and volume will be alternated. First word xxxxxxxx V6-V0 , Second
+word P15-P0 (etc)
+
+AUDxDAT    0AA      W     P             Audio channel x data
+
+This register is the audio channel x (x=0,1,2,3) DMA data buffer. It
+contains 2 bytes of data that are each 2'8 complement and are outputted
+equentially (with digital-to-analog conversion) to the audio output pins.
+(LSB = 3 MV) The DMA controller automatically transfers data to this
+register from RAM. The processor can also write directly to this
+register. When the DMA data is finished (words outputted=length) and the
+data in this register has been used, an audio channel interrupt request
+is set.
+
+                           - Appendix A 259 -
+
+
+AUDxLCH 0A0 W A       Audio channel x location (high 3 bits)
+AUDxLCL 0A2 W A       Audio channel x location (low 15 bits)
+
+This pair of registers contains the 18 bit starting address (location) of
+audio channel x (x=0,1,2,3) DMA data. This is not a pointer register and
+therefore needs to be reloaded only if a different memory location is to
+be outputted.
+
+AUDxLEN 0A4 W     P   Audio channel x length
+
+This regiter contains the length (number of words) of audio channel x DMA
+data.
+
+AUDxPER 0A6 W     P   Audio channel x Period
+
+This register contains the period (rate) of audio chnnel x DMA data
+transfer. The minimum period is 12 color clocks. This means that the
+smallest number that should be placed in this regiter is 124 decimal.
+This corresponds to a maximum sample frequency of 28.86 khz.
+
+AUDxVOL 0A8 W     P   Audio channel x volume
+
+This register contains the volume setting for audio channel x. Bits
+6,5,4,3,2,1,0 specify 65 linear volume levels as shown below.
+
+Bit#   Use
+--------------------------------------------------
+
+15-07  Not used
+06     Forces volume to max (64 ones, no zeros)
+05-00  Sets one of 64 levels (000000-no output (111111-63 19, one 0)
+
+BLTAFWM 044 W A       Blitter first-word mask for source A
+BLTALWM 046 W A       Blitter last-word mask for source A
+
+The patterns in these two registers are ANDed with the firt and last
+words of each line of data from source A into the blitter. A zero in any
+bit override data from source A. These registers should be set to all 1's
+for fill mode or for line-drawing mode.
+
+                           - 260 Appendix A -
+
+
+BLTCON0 040 W A       Blitter control register 0
+BLTCON1 042 W A       Blitter control register 1
+
+These two control registers are used together to control blitter
+operations. There are two basic mode, area and line, which are selected
+by bit 0 of BLTCON1, as shown below.
+
+AREA MODE ("normal")
+
+BIT BLTCON0    BLTCON1
+
+15    ASH3      BSH3
+14    ASH2      BSH2
+13    ASH1      BSH1
+12    ASA0      BSH0
+11    USEA        X
+10    USEB        X
+09    USEC        X
+08    USED        X
+07    LF7         X
+06    LF6         X
+05    LF5         X
+04    LF4       EFE
+03    LF3       IFE
+02    LF2       FCI
+01    LF1       DESC
+00    LF0       LINE(0)
+
+ASH 3-0 Shift value of A source
+BSH 3-0 Shift value of B source
+USEA Mode control bit to use source A
+USEB Mode control bit to use source B
+USEC Mode control bit to use source C
+USED Mode control bit to use destination D
+LF 7-0 Logic function minterm select lines
+EFE Exclusive fill enable
+IFE Inclusive fill enable
+FCI Fill carry input
+DESC Descending (decreasing address) control bit
+LINE Line mode control bit (set to 0)
+
+                           - Appendix A 261 -
+
+
+BLTCON0 (cont.)  LINE DRAW      LINE MODE (line draw)
+BLTCON1 (cont.)  LINE DRAW
+                 LINE DRAW    BIT# BLTCON0  BLTCON1
+                 LINE DRAW
+                 LINE DRAW     15   START3  TEXTURE3
+                 LINE DRAW     14   START2  TEXTURE2
+                 LINE DRAW     13   STARTl  TEXTURE1
+                 LINE DRAW     12   START0  TEXTURE0
+                 LINE DRAW     11   1       0
+                 LINE DRAW     10   0       0
+                 LINE DRAW     09   1       0
+                 LINE DRAW     08   1       0
+                 LINE DRAW     07   LF7     0
+                 LINE DRAW     06   LF6     SIGN
+                 LINE DRAW     05   LF5     0 (Reserved)
+                 LINE DRAW     04   LF4     SUD
+                 LINE DRAW     03   LF3     SUL
+                 LINE DRAW     02   LF2     AUL
+                 LINE DRAW     01   LF1     SING
+                 LINE DRAW     00   LF0     LINE(=1)
+                 LINE DRAW
+                 LINE DRAW     START 3-0 Starting point of line
+                 LINE DRAW               (0 thru 15 hex)
+
+                 LINE DRAW     LF7-0 Logic function minterm
+                 LINE DRAW     select lines should be preloaded
+                 LINE DRAW     with 4A to select the equation
+                 LINE DRAW     D=(AC+ABC). Since A contains a
+                 LINE DRAW     single bit true (8000), most bits
+                 LINE DRAW     will pass the C field unchanged
+                 LINE DRAW     (not A and C), hut one bit will
+                 LINE DRAW     invert the C field and combine it
+                 LINE DRAW     with texture (A and B and not C).
+                 LINE DRAW     The A bit is automatically moved
+                 LINE DRAW     across the word by the hardware.
+                 LINE DRAW
+                 LINE DRAW     LINE Line mode control bit (set to 1)
+                 LINE DRAW     SIGN Sign flag
+                 LINE DRAW     0 Reserved for new mode
+                 LINE DRAW     SING Single bit per horizontal line for
+                 LINE DRAW     use with subsequent area fill
+                 LINE DRAW     SUD Sometimes up or down (=AUD*)
+                 LINE DRAW     SUL Sometimes up or left
+                 LINE DRAW     AUL Always up or left
+
+                 LINE DRAW     The 3 bits above select the octant
+                 LINE DRAW     for line drawing:
+
+                 LINE DRAW     OCT     SUD SUL AUL
+                 LINE DRAW
+                 LINE DRAW      0       1   1   0
+                 LINE DRAW      1       0   0   1
+                 LINE DRAW      2       0   1   1
+                 LINE DRAW      3       1   1   1
+                 LINE DRAW      4       1   0   1
+                 LINE DRAW      5       0   1   0
+                 LINE DRAW      6       0   0   0
+                 LINE DRAW      7       1   0   0
+
+LINE DRAW The "B" source is used for
+LINE DRAW texturing the drawn lines.
+
+                           - 262 Appendix A -
+
+
+BLTDDAT               Blitter destination data register
+
+This register holds the data resulting from each
+word of blitter operation until it is sent to a
+RAM destination. This is a dummy address and
+cannot be read by the micro. The transfer is
+automatic during blitter operation.
+
+BLTSIZE 058 W A       Blitter start and size (window width, height)
+
+This register contains the width and height of
+the blitter operation (in line mode, width must
+= 2, height = line length). Writing to this
+register will start the blitter, and should be
+done last, after all pointers and control
+registers have been initialized.
+
+BIT 15,19,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+---------------------------------------------------
+    h9 h8 h7 h6 h5 h4 h3 h2 h1 h0,w5 w4 w3 w2 w1 w0
+
+h=height=vertical lines (10 bits=1024 lines max)
+w=width=horizontal pixels (6 bits=64 words=1024 pixels max)
+
+LINE DRAW BLTSIZE controls the line length and starts
+LINE DRAW the line draw when written to. The h field
+LINE DRAW controls the line length (10 bits gives
+LINE DRAW lines up to 1024 dots long). The w field
+LINE DRAW must be set to 02 for all line drawing.
+
+BLTxDAT 074 W A       Blitter source x data register
+
+This register holds source x (x=A,B,C) data for
+use by the blitter. It is normally loaded by the
+blitter DMA channel; however, it may also be
+preloaded by the microprocessor.
+
+LINE DRAW BLTADAT is used as an index register
+LINE DRAW and must be preloaded with 8000.
+LINE DRAW BLTBDAT is used for texture; it must
+LINE DRAW be preloaded with FF if no texture
+LINE DRAW (solid line) is desired.
+
+                           - Appendix A 263 -
+
+
+BLTxMOD 064 W A       Blitter modulo x
+
+This register contains the modulo for blitter
+source (xA,B,C) or destination (x=D). A modulo
+is a number that is automatically added to the
+address at the end of each line, to make the
+address point to the start of the next line. Each
+source or destination has its own modulo, allowing
+each to be a different size, while an identical
+area of each is used in the blitter operation.
+
+LINE DRAW BLTAMOD and BLTBMOD are used as slope
+LINE DRAW storage registers and must be preloaded
+LINE DRAW with the values (4Y-4X) and (4Y)
+LINE DRAW respectively. Y/X= line slope.
+LINE DRAW BLTCMOD and BLTDMOD must both be
+LINE DRAW preloaded with the width (in bytes)
+LINE DRAW of the image into which the line is
+LINE DRAW being drawn (normally two times the
+LINE DRAW screen width in words).
+
+BLTxPTH 050 W A       Blitter pointer to x (high 3 bits)
+BLTxPTL 052 W A       Blitter pointer to x (low 15 bits)
+
+Thia pair of registers contains the 18-bit address
+of blitter source (x=A,B,C) or destination (x=D)
+DMA data. Thia pointer must be preloaded with the
+starting address of the data to be processed by
+the blitter. After the blitter is finished, it
+will contain the last data address (plus increment
+and modulo).
+
+LINE DRAW BLTAPTL is used as an accumulator
+LINE DRAW register and must be preloaded with
+LINE DRAW the starting value of (2Y-X) where
+LINE DRAW Y/X is the line slope. BLTCPT and
+LINE DRAW BLTDPT (both H and L) must be
+LINE DRAW preloaded with the starting address
+LINE DRAW of the line.
+
+BPLlMOD 108 W A       Bit plane modulo (odd planes)
+BPL2MOD 10A W A       Bit Plane modulo (even planes)
+
+These registers contain the modulos for the odd
+and even bit planes. A modulo is a number that is
+automatically added to the address at the end of
+each line, so that the address then points to the
+start of the next line.
+Since they have separate modulos, the odd and even
+bit planes may have sizes that are different from
+each other, as well as different from the display
+window aize.
+
+                           - 264 Appendix A -
+
+
+BPLCON0 100 W A D Bit plane control register (misc.
+                  control bits)
+BPLCON1 102 W D   Bit plane control register
+                  (horizontal scroll control)
+BPLCON2 104 W D   Bit Plane control register
+                  (video priority control)
+
+These registers control the operation of the
+bit planes and various aspects of the display.
+
+BIT#     BPLCON0   BPLCON1    BPLCON2
+
+15       HIRES       X           X
+14       BPU2        X           X
+13       BPU1        X           X
+12       BPU0        X           X
+11       HOMOD       X           X
+10       DBLPF       X           X
+09       COLOR       X           X
+08       GAUD        X           X
+07        X         PF2H3        X
+06        X         PF2H2      PF2PRI
+05        X         PF2H1      PF2P2
+04        X         PF2H0      PF2P1
+03       LPEN       PF1H3      PF2P0
+02       LACE       PF1H2      PF1P2
+01       ERSY       PF1H1      PF1P1
+00        X         PF1H0      PF1lP0
+
+HIRES =High-resolution (640) mode
+BPU   =Bit plane use code 000-110 (NONE through 6 inclusive)
+HOMOD =Hold-and-modify mode
+DBLPF =Double playfield (PF1=odd PF2=even bit planes)
+COLOR =Composite video COLOR enable
+GAUD  =Genlock audio enable (muxed on BKGND pin during vertical blanking
+LPEN  =Lightpen enable (reset on power up)
+LACE  =Interlace enable (reset on power up)
+ERSY  =External resync (HSYNC, VSYNC pads become inputs) (reset on power
+      up)
+PF2PRI=Playfield 2 (even planes) has priority over (appears in front of)
+       playfield 1 (odd planes).
+PF2P  =Playfield 2 priority code (with respect to sprites)
+PF1P  =Playfield 1 priority code (with respect to sprites)
+PF2H  =Playfield 2 horizontal scroll code
+PFlH  =Playfield 1 horizontal scroll code
+
+                           - Appendix A 265 -
+
+
+BPLxDAT 110 W D Bit plane x data (parallel-to-serial convert)
+
+These registers receive the DMA data fetched from
+RAM by the bit plane address pointers described
+above. They may also be written by either
+microprocessor. They act as a six-word parallel-
+to-serial buffer for up to six memory bit planes
+(x=1-6). The parallel-to-serial conversion is
+triggered whenever bit plane #1 is written,
+indicating the completion of all bit planes for
+that word (16 pixels). The MSB i9 output first,
+and is, therefore, always on the left.
+
+BPLxPTH 0E0 W A =      Bit plane x pointer (high 3 bits)
+
+BPLxPTL 0E2 W A       Bit plane x pointer (low 15 bits)
+
+This pair of registers contains the 18-bit pointer to
+the address of bit-plane x (x21,2,3,4,5,6) DMA data.
+This pointer must be reinitialized by the processor
+or copper to point to the beginning of bit plane data
+every vertical blank time.
+
+CLXCON      098 W D Collision control
+
+This register controls which bit-planes are
+included (enabled) in collision detection and
+their required state if included. It also controls
+the individual inclusion of odd-numbered sprites
+in the collision detection by logically OR-ing
+them with their corresponding even-numbered sprite.
+
+BIT  FUNCTION   DESCRIPTION
+-----------------------------------------------------
+15    ENSP7     Enable sprite 7 (ORed with sprite 6)
+14    ENSP5     Enable sprite 5 (ORed with sprite 4)
+13    ENSP3     Enable sprite 3 (ORed with sprite 2)
+12    ENSP1     Enable sprite 1 (ORed with sprite 0)
+11    ENBP6     Enable bit plane 6 (match required for collision)
+10    ENBP5     Enable bit plane 5 (match required for collision)
+09    ENBP4     Enable bit plane 4 (match required for collision)
+08    ENBP3     Enable bit plane 3 (match required for collision)
+07    ENBP2     Enable bit plane 2 (match required for collision)
+06    ENBP1     Enable bit plane 1 (match required for collision)
+05    NVBP6     Match value for bit plane 6 collision
+04    MVBP5     Match value for bit plane 5 collision
+03    MVBP4     Match value for bit plane 4 collision
+02    MVBP3     Match value for bit plane 3 collision
+01    MVBP2     Match value for bit plane 2 collision
+00    MVBP1     Match value for bit plane 1 collision
+
+NOTE: Disabled bit planes cannot prevent collisions. Therefore if all bit
+planes are disabled, collisions will be continuous, regardless of the
+match values.
+
+                           - 266 Appendix A -
+
+
+CLXDAT      00E R D Collision data register (read and clear)
+
+This address reads (and clears) the collision
+detection register. The bit assignments are below.
+
+NOTE: Playfield 1 is all odd-numbered enabled
+bit planes. Playfield 2 is all even-numbered
+enabled bit planes
+
+BIT# COLLISIONS REGISTERED
+--------------------------------------
+15   not used
+14   Sprite 4 (or 5) to sprite 6 (or 7)
+13   Sprite 2 (or 3) to sprite 6 (or 7)
+12   Sprite 2 (or 3) to sprite 4 (or 5)
+11   Sprite 0 (or 1) to sprite 6 (or 7)
+10   Sprite 0 (or 1) to sprite 4 (or 5)
+09   Sprite 0 (or 1) to sprite 2 (or 3)
+08   Playfield 2 to sprite 6 (or 7)
+07   Playfield 2 to sprite 4 (or 5)
+06   Playfield 2 to sprite 2 (or 3)
+05   Playfield 2 to sprite 0 (or 1)
+04   Playfield 1 to sprite 6 (or 7)
+03   Playfield 1 to sprite 4 (or 5)
+02   Playfield 1 to sprite 2 (or 3)
+01   Playfield 1 to sprite 0 (or 1)
+00   Playfield 1 to playfield 2
+
+COLORxx 180 W D Color table xx
+
+There are 32 of these registers (xx=00-31) and they
+are sometimes collectively called the "color
+palette." They contain 12-bit codes representing
+red, green, and blue colors for RGB systems.
+One of these registers at a time is selected
+(by the BPLxDAT serialized video code)
+for presentation at the RGB video output pins.
+The table below shows the color register bit usage.
+
+BIT# 15,14,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+----------------------------------------------------
+ RGB  X  X  X  X R3 R2 B1 R0 G3 G2 G1 G0 B3 B2 B1 B0
+
+B=blue, G=green, R=red,
+
+COP1LCH     080 W A          Copper first location register
+                             (high 3 bits)
+COP1LCL     082 W A          Copper first location register
+                             (low 15 bits)
+COP2LCH     084 W A          Copper second location register
+                             (high 3 bits)
+COP2LCL     086 W A          Copper second location register
+                             (low 15 bits)
+
+These registers contain the jump addresses described above.
+
+                           - Appendix A 267 -
+
+
+COPCON      02E W A Copper control register
+
+This is a 1-bit register that when set true, allows
+the Copper to access the blitter hardware. This
+bit is cleared by power-on reset, so that the
+Copper cannot access the blitter hardware.
+
+BIT  NAME      FUNCTION
+
+01   CDANG     Copper danger mode. Allows Copper
+               access to blitter if true.
+
+COPINS      08C W A Copper instruction fetch identify
+
+This ia a dummy address that is generated by the
+Copper whenever it is loading instructions into
+its own instruction register. This actually occurs
+every Copper cycle except for the second (IR2)
+cycle of the MOVE instruction. The three types
+of intructions are shown below.
+
+MOVE - Move immediate to destination.
+WAIT - Wait until beam counter is equal to, or
+greater than. (keeps Copper off of bus
+until beam position has been reached).
+SKIP - Skip if beam counter is equal to or greater
+than (skips following MOVE instruction unless
+beam position has been reached).
+
+                           - 268 Appendix A -
+
+
+COPINS (cont.) MOVE    WAIT UNTIL      SKIP IF
+
+BIT      IR1  IR2      IR1    IR2    IR1    IR2
+
+15       X    RD15     VP7    BFD *  VP7    BFD *
+14       X    RD14     VP6    VE6    VP6    VE6
+13       X    RD13     VP5    VE5    VP5    VES
+12       X    RD12     VP4    VE4    VP4    VE4
+11       X    RD11     VP3    VE3    VP3    VE3
+10       X    RD10     VP2    VE2    VP2    VE2
+09       X    RD09     VP1    VE1    VP1    VE1
+08      DA8   RD08     VP0    VE0    VP0    VE0
+07      DA7   RD07     HP8    HE8    HP8    HE8
+06      DA6   RD06     HP7    HE7    HP7    HE7
+05      DAS   RD05     HP6    HE6    HP6    HE6
+04      DA4   RD04     HP5    HE5    HPS    HES
+03      DA3   RD03     HP4    HE4    HP4    HE4
+02      DA2   RD02     HP3    HE3    HP3    HE3
+01      DA1   RD01     HP2    HE2    HP2    HE2
+00       0    RD00      1      0      1      1
+
+IR1  =First instruction register
+IR2  =Second instruction regiater
+DA   =Destination address for MOVE instruction. Fetched
+      during IR1 time, uaed during IR2 time on RGA bus.
+RD   =RAMdata moved by MOVE inatruction at IR2 time
+      directly from RAM to the addreas given by the
+      DA field.
+
+VP   =Vertical beam position compariaon bit.
+HP   =Horizontal beam position comparison bit.
+VE   =Enable comparison (mask bit).
+HE   =Enable comparison (mask bit).
+
+* NOTE BFD-Blitter finished disable. When this bit is true, the Blitter
+Finished flag will have no effect on the Copper. When this
+bit is zero, the Blitter Finished flag must be true (in addition to the
+rest of the bit comparison) before the Copper can exit from its wait
+state or skip over an instruction. Note that the V7 comparison cannot be
+masked.
+
+The Copper is basically a two-cycle machine that requests the bus only
+during odd memory cycles (4 memory cycles per instruction). This prevents
+collisions with diaplay, audio, disk, refresh, and sprites, all of which
+use only even cycles. It therefore needs (and has) priority over only the
+blitter and micro-processor.
+
+There are only three types of instructions: MOVE immediate, WAIT until,
+and SKIP if. All intructions (except for WAIT) require two bus cycles
+(and two instruction words). Since only the odd bus cycles are requested,
+four memory cycle times are required per instruction (memory cycles are
+280 ns.)
+
+                           - Appendix A 269 -
+
+
+COPINS (cont.)
+
+There are two indirect jump registers, COP1LC and COP2LC. These are 18-
+bit pointer registers whose contents are used to modify the program
+counter for initialization or jumps. They are transferred to the program
+counter whenever strobe addresses COPJMP1 or COPJMP2 are written. In
+addition, COP1LC is automatically used at the beginning of each vertical
+blank time.
+
+It is important that one of the jump registers be initialized and its
+jump strobe address hit after power-up but before Copper DMA is
+initialized.  This insures a determined startup address and state.
+
+COPJMP1 088 5 A       Copper restart at first location
+COPJMP2 08A 5 A       Copper restart at second location
+
+These addresses are strobe addresses. When written to, they cause the
+Copper to jump indirect using the address contained in the first or
+second location registers described below. The Copper itself can write to
+these addresses, causing its own jump indirect.
+
+                           - 270 Appendix A -
+
+
+DDFSTOP 094 W A       Display data fetch stop (horiz. position)
+
+DDFSTRT 092 W A       Display data fetch start (horiz. position)
+
+These registers control the horizontal timing of the
+beginning and end of the bit plane DMA display data
+fetch. The vertical bit plane DMA timing is identical
+to the display windows described above.
+The bit plane modulos are dependent on the bit plane
+horizontal size and on this data-fetch window size.
+
+Regiter bit assignment
+
+BIT 15,14,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+---------------------------------------------------
+USE  X  X  X  X  X  X  X  X H8 H7 H6 H5 H4 H3  X  X
+
+(X bits should always be driven with 0 to maintain
+upward compatibility)
+
+The tables below show the start and stop timing for
+different register contents.
+
+DDFSTRT (left edge of display data fetch)
+
+PURPOSE            H8,H7,H6,H5,H4
+---------------------------------
+Extra wide (max) *  0  0  1  0  1
+Wide                0  0  1  1  0
+Normal              0  0  1  1  1
+Narrow              0  1  0  0  0
+
+DDFSTOP (right edge of display data fetch)
+
+PURPOSE            H8,H7,H6,H5,H4
+---------------------------------
+Narrow              1  1  0  0  1
+Normal              1  1  0  1  0
+Wide (max)          1  1  0  1  1
+
+DIWSTOP 090 W A       Display window stop (lower right
+vertical-horizontal position)
+
+DIWSTRT 08E W A       Display window start (upper left
+vertical-horizontal position)
+
+These registers control display window size and
+position by locating the upper left and lower right
+corners.
+
+BIT 15,14,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+---------------------------------------------------
+USE V7 V6 V5 V4 V3 V2 V1 V0 H7 H6 H5 H4 H3 H2 H1 H0
+
+DIWSTRT is vertically restricted to the upper 2/3
+of the display (V8=0) and horizontally restricted to
+the left 3/4 of the display (H8=0).
+
+DIWSTOP is vertically restricted to the lower 1/2
+of the display (V8=/V7) and horizontally restricted
+to the right 1/4 of the display (H8=1).
+
+                           - Appendix A 271 -
+
+
+DMACON      096 W A D P DMA control write (clear or set)
+DMACONR     002 R A P DMA control (and blitter status) read
+
+                 This register controls all of the DMA channels and
+                 contains blitter DMA status bits.
+
+                 BIT   FUNCTION     DESCRIPTION
+
+                 15    SET/CLR      Set/clear control bit. Determines
+                                    if bits written with a 1 get aet or
+                                    cleared. Bits written with a zero
+                                    are unchanged.
+                 14    BBUSY        Blitter busy status bit (read only)
+                 13    BZERO        Blitter logic zero status bit
+                                     (read only).
+                 12    X
+                 11    X
+                 10    BLTPRI       Blitter DMA priority
+                                     (over CPU micro) (also called
+                                    "blitter nasty") (disables /BLS
+                                    pin, preventing micro from
+                                    stealing any bus cycles while
+                                    blitter DMA is running).
+                 09    DMAEN        Enable all DMA below
+                 08    BPLEN        Bit plane DMA enable
+                 07    COPEN        Copper DMA enable
+                 06    BLTEN        Blitter DMA enable
+                 05    SPREN        Sprite DMA enable
+                 04    DSKEN        Disk DMA enable
+                 03    AUD3EN       Audio channel 3 DMA enable
+                 02    AUD2EN       Audio channel 2 DMA enable
+                 01    AUD1EN       Audio channel 1 DMA enable
+                 00    AUD0EN       Audio channel 0 DMA enable
+
+DSKBYTR     01A R      P Disk data byte and status read
+
+This register is the disk-microprocessor data
+buffer. Data from the disk (in read mode) is
+loaded into this register one byte at a time, and
+bit 15 (DSKBYT) is set true.
+
+BIT
+---------------------------------------------------
+15     DSKBYT    Disk byte ready (reset on read)
+14     DMAON     Mirror of bit 15 (DMAEN) in DSKLEN,
+                 ANDed with Bit 09 (DMAEN) in DMACON
+13     DISKWRITE Mirror of bit 14 (WRITE) in DSKLEN
+12     WORDEQUAL This bit true only while the
+                 DSKSYNC register equals the data from disk.
+11-08  X         Not used
+07-00 DATA       Disk byte data
+
+                           - 272 Appendix A -
+
+
+DSKDAT      026    W    P   Disk DMA data write
+DSKDATR     008    ER   P   Disk DMA data read (early read dummy
+                                  address )
+
+                 This regiter is the disk DMA data buffer. It
+                 contains two bytes of data that are either sent
+                 (written) to or received (read) from the disk.
+                 The write mode is enabled by bit 14 of the LENGTH
+                 register. The DMA controller automatically
+                 tranfer data to or from this register and RAM,
+                 and when the DMA data is finished (length=0) it
+                 causes a disk block interrupt. See interrupts below.
+
+DSKLEN      024    W    P   Disk length
+
+                 This register contains the length (number of words)
+                 of disk DMA data. It also contains two control
+                 bits, a DMA enable bit, and a DMA
+                 direction (read/write) bit.
+
+                 BIT#   FUNCTION       DESRIPTION
+                 -------------------------------------------------
+                 15     DMAEN          Disk DMA enable
+                 14     WRITE          Disk write (RAM to disk) if 1
+                 13-0   LENGTH         Length (# of words) of DMA data.
+
+DSKPTH      020    W    A   Disk pointer (high 3 bits)
+DSKPTL      022    W    A   Disk pointer (low 15 bits)
+
+                 This pair of registers contains the 18-bit
+                 address of disk DMA data. These address registers
+                 must be initialized by the processor or Copper
+                 before disk DMA is enabled.
+
+DSKSYNC     07E    W    P   Disk sync register
+
+                 hold the match code for disk read synchronization.
+                 See ADKCON bit 10.
+
+                           - Appendix A 273 -
+
+
+INTENA      09A W P Interrupt enable bits (clear or set bits)
+INTENAR     01C R P Interrupt enable bita (read)
+
+                 This register contains interrupt enable bits. The bit
+                 assignment for both the request and enable registers
+                 is given below.
+
+                 BIT#   FUNCT  LEVEL  DESCRIPTION
+                 --------------------------------------------------------
+                 15    SET/CLR       Set/clear control bit. Determines if
+                                     bits written with a 1 get set or
+                                     cleared. Bits written with a zero
+                                     are always unchanged.
+                 14    INTEN         Master interrupt (enable only,
+                                     no request)
+                 13    EXTER     6   External interrupt
+                 12    DSKSYN    5   Disk sync register (DSKSYNC)
+                                      matches disk data
+                 11    RBF       5   Serial port receive buffer full
+                 10    AUD3      4   Audio channel 3 block finished
+                 09    AUD2      4   Audio channel 2 block finished
+                 08    AUDl      4   Audio channel 1 block finished
+                 07    AUD0      4   Audio channel 0 block finished
+                 06    BLIT      3   Blitter finished
+                 05    VERTB     3   Start of vertical blank
+                 04    COPER     3   Copper
+                 03    PORTS     2   I/O ports and timers
+                 02    SOFT      1   Reserved for software-initiated
+                                      interrupt
+                 01    DSKBLK    1   Disk block finished
+                 00    TBE       1   Serial port transmit buffer empty
+
+INTREQ       09C W       P Interrupt request bits (clear or set)
+INTREQR      01E R       P Interrupt request bits (read)
+
+This register contains interrupt request bits (or flags). These bits may
+be polled by the processor; if enabled by the bits listed in the next
+register, they may cause processor interrupts. Both a set and clear
+operation are required to load arbitrary data into this register. These
+status bits are not automatically reset when the interrupt is serviced,
+and must be reset when desired by writing to this address. The bit
+assignments are identical to the enable regiater below.
+
+                           - 274 Appendix A -
+
+
+JOY0DAT 00A R D Joystick-mouse 0 data (left vertical, horizontal)
+
+JOY1DAT 00C R D Joystick-mouse 1 data (right vertical, horizontal)
+
+These addresses each read a pair of 8-bit mouse counters. 0=left
+controller pair, 1=right controller pair (four counters total). The bit
+usage for both left and right addresses is shown below. Each counter is
+clocked by signals from two controller pins. Bits 1 and 0 of each counter
+may be read to determine the state of these two clock pins. This allows
+these pins to double as joystick switch inputs.
+
+Mouse counter usage:
+(pins 1,3=Yclock, pins 2,4=Xclock)
+
+BIT  15,14,13,12,11,10,09,08 07,06,05,04,03,02,01,00
+----------------------------------------------------
+0DAT Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 X7 X6 X5 X4 X3 X2 X1 X0
+1DAT Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 X7 X6 X5 X4 X3 X2 X1 X0
+
+The following table shows the mouse/joystick connector pin usage. The
+pins (and their functions) are sampled (multiplexed) into the DENISE chip
+during the clock times shown in the table. This table is for reference
+only and should not be needed by the programmer. (Note that the joystick
+functions are all "active low" at the connector pins.)
+
+                            Sampled by DENISE
+Conn   Joystick   Mouse
+Pin    Function   Function  Pin  Name    Clock
+------------------------------------------------
+L1     FORW*        Y        38   M0V at CCK
+L3     LEFT*        YQ       38   M0V at CCK*
+L2     BACK*        X         9   M0H at CCK
+L4     RIGH*        XQ        9   M0H at CCK*
+R1     FORW*        Y        39   M1V at CCK
+R3     LEFT*        YQ       39   M1V at CCK*
+R2     BACK*        X         8   M1H at CCK
+R4     RIGH*        XQ        8   M1H at CCK*
+
+After being sampled, these connector pin signals are used in quadrature
+to clock the mouse counters. The LEFT and RIGHT joystick functions
+(active high) are directly available on the Y1 and X1 bits of each
+counter. In order to recreate the FORWARD and BACK joystick functions,
+however, it is necessary to logically combine (exclusive OR) the lower
+two bits of each counter. This is illustrated in the following table.
+
+TO DETECT                   READ THESE COUNTER BITS
+----------------------------------------------------------
+Forward                     Y1 xor Y0 (BIT#09 xor BIT#08)
+Left                        Y1
+Back                        X1 xor X0 (BIT#01 xor BIT#00)
+Right                       X1
+
+                           - Appendix A 275 -
+
+
+JOYTEST 036 W D Write to all four joystick-mouse counters at once.
+
+Mouse counter write test data:
+
+BIT# 15,14,13,12,11,10,09,08 07,06,05,04,03,02,01,00
+----------------------------------------------------
+0DAT Y7 Y6 Y5 Y4 Y3 Y2 xx xx X7 X6 X5 X4 X3 X2 xx xx
+1DAT Y7 Y6 Y5 Y4 Y3 Y2 xx xx X7 X6 X5 X4 X3 X2 xx xx
+
+POT0DAT     012 R        P Pot counter data left pair (vert,horiz)
+POT1DAT     014 R        P Pot counter data right pair (vert,horiz)
+
+These addresses each read a pair of 8-bit pot counters.
+(Four counters total.) The bit assignment for both
+addresses is shown below. The counters are stopped by
+signals from two controller connectors (left-right)
+with two pins each.
+
+BIT#  15,14,13,12,11,10,09,08 07,06,05,04,03,02,01,00
+-----------------------------------------------------
+RIGHT Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 X7 X6 X5 X4 X3 X2 X1 X0
+LEFT  Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 X7 X6 X5 X4 X3 X2 X1 X0
+
+             CONNECTORS                PAULA
+         ----------------------------------------
+          Loc.  Dir.  Sym  Pin     Pin#  Pin Name
+         ----------------------------------------
+         RIGHT   Y     RY   9       36    (POT1Y)
+         RIGHT   X     RX   5       35    (POT1X)
+         LEFT    Y     LY   9       33    (POT0Y)
+         LEFT    X     LX   5       32    (POT0X)
+
+POTGO       034 W        P Pot port data write and start.
+
+POTGOR      016 R        P Pot port data read (formerly called POTINP).
+
+This register controls a 4-bit bi-directional I/O port
+that shares the same four pins as the four pot counters
+above.
+
+BIT#  FUNCT   DESCRIPTION
+---------------------------------------
+15    OUTRY   Output enable for Paula pin 36
+14    DATRY   I/O data Paula pin 36
+13    OUTRX   Output enable for Paula pin 35
+12    DATRX   I/O data Paula pin 35
+11    OUTLY   Output enable for Paula pin 33
+10    DATLY   I/O data Paula pin 33
+09    OUTLX   Output enable for Paula pin 32
+08    DATLX   I/O data Paula pin 32
+07-01 0       Reserved for chip ID code (presently 0)
+00    START   Start pots (dump capacitors, start counters)
+
+REFPTR      028 W A          Refresh pointer
+
+This register is used as a dynamic RAM refresh address generator. It is
+writeable for test purposes only, and should never be written by
+the microprocessor.
+
+                           - 276 Appendix A -
+
+
+SERDAT      030 W P Serial port data and stop bits write
+                                  (transmit dala buffer)
+
+                 This address writes data to a transmit data buffer.
+                 Data from this buffer is moved into a serial shift
+                 register for output transmission whenever it is
+                 empty. This sets the interrupt request TBE
+                 (transmit buffer empty). A stop bit must be
+                 provided as part of the data word. The length of
+                 the data word is set by the position of the stop
+                 bit.
+
+                 BIT# 15,14,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+                 ----------------------------------------------------
+                 USE   0  0  0  0  0  0  S D8 D7 D6 D5 D4 D3 D2 D1 D0
+
+                 Note: S = stop bit = 1, D = data bits.
+
+SERDATR     018 R P Serial port data and.status read
+                                 (receive data buffer)
+
+                 This address reads data from a receive data buffer.
+                 Data in this buffer is loaded from a receiving
+                 shift register whenever it is full. Several
+                 interrupt request bits are also read at this
+                 address, along with the data, as shown below.
+
+BIT# SYM           FUNCTION
+
+15    OVRUN        Serial port receiver overrun.
+                   Reset by resetting bit 11 of INTREQ.
+14    RBF          Serial port receive buffer full
+                    (mirror).
+13    TBE          Serial port transmit buffer empty (mirror).
+12    TSRE         Serial port transmit shift register empty.
+                    Reset by loading into buffer.
+11    RXD          RXD pin receives UART serial data for direct bit test
+                    by the microprocessor.
+10    0            Not used
+09    STP          Stop bit
+08  STP-DB8        Stop bit if LONG, data bit if not.
+07    DB7          Data bit
+06    DB6          Data bit
+05    DBS          Data bit
+04    DB4          Data bit
+03    DB3          Data bit
+02    DB2          Data bit
+01    DB1          Data bit
+00    DB0          Data bit
+
+                           - Appendix A 277 -
+
+
+SERPER      032 W P Serial port period and control
+
+This register contains the control bit LONG referred to
+above, and a 15-bit number defining the serial port
+baud rate. If this number is N, then the baud rate is
+1 bit every (N+1) * 0.2794 microseconds.
+
+BIT#   SYM        FUNCTION
+--------------------------------------------------------------
+15     LONG       Defines serial receive as 9-bit word.
+14-00  RATE       Defines baud rate=1/ ( (N+1) * 0.2794 microsec.
+
+SPRxCTL 142 W A D Sprite x vert stop position and control data
+SPRxPOS 140 W A D Sprite x vert-horiz start position data
+
+These two registers work together as position, size and
+feature sprite-control registers. They are usually loaded
+by the sprite DMA channel during horizontal blank;
+however, they may be loaded by either processor at any time.
+SPRxPOS register:
+
+BIT#   SYM      FUNCTION
+------------------------------------------------------------------
+15-08  SV7-SV0  Start vertical value. High bit(SV8) is in SPRxCTL
+                 register below.
+07-00  SH8-SH1  Start horizontal value. Low bit(SH0) is in SPRxCTL
+                 register below.
+
+SPRxCTL register (writing this address disables sprite horizontal
+comparator clrcuit):
+
+BIT#    SYM       FUNCTION
+------------------------------------------------------------
+15-08   EV7-EV0   End (stop) vertical value low 8 bits
+07      ATT       Sprite attach control bit (odd sprites)
+06-04    X        Not used
+02      SV8       Start vertical value high bit
+01      EV8       End (stop) vertical value high bit
+00      SH0       Start horizontal value low bit
+
+SPRxDATA 144 W D Sprlte x image data register A
+SPRxDATB 146 W D Sprite x image data register B
+
+These registers buffer the sprite image data. They are
+usually loaded by the sprite DMA channel but may be
+loaded by either processor at any time. When a
+horizontal comparison occurs, the buffers are dumped
+into shift registers and serially outputted to the
+display, MSB first on the left.
+
+NOTE: Writing to the A buffer enables (arms) the sprite.
+Writing to the SPRxCTL register disables the sprite.
+If enabled, data in the A and B buffers will be outputted
+whenever the beam counter equals the sprite horizontal
+position value in the SPRxPOS register.
+
+SPRxPOS see SPRxCTL
+
+                           - 278 Appendix A -
+
+
+SPRxPTH 120 W A       Sprite x pointer (high 3 blts)
+
+SPRxPTL 122 W A       Sprite x pointer (low 15 bits)
+
+This pair of registers contains the 18-bit address
+of sprite x (x=0,1,2,3,4,5,6,7) DMA data. These address
+registers must be initialized by the processor or Copper
+every vertical blank time.
+
+STREQU      038 S      D Strobe for horizontal sync with VB and EQU
+STRHOR      03C 5      D P Strobe for horizontal sync
+STRLONG     03E 5      D Strobe for identification of long
+                                   horizontal line
+
+One of the first three strobe addresses above is
+placed on the destination address bus during the
+first refresh time slot. The fourth strobe shown
+above is used during the second refresh time slot of
+every other line to identify lines with long counts
+(228). There are four refresh time slots, and any
+not used for strobes will leave a null (FF) address
+on the destination address bus.
+
+STRVBL      03A 5      D     Strobe for horizontal sync with VB
+                                  (vertical blank)
+
+VHPOSR      006 R A          Read vertical and horizontal position of
+                               beam or lightpen
+VHPOSW      02C W A          Write vertical and horizontal position
+                               of beam or lightpen
+
+BIT# 15,14,13,12,11,10,09,03,07,06,05,04,03,02,01,00
+-----------------------------------------------------
+USE  V7 V6 V5 V4 V3 V2 V1 V0,H8 H7 H6 H5 H4 H3 H2 H1
+
+RESOLUTION=1/160 of screen width (280 ns)
+
+VPOSR       004 R A Read vertical most significant bit
+                                 (and frame flop)
+VPOSW       02A W A Write vertical most significant bit
+                                 (and frame flop)
+
+                 BIT 15,14,13,12,11,10,09,08,07,06,05,04,03,02,01,00
+
+                 USE LOF  V8
+
+                 LOF=Long frame (auto toggle control bit in BPLCON0)
+
+                           - Appendix A 279 -
+
+End.

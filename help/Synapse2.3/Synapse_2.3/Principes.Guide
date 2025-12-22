@@ -1,0 +1,676 @@
+@Database Principes.Guide
+
+@Index "Index.Guide/Main"
+
+@Node Main "Principes de Fonctionnement"
+@TOC Main
+@font helvetica.font 13
+
+               @{" Le Fonctionnement du Bus " link Bus}
+               @{" Le Direct Memory Access " link DMA}
+               @{" Synchrone ou Asynchrone " link Synch}
+
+               @{" Planar ou Chunky Pixels " link Pixel}
+               @{" Lexique PAO, Graphique et 3D" link LexGFX}
+
+               @{" Le Flicker Fixer " link Flicker}
+               @{" L'Affichage sur Moniteur " link Aff}
+               @{" Les Imprimantes " link Imp}
+               @{" Les Scanners " link Scanners}
+
+               @{" Initialisation du Système " link Reset}
+               @{" Organisation de la mémoire " link MapRAM}
+
+
+               @{" Retour Au Menu Principal " link "Synapse.Guide/Main"}
+
+@Endnode
+
+@Node Bus "Fonctionnement Du Bus"
+
+La  séparation  des  opérations  et  la  définition  de la zone mémoire CHIP se
+justifient par le fait que l'Amiga utilise deux bus distincts.  Le bus CHIP RAM
+est  un  élément séparé du bus principal utilisé par l'UC et les autres unités,
+mais  est  accessible  par  l'UC quand même.  La séparation peut même être plus
+grande étant donné le fait que le bus CHIP RAM peut être complètement séparé du
+bus CPU dans certaines circonstances.
+
+Le bus CHIP RAM est d'abord utilisé par les custom chips, l'UC se voyant offert
+l'accès  à  celui-ci à chaque cycle impair.  Les custom chips ont priorité dans
+ce  domaine,  et  c'est  où l'idée de "bus contention" apparaît.  Si les custom
+chips  génèrent une grande activité sur le bus (résolutions d'affichage élevées
+ou  accès  DMA  intensifs par exemple), ils peuvent ralentir l'UC, la forçant à
+attendre  si  elle  a  besoin  de  données ou d'informations provenant de cette
+partie de la mémoire.  C'est ici qu'entre en jeu la FAST RAM.
+
+La  FAST RAM est une mémoire qui n'est pas sur le bus CHIP RAM, mais plutôt sur
+le  bus  du  système ou le bus d'extension.  Cette mémoire n'est pas accessible
+par les custom chips, et de fait aucune "bus contention" pour son accès ne peut
+occurer  entre  eux  et  l'UC.   De part la nature distincte de ces bus, il est
+possible  pour  l'UC  de gérer des instructions et données en utilisant la FAST
+RAM  pendant  que  les custom chips travaillent parallèlement dans la zone CHIP
+RAM.   Cette possibilité de travail en parallèle permet à l'Amiga d'exécuter de
+nombreuses opérations graphiques plus rapidement que si elle n'avait accès qu'à
+un seul bus.
+
+Le  bus  CHIP  RAM  sur  tous  les  Amiga est cadencé à une fréquence d'horloge
+d'approximativement 7.15 MHZ.  Sur les A500 et A2000, il s'agit de la fréquence
+d'horloge  du  système  central.   Pour  ces  machines,  le  bus  CHIP  RAM est
+accessible par  un port 16 bit, cependant sur les systèmes A3000 et AGA le port
+du  bus  pour les accès externes est une interface complètement 32 bit, offrant
+des  transferts  de  données  plus  importants  pour  une  fréquence  d'horloge
+équivalente.
+
+A  cause  de la "bus contention", un système contenant seulement de la CHIP RAM
+peut  très bien être plus lent qu'un autre qui contient de la FAST RAM en plus.
+La  machine  équipée de FAST RAM aura son  UC capable d'opérer en parallèle sur
+ce  bus, pendant que les custom chips travaillent sur leurs propres tâches.  Un
+système équipé de CHIP RAM seulement rencontrera des circonstances ou l'UC sera
+forcée  d'attendre  pour accèder aux données, puisque les custom chips pourront
+être en train d'utiliser intensément le bus CHIP RAM.
+
+La  FAST  RAM  sur  les  séries  A500, A600, A1200 et A2000 peut se trouver sur
+plusieurs supports.  De la carte d'extention standard sur le bus d'extension et
+qui  opère  à  la  fréquence  d'horloge  du  système, jusqu'à d'autres méthodes
+d'addition  de  RAM n'utilisant pas les voies standards d'extension de l'Amiga.
+La  FAST  RAM située sur les extentions standard opère à la fréquence d'horloge
+du  système (7.15 MHZ) et est accèdée de même.  Sur les A3000 et A4000, la FAST
+RAM  est  généralement située sur la carte mère, est est accèdée en accord avec
+la  fréquence  d'horloge  de  ces  machines, qui peut être 16 ou 25 MHZ sur les
+modèles de base.
+
+Notons  que  quelques  systèmes utilisant seulement 512 Ko de CHIP RAM ont dans
+leurs  listes  de  mémoire  une  zone  de RAM appelée FAST, mais qui en fait se
+trouve  sur  le même bus que la CHIP RAM.  Il s'agit généralement de la mémoire
+trouvée sur les cartes mères d'A2000 pour les machines avec 512 Ko de CHIP RAM,
+ou  sur la carte d'extention A501 pour les A500.  Cette mémoire souffrira de la
+même  "bus  contention"  à  laquelle  est  exposée  la  CHIP  RAM,  et  il  est
+généralement  recommandé d'être sûr qu'un programme n'est pas placé ici à moins
+qu'il  ne  doivent obligatoirement y être (si de la vraie FAST RAM existe, elle
+doit  être  utilisée  en  priorité).   Le  programme "FastMemFirst" fournie par
+Commodore s'aquitte de cette fonction.
+
+La FAST RAM située sur une carte accélératrice n'est pas limitée à la fréquence
+d'horloge du bus du système.  Elle peut être utilisée à une telle vitesse, mais
+en  général elle peut être accédée à une fréquence bien différente, normalement
+à  la  fréquence  de l'horloge de l'UC de la carte accélératrice.  Les systèmes
+utilisant  des  cartes accélératrices profitent de cet avantage, mais puisqu'un
+accélérateur  ne modifie pas la fréquence d'horloge du système, et de plus pour
+permettre  à  l'UC  de  l'accélérateur d'utiliser les ressources du système, il
+doit  être  synchronisé  avec  l'horloge du système, et peut parfois avoir à se
+battre avec un bus trop étroit.  C'est souvent le cas sur le A500/A600 ou A2000
+en  utilisant des cartes équipée de MC68020 ou 68030, plus adaptées pour un bus
+32 bit.
+
+Puisque ces processeurs subissent une sévère réduction de leurs performances en
+accèdant  à un bus étroit, en plus de la réduction occasionnée par la fréquence
+d'horloge inférieure du système, les accélérateurs sont souvent équipés de leur
+propre  RAM conçue pour opérer à la fréquence de l'UC et qui utilise une taille
+de  bus  plus  performante  (32  bit).   Le  cas des A3000/A4000 est légèrement
+différent.   Les  A3000  et  A4000  utilisent  déjà  un  bus  32 bit pour leurs
+ressources   mémoires,   il  n'y  a  donc  pas  de  problème  avec  les  cartes
+accélératrices  pour  ces  machines.   Cependant, le bus sur le A3000/A4000 est
+cadencé à 16 ou 25 MHZ (selon le modèle), et si une UC plus rapide est utilisée
+sur  l'accélérateur  il  peut  être  profitable  pour la carte accélératrice de
+contenir sa propre RAM de façon à réduire les temps d'accès au minimum.
+
+Les A3000/A4000 offrent une possibilité pour un accélérateur d'offrir sa propre
+fréquence d'horloge à la carte mère.  C'est ce qui ce passe quand une A3640 est
+installée dans un A3000.
+
+@Endnode
+
+@Node DMA "Le Direct Memory Access"
+
+Un  système  est  DMA  si il peut directement accèder à la mémoire système sans
+utiliser  le processeur central.  Un système avec plusieurs sources DMA est dit
+"à  plusieurs  canaux".  Tous les Amiga font un usage intensif du DMA dans leur
+subsystème.   Les  générateurs  d'adresses  (Alice  ou Agnus) gèrent environ 26
+canaux  DMA  vers  la  mémoire  Chip.   Un  de ces canaux donne l'accès vers la
+mémoire  chip  au  processeur hôte, les autres incluent les moteurs de sprites,
+les   fetch   bitplan,   blitter,   copper,   audio,   lecteur  de  disquettes,
+rafraîchissement de mémoire, etc...  Le bus local lui-même dispose de plusieurs
+canaux DMA :  bus d'extension, (co)processeurs et SCSI (si présent sur la carte
+mère).   Le  bus  d'extension  a  également un canal DMA par connecteur, chacun
+d'entre  eux partagent l'unique canal vers les ressources de la carte mère.  Un
+bus  donné  ne  peut  bien  sûr  être  utilisé  que  par  un élément à la fois.
+Cependant  il  est  souvent  possible  de  faire  fonctionner  plusieurs bus en
+parallèle.   Par  exemple, le bus chip peut supporter des accès copper, blitter
+et bitplan pendant que la CPU accède à la mémoire Fast.
+
+
+Ce  principe  de DMA pose parfois des problèmes dans le cas où l'on utilise une
+carte  équipée de RAM non-DMA.  C'est le cas de certaines cartes accélératrices
+ou  de  la  carte  d'extension  mémoire  DKB  A2632  pour l'A2630.  Cette carte
+contient  de  la RAM 32 bits situé en dehors de la zone 24 bits DMA de l'A2000.
+Ainsi, les cartes contrôleurs A2091 ou l'Oktagon 2008 (pourtant non-DMA) voient
+leurs performances sévèrement diminuées.
+
+Ce  phénomènes  s'explique  par  le  fait que lorsque le FileSystem est informé
+qu'une  application  a demandé un transfert de données du disque dur vers de la
+mémoire  dans  laquelle il ne peut faire de DMA, il doit réaliser une opération
+relativement  complexe.   Il  établit  un buffer de 512 octets en mémoire basse
+(chip  Ram ou 24 bits DMA) où les DMA fonctionnent.  Il fait ses DMA dans cette
+mémoire  tampon  et  en  recopie  le  contenu  en  mémoire  32 bits Non-DMA par
+l'intermédiaire du processeur central.
+
+Le  patch  circulant  dans le DP, DMAFix de Barry McConnell utilise une routine
+personnelle pour contourner le problème.
+
+@Endnode
+
+@Node Synch "Synchrone ou Asynchrone"
+
+Les  systèmes  accélérateurs  synchrones  furent les premiers à apparaître pour
+l'Amiga.  Ils sont généralement trouvés sur les cartes accélératrices à base de
+MC68020,  et  aussi sur de nombreuses cartes bon marché à base de MC68000.  Une
+conception synchrone est celle dans laquelle les éléments présents sur la carte
+accélératrice  sont  cadencés à un taux qui est absolument synchronisé avec les
+signaux  de  l'horloge  du  système  principal.   Pour  les A500 et A2000, cela
+signifie  que  la  fréquence  de  l'horloge  de tels accélérateurs doit être un
+multiple  absolu de celle des systèmes hôtes, en l'occurrence 7.15 MHz (NTSC) /
+7.09   MHz.    A   cause   des   difficultés   rencontrées  pour  maintenir  la
+synchronisation  à  des  fréquences  élevées,  ces  cartes  accélératrices sont
+généralement  limitées  à  environ  14  MHz,  soit  le  double de la vitesse de
+l'horloge du système.
+
+Une  conception  asynchrone, à  l'opposé,  n'est  pas  confrontée  à  de telles
+restrictions.   Ces  systèmes  sont un peu plus difficiles à concevoir, mais en
+général  leurs  composants  peuvent accepter quasiment n'importe quelle vitesse
+d'horloge,  en  supposant  qu'ils soient eux-mêmes capables de fonctionner à la
+fréquence donnée.  Ce principe est utilisé sur toutes les cartes accélératrices
+à base de MC68030 prévues pour A500, A1200 et A2000, expliquant le grand nombre
+de fréquences d'horloge trouvées sur ces cartes.
+
+@Endnode
+
+@Node Pixel "Chunky Ou Planar Pixels"
+
+Les  termes  chunky  et  planar  (bitplan)  se  rapportent à différentes façons
+d'enregistrer des informations graphiques dans la mémoire d'un ordinateur.
+
+Les images gérées dans un ordinateur le sont sous forme d'une grille de pixels,
+chacun  d'entre eux étant représenté par un nombre définissant sa couleur.  Par
+exemple, voici un image simplifiée en 4 couleurs :
+
+        00302132
+
+L'Amiga  enregistre cette image dans le mode bitplan.  C'est à dire qu'elle est
+représentée  par plusieurs plans de bits (chiffres binaires 0 ou 1).  C'est une
+image  en  4 couleurs, donc chaque couleur peut être représentée par deux bits.
+Il y donc 2 bitplans.
+
+
+        00100110    bitplan 0
+        00101011    bitplan 1
+        --------
+        00302132    résultat de l'addition binaire
+
+Maintenant, voilà une autre façon d'enregistrer cette image.  On coupe les bits
+de données en petits morceaux (chunk) :
+
+        00 00 11 00 01 10 11 01 = 00302132
+
+C'est le principe du mode chunky pixel.
+
+Chaque  méthode  d'enregistrement est parfaitement logique, et personne ne peut
+dire  qu'une est meilleure que l'autre.  Cependant, certains aspects techniques
+causent avantages et désavantages selon le but recherché.
+
+Le Macintosh et les PC utilisent le mode chunky pixel.
+
+@Endnode
+
+@Node LexGFX "Lexique PAO, Graphique et 3D"
+
+@{b}Graphique et 3D@{ub}
+
+Anti-Aliasing
+Méthode  de  lissage  des pixels visant à effacer les effets d'escalier sur les
+images.
+
+Cinématique Inverse
+Technique  d'animation souple et puissante qui permet d'animer un personnage ou
+un objet de façon naturelle.
+
+Gouraud
+Modèle de rendu évolué où l'éclairage des facettes dépend de leur orientation.
+
+Lambert
+Modèle  de  rendu  qui  ne  prend pas en compte les sources lumineuses lors des
+calculs.
+
+Phong
+Algorithme  de  type sumérieur supportant les textures et prenant en compte, de
+manière très pointue, les éclairages.
+
+Radiosité
+Algorithme  basé sur la totalité de l'énergie lumineuse présente dans la pièce.
+Chaque objet en recevant une partie.
+
+Raytracing
+Une méthode de rendu en matière de 3D.
+
+
+
+@{b}Publication Assistée par Ordinateur@{ub}
+
+Approche de Paire
+Espace entre deux signes. Aussi appelé fitting.
+
+Chasse
+Rapport  de la largeur d'un caractère à son corps.  Le plus souvent, la largeur
+d'un caractère.
+
+CMYK
+Cyan,  Magenta,  Yellow  et  blacK (K pour Key).  Les quatre couleurs utilisées
+lors de sorties quadrichromiques.
+
+Feuille de style
+Ensemble  d'attibuts  typographiques et d'éléments de formatage du texte.  Elle
+peut être sauvegardée et appliquée à d'autres documents.
+
+Habillage
+Composition  d'un  texte  respectant  les contours d'une image.  Appelé parfois
+packing ou Run Around.
+
+Lettrine
+Première  lettre  d'un  chapitre  ou paragraphe occupant généralement plusieurs
+lignes en hauteur.
+
+@Endnode
+
+@Node Flicker "Le Flicker Fixer"
+
+En  résolution  entrelacée  l'écran et décomposé en deux images,  une image est
+formée  des lignes paires et l'autre des lignes impaires.  Ces deux images sont
+envoyées successivement au moniteur à raison de 1/50 de seconde chaque (au lieu
+de  1/25  de  seconde pour une résolution non-entrelacée), et l'oeil perçoit ce
+rapide changement d'image sous la forme d'un scintillement.
+
+Il  est  certes possible  de  limiter  ce  clignotement  par l'utilisation d'un
+moniteur  à haute rémanence phosphorique, mais ce dernier a tendance à créer de
+nombreux  problèmes de proximité de couleurs et à laisser des "traces" à chaque
+mouvement survenant à l'écran.
+
+La  solution  idéale  est  une  carte Flicker Fixer qui s'installe dans le port
+vidéo des Amiga 2000 ou Amiga 4000, l'Amiga 3000 en étant équipé d'origine.
+
+Certaines cartes pour A500 et A2000 s'installaient entre Denise et son support.
+
+Cette  carte  utilise  une  mémoire spéciale de plusieurs Mo dans laquelle elle
+stocke  l'image  courante.   Dès  que  la  deuxième image est générée, la carte
+intercale  les  lignes paires de sa mémoire avec les lignes impaires de l'image
+envoyée  par  Denise  ou  Lisa  à  15.75  Khz.   Cette nouvelle image formée de
+l'addition  des  deux précédentes est alors restituée en 31.5 Khz sur la sortie
+de  la  carte.   L'utilisation  d'un  moniteur  supportant  cette fréquence est
+évidemment requise.
+
+
+
+Un  autre  genre  de carte a fait son apparition, le Scan Doubler.  Celle-ci se
+contente  de  doubler  la  fréquence de sortie de 15.75 à 31 KHz pour permettre
+l'utilisation  d'écrans VGA sur l'Amiga.  Elle ne résout en rien le problème de
+scintillement.
+
+@Endnode
+
+@Node Aff "Affichage sur Moniteur"
+
+Les  images  affichées sur le moniteur ou la télévision connecté à l'Amiga sont
+traitées par l'ordinateur sous forme de 0 et de 1.  Ces informations numériques
+sont   ensuite  converties  en  ondes  électriques  par  le  circuit  vidéo  de
+l'ordinateur,  puis  transmises  au  tube  de  l'écran.  Sur la face interne de
+celui-ci,   des  cellules  photosensibles,  ou  photophores,  répondent  à  une
+excitation  électrique  par  la  production  d'un faisceau lumineux, et forment
+ainsi  chaque  pixel  (picture element) d'une image.  Pour un écran monochrome,
+chaque  photophore  excité devient blanc alors que les autres restent noirs, et
+l'image est produite par contraste entre ces valeurs.
+
+Un  écran couleur dispose de trois canons à électrons respectivement destinés à
+exciter  trois  classes  de  photophores  :   rouges,  verts  et  bleus.   Leur
+combinaison  forme  les pixels d'une image.  Entre les canons à électrons et la
+plaque  avant  de l'écran, une grille filtre l'émission de particules et affine
+ainsi le contour de chaque point de l'image.  La position relative des canons à
+électrons,   la  forme  de  cette  grille  et  des  photophores,  caractérisent
+actuellement quatre qualités de moniteurs :
+
+Les  plus  empiriques présentent trois canons organisés en triangle, une grille
+en  forme  de  passoire  et  un  écran hémisphérique.  Les trois faisceaux sont
+filtrés à leur intersection par un orifice du masque et produisent trois points
+lumineux également organisés en triangle.
+
+Une  seconde  génération  d'écrans, conçue selon le même principe, est dotée de
+trois canons en ligne.  Ils équipent actuellement la plupart des configurations
+standards.
+
+Les  écrans  Trinitron exploitent une technologie radicalement différente créée
+par  Sony.   Leur  tube,  cylindrique  et non sphérique, donne l'illusion d'une
+image  plane.  Un canon unique produit trois faisceaux de section rectangulaire
+filtrés  par  une  grille  constituée  de  lamelles verticales.  Cette nouvelle
+organisation  laisse  passer  plus  de  lumière et améliore ainsi la qualité de
+l'image.
+
+Une  quatrième  classe,  qui  utilise la technologie DiamondTron de Mitsubishi,
+dispose de l'organisation en ligne des trois canons et de la grille de Sony.
+
+
+Les  premiers  ordinateurs  portables  utilisaient  un affichage au plasma.  Le
+principe  était  proche  d'un lampe au néon.  L'affichage était le plus souvent
+orange  sur  noir.   Ils  étaient  clairs  et faciles à lire, mais consommaient
+beaucoup plus d'énergie que les écrans à cristaux liquides.
+
+Les ordinateurs portables actuels utilisent les techniques à matrice passive ou
+active.
+
+Un  écran  à  cristaux  liquides est dit à matrice active lorsque l'allumage de
+chaque  point de l'écran est commandé par un circuit électronique à transistor.
+Cette technologie offre un meilleur contraste et un angle de visualisation plus
+ouvert.   Ces écrans sont nettement plus coûteux que ceux utilisant le principe
+de la matrice passive.
+
+Un  écran  à  cristaux liquides est dit à matrice passive lorsque la matrice de
+commande  des pixels est constituée de fils verticaux et horizontaux.  Un pixel
+est  allumé  lorsque  le  fil  vertical et horizontal constituant la matrice de
+l'écran sont stimulés.
+
+@Endnode
+
+@Node Imp "Les Imprimantes"
+@font helvetica.font 13
+
+                    @{" Imprimantes à impact " link ImpImp}
+                    @{" Imprimantes à cristaux liquides " link ImpLCD}
+                    @{" Imprimantes à jet d'encre " link ImpJet}
+                    @{" Imprimantes ionographiques " link ImpIon}
+                    @{" Imprimantes laser " link ImpLas}
+                    @{" Imprimantes thermiques " link ImpTher}
+                    @{" Les flasheuses " link Flash}
+
+
+@Endnode
+
+@Node ImpImp "Imprimante à impact"
+
+Imprimante à boule
+
+Imprimante dont la tête d'impression est une boule dont la surface comporte des
+caractères  en  relief.   Un  mécanisme  fait  pivoter  la boule en fonction du
+caractère   à   taper,  puis  la  projette  sur  la  feuille  de  papier  après
+interposition du ruban encreur.
+
+La  police  d'impression  est unique à moins de changer la boule en fonction du
+texte.
+
+
+Imprimante à marguerite
+
+L'élément  d'impression  de  ces imprimantes est une marguerite, tout comme les
+machines  à écrire de la même technologie.  Le principe est proche de celui des
+imprimante  à  boule,  la  seule  différence  est que l'élément rotatif est une
+marguerite et non une boule.
+
+Chez NEC, des imprimantes à tulipes reprennaient le même principe.
+
+
+Imprimante matricielle
+
+Ou  imprimante  à  aiguilles.   Les caractères sont produits par une matrice de
+petites aiguilles. La qualité d'impression est dépendante du nombre d'aiguilles
+de  la  matrice.   Plus  le  nombre  est  grand,  meilleure  est  la finesse de
+l'impression.   Les  meilleures imprimantes à aiguilles (24 ou plus) produisent
+des documents d'une qualité proche de celle des imprimantes à jet d'encre.
+
+@Endnode
+
+@Node ImpLCD "Imprimante à cristaux liquides"
+
+Imprimante   électrophotographique   de   technologie   voisine  de  celle  des
+imprimantes  laser.   Cette  imprimante utilise un tambour chargé d'électricité
+statique  pour transférer le toner sur le papier.  Le tambour est photosensible
+et  la  charge  est obtenue en y appliquant de la lumière selon le dessin de la
+page  désirée.   l'imprimante  LCD se sert d'une source de lumière forte, comme
+une  lampe  halogène,  masquée du tambour par une matrice de cristaux liquides.
+Lors de la rotation du tambour, l'activation des cellules permet l'illumination
+du tambour aux points correspondants.
+
+@Endnode
+
+@Node ImpJet "Imprimantes à jet d'encre"
+
+Imprimante dont la tête d'impression projette de très fines gouttes d'encre sur
+le  papier.   Une  capsule pleine d'encre est présente sur la tête d'impression
+(ou  reliée  par  l'intermédiaire d'un tube).  L'encre est mise en vibration ou
+chauffée,  puis  projetée sur le papier au travers de minuscules orifices selon
+un arrangement correspondant au caractère à imprimer.
+
+Depuis  quelques  années, cette technologie rivalise avec l'impression laser en
+qualité d'impression, sinon en rapidité.
+
+@Endnode
+
+@Node ImpION "Imprimantes ionographiques"
+
+Ces  imprimantes  servent dans la production de masse et peuvent sortir 30 à 80
+pages  à la minute.  Elles contiennent un tambour chargé d'électricité statique
+à  l'aide d'un faisceau d'ions.  Le procédé de transfert du toner sur le papier
+est  rapide  et ne nécessite pas de chaleur.  Cette méthode laisse cependant au
+papier  un  aspect lustré inadapté à la correspondance d'affaires.  De plus, la
+qualité d'impression est nettement inférieure à celle des imprimantes laser.
+
+@Endnode
+
+@Node ImpLas "Imprimantes laser"
+
+Ces  imprimantes électrophotographiques sont basées sur la même technologie que
+les photocopieurs. Un faisceau laser convergeant et un miroir rotatif dessinent
+une  image  de  la  page désirée sur un tambour photosensible (recouvert d'OPC,
+OrganoPhotoConducteur).   Cette image est convertie en charges électrostatiques
+qui  attirent  et  retiennent  le  toner  (fine poudre d'encre).  Attiré par la
+feuille  de  papier  préalablement chargée d'électricité statique, le toner s'y
+dépose  pendant qu'elle s'enroule sur le tambour, est y est fixé par chauffage.
+La  charge  du  tambour est alors annulée et l'excès de toner retiré.  Si on se
+contente   de   répèter  l'application  de  toner  et  le  passage  du  papier,
+l'imprimante peut faire des copies multiples de la même page.
+
+@Endnode
+
+@Node ImpTher "Imprimantes thermiques"
+
+Ces  imprimantes  utilisent  la  chaleur  pour  créer  une  image sur du papier
+spécialement  traité.   L'imprimante  utilise  des  aiguilles pour produire une
+image, en les chauffant et les appliquant sur le papier.  Le revêtement spécial
+du papier perd sa couleur à la chaleur.
+
+
+Les  imprimantes thermiques à transfert reprennent le même principe mais plutôt
+que d'entrer en contact avec du papier spécial, les aiguilles touchent un ruban
+large  saturé  de  paraffine.   Celle-ci  fond  sous les aiguilles et adhère au
+papier où elle se refroidit et se solidifie.
+
+
+Les  imprimantes  à transfert thermique emploient des colorants transparents ce
+qui leur permet de produire des tons continus proches de la photographie.
+
+@Endnode
+
+@Node Flash "Les Flasheuses"
+
+La  technologie  employée  est la même que celle des imprimantes laser, mais le
+faisceau   laser   agit   directement  sur  le  papier  (bromure)  ou  le  film
+photosensible.  Le papier ou le film ainsi exposé est enroulé dans une cassette
+étanche à la lumière.  Cette cassette est ensuite introduite dans la machine de
+développement,   où   elle  est  traitée  selon  les  procédés  photographiques
+traditionnels.   L'image est donc formée directement sur la surface sensible et
+est  évidemment  plus nette que celle obtenue par des points de toner fixés sur
+le   papier.    La   sortie  finale  est  effectuée  sur  film  ou  sur  papier
+photosensible.
+
+@Endnode
+
+@Node Scanners "Les Scanners"
+
+Les  scanners  à plat reprennent un principe proche de celui des photocopieurs.
+Le  document  à  scanner  est  déposé  à plat sur la vitre du scanner.  La face
+dirigée  vers  le  bas  est éclairée par une source de lumière.  Cette lumière,
+réfléchie  par le document, est transmise par un jeu de miroirs et de lentilles
+jusqu'à  un  ensemble  de cellules photosensibles CCD (Charge Coupled De ices).
+Chaque  capteur  de  la  batterie de CCD convertit le flux lumineux émis par un
+point  de  l'image  en  un  courant  électrique  proportionnel à l'intensité de
+lumière.  Le courant passe alors par un convertisseur analogique-numérique, qui
+produit à son tour un nombre représentant l'intensité du pixel considéré.
+
+Les scanners pour diapositive fonctionnent de façon identique en dehors du fait
+que la source de lumière est placée par rapport au film.
+
+Dans  les  scanners à tambour, le document est fixé sur un tambour qui tourne à
+grande  vitesse.   Le  rayon  de  lumière  réfléchi  est  analysé  par  des PMT
+(PhotoMultiplicateurs).    Le  niveau  de  qualité  est  supérieur  aux  autres
+scanners, justifiant leur coût élevé.
+
+@Endnode
+
+
+@Node Reset "Initialisation et Messages d'Erreur"
+
+Liste des opérations de lancement
+
+
+Gris Foncé                    Hardware et 68000 OK
+Gris Clair                    Software OK
+Rouge                         Mauvais Checksum dans la ROM
+Vert                          Problème dans la RAM ou Erreur CIA 8520
+Bleu                          Problème dans les Custom Chips
+Jaune                         Erreur 68000 ou Agnus
+Blanc 1.3/2.0    Noir 3.0     Phase d'initialisation bien effectuée
+
+
+
+Initialisation des ROM
+
+Vide la mémoire
+Déconnecte les DMA et interruptions
+Vide l'écran
+Teste le hardware
+Passe ou indique l'échec hardware à l'écran (Bleu = erreur custom chips)
+                                            (Vert = erreur RAM Chip)
+                                            (Gris foncé = OK)
+Contrôle les ROM
+Passe ou indique l'échec ROM à l'écran      (Rouge = erreur)
+                                            (Gris clair = OK)
+Système OK
+
+Teste la RAM à $C00000
+Déplace SYS_BASE à $C00000 si existe
+Teste la RAM
+Passe ou indique l'échec RAM à l'écran (LED clignote 9c+1l+vert=erreur)
+Teste le Software
+Passe ou indique l'échec Software (Jaune = erreur détectée par le 680x0)
+                                  (Gris clair = OK)
+Organise la RAM
+Lie les Libraries
+Trouve la RAM externe et l'ajoute à la liste
+Organise les interruptions et DMA (spécialement pour le lecteur de boot)
+Lance la tâche par défaut
+Cherche un 680x0 et 6888x
+Cherche une Exception (alerte système)
+Reset system
+
+
+Initialisation du clavier
+
+Le clavier possède son propre microprocesseur, sa RAM et sa ROM. Une séquence
+de test est effectuée à l'allumage :
+
+Vérification de la ROM par des sommes de contrôle
+Test des 60 octets de RAM
+Test du timer
+Se lie à l'ordinateur et donne les résultats du test :
+
+Clignotement(s) du Caps Lock :
+
+1 : Erreur dans la ROM du clavier
+2 : Erreur dans la RAM du clavier
+3 : Erreur de l'horloge (timer)
+4 : Court circuit entre 2 touches ou pour une des 7 touches de contrôle
+
+@Endnode
+
+@Node MapRAM "Organisation de la mémoire"
+
+@{b}Organisation sur l'Amiga 1200 :@{ub}
+
+$000000 - $1FFFFF 2 Mo   Chip RAM
+$200000 - $5FFFFF 4 Mo   Espace d'extension Zorro II
+$600000 - $9FFFFF 4 Mo   Mémoire PCMCIA
+$A00000 - $A1FFFF 128 Ko Attributs de la carte PCMCIA
+$A20000 - $A3FFFF 128 Ko E/S PCMCIA
+$A40000 - $A5FFFF 128 Ko Octets PCMCIA
+$A60000 - $A7FFFF 128 Ko E/S PC
+$A80000 - $B7FFFF 1 Mo   ROM système sélectionnée
+$B80000 - $BEFFFF 448 Ko Non utilisé
+$BF0000 - $BFFFFF  64 Ko Registres E/S CIA
+$C00000 - $CFFFFF 1 Mo   Mémoire C00000
+$D00000 - $D7FFFF 512 Ko Mémoire PC
+$D80000 - $D8FFFF  64 Ko Composant SPARE sélectionné
+$D90000 - $D9FFFF  64 Ko Composant ARCNET sélectionné
+$DA0000 - $DA3FFF  16 Ko Disque IDE
+$DA4000 - $DA4FFF  16 Ko Réservé pour IDE
+$DA8000 - $DAFFFF  32 Ko Registres de configuration PCMCIA et IDE
+$DB0000 - $DBFFFF  64 Ko Non utilisé (Réservé pour IDE externe)
+$DC0000 - $DCFFFF  64 Ko Horloge temps réel
+$DD0000 - $DDFFFF  64 Ko Réservé pour le contrôleur DMA
+$DE0000 - $DEFFFF  64 Ko Non utilisé
+$DF0000 - $DFFFFF  64 Ko Registres des composants du chipset
+$E00000 - $E7FFFF 512 Ko ROM système (1ère partie si ROM de 1 Mo)
+$E80000 - $EFFFFF 512 Ko E/S et configuration Zorro II
+$F00000 - $F7FFFF 512 Ko Zone flash ROM
+$F80000 - $FFFFFF 512 Ko ROM système (2ème partie si ROM de 1 Mo)
+
+
+@{b}Organisation de l'Amiga 1000 à l'Amiga 3000 :@{ub}
+
+000000-03FFFF 256K de RAM Chip
+040000-07FFFF 256K d'extension de RAM Chip sur A1000, standard sinon.
+080000-0FFFFF 512K de RAM Chip étendue (Fat AGNUS ou supérieur).
+100000-1FFFFF 1 Mo de RAM réservée. Un Mo de RAM chip supplémentaire.
+200000-9FFFFF 8 Mo de RAM Auto-Config.
+A00000-BEFFFF 2 Mo de RAM réservée.
+BFD000-BFDF00 Registres E/S 8520-B
+BFE001-BFEF01 Registres E/S 8520-A
+C00000-D7FFFF 1.5 Mo d'extension mémoire interne. RAM CPU.
+D80000-DBFFFF Réservé.
+DC0000-DCFFFF Horloge sauvegardée par pile.
+DD0000-DEFFFF Réservé.
+DFF000-DFFFFF Registres des composants du Chipset.
+E00000-E7FFFF Réservé.
+E80000-E8FFFF Espace périphériques Auto-config.
+E90000-EFFFFF Espace Auto-config secondaire (Cartes E/S 64Ko).
+F00000-F7FFFF Réservé.
+F80000-FBFFFF 256Ko réservés pour les ROM 256Ko, sinon Kickstart 2.0+.
+FC0000-FFFFFF Kickstart (toutes versions).
+
+
+@{b}Organisation du CDTV :@{ub}
+
+000000-0FFFFF Mémoire Chip.
+100000-1FFFFF Espace pour mémoire chip supplémentaire.
+200000-9FFFFF Espace pour la mémoire Autoconfig.
+A00000-BFFFFF Registres CIA.
+C00000-C7FFFF Espace pour la mémoire "slow-fast".
+C80000-DBFFFF Réservé.
+DC0000-DC7FFF Horloge sauvegardée par pile.
+DC8000-DC87FF Mémoire non-volatile.
+DC8800-DCFFFF Mémoire non-volatile.
+DD0000-DEFFFF Réservé.
+DF0000-DFFFFF Composants du Chipset.
+E00000-E7FFFF Espace d'adressage de la carte mémoire frontale.
+E80000-E8FFFF Espace AutoConfig.
+E90000-E9FFFF Première unité AutoConfig, utilisé par DMAC.
+EA0000-EFFFFF Espace pour les autres unités AutoConfig.
+F00000-F3FFFF ROM du CDTV.
+F40000-F7FFFF Espace secondaire pour la ROM du CDTV.
+F80000-FBFFFF Espace pour la ROM KickStart.
+FC0000-FFFFFF Kickstart ROM
+
+@Endnode

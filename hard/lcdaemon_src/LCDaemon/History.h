@@ -1,0 +1,79 @@
+/* (view using tab-size  8)	*/
+/************************************************************************************************\
+**			LCDaemon	©1995-1997 VOMIT,inc.					**
+**************************************************************************************************
+**	N	:	New	**	F	:	Feature	**	B	:	Bugfix	**
+**************************************************************************************************
+**	Version 1	N	Basic implementation: parallel, Amigawin and PI/T B		**
+**	10-sep-95										**
+**												**
+**	Rev 1		N	ARexx port implemented						**
+**	23-sep-95	F	Public port is removed when in shutdown, waiting for 		**
+**				timerequests to complete. This should avoid unnecessary		**
+**				LCDERR_TOOBUSY replies: the applications will fail at		**
+**				the SafePutToPort() level.					**
+**												**
+**	Rev 2		N	Arexx functions 'getcharacters'	and 'getlines' (beta)		**
+**	24-sep-95										**
+**												**
+**	Rev 3		B	Fixed string length bug in Arexx command parser that		**
+**	22-oct-95		caused weird system instability.				**
+**												**
+**	Rev 4		B	Fixed bug in replying to functions (rev 2)			**
+**	4-nov-95	N	Changed to GST files for speedy compilation			**
+**												**
+**	9-nov-95	N	Completed AmigaGuide documentation for "manual" Aminet		**
+**				upload at Kölner Messe.						**
+**												**
+**	7-jan-96	F	Added support for CHARACTERS=20 (since I just finished		**
+**				a board using a 20-char 2-lines backlighting display I		**
+**				bought at the Kölner Messe)					**
+**				Aminet upload (see 9-nov-95) has been posponed due to		**
+**				interest shown by Amiga Magazin.)				**
+**												**
+**	Rev 5		B	Fixed misunderstanding in DDRAM address mapping for		**
+**	14-jul-96		2-line displays when using GOTOXY				**
+**			N	Renewed screen update routine, necessary for			**
+**				programmable character support					**
+**			F	Start of programmable charater support, requested		**
+**				by various people after the Amiga Shopper appearance		**
+**				and Aminet release						**
+**												**
+**	Rev 6											**
+**	20-jul-96	N	Programmable character support is implemented through use of	**
+**				the LCD_ALLOCATEHANDLE interface.				**
+**												**
+**	Rev 7		N	Added a driver for the MFC II 's port 0. Driver specific	**
+**	1-sep-96		options are now configured using the "startup" field		**
+**			F	The window title of the lcd_ami driver can now be set using	**
+**				the startup field.						**
+**	Rev 8		N	Support for displays with a width of 24 characters		**
+**	13-oct-96	N	Driver for the Multifacecard 3					**
+**			B	Made a little more robust when echoing extremely long		**
+**				texts to the display. This is still not recommended, though!	**
+**												**
+**	Rev 9		N	Utilities/SysInfo is a Executive CPU monitor and SysMon clone	**
+**			N	TENDOTS switch (beta)						**
+**			N	lcd-handler (beta)						**
+**												**
+**	Version 2	N	Complete rewrite in C++ (MaxonC++ 4.0) using Object-oriented	**
+**	11-may-97		design.								**
+**			N	Multi-controller display support, e.g. 4 lines. Involves an 	**
+**				extension to the driver callback functions.			**
+**			F	Removed support for LCDIRECT commands. This would get way too	**
+**				complex for multi-controller LCDs and noone was using it anyway	**
+**												**
+**	Rev 1		F	Added selection of port driver in guppy.c			**
+**	23-sep-97	F	Added (beta) 4-line support for MFC3				**
+**												**
+**	Rev 2		N	Multiple-instance support					**
+**	14-dec-97	N	External driver library						**
+**			N	Tooltype/env-var startup parameters				**
+**			F	Pre/Post message-callbacks					**
+**			N	Deviating memory map support (beta)				**
+**			N	Installer script						**
+**												**
+**	Rev 3		B	Buffer overrun bug fixed (thanks, Andre Breiler) 		**
+**	15-Aug-98	N	Source code released under GNU Public License			**
+**												**
+\************************************************************************************************/

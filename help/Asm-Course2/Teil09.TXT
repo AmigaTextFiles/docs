@@ -1,0 +1,317 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 9.Teil...
+
+So, arbeiten wir noch ein bisschen mit dem listing von Eben.
+Fuegt doch mal vor dem Ende der Copperliste folgende zeilen ein..
+
+
+dc.w $0182,$0000
+dc.w $000f,-2
+dc.w $0182,$0222
+dc.w $100f,-2
+dc.w $0182,$0444
+dc.w $200f,-2
+dc.w $0182,$0666
+dc.w $200f,-2
+dc.w $0182,$0888
+dc.w $200f,-2
+dc.w $0182,$0aaa
+dc.w $500f,-2
+dc.w $0182,$0ccc
+dc.w $600f,-2
+dc.w $0182,$0eee
+dc.w $700f,-2
+dc.w $0182,$0ccc
+dc.w $800f,-2
+dc.w $0182,$0aaa
+dc.w $900f,-2
+dc.w $0182,$0888
+dc.w $a00f,-2
+dc.w $0182,$0666
+dc.w $b00f,-2
+dc.w $0182,$0444
+dc.w $c00f,-2
+dc.w $0182,$0222
+dc.w $d00f,-2
+dc.w $0182,$0000
+
+
+Nett, nicht wahr...schoener Effekt.
+
+Natuerlich koennte man auf diese art und weise auf ein logo Titschen oder
+schwingen lassen. Dazu muessten wir wie am anfang mit dem balken der
+Springt, die Positionen nicht mehr durch ein Popeliges `Add` erschaffen,
+sondern die positionen aus einer Tabelle lesen. Aber das machen wir
+zusammen mit dem dem Naechsten Effekte, der ein wahrer Super effekt ist,
+wenn man sich muehe gibt...Aber ich denke es wird mal zeit etwas zu machen
+was schon mal etwas Profisioneller aussieht.
+Dazu muessen wir allerdings Einen Schritt weiter gehen, naemlich in...
+
+12.Animation durch zyklische Copperlistenneuerstellung
+
+Hoert sich etwas Komisch an, ist aber schnell erklaert.
+Die veraenderungen die wird bis jetzt an den Copperlisten durchgefuehrt
+haben bezogen sich immer nur auf ein oder zwei Elemente.
+Jetzt aber werden die veraenderungen so Zahlreich das es einfacher und
+schneller ist wenn wir jedesmal eine neue copperliste berechnen lassen, und
+sie ueber die alte Kopieren.
+
+Anwendung wuerde es finden, wenn wir wie im Vorletzten Listing eine
+Copperliste erstellen, die eine Farbspielerei durch veraendern einer
+Tabelle immer wieder neue Bilder Bringt, evtl. koennte auch bei jedem
+Durchlauf eine Neue Tabelle initialisiert werden.
+
+Tja das ist alles moeglich. Wir nehmen also die Technik die wir schon
+kennen. Das erste element lesen und die Tabelle rotieren lassen.
+
+Ich ueberlege mir gerade was wir den zusammenschustern...Entweder Stripes
+(tubes) oder einen Waessrigen Wassereffekt, der waere natuerlich schoener.
+
+Also, machen wir einen Kombinierten Logo-Titsch und Wasser effekt.
+
+Das mit dem Titschen is ja wohl Null Probleme wie Alf jetzt sagen wuerde.
+Denn das erstzen der Add funktion durch das auslesen einer Tabelle ist ja
+schon etwas laenger bekannt. Jetzt muss ich nur noch die technik des
+Wassereffektes erklaeren...Naja dazu gehen wir zwar nicht an den Fuehlinger
+See, sonder in den Ascii see. Stellt euch bitte vor am ufer steht eine 4,
+auf deren schulter eine drei, darauf eine 2 und ganz oben ist eine 1.
+Desweiteren Stellt euch vor ihr kommt aus dem Wasser, es sind wellen da,
+und ihr seht nach vorne. Dann seht ihr etwas verzerrt die Vier auch im
+wasser wieder, allerdings auf dem Kopf...Ich versuche das mal
+aufzuzeichnen. Bitte entschuldigt, den meine AscII zeichen faehigkeiten
+sind doch sehr begrenzt.
+Ich beschreibe die Situation von der seite, wobei die Zahlen auf den Wasser
+die Stellen sind wo ihr die Spiegeln bilder der Zahlen am Ufer seht.
+
+
+Du                                           1
+                                             2
+                                             3
+                                             4
+         111                           ________________
+ ***     ***2   4***     ***     ***  /
+*   *   *   *333*   *   *   *   *   */ Strand
+     ***     ***     ***     ***    /
+
+Wenn ihr euch vorstellt von Punkt `Du` zu gucken seht ihr die 1 ein paar
+mal, also verzerrt laenger, die 2 garnicht, von der drei, zwei abschnitte,
+allerdings wieder ins groessere verzerrt, und die 4 ganz. Das ganze
+verzieht sich natuerlich sobald sich das wasser bewegung. Da wasser die
+bewandnis hat niemals in wellen zu stehen, ist es klar das es sich standig
+aendert.
+
+So auch wenn es schwerfaellt, erinnert euch mal an das was ich geschrieben
+habe zu den Einfachen effekten mit den Modulo werte, vonwegen Zeile
+doppelt, oder Zeile garnicht oder so.
+Mit dieser Technik koennten wir das machen, also frisch ans Werk.
+Das wir jetzt fuer laenger zeit erstmal das letzte komplette listing. Da
+wir ein laengere zeit nur noch mit Austauschen der Erstellungsroutinen
+auskommen.
+Achja fuer die Leute die sich die Register markieren.
+Die Modulo register fuer Grade und ungrade Planes sind
+$DFF108 ungrade  ($0108 in dem Copperlistenerstellungsprogramm)
+$DFF10A grade  ($010a in dem Copperlistenerstellungsprogramm)
+
+Falls ihr mir den Worten grade und ungrade noch nicht anfangen koennt, oder
+warum es zwei getrennte gibt ist einfach.
+Es ist zwar laestige bei einem bild ueber einer Plane (also ueber 2 Farben)
+immer alle beide Modulo Werte zu setzen. Allerdings gibt es den
+DualPlayfield-Modus, in dem Zwei voellig voneinander unabhaegige Playfields
+gezeigt werden. Diese Koennen allerdings nicht mehr als 8 farben (3 planes)
+darstellen, da der Amiga insgesamt nur 6 Planes verwaltet. Die beiden
+Playfields teilen sich dann die graden und ungraden auf...
+
+Playfield 1         -         Playfield 2
+    1                             2
+    3                             4
+    5                             6
+
+Und dann ist es natuerlich schon besser wenn man getrennte Modulo werte
+hat. Denn das eine Koennte ja ein Titschendes Logo sein, und das andere
+ein Playfield mit uebergroesse, oder ?
+
+
+Hier erstmal das Programm, ein paar erklaerungen hinterher.
+
+
+start:
+execbase=       4
+openlibrary=    -408
+vhposr=         $dff006
+intena=         $dff09a
+dmacon=         $dff096
+cop1lc=         $dff080
+ciaapra=        $bfe001
+
+        move.w  #$0020,dmacon
+        move.w  #$4000,intena
+        move.w  #7,d0
+        lea     $40000,a0
+        lea     $dff180,a1
+coloop:
+        move.w  (a0)+,(a1)+
+        dbf     d0,coloop
+wait:   cmpi.b  #$80,vhposr
+        bne.s   wait
+        bsr.s   makecl
+        bsr.L   tablescroll
+
+        btst    #6,ciaapra
+        bne     wait
+
+        move.l  execbase,a6
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$c000,intena
+        move.l  38(a6),cop1lc
+        rts
+
+makecl:
+        lea     $03f000,a0
+        move.l  a0,cop1lc
+        move.l  #$01003200,(a0)+
+        move.l  #$00e00004,(a0)+
+        move.l  #$00e20010,(a0)+
+        move.l  #$00e40004,(a0)+
+        move.l  #$00e62810,(a0)+
+        move.l  #$00e80004,(a0)+
+        move.l  #$00ea5010,(a0)+
+        move.l  #$01003200,(a0)+
+        move.l  #$008e3081,(a0)+        ;diwstrt
+        move.l  #$009030c1,(a0)+        ;diwstop
+        move.l  #$00920038,(a0)+        ;ddfstrt
+        move.l  #$009400d0,(a0)+        ;ddfstop
+
+;----------------------------------------------------------------
+; Wasser Effekt
+;----------------------------------------------------------------
+        bsr.s   makewasser
+
+        move.l  #$b10ffffe,(a0)+
+        move.l  #$01000200,(a0)+
+        move.l  #$01081780,(a0)+
+        move.l  #$010a1780,(a0)+
+        move.l  #$01020000,(a0)+
+        move.l  #$b20ffffe,(a0)+
+        move.l  #$01080000,(a0)+
+        move.l  #$010a0000,(a0)+
+        move.l  #$-2,(a0)+
+        rts
+
+gfxname: dc.b "graphics.library",0
+>Extern "wasserpic.raw",$40000
+even
+Makewasser:
+        move.w  #$0108,d0               ;Modulo fuer ungerade planes
+        move.w  #$6c0f,d2               ;Waitadressen
+        move.w  #$fffe,d3               ;Waitbefehl
+        move.w  #$0043,d4               ;Counter
+        move.l  #wassertable,a1         ;Wasserdatentabelle
+
+wasserloop:
+        move.w  d2,(a0)+                        ;Warte auf ..
+        move.w  d3,(a0)+                        ;Wartebefehl
+        move.w  d0,(a0)+
+        add.w   #2,d0
+        move.w  (a1),(a0)+              ;Modulo wert aus tabelle
+        move.w  d0,(a0)+                ;Modulo gerade
+        sub.w   #2,d0
+        move.w  (a1)+,(a0)+             ;Modulo wert aus tabelle
+        add.w   #$100,d2
+        dbf     d4,wasserloop
+        rts
+Tablescroll:
+        move.w  #$63,d0
+        move.l  #wassertable,a0
+        move.l  a0,a1
+        add.l   #2,a1
+        move.w  (a0),a2
+scrollloop:
+        move.w  (a1)+,(a0)+
+        dbf     d0,scrollloop
+        move.w  a2,(a0)
+        rts
+wassertable:
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+dc.w -80,-80,-120,-80,-120,-120,-120,-120,-80,-120,-80,-80
+dc.w -80,-80,-40,-80,-40,-40,-40,-40,-80,-40,-80,-80
+
+
+Den namen muesst ihr selber einsetzen. Ich habe den Extern befehl frueher
+immer irgendwo im Listing positioniert, also viel spass beim suchen !
+
+So fleissig wie ihr denkt bin ich allerdings nicht, ich habe das nicht
+eben jetzt gemacht, sondern....
+
+Tratarata, das ist mein erster versuch mit dem Wasser-effekt, es ist
+ungefaehr 4 monate alt...Und wie ihr seht habe ich meine Programmierstil
+seitdem nicht grossartig veraendert. Aber das heisst nichts, so habe ich
+auch schon auf dem 64`er gewurschtelt.
+Wobei ich hiermit alle Kursteilnehmer gruessen moechte die vom guten alten
+64`er umgestiegen sind, um die klasse hoeher zu fahren..
+
+Ich habe nichts grossartiges daran geaendert, deshalb laeuft es mit 8
+Farben, waere guenstig wenn ihr noch ein Bild malt, welches nur aus drei
+Planes besteht, oder besser versucht doch mal es umzuschreiben so das es
+auf 32 farben laeuft. Eins ist allerdings von Noeten, ihr muesst in der
+Erstellungs routine die da Heisst `Makewasser`, das erste wait wort so
+einstellen so das es auf das ende Eures Logos zeigt. Es waere ganz gut wenn
+euer Logo 70 Zeilen nicht ueberschreitet. Ansonsten koennt ihr machen was
+ihr wollt.
+
+So jetzt mal kurz zu der Funktion des Prograemmchens...
+Es triftt alle noetigen vorbereitungen, ausserhalb der Endlosschleife.
+Naja, was heisst `Alle`...sie kopiert nur die Farben nach $dff180 und so
+weiter. Copperliste wird noch keine Erstellt.
+Das passiert in der Endlosschleife, dort erstellen wir eine Copperliste,
+die jeder zeile in einem bestimmten bereich einen Modulo wert gibt.
+Diese Modulowerte, entsprechen dem was ich von dem Blick auf das wasser
+gesagt habe. Manches sieht man nicht, manches ja...manches sogar doppelt
+und dreifach..
+Nachdem die Copperliste erstellt ist, wird die Tabelle der Modulo werte
+Rotiert. Dann wird wieder einmal die Maus abgefragt...und schliesslich
+falls nicht gedrueckt...springt der Pozessor wieder in die Endlos schleife.
+
+Allerdings muss dieser Effekt, wenn er in ein Intro/Demo eingebaut wird
+etwas veraendert werden, aber dazu (Viel) spaeter.
+
+Versucht mal eine Andere Tabelle zu erstellen, ihr muesst allerdings dann
+auch die Routine achten die die Tabelle Rotieren laesst, ihr muesst sie
+dann auf eine neue Laenge einstellen.
+
+Bei diesem Listing ist halt sehr deutlich zu sehen wie das mit dem
+Zyklischen veraendern der Copperliste geht. Sobald die Zeile #$80 erreicht
+ist, wird die neue Liste errechnet, und gleichzeitg aufgebaut. Nachdem die
+steht wir noch die Tabelle rotiert, und dann kommt eine Maus abfrage. Und
+dann wieder von Vorne.
+Falls ihr, was ich nicht hoffen will, das ganze noch nicht so ganz
+verstanden habt, es ging auch etwas schnell, dann ist das nicht ganz so
+schlimm, das kommt...da wir jetzt schon zu den Fortgeschrittenen zaehlen,
+koennen wir uns kleine schnitzer erlauben. Da ich nicht annehme das ihr
+euch alles nur einmal durchlest schaetze ich mal das es irgendwann auch der
+letzte kapiert.
+
+Ihr koenntet ja mal versuchen, diesen Wassereffekte so mit der
+Horizontalen laufschrift (ich nenne sie Kino Schrift) zu verbinden das es
+aussieht als wenn die Schrift aus dem Wasser Kaem, gute idee ne ?
+
+So, nachdem wir das mit diser zyklischen veraenderung verstanden habe
+machen wir uns weiter, wieder weg davon und hin zur einfachen veraenderung
+von einzelnen Elementen der laufenden Copperliste.
+Im naechsten Teil wagen wir uns an ein Schwingendes Logo...
+
+See you....
+
+                Jeff Kandle

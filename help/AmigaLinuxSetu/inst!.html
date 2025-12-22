@@ -1,0 +1,2233 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 3.0//EN" "html.dtd">
+<HTML>
+<HEAD>
+<TITLE> m68k (Amiga / Watchtower) install FAQ </TITLE>
+</HEAD>
+<BODY>
+
+</BODY>
+</HTML><PRE><H3>
+
+From: Ron Flory (<A HREF="http:index.html">HOMEPAGE</A>, <A HREF="mailto: rjflory@feist.com">rjflory@feist.com</A>, <A HREF="mailto: rjflory@ifrsys.com">rjflory@ifrsys.com</A>)
+To:     Those curious about m68k Linux on Amiga/Atari
+Subj:  m68k (Amiga / Watchtower) install FAQ
+Date:  07 Oct 1997</H3>
+
+
+<HR>
+
+<H2>Recent Changes (in no particular order):</H2><UL>
+- Rough conversion to HTML format for online browsing.
+- 'All-Amiga' install (no non-Amiga files).
+- tar/gz file extraction now native, and simplified.
+- Upgrade to Amiboot.5.6.
+- Better 'adduser'.
+- Fix the 'non-root' vi problem.
+- One way to overcome endless 'vi' screen flash.
+- Better HdToolBox instructions.
+- Added 'how to compile your own kernel'
+- Add new softlink for gcc C++ 'includes'.
+- Include sample install scripts.
+- How to fix /dev/modem1 softlink on Amiga.
+- How to setup PPP.
+- Add more links.
+- Add link to master Watchtower site (tsx.mit -was- empty).
+- Add Atari link and m68k/linux links.
+- Mention 'joe' as alternative to 'vi'.
+- Add link to Walnut Creek.
+- Readability mods.
+- Tell user to start HdToolBox before using its functions.
+- Corrections to my 'extract' scriptfile.
+- Unswap the vmlinux / linux-src refs
+- Add Atari ref on the kernel sources.
+- Add 'modules' compile/install to kernel build.
+
+- The usual corrections and cleanups (!).
+</UL>
+
+<HR>
+
+<U><H1>Contents:</H1></U> <OL>
+<LI><A HREF="#Other m68k Linux References">Other m68k Linux References</A>
+<LI><A HREF="#The System">The System</A>
+<LI><A HREF="#Finding The Files">Finding The Files</A>
+<LI><A HREF="#Getting The Files">Getting The Files</A>
+<LI><A HREF="#Disk Prep">Disk Prep</A>
+<LI><A HREF="#Setup The Filesystem">Setup The Filesystem</A>
+<LI><A HREF="#Prepare For Installation">Prepare For Installation</A>
+<LI><A HREF="#A Kernel Dry Run">A Kernel Dry Run</A>
+<LI><A HREF="#Unpack The Filesystem">Unpack The Filesystem</A>
+<LI><A HREF="#Customize 'fstab'">Customize 'fstab'</A>
+<LI><A HREF="#Your First Disk-Based Linux Boot">Your First Disk-Based Linux Boot</A>
+<LI><A HREF="#Changing The 'root' Password">Changing The 'root' Password</A>
+<LI><A HREF="#Adding New Users">Adding New Users</A>
+<LI><A HREF="#Setting Up The (local) Network">Setting Up The (local) Network</A>
+<LI><A HREF="#Final Checkout">Final Checkout</A>
+<LI><A HREF="#How To NFS Mount Another Machine">How To NFS Mount Another Machine</A>
+<LI><A HREF="#Fixing The Amiga Built-In Serial Port Softlink">Fixing The Amiga Built-In Serial Port Softlink</A>
+<LI><A HREF="#Setting Up The Sources">Setting Up The Sources</A>
+<LI><A HREF="#Compiling Your Own Kernel">Compiling Your Own Kernel</A>
+<LI><A HREF="#Setting Up A Serial PPP Connection">Setting Up A Serial PPP Connection</A>
+<LI><A HREF="#Using An AmigaDos Icon To Start Linux">Using An AmigaDos Icon To Start Linux</A>
+<LI><A HREF="#Helpful, But Dangerous Scripts">Helpful, But Dangerous Scripts</A>
+<LI><A HREF="#Closing">Closing</A>
+</OL>
+
+
+<HR>
+
+
+ This FAQ is designed to help others who are trying to get into
+Linux on the Amiga, but Atari folks may also benefit from some 
+of this information as well.  AFAIK the original m68k (??) 
+install FAQ is over 2 years old and has become a bit dated; even
+so you should still get a copy of it for use as a second opinion.
+
+ Read this FAQ completely before touching your machine.  If
+you take the time to read ahead <B>before</B> you jump in, you will
+encounter fewer surprises later on (we don't like surprises, do we...).
+
+ I've been a systems developer on several platforms for over 15
+years and find the Amiga to be among the best.  However, with 
+the fall of Commodore etc., Linux seems to be a good second 
+choice for an operating system, particularly if you just happen
+to have a spare Amiga and/or some extra disk space available.
+
+ This install process is not a trivial undertaking so I assume
+(hope !) you have at least a little knowledge of computers; 
+Amiga, AmigaDos, and Linux in particular.  A bit of hardware 
+experience is also a big plus...  However, even if you are a 
+first-timer, this FAQ will go a long way towards getting you 
+online with m68k Linux.
+
+ I also assume you will be installing Linux onto a functional
+AmigaDos system.  In the past I described how to install Linux
+m68k onto its own separate disk, but most people seem to be
+trying to share a single disk for both AmigaDos and Linux.  
+Although this is easy to do, its a little riskier than putting
+Linux on its own disk.  I recently freed-up a 1.2Mb SCSI-disk 
+from one of my other systems so I'll base this install-FAQ on 
+a single SCSI-disk setup.
+
+ <B>Be sure to check for updates to this FAQ from time to time
+at <A HREF="http://www.feist.com/~rjflory/wat-inst.html">m68k Watchtower Linux Install FAQ</A>.</B>
+
+
+<H2>                           <U>Disclaimer</U></H2>
+
+ Installing an operating system onto a computer is a process
+that can damage any existing operating system and/or data even
+if you follow all instructions, and take every possible
+safeguard.  Before you try this (or any) OS install, you should
+backup all programs and data that you feel is worth keeping.
+
+ Some of the methods and opinions presented here may appear less
+than optimal to a seasoned kernel hacker, but some advanced
+issues are too confusing to a person just starting out.  I am
+NOT a Linux guru, but I know enough to get most things online
+(eventually).  If I have broken some secret Linux taboo, please
+let me know- not to publicly crucify me, but so that I may learn
+a better way, and pass it on.... (we are all learning as we go).
+
+ I have wiped-clean and re-installed Linux from scratch on my
+machine MANY times to help ensure I encounter the same kind of
+problems a first-timer would.  If you find something here that
+does not work, or could be done a better way, PLEASE let me
+know, along with the reason(s) why, if possible.
+
+ This FAQ has turned up in several surprising places.  You may
+upload or do most anything with this document so long as you do 
+not alter its content and your intentions are good (for the 
+Amiga/Linux community that is...).  If this thing helps you get
+online, please let me know.
+
+ Thanx to Chris Lawrence for posting this evolving project to
+the Linux m68k homepage, and to all the m68k core developers
+who have done all the really hard work.
+
+ <A HREF="http:index.html">Ron Flory, C++ Avionics Developer</A>
+ Kechi, Ks (yes, Kansas [Tornadoes, Toto, Wheat, Fundamentalists, etc.]) USA
+
+
+<HR>
+
+
+<U><A NAME="Other m68k Linux References"><H1>Other m68k Linux References</H1></A></U>
+
+<PRE>
+ The official, up-to-date m68k Linux FAQ can be found at:
+
+   <A HREF="http://www.clark.net/pub/lawrencc/linux/">http://www.clark.net/pub/lawrencc/linux/</A>
+
+   <A HREF="http://www.clark.net/pub/lawrencc/linux/faq/faq.html">http://www.clark.net/pub/lawrencc/linux/faq/faq.html</A>
+
+
+ The old (but helpful) m68k Linux install-FAQ can be found at:
+
+   <A HREF="http://www.informatik.uni-oldenburg.de/~amigo/InstGuide">http://www.informatik.uni-oldenburg.de/~amigo/InstGuide</A>
+
+
+ Atari oriented install FAQs can be found at:
+
+   <A HREF="http://www.dadacomm.com/linux-m68k/howto.html">http://www.dadacomm.com/linux-m68k/howto.html</A>
+
+   <A HREF="http://zippy.spods.dcs.kcl.ac.uk/~tomlin/flinux.html">http://zippy.spods.dcs.kcl.ac.uk/~tomlin/flinux.html</A>
+
+
+ The Linux Documentation Project (tons of FAQs) can be found at:
+
+   <A HREF="http://sunsite.unc.edu/LDP/">http://sunsite.unc.edu/LDP/</A>
+
+
+ The Debian Linux homepage may be found at:
+
+   <A HREF="http://www.debian.org/">http://www.debian.org/</A>
+
+
+ A Samba FAQ homepage may be found at:
+
+   <A HREF="http://lake.canberra.edu.au/pub/samba/samba.html">http://lake.canberra.edu.au/pub/samba/samba.html</A>
+
+
+ The Monster List of Amiga Links:
+
+   <A HREF="http://www.cucug.org/amimonster.html">http://www.cucug.org/amimonster.html</A>
+
+
+
+<H2>   Newsgroups:</H2>
+
+ The usenet (news) feed for m68k Linux is:
+
+   <A HREF="news: comp.os.linux.m68k">comp.os.linux.m68k</A>
+
+
+ Several Amiga-specific newgroups:
+
+   <A HREF="news: comp.sys.amiga.hardware">comp.sys.amiga.hardware</A>
+   <A HREF="news: comp.sys.amiga.programmer">comp.sys.amiga.programmer</A>
+
+
+ Several Linux-specific newgroups (mostly intel users):
+
+   <A HREF="news: comp.os.linux.setup">comp.os.linux.setup</A>
+   <A HREF="news: comp.os.linux.x">comp.os.linux.x</A>
+   <A HREF="news: comp.os.linux.networking">comp.os.linux.networking</A>
+   <A HREF="news: comp.os.linux.questions">comp.os.linux.questions</A>
+
+
+<HR>
+
+
+<U><A NAME="The System"><H1>The System</H1></A></U>
+
+ My main Amiga experience is with A2000 and A500 systems,
+although I'm told Linux will run on the A1200, A3000 and A4000
+series as well- so long as your processor has a MMU (Memory
+Management Unit).  For a list of system requirements, please
+check-out:
+
+
+   <A HREF="http://www.clark.net/pub/lawrencc/linux/faq/faq-3.html">http://www.clark.net/pub/lawrencc/linux/faq/faq-3.html</A>
+
+
+ My 'spare' A2000 system has been upgraded to a 16meg GVP
+G-Force 68040, with an Ariadne ethernet card.  I used to have a
+CSA '030 card in the system.  I simply unplugged the 030 and 
+installed the 040; Linux worked just fine with no configuration 
+changes at all.
+
+ Please note that I had trouble with the version of
+<B>68040.library</B> that came with the GVP card, the system would die
+when the Linux screen blanker kicked in.  Using the original
+<B>68040.library</B> that came with AmigaDos 3.1 solved the problem.
+
+ The majority of first-time people trying to install Linux on an
+A1200 have trouble because the stock system does not have a math
+coprocessor chip installed, which the released kernels REQUIRE.
+I strongly recommend that you install the math chip (FPU)
+because FPU-emulating kernels are very hard to find, and often
+exhibit strange behavior.
+
+ I find an old 150Mb disk drive is large enough to hold the
+basic m68k Linux package.  If you want the sources or the X11
+system, add another 150Mb (or more).  Its a bit safer to install
+Linux on a different physical disk than your AmigaDos partition,
+so you might want to look for a 'cheap' used drive if you
+currently have only one hard disk in your system (well, thats
+my opinion...).
+
+
+<HR>
+
+
+<U><A NAME="Finding The Files"><H1>Finding The Files</H1></A></U>
+
+ There are several sources for the files needed to install m68k
+Linux:
+
+   CDROMS:
+
+      <A HREF="http://ftp.wustl.edu/~aminet/">- AmiNet</A>
+      <A HREF="http://www.debian.org/vendors.html">- Debian</A>
+      <A HREF="http://www.cdrom.com">- Walnut-Creek</A>
+
+
+   FTP Sites:
+
+      <A HREF="ftp://ftp.uni-erlangen.de/pub/Linux/680x0/">- uni-erlangen.de mirrors (m68k/Linux)</A>
+      <A HREF="http://ftp.wustl.edu/~aminet/">- AmiNet mirrors          (support files)</A>
+
+
+ Having a CD in hand is nice, but if you can't wait, or can't 
+get your hands on the CDs, try the FTP route.  If you use FTP,
+there are worldwide mirrors for most sources, so you should be 
+able to find a nearby site that provides "reasonable"
+throughput.  For further info, browse the links included in the
+"Other m68k Linux References" section.
+
+
+ For a list of m68k-Linux mirrors, refer to:
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/README.MIRRORS">ftp://tsx.mit.edu/pub/linux/680x0/README.MIRRORS</A>
+   <A HREF="ftp://ftp.uni-erlangen.de/pub/Linux/680x0/README.MIRRORS">ftp://ftp.uni-erlangen.de/pub/Linux/680x0/README.MIRRORS</A>
+
+
+ For a list of AmiNet mirrors, refer to:
+
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/README">http://wuarchive.wustl.edu/systems/amiga/aminet/README</A>
+
+
+ Another thing to keep in mind is that AmiNet has built-in
+search tools, both on the cdrom and on its web page.  An AmiNet
+search tool may be found at:
+
+    <A HREF="http://wuarchive.wustl.edu/aminetbin/find"> (usa)  http://wuarchive.wustl.edu/aminetbin/find</A>
+   <A HREF="http://ftp.uni-paderborn.de/aminetbin/find">(German) http://ftp.uni-paderborn.de/aminetbin/find</A>
+
+
+<HR>
+
+
+<U><A NAME="Getting The Files"><H1>Getting The Files</H1></A></U>
+
+ This section assumes you are downloading the files from remote
+FTP sites.  If you are lucky enough to have these files on cdrom
+you may refer to this section for relevant directories and
+filenames.
+
+ If you are new to web browsers, there is a subtle distinction
+between 'browsing' and 'downloading' a file.
+
+   <B>'browsing', or simply clicking on a URL (filename) means to
+   copy the file to your machine, then display the contents to
+   a text window on your computer screen.  Do this ONLY WITH
+   TEXT  FILES, otherwise you will end up with a screen full of
+   garbage...
+
+   'downloading', or shift-click means to copy the URL file to a
+   directory on your local computer.  We will be doing this with
+   most of the files described in this FAQ.</B>
+
+      ---------------------------------------------------
+
+
+ At this point, we are still running under vanilla AmigaDos.
+
+ On the machine on which you are going to install m68k Linux
+create a directory called 'linux'.  Mine is DH1:linux.  I don't
+use DH0: because I want AmigaDos safely isolated from Linux 
+(also, I use AmiFileSafe on DH0:, which Linux cannot read).
+
+ Anyway, place all the files we are going to download in this 
+DH1:linux/ directory (use your own drive ID here, not mine...).
+
+ Most of the m68k/Linux files can be downloaded from mirrors
+of the 'uni-erlangen.de' site.  My favorite links to these
+sites are:
+
+   <A HREF="ftp://ftp.uni-erlangen.de/pub/Linux/680x0/">ftp://ftp.uni-erlangen.de/pub/Linux/680x0/</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/">ftp://tsx.mit.edu/pub/linux/680x0/</A>
+
+
+      ---------------------------------------------------
+
+
+ I am told that you need to copy ixemul.library to your AmigaDos
+libs: directory.  If you use a shell-based FTP, MAKE SURE you
+are using FTP in BINARY mode.
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/tools/amiga/">ftp://tsx.mit.edu/pub/linux/680x0/tools/amiga/</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/tools/amiga/ixemul.library">ftp://tsx.mit.edu/pub/linux/680x0/tools/amiga/ixemul.library</A>
+
+
+      ---------------------------------------------------
+
+
+ Next, you should download all the files in the 'Watchtower'
+directory.  This will take quite a while so make sure you have a
+fast/clean modem connection and several hours to kill (I'm not
+kidding !!  The largest of these files is 13 Mb).
+
+ These files are very old, so even an older m68k cdrom
+distribution should have the same files as those found on the
+FTP site.
+
+   Note: I like to use the 'tsx.mit.edu' site, but the master
+         site for these mirrors changed some of the directory
+         names.  If the Watchtower files are not available here
+         check the master site:
+
+   <A HREF="ftp://ftp.uni-erlangen.de/pub/Linux/680x0/watchtower/">ftp://ftp.uni-erlangen.de/pub/Linux/680x0/watchtower/</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/CONTENTS">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/CONTENTS</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-root.CONTENTS.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-root.CONTENTS.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-root.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-root.tar.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usr.CONTENTS.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usr.CONTENTS.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usr.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usr.tar.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usrdoc.CONTENTS.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usrdoc.CONTENTS.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usrdoc.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-usrdoc.tar.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-var.CONTENTS.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-var.CONTENTS.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-var.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2-var.tar.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.INSTALL">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.INSTALL</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.NEWS">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.NEWS</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.PACKAGES">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.PACKAGES</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.README">ftp://tsx.mit.edu/pub/linux/680x0/watchtower/watchtower-2.README</A>
+
+
+      ---------------------------------------------------
+
+
+ Here is where you need to decide which version of Linux you
+want to install.  Even numbers like 2.0.x indicate a stable
+version whereas odd values such as 2.1.x are experimental.
+Stick with the stable versions unless you are a kernel hacker.
+Generally you will want to use the most recent version, unless
+you've seen traffic on the newsgroups that indicate a problem
+with a particular version that might affect your system.
+
+ Now go back to the 'v2.0' directory.  I've had very good luck
+with version 2.0.29 (and I've heard of problems with 2.0.28),
+so we'll download the files for 2.0.29:
+
+ Download ALL 'announce' files and a 'vmlinux' image from the 
+'v2.0' directory:
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/">ftp://tsx.mit.edu/pub/linux/680x0/v2.0</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/vmlinux-2.0.29-Amiga.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/vmlinux-2.0.29-Amiga.tar.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/vmlinux-2.0.29-Atari.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/vmlinux-2.0.29-Atari.tar.gz</A>
+
+ You should download only the file that applies to your machine...
+
+
+ If you want to install the sources so that you can recompile
+the kernel (to use PPP), or your own C/C++ files you'll a copy
+of the sources for your machine.  
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/">ftp://tsx.mit.edu/pub/linux/680x0/v2.0</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/linux-2.0.29.tar.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/linux-2.0.29.tar.gz</A>
+
+
+      ---------------------------------------------------
+
+
+ Next we go to the 'boot' directory.  At this point you don't
+need the LILO files, but keep them in mind because you might
+want to get fancy and boot directly into Linux someday.
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/amiboot-5.6.readme">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/amiboot-5.6.readme</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/amiboot-5.6.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/boot/amiboot-5.6.gz</A>
+
+
+ Next we go to the 'filesys' directory.  You will need these
+files:
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/</A>
+
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.README">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.README</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.gz</A>
+   <A HREF="ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.list.gz">ftp://tsx.mit.edu/pub/linux/680x0/v2.0/filesys/filesys-ELF-2.0.x-1400K-2.list.gz</A>
+
+ The 1400k filesystem is recommended for future compatibility,
+but it is missing the very convenient (tab) command-completion
+and the command history buffer features present in the other
+filesystem (I really miss this...).
+
+
+   ---------------------------------------------------
+
+
+ There are several other files you will need.  They are 'lha'
+and 'untgz' for the Amiga.  'lha' is a file compress/extract
+program comparable to pkzip, 'untgz' and 'gzip' are similar
+programs designed to handle files from the Unix/Linux world.
+
+ Recent versions of the 'LhA' programs are present on the AmiNet
+#13 CDROMs.  I'm not sure which cdrom 'untgz' is on, but you can
+always FTP it.  If you already have these files then you may
+skip ahead to next section (after copying them to your :linux
+install directory).
+
+ If you need to download them, these files can be found on any
+(full) AmiNet mirror site.  I use the nearby 'wustl' site:
+
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/">http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/</A>
+
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/LhA_e138.run">http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/LhA_e138.run</A>
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/untgz.lha">http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/untgz.lha</A>
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/tgz10se.lha">http://wuarchive.wustl.edu/systems/amiga/aminet/util/arc/tgz10se.lha</A>
+
+ There are more recent versions the LhA program, some having a
+GUI front-end, but my experience is with version 1.38.  You are
+free to download the other variants, but I know this process
+WILL work with LhA version 1.38.
+
+
+   ---------------------------------------------------
+
+
+ There is one script missing from the Watchtower filesystem.  It
+is 'adduser'.  This file may be found on AmiNet.  If you don't
+have a cdrom containing this file, try one of the AmiNet
+mirrors:
+
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/">http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/</A>
+
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/LinuxAddUser.lha">http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/LinuxAddUser.lha</A>
+   <A HREF="http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/LinuxAddUser.readme">http://wuarchive.wustl.edu/systems/amiga/aminet/misc/unix/LinuxAddUser.readme</A>
+
+
+<HR>
+
+                  *****************
+                  *               *
+                  *   A 1 2 0 0   *
+                  *               *
+                  *****************
+
+ Folks running an Amiga WITHOUT a math coprocessor chip must
+run a kernel with math emulation built-in.  There are several
+Amiga/Atari mathemu kernels at:
+
+   <A HREF="ftp://ftp.nocrew.pp.se/pub/linux/">ftp://ftp.nocrew.pp.se/pub/linux/</A>
+
+ Although I have verified the presence of this site, I have no
+means of testing the files found here.  The most recent stable
+version seems to be 2.0.22, which is far too old.  2.1.29 is not
+a stable release, so beware....
+
+ If there are additional sites containing current mathemu
+kernels, I would be very interested in hearing about them.
+
+   <B>I strongly recommend that you install the math chip (FPU)
+because FPU-emulating kernels are very hard to find, hard to get
+running, and often exhibit strange behavior.</B>
+
+
+<HR>
+
+
+<U><A NAME="Disk Prep"><H1>Disk Prep</H1></A></U>
+
+ This is the stage of installation where you need to be very,
+very careful.  Take the time to double-check every keystroke
+and mouse-click, otherwise you may format your AmigaDos
+partition.  If this happens you'll have to re-install AmigaDos
+(from scratch) before you can get back to where you started
+from.
+
+   ***********************************************************
+   *                                                         *
+   *  Make sure you have a set of bootable floppy disks with *
+   * all the tools (programs) you need to repair any damage  *
+   * you do here.  This includes disk/tape setup and restore *
+   * programs.  Have you done a FULL backup ???  (today?)    *
+   *                                                         *
+   ***********************************************************
+   *                                                         *
+   *  The contents of any deleted or resized partition WILL  *
+   * BE LOST.  Make sure you have recent backups, or have    *
+   * ALL files (including attributes) from such partitions   *
+   * copied to tape or a nearby machine.  'lha' is the best  *
+   * way I know to archive all the files and attributes into *
+   * a single, easy to backup/restore file:                  *
+   *                                                         *
+   * Compress: lha a -a -e -r -x dh0.lha dh0:#?              *
+   * Extract:  lha x -a -e -r -x dh0.lha                     *
+   *                                                         *
+   *  This single file (dh0.lha) may be copied to tape, or a *
+   * computer for restore after partitioning.                *
+   *                                                         *
+   ***********************************************************
+   *                                                         *
+   *  If you run out of RAM: space during the file compress  *
+   * step, issue the shell command                           *
+   *                                                         *
+   *     ASSIGN RAM: DH0:T                                   *
+   *                                                         *
+   * which will use disk as temp buffer instead of RAM:.     *
+   * This should work OK, but may be somewhat slow.          *
+   *                                                         *
+   ***********************************************************
+
+ Many *nix folks use several partitions- one for each major
+directory.  This is the best way for an experienced user to
+setup their system, but right now I'm just going to use a single
+Linux directory structure, which is -much- easier for beginners
+to deal with.
+
+ The downside of using a single partition is potential file
+security and OS update issues, whereas the downside of using
+separate partitions for each key directory is if you choose too
+small a size for one of them, resizing can be a bitch.
+
+ In the past I had separate hard disks for AmigaDos and Linux,
+but now they both live on the same (bigger, faster) drive.  When
+I run AmigaDos I use the AmiFileSafe filesystem because it is
+SO much faster than AmigaDos FFS.  Regardless of which
+filesystem you choose for your primary AmigaDos partition, you
+will need at least one vanilla AmigaDos AFFS partition for
+setup of, and interchange with Linux.
+
+ Generally, while running Linux you will need at least two (2)
+partitions:
+
+   Name                    Purpose
+  ------         ------------------------------------
+
+   <B>swap           (Linux virtual-memory swap space)</B>
+   <B>/              (root filesystem)</B>
+
+ First decide how much swap-space you want.  A reasonable value
+is about twice the amount of ram present in your machine.
+
+ If you have the option, you might want to place 'swap' on a
+different physical disk than your 'linux' partitions.  This will
+minimize head thrashing and increase system performance when
+swapping is used (beginners can ignore this).
+
+CAUTION: I have heard that creating a swap partition on the
+         Atari, though possible requires special knowledge.  If
+         you are using an Atari and don't know how to change the
+         partition ID's, do not create a swap partition.  Linux
+         will create a runtime swapfile for you on the existing
+         filesystem if it needs one.
+
+
+   ---------------------------------------------------------
+
+            -- Describing Your Disk to AmigaDos --
+
+ Although there are a variety of partition utilities for the
+Amiga, I recommend 'HdToolBox' which is found in the 'Tools'
+drawer of your boot AmigaDos (2.04 or later ?) drive.  It is a
+good idea to have a boot-floppy containing this program, as 
+well as 'format'.
+
+    All of this first section should only be necessary if you
+   are adding a new disk to your system.
+
+   -  Start HdToolBox.
+
+   -  Select the disk unit that will become your Linux drive.
+
+    If the selected disk does not properly reflect the drive
+   actually present, you need to update the list by performing
+   the following:
+
+   -  Click on 'change drive type'.
+   -  Ensure the box at the top properly describes the type
+      of interface you have (i.e. SCSI).
+   -  Click on 'define new'.
+   -  Click on 'read configuration'.
+   -  Read the requester box.  Nod your head and click on
+      'Continue'.
+
+      All the numeric boxes should update, indicating the
+      geometry of your disk.
+
+         Note: Some SCSI drives report an odd geometry such
+               that HdToolBox thinks the drive has NEGATIVE (!)
+               capacity.  In this case you will need to
+               manually derive a sector and cylinder count
+               who's product is less than or equal to the
+               actual number of blocks on the disk.
+
+   -  Keep in mind that some controllers/devices don't work if
+      reselection is used.  You may need to come back here
+      and toggle the 'reselection' box someday.
+
+   -  Click on 'OK'
+   -  Click on 'OK'
+
+   -  If this drive has never been installed on this computer
+      before, Click on 'Continue'.  This will eventually result
+      in the redefinition of all data areas on this disk.
+
+         Note: Make sure you heed any warnings.  Saving these
+               new values will wipe out all filesystems on this
+               drive.
+
+        -------------------------------------------------
+
+                      -- Creating Partitions --
+
+ If this is the same physical disk as your AmigaDos system make
+sure you have done a backup.  It is very likely that any resize
+or deletion of partitions WILL destroy your current AmigaDos
+disk system.
+
+   Note: These same steps may be used to create a new AmigaDos
+         partition if necessary.
+
+   Note: Unlike other versions of Linux, you do not have to
+         concern yourself with the length of each partition
+         because Linux can determine these values automatically
+         by looking at the partition headers on the disk.
+
+
+ Now, you need to create the disk partitions for Linux:
+
+ You should now be at the main HdToolBox screen.
+
+   -  Select the disk unit that will become your Linux drive.
+   -  Click on 'partition drive'
+   -  Click on 'Advanced Options'  (to enable them).
+
+   -  Delete any previous partitions (that you do not want).
+
+      *   Make sure you are altering the proper disk.  If you
+         are installing Linux on a single disk system, you will
+         have to resize the existing partitions to make room
+         for Linux.  This is a destructive operation which will
+         require you to re-install AmigaDos from scratch.  If
+         you do this make sure you have boot floppies with all
+         disk/tape/network setup and restore programs you will
+         ever need.  Double-check.
+
+      *   If you need to resize the AmigaDos partition, you must
+         first click on that partition represented by a large
+         split horizontal bar, then click on 'Delete Partition'.
+
+      *  When you have a large enough area of your disk freed up
+         to create the 'swap' and 'linux' partitions, you may
+         create new partitions by clicking on the 'New
+         Partition' gadget, then clicking in an empty area of
+         the large bar representing the disk surface.
+
+   -  Create a new partition and call it 'swap'.  Use the length
+      discussed earlier (twice your ram size).
+   -  Make sure the 'bootable' box is NOT enabled.
+   -  Click on 'change'.  Disable the 'automount' gadget.
+   -  Click on 'OK'.
+
+   -  Create another partition and call it 'linux'.  This
+      partition should be as large as possible.
+   -  Make sure the 'bootable' box is NOT enabled.
+   -  Click on 'change'.  Disable the 'automount' gadget.
+   -  Click on 'OK'.
+
+   -  Once you are finished creating partitions, click on 'OK'.
+
+
+ You should now be at the main HdToolBox screen again.
+
+   -  Click on 'Save Changes To Drive'.  It doesn't hurt to
+      double-check everything before you commit these changes
+      to disk.  No damage will occur until you 'Save'.  Take a
+      minute and double-check now.
+
+   -  Click on 'exit'
+
+   -  You should restart your system now.
+
+ After your system restarts, you will need to reformat any new
+or resized AmigaDos partitions.  You DO NOT need to format Linux
+partitions at this time.
+
+ If you have wiped your primary AmigaDos partition you will need
+to re-install AmigaDos, or restore a disk/tape image of your
+previous system.  Personally I find the restore option to be the
+best :) because all your custom configurations will be
+preserved.  A tape backup helps out a bunch here, as I have
+learned- the hard way...
+
+
+<HR>
+
+
+<U><A NAME="Prepare For Installation"><H1>Prepare For Installation</H1></A></U>
+
+ If you are like me, all these files have been downloaded onto
+a machine other than the Amiga where m68k Linux will be
+installed.  If so, you'll need to copy all the Linux files to
+your Amiga.  Hopefully you have an ethernet card and AmiTcp
+or Miami, otherwise a serial connection and Twin-Express may
+help out (although slowly..).
+
+ On the AmigaDos machine on which you are going to install m68k
+Linux:
+
+   -  Open a shell.
+
+   -  If you have not done so already, create a directory on an
+      AFFS partition called 'linux' (mine is DH1:).
+
+   -  Go to your new 'linux' directory.  (i.e.  cd dh1:linux)
+
+   -  If you have not done so already, Copy all the files you
+      have downloaded so far into this AFFS :linux partition.
+
+   -   Extract the 'lha' utility:
+
+         =============================================
+            <B>LhA_e138.run</B>
+         =============================================
+
+       Answer 'Y' to the extraction prompt, then 'N' to the two
+      other prompts.  When finished, you may want to copy the
+      resulting 'LhA' program to a directory on your command
+      search path.
+
+
+   -   Extract the 'untgz' program:
+
+         =============================================
+            <B>lha e untgz.lha</B>
+         =============================================
+
+       When finished, you might want to copy the resulting
+      'untgz' program to a directory on your command search
+      path.
+
+
+   -  Extract the Gzip program:
+
+         =============================================
+            <B>lha e tgz10se.lha</B>
+            <B>copy tgz/gzip ""</B>
+         =============================================
+
+       When finished, you might want to copy the resulting
+      'gzip' program to a directory on your command search
+      path.
+
+
+   -  Extract the 'vmlinux' image:
+
+         =============================================
+            <B>untgz vmlinux-2.0.29-Amiga.tar.gz</B>
+         =============================================
+
+       This will make your disk buzz while extracting 3 files.
+
+
+   -  Extract the 'amiboot' program:
+
+         =============================================
+            <B>gzip -d amiboot-5.6.gz</B>
+            <B>protect amiboot-5.6 +e</B>
+         =============================================
+
+       If you want to, simply copy amiboot-5.6 to 'amiboot'
+      (without the quotes), its shorter and easier to type.
+
+
+   -  Extract the 'adduser' script:
+
+         =============================================
+            <B>lha e LinuxAddUser.lha</B>
+            <B>gzip -d adduser.gz</B>
+         =============================================
+
+       The 'adduser' script we got from AmiNet is ALMOST what
+      we need to add new users to the system, but we have to
+      make a minor change first.  Using any Amiga text editor
+      change the first line of 'adduser' to work with the
+      Linux 'bash' shell:
+
+         from: <B>#! /bin/sh</B>
+         to:   <B>#! /bin/bash</B>
+
+
+<HR>
+
+
+<U><A NAME="A Kernel Dry Run"><H1>A Kernel Dry Run</H1></A></U>
+
+ --OK--, now its time to see if m68k Linux will run on your
+machine.  One way is to type all the commands and parameters
+manually, or place them in a disk file called 'bootargs'.  I've
+chosen to create the following script file (that can be invoked
+with a icon) named 'install'.
+
+ 'Install' contains:
+
+   ===============================================
+      <B>cd dh1:linux
+
+      amiboot -k vmlinux -r dh1:linux/filesys-ELF-2.0.x-1400k-2.gz root=/dev/ram video=ntsc</B>
+   ===============================================
+
+   *   All of the options following the 'amiboot' program are
+      contained on the same, single command line.
+
+   *   The 'video' option is not always needed, but is
+      included here as a safety net.  Europeans may or may not
+      need to specify 'pal'.  When in doubt, read the amiboot
+      readme file.
+
+   *   The amiboot program is able to uncompress the 'filesys'
+      archive at runtime, making the boot process MUCH faster.
+
+   *   I assume you have booted AmigaDos in the normal way
+      using system-startup and user-startup, if you are running
+      an 040/060 and bypass these you will probably want to
+      insert a call to the 'setpatch' program at the beginning
+      of this 'install' file.
+
+       NOTE: I have not needed or verified this, but have been
+             told it is sometimes necessary with the 040/060.
+
+   *   If you decide to use a scriptfile, set the "SCRIPT" flag
+      of the 'install' script using the PROTECT command,
+      otherwise you will have to enter 'execute install'.
+
+
+ Now is time for the big test.  Before you do this make sure you
+have shut down any TCP/IP protocol stacks (AmiTcp, MIAMI, etc)
+FIRST or the Linux loader will lock-up.  Now simply type
+'install' (without the quotes of course).
+
+
+   ===============================================
+      <B>install</B>
+   ===============================================
+
+ If all has gone well, there will be a lot of disk activity
+without error messages, then the screen will go white for 5..10
+seconds.  Hold your breath and hope...
+
+ The screen should then go black and emit a page or two of
+startup information.  This information is designed to help you
+determine what hardware has been detected, and whether or not
+it is operating correctly.
+
+ Here is a sample output from my '040 based A2000:
+
+
+<B>Amiga hardware found: [A2000] A2000_CLK VIDEO BLITTER AUDIO FLOPPY KEYBOARD MOUSE SERIAL PARALLEL CHIP_RAM PAULA AGNUS_HR_NTSC ZORRO
+Probing AutoConfig expansion device(s):
+  0x00e90000: Great Valley Products GFORCE 040 with SCSI controller (Z2, 64K)
+  0x00e90000: Great Valley Products GFORCE 040 Turbo Board (Z2, 0M)
+  0x00ea0000: Village Tronic Ariadne Ethernet Card (Z2, 64K)
+Console: colour Amiga OCS 80x25, 1 virtual console (max 63)
+Calibrating delay loop.. ok - 21.86 BogoMIPS
+Memory: 14364k/16384k available (828k kernel code, 648k data)
+Swansea University Computer Society NET3.035 for Linux 2.0
+NET3: Unix domain sockets 0.13 for Linux NET3.035.
+Swansea University Computer Society TCP/IP for NET3.034
+IP Protocols: ICMP, UDP, TCP
+Linux version 2.0.29 (jes@pcitpdp01) (gcc version 2.7.2.2) #1 Thu Feb 27 16:55:38 CET 1997
+M68K Serial driver version 1.01
+ttyS0 at 0x80dff018: Amiga builtin
+lp_init: lp using interrupt driver
+lp0: Builtin parallel port at 0x80bfe101
+Amiga mouse installed.
+DMA sound driver installed, using 4 buffers of 32k.
+Ramdisk driver initialized : 16 ramdisks of 4096K size
+loop: registered device at major 7
+FD: probing units
+found (5)fd: drive 0 didn't identify, setting default ffffffff
+fd0 fd1 fd2
+wd33c93-0: chip=WD33c93A/9 no_sync=0xff no_dma=0 debug_flags=0x00
+           setup_strings=,,,,,,,,,,,,
+           Version 1.24 - 29/Jan/1997, Compiled Feb 27 1997 at 17:08:22
+scsi0 : GVP Series II SCSI
+scsi : 1 host.
+ sending SDTR 010301Started kswapd v 1.4.2.2
+0000sync_xfer=00  Vendor: QUANTUM   Model: LIGHTNING 730S    Rev: 241E
+  Type:   Direct-Access                      ANSI SCSI revision: 02
+Detected scsi disk sda at scsi0, channel 0, id 0, lun 0
+ sending SDTR -REJ-  Vendor: WANGTEK   Model: KS23465           Rev: CX15
+  Type:   Sequential-Access                  ANSI SCSI revision: 01 CCS
+Detected scsi tape st0 at scsi0, channel 0, id 4, lun 0
+ sending SDTR -REJ-  Vendor: TOSHIBA   Model: CD-ROM XM-3301TA  Rev: 2411
+  Type:   CD-ROM                             ANSI SCSI revision: 02
+Detected scsi CD-ROM sr0 at scsi0, channel 0, id 6, lun 0
+scsi : detected 1 SCSI tape 1 SCSI cdrom 1 SCSI disk total.
+SCSI device sda: hdwr sector= 512 bytes. Sectors= 1431760 [699 MB] [0.7 GB]
+PPP: version 2.2.0 (dynamic channel allocation)
+TCP compression code copyright 1989 Regents of the University of California
+PPP Dynamic channel allocation code copyright 1995 Caldera, Inc.
+PPP line discipline registered.
+SLIP: version 0.8.4-NET3.019-NEWTTY (dynamic channels, max=256).
+CSLIP: code copyright 1989 Regents of the University of California.
+eth0: Ariadne at 0x00ea0000, Ethernet Address 00:60:30:00:0e:db
+Partition check:
+ sda: RDSK sda1 sda2 sda3 sda4 sda5
+RAMDISK: Compressed image found at block 0
+VFS: Mounted root (ext2 filesystem).</B>
+
+
+ If you are lucky and get this far, simply login as 'root'
+(no password).
+
+ If you are unlucky and don't get this far, you will need to
+post a plea for help to the m68k newsgroup.  Try to provide as
+much info from your linux startup dump as possible.
+
+
+<HR>
+
+
+<U><A NAME="Setup The Filesystem"><H1>Setup The Filesystem</H1></A></U>
+
+ If all went well you are currently running under a Linux m68k
+RAM filesystem.
+
+ I'm assuming you have a SCSI based machine.  Under Linux the
+first SCSI disk is called /dev/sda<B>x</B>, where 'x' refers to the
+partition number, starting with 1.
+
+    For example, the first partition of the first SCSI drive is
+   /dev/sda1 and the second partition of that drive is called
+   /dev/sda2, etc.
+
+    Also, the first partition of the second SCSI drive is
+   /dev/sdb1 and the second partition of that drive is called
+   /dev/sdb2, etc.
+
+    IDE drives are identified in a similar manner, with
+   /dev/hda1 being the first partition of the first drive.
+
+
+ Before you start 'formatting' partitions, its a good idea to
+make sure the disk is laid out the way you think it is, so
+lets see if your AFFS (AmigaDos) :linux is where it should be.
+
+ Don't skip this step; I have seen cases where a tiny phantom
+partition has been created by HdToolBox, causing all following
+partition numbers to be offset by 1.  The worst-case result of
+this situation is that you may reformat a partition other than
+the one you intended.
+
+   ==================================
+      <B>mkdir /dh1</B>
+      <B>mount -t affs /dev/sda2 /dh1</B>
+   ==================================
+
+ Remember to use the /dev/ entry that describes where the :linux
+partition is located on YOUR system, /dev/sda2 is what I use
+on my machine.
+
+ If this worked without displaying any error messages then 
+continue to the next step, otherwise try mounting the next 
+sequential partition as an 'affs' filesystem.
+
+ Verify this is actually the intended AmigaDos disk by doing a 
+directory of /dh1:
+
+   =========================================================
+      <B>ls /dh1</B>
+   =========================================================
+
+
+ To initialize the new disk partition(s):
+
+   To create the 'swap' partition (in my case):
+
+      ================================================
+         <B>mkswap /dev/sda3</B>
+         <B>swapon /dev/sda3</B>
+      ================================================
+
+    the length of this 'swap' partition will be determined by
+   the information written in the partition tables.
+
+
+   To create the 'linux' partition (in my case):
+
+      ================================================
+         <B>mke2fs /dev/sda4</B>
+      ================================================
+
+    This will build an 'e2fs' directory structure on the
+   specified partition, which will become your Linux 'root'.
+   This may take a minute or two.
+
+    The length of this 'linux' partition will be determined by
+   the information written in the partition tables you created
+   earlier with HdToolBox (Amiga).
+
+
+ Most other Linux distributions perform a 'sync' and system
+restart at this point, but I'm told its unnecessary with
+this one.
+
+   However, If you wish to restart the system, enter:
+
+   ===============================================
+      <B>shutdown -r now ; exit</B>
+   ===============================================
+
+    When it asks 'Why', simply press enter, then wait for the
+   system to restart.   Your system should reboot back to
+   AmigaDos.  Open a command shell and go to the :linux
+   directory.  Execute the 'install' script (the one we created
+   earlier) to reload a RAM-based m68k Linux session.
+
+    When things stop moving, again login as 'root'.  If RAM is
+   scarce on your machine, activate the swap partition using
+   the 'swapon' command the same way you did above.
+
+
+<HR>
+
+
+<U><A NAME="Unpack The Filesystem"><H1>Unpack The Filesystem</H1></A></U>
+
+ This is the part of the process where we extract the Linux
+filesystem archives to create a new filesystem on your machine.
+This will take some time.  We first need to mount our primary
+Linux disk partition:
+
+   ==================================
+      <B>mount -t ext2 /dev/sda4 /mnt</B>
+   ==================================
+
+ '/mnt' is an alias for the location where we are going to
+build the actual disk-based filesystem on your disk.
+
+ If you are using several partitions (instead of the simplistic
+single partition I'm using here) you also need to mount them
+at this time.
+
+
+ If you have already mounted the AmigaDos AFFS partition as
+explained in 'Setup The Filesystem', go to the next step
+(ls /dh1).  We need a second mountpoint to access all those
+files we copied into our AmigaDos  :linux  directory, so create
+a new subdirectory in your RAM-based Linux filesystem and
+mount it:
+
+   (Note: /dev/sda2 is my system, yours will be different).
+
+   ==================================
+      <B>mkdir /dh1</B>
+      <B>mount -t affs /dev/sda2 /dh1</B>
+   ==================================
+
+ You can verify this is your AmigaDos disk by doing a directory
+of /dh1:
+
+   =========================================================
+      <B>ls /dh1</B>
+   =========================================================
+
+ You should recognize the content and layout as being your
+AmigaDos AFFS filesystem.
+
+
+ First go to the root of our new Linux disk partition:
+
+   =========================================================
+      <B>cd /mnt</B>
+   =========================================================
+
+
+ Next we need to extract the 'root' filesystem from the
+'tar' archive you placed on your AmigaDos :linux directory:
+(This assumes a general layout of dh1:linux).
+
+   ============================================================
+      <B>tar xvzf /dh1/linux/watchtower-2-root.tar.gz</B>
+   ============================================================
+
+ This takes a while, but not too long...
+
+
+   NOTE: Advanced Linux users might try to open several Vcons
+         and extract all files at the same time- watch out.
+         Everytime I've tried this I ended up with a corrupt
+         filesystem.
+
+
+ Next extract the 'usr' partition:
+
+   ============================================================
+      <B>tar xvzf /dh1/linux/watchtower-2-usr.tar.gz</B>
+   ============================================================
+
+ Now this DOES take a quite a while...  Take a few minutes and
+look over the next section.
+
+ After a few minutes the screen will go blank.  This is simply a
+screen saver, you may wake up the screen by pressing the ALT
+key.
+
+ Depending on the filesystem you are using, you might get a
+'Broken pipe' message right after 'usr/var' is extracted, This
+is not a real error, ignore it (I am told...).
+
+
+ Next extract the 'var' partition:
+
+   ============================================================
+      <B>tar xvzf /dh1/linux/watchtower-2-var.tar.gz</B>
+   ============================================================
+
+ This one is quick.
+
+
+ If you want all the 'man' pages, you should also install the
+'usrdoc' archive.  I advise you do this unless disk space is an
+issue.
+
+ ==============================================================
+   <B>tar xvzf /dh1/linux/watchtower-2-usrdoc.tar.gz</B>
+ ==============================================================
+
+
+ Next, copy the 'adduser' script to /mnt/usr/bin:
+
+ ==============================================================
+   <B>cp /dh1/linux/adduser /mnt/usr/bin/</B>
+ ==============================================================
+
+
+<HR>
+
+
+<U><A NAME="Customize 'fstab'"><H1>Customize 'fstab'</H1></A></U>
+
+ Before you attempt to run a disk-based Linux, you will have to
+change the contents of one of the disk files.  The 'fstab' file
+tells Linux where to find the filesystems and partitions you
+have created for it.
+
+ The two (major) fstab issues are:
+
+   -  describing the 'swap' partition (if you have one).
+   -  describing the 'linux' partition(s).
+
+ Note that you must use the same /dev/sdxx or /dev/hdxx device
+entries that apply to your Linux disk drives.
+
+ The editor included as part of Linux is 'vi'.  If you don't
+know how to use vi and want to do more than described here, find
+a Linux manual and read up on 'vi'.
+
+       <B>Note: If you really hate 'vi' (which I can understand), 
+             another editor called 'joe' is also available.  joe
+             emulates Wordstar.  If you don't know Wordstar, stick
+             with 'vi'.</B>
+
+
+         -----------------------------------------------
+
+ I'm not a 'vi' expert, but here goes...
+
+ 'vi' is an old-style screen-based text editor that recognizes
+cursor keys, several command codes and a number of special
+escape-sequences.  The minimal set of commands we need to edit
+'fstab' are:
+
+   a        enter INSERT mode at end of line under cursor.
+   i        enter INSERT mode at current cursor position.
+   arrows   move the cursor around the user text area.
+   Escape   exit INSERT mode and enter COMMAND mode.
+   :q!      when in COMMAND mode, quit without saving changes.
+   :wq      when in COMMAND mode, write changes and quit.
+   x        when in COMMAND mode, delete character under cursor.
+   dd       when in COMMAND mode, delete the line under cursor.
+
+ 'vi' is always in one of two states, COMMAND or INSERT mode. In
+order to enter new text you must be in INSERT mode.  To exit or
+save changes you must be in COMMAND mode.  You can return to
+COMMAND mode at any time by pressing the Escape key.  If you are
+already in COMMAND mode, the bell will beep (or your screen will
+flash white).
+
+ This 'vi' also has an annoying habit of flashing the screen
+whenever it detects a user error.  This flash is quite slow,
+and can result in several minutes of screen flashing if you type
+too far ahead.  One easy way around this is to simply switch to
+a different V-Console ( Alt-F2 ), wait a few seconds, then
+switch back to your primary seesion ( Alt-F1 ).  The blinking
+should be done by now, and you can resume with your editing.
+
+
+ Edit the current 'fstab' located on your hard disk:
+
+   ============================================================
+      <B>cd /mnt/etc</B>
+      <B>vi fstab</B>
+   ============================================================
+
+ Note: All lines preceded with a # are comments, which are
+       ignored by Linux.
+
+ Cursor down to the entry '/dev/sda6' that describes the
+location of the Linux 'root' directory.  It is very likely that
+your root directory is different than this.  Place the cursor
+over the first character that needs to be changed ('a' in my
+case) and press 'x' for each character that needs to be deleted.
+
+   so  "<B>/dev/sda6  </B>"  becomes  "<B>/dev/sd    </B>"
+
+ Now make sure the cursor is directly over the first blank
+character where you need to insert new text (this might be a
+TAB chars, a bit more to the right than you might expect)
+and press 'i'.  You are now in INSERT mode.  Enter the correct
+characters to make this entry describe the location of your
+linux directory.  Press Escape to return to COMMAND mode.
+
+ If you made an error, use these same steps to correct it.  If
+you really hosed things up (as in FUBAR), press Escape and enter
+:q!  (this will abort the edit session without saving, so you
+can start all over again).
+
+ A word of caution: vi has a quirk of moving the cursor back 1
+space to the left when you exit INSERT mode.  Don't let this
+bite you.  Also, the backspace-delete key does not seem to work.
+
+ Use the cursor keys to make any additional changes.  When you
+are done, write your changes to disk and exit by pressing Escape
+followed by  :wq  .  (do not enter the extra spaces shown here).
+
+
+ Now that you are a 'vi' expert, you may make some of these
+additional changes:
+
+    If you are using an Amiga, or you have properly setup an
+   Atari swapfile, you need to add the following entry to
+   /mnt/etc/fstab (use your own device numbers, not mine):
+
+      <B>/dev/sda3   swap     swap  defaults    0  0</B>
+
+
+    My 'root' filesystem entry looks like this:
+
+      <B>/dev/sda4   /        ext2  defaults    0  1</B>
+
+
+    Most of the other entries should be commented-out, except
+   for /dev/fd0, which is your floppy disk.
+
+
+    On the Amiga, its nice to have the AmigaDos (AFFS :linux)
+   partition available for file interchange, so I create an
+   fstab entry for it:
+
+      <B>/dev/sda2   /dh1     affs  defaults    0  1</B>
+
+   Note: Unless you have already done so, you will need to
+         create a mountpoint AFTER you save/exit from vi:
+
+      =================================
+         <B>mkdir /mnt/dh1</B>
+      =================================
+
+          Once you have done this, and restarted the machine,
+         your AmigaDos DH1: disk will be accessible as /dh1.
+
+   Note: you do not -have- to do this now, it may be done
+         later.
+
+
+ Save your changes and exit vi. (remember, 'Escape' :wq ).
+
+
+        -------------------------------------------------
+
+
+   **************************************************
+   *****                                        *****
+   ***** OK, here we are at the moment of truth *****
+   *****                                        *****
+   **************************************************
+
+ We have things setup to the point where we should be able to
+boot a 'live' disk-based Linux system.
+
+ Shutdown this ram-based version of Linux and reboot:
+
+   ==========================================
+      <B>shutdown -r now ; exit</B>
+   ==========================================
+
+ It will ask 'Why', press return.  The system should unmount the
+various file systems, and eventually reboot the system into
+AmigaDos (assuming you are setup to boot into AmigaDos by
+default).
+
+ In certain -rare- cases, you may have to issue a 3-key salute
+(ctrl-Lamiga-Ramiga) after a few seconds to actually reboot
+the machine.
+
+
+<HR>
+
+
+<U><A NAME="Your First Disk-Based Linux Boot"><H1>Your First Disk-Based Linux Boot</H1></A></U>
+
+ Now we need to setup for easy startup of Linux from AmigaDos.
+Open a command shell, and go to your :linux directory.
+
+ We could manually type the commands to start Linux from now
+on, but I'm lazy and believe the machine should do this kind of
+drudgery.  You may use a feature of the amiboot program where
+startup options may be read from the file 'bootargs', but I
+still have to switch back and forth between ram/disk file
+systems (to test this FAQ for example) far too often to lock
+myself down to one or the other mode.
+
+ Another method is to create a script-file called 'boot' that
+looks very much like the 'install' script we made earlier.
+
+ 'boot' contains:
+
+   ==================================================
+      <B>cd dh1:linux</B>
+      <B>amiboot -k vmlinux root=/dev/sda4 video=ntsc</B>
+   ==================================================
+
+    If you use the scriptfile method, Set the "SCRIPT" flag of
+   the 'boot' script using the PROTECT command.
+
+   European folks may want to specify 'video=pal'.
+
+   NOTE: Let me remind you again that the 'root' device MUST
+         match the partition number where YOU installed Linux,
+         and specified in YOUR /etc/fstab file.
+
+ Now is time for the big test.  Before you do this make sure
+you have shut down any TCP/IP protocol stacks (AmiTcp, MIAMI,
+etc) FIRST or the Linux loader will lock-up.  Now simply type
+'boot' (without the quotes of course).
+
+
+   ===============================================
+      <B>boot</B>
+   ===============================================
+
+ If all has gone well, there will be a lot of disk activity
+without error messages, then the screen will go white for a
+while.  A little later the screen will go black and start
+producing a page or so of familiar startup messages regarding
+the hardware and filesystems it has found.  Finally a Linux
+signon screen should appear.
+
+ If things did not go well then there are several possibilities:
+
+   1. Your 'amiboot' parameters were incorrect:
+
+          Ensure your 'root=' param specifies the correct
+         partition of your Linux '/' filesystem.  This should be
+         the same value you placed in the '/mnt/etc/fstab' file
+         in the previous section.
+
+
+   2. You have hardware that is not recognized.
+
+          If you cannot do a normal 'shutdown', perform a
+         control-Lamiga-Ramiga restart, reboot and start a ram-
+         based linux session, watching very closely for error
+         messages during the boot process.  Hopefully this will
+         give you a hint.
+
+
+   3. You made an error in your /mnt/etc/fstab file:
+
+          This one normally results in an error message
+         regarding the root filesystem.  Reboot into a ram-based
+         Linux and fix /mnt/etc/fstab using 'vi'.  Double check
+         all your entries again.
+
+
+   4. You did not properly gzip/tar the root/usr/var/ file-
+      systems.
+
+          This should not happen if you did not receive any
+         error messages during the gzip/tar process (and you
+         extracted the files to the proper location).  Boot up
+         under a ram-based linux session, mount /mnt, do a
+         cd /mnt and see if all the familiar directories are
+         present.
+
+
+   5. Something else (god, I hate this one....).
+
+          For this one you will most likely have to send cries
+         for help across the usenet.  If you do this make sure
+         you can fully describe your system, the files you've
+         installed and when (and where) the process goes sour.
+
+
+ If you need to change fstab or any other aspect of the Linux
+files simply perform another RAM-base startup (using the
+'install' script, if you went that route).
+
+               -----------------------------
+
+ Ok, if you got to the signon prompt simply login as 'root'.
+If you missed it in the readme's, the password is 'linux'.
+
+ Most people miss this, so here it is again...
+
+<H1>   Note: your root password is 'linux'</H1>
+
+ Its a good idea to look into all the startup logging messages
+generated by the kernel.  Most of them went by so fast that we
+could not read them.  There is a copy of this information stored
+in the proc-filesystem.  To view this information (and you
+should learn how), enter:
+
+   ========================================
+      <B>dmesg /proc/kmsg > /tmp/kmsg</B>
+   ========================================
+
+ You can view this copy of the logfile with 'vi' (vi /tmp/kmsg).
+
+
+<HR>
+
+
+<U><A NAME="Changing The 'root' Password"><H1>Changing The 'root' Password</H1></A></U>
+
+ It is a very good idea to change your root password from
+something everybody knows to something only you know.  Remember
+that anyone able to determine you have a m68k installation will
+know your default password.
+
+ The only problem is that you can't change your password (yet)
+because a key file is currently missing.  Just do this:
+
+   ====================================
+      <B>cp /etc/passwd /etc/passwd.OLD</B>
+   ====================================
+
+ Now you should change the root password using the 'passwd'
+command.  Editing this file with 'vi' is generally not
+recommended, especially since the password fields are encrypted.
+
+ CAUTION: Once you change the root password, MAKE SURE you can
+          login to another console (after using left-alt-F2)
+          with the new password, otherwise you will be quite
+          locked-out.  It is possible to re-boot under a ram-
+          based system and fix the passwd file by supplying an
+          empty password field, but I would rather avoid this
+          joy.
+
+
+<HR>
+
+
+<U><A NAME="Adding New Users"><H1>Adding New Users</H1></A></U>
+
+ I'm not sure why, but many m68k people seem to be running
+exclusively as 'root', which is a dangerous thing to do.  Most
+other Linux distributions prompt you to create a personal user
+account (other than root, so that you'll use it instead of root)
+during the install script.  Since we don't have an install
+script we should create a 'user' account as soon as possible.
+
+ In addition to adduser, several programs (such as 'vi' will not
+work if you forget to change several file 'modes'.  Change these
+rights to allow proper access (do this even if you don't add 
+users):
+
+   =================================
+      <B>chmod 0700 /usr/bin/adduser</B>
+      <B>chmod 1777 /var/tmp</B>
+      <B>chmod 1777 /tmp</B>
+      <B>chmod 0666 /dev/null</B>
+      <B>chmod 0666 /dev/zero</B>
+    =================================
+
+ Now that 'adduser' is on your machine, simply enter:
+
+   ===============================
+      <B>adduser new_user_name</B>
+      <B>passwd  new_user_name</B>
+   ===============================
+
+ To test this, switch to another Vconsole ( Alt-F2 ) and login
+to the new user account.
+
+
+<HR>
+
+
+<U><A NAME="Setting Up The (local) Network"><H1>Setting Up The (local) Network</H1></A></U>
+
+ Ah, now here's a fun section (!).  If you have a network card
+you must manually alter Linux files to recognize it.  I have an
+Ariadne card, so I'll explain how I got it working.  Note that
+this is by no means the only or best way to do this.
+
+ If you are using a local ethernet connection you need to choose
+a network address and mask.  A general rule is that networks
+starting with 10.x.x.x are considered 'local' (and most routers
+don't pass such messages along).
+
+ Since my network is purely local, I've chosen the address range
+of 10.1.1.x for my network, yielding a netmask of 255.255.255.0.
+
+ In the file /etc/hosts :
+
+   *  There are several entries specifying the addresses of
+      'other' machines.  You must leave the entries for
+      'localhost' and 'broadcast' alone, but you can deactivate
+      any of the other entries by placing a # in front of them
+      if you wish.  You must insert an entry for your machine.
+      Since my secondary Amiga is called 'sidekick', my entry
+      looks like:
+
+         <B>10.1.1.14 sidekick.rjf.net sidekick</B>
+
+       The middle part is a fully-qualified address, choose one
+      with a similar format for your system (x.y.z) instead of
+      (w.x.y.z) .  Make sure you provide BOTH aliases.
+
+       You should also add the name of any nearby local
+      systems.  My P6-200 NT Fileserver is called 'borg'
+      (representing the evil Msoft empire, of course...):
+
+         <B>10.1.1.15 borg</B>
+
+
+ In the file /etc/netconfig, change (in my case):
+
+   from:    <B>host watchtower</B>
+   to:      <B>host sidekick.rjf.net</B>
+
+   from:    <B># iface eth0 myhost 255.255.255.0 10.0.32.255 up</B>
+   to:      <B>iface eth0 sidekick 255.255.255.0 10.1.1.255 up</B>
+
+       And under the section 'Routes' (there is already a
+      loopback entry), add the following line:
+
+   <B>route -net 10.1.1.0 netmask 255.255.255.0 dev eth0</B>
+
+
+ If you plan on using a nameserver, you will need to activate
+the 'ns' entry and enter the address of the nameserver provided
+by your ISP.
+
+
+   PLEASE REFER TO THE SECTION ON 'PPP' FOR PPP INFO
+
+
+<HR>
+
+
+<U><A NAME="Final Checkout"><H1>Final Checkout</H1></A></U>
+
+ If you have gotten to this point, and things are still working,
+its time to shutdown the machine and restart using the new
+configuration.
+
+ enter:
+
+   =====================================
+      <B>shutdown -r now ; exit</B>
+   =====================================
+
+ When the system powers back up in AmigaDos mode, go to your
+:linux directory and type 'boot'.  Linux should startup, and
+init the ethernet card (if present).
+
+ Login as root, using the proper password.
+
+
+ If you have a nearby machine on your network you should verify
+your local network setups by 'ping'ing a nearby machine.  In
+my case I'd say:
+
+   ===============
+      <B>ping borg</B>
+   ===============
+
+ This should quickly be followed by an endless series of lines
+indicating 64 bytes from the physical address of the target
+machine.  This is GOOD (i.e. you are online).
+
+ Use control-c to exit.
+
+
+<HR>
+
+
+<U><A NAME="How To NFS Mount Another Machine"><H1>How To NFS Mount Another Machine</H1></A></U>
+
+ Although not as fast as FTP, NFS (Network File System) is a
+very convenient method of transferring files between computers.
+Using this protocol I can directly send files between any of my
+machines (be they Linux (any flavor), NT, or Win95).
+
+ In general, you should NFS mount (or grant mount rights to)
+only machines you own, or trust.  This is a security opening if
+not very carefully managed.
+
+
+   ----------------------------------------------
+   ---- Changes to the machine to be mounted ----
+   ----------------------------------------------
+
+   Append to /etc/exports:    (on my i486 machine 'spareparts')
+
+      <B>/ sidekick (rw,no_root_squash)
+      / borg (rw,no_root_squash)
+      / avatar (rw,no_root_squash)
+      / peace (rw,no_root_squash)</B>
+
+    This will allow my A2000 (sidekick) or my NT machine (borg)
+   among others, to mount the root '/' directory of my i486
+   Linux machine 'spareparts'.
+
+   CAUTION: Only use the 'no_root_squash' if you truly trust the
+            connecting machine (and probably only if you have a
+            'closed' network).  This option permits root
+            privilege-level access to your machine.
+
+
+   ------------------------------------------------------
+   ---- Changes to the machine which mounts another -----
+   ------------------------------------------------------
+
+   Append to /etc/fstab:      (on my m68k machine 'sidekick')
+
+      <B>spareparts:/ /Spareparts nfs noauto,user,rw,exec,suid,dev</B>
+      <B>borg:/c      /Borg       nfs noauto,user,rw,exec,suid,dev</B>
+
+
+   Uncomment these entries in m68k linux /etc/netconfig:
+
+      <B>rpc portmap</B>
+      <B>rpc mountd</B>
+      <B>rpc nfsd</B>
+
+
+      Create mountpoint(s):
+
+      ==========================================
+         <B>mkdir /Spareparts</B>
+         <B>chmod 1777 /Spareparts</B>
+
+         <B>mkdir /Borg</B>
+         <B>chmod 1777 /Borg</B>
+      ==========================================
+
+ Reboot the machine after you do this (the rpc stuff)...
+
+
+ Assuming the 'Spareparts' machine has been setup (as above) to
+grant NFS mount rights to your machine (Sidekick in my case),
+you need to mount the remote filesystem like so:
+
+   ==========================================
+      <B>mount -t nfs spareparts:/ /Spareparts</B>
+   ==========================================
+
+ Note: The '-t nfs' is not necessary if you place the 'nfs'
+       entries in 'fstab' and restart Linux.  In this case
+       you simple type:
+
+      ==========================================
+         <B>mount /Spareparts</B>
+      ==========================================
+
+
+<HR>
+
+
+<U><A NAME="Fixing The Amiga Built-In Serial Port Softlink"><H1>Fixing The Amiga Built-In Serial Port Softlink</H1></A></U>
+
+ Since the Watchtower filesystem we are using was built on an
+Atari, there are some machine-specific setups we Amiga users
+need to change.
+
+ The Amiga has dedicated mouse ports (so does the Atari), so we 
+don't need to alias our built-in serial port as the mouse 
+device.  This is an issue because the existing mouse softlink 
+'breaks' our built-in serial port.
+
+ Enter the following (as user 'root'):
+
+   ======================================
+      <B>rm /dev/mouse</B>
+      <B>ln -s /dev/amigamouse /dev/mouse</B>
+   ======================================
+
+   Note: I found that I had to reboot the machine for these
+         changes to fully take effect.  After doing so,
+         minicom and pppd on /dev/modem1 worked on the first
+         try.
+
+
+ The only side-effect I've seen so far is a diagnostic on startup
+that may be mouse-related.  I don't use m68k X yet.  If anyone
+knows this to be a real problem (or the solution), please let me 
+know.  ;)
+
+
+<HR>
+
+
+<U><A NAME="Setting Up The Sources"><H1>Setting Up The Sources</H1></A></U>
+
+ If you wish to compile the kernel, or any C/C++ programs of
+your own that use system calls or #defines you must extract the
+sources/includes and fix a 'softlink'.  If you have no
+interest in such things (yet) you can simply skip this section,
+it won't affect the normal operation of Linux (as far as I
+know).
+
+ While running disk-based Linux, go to directory /usr.
+Currently the /usr/src directory is a softlink.  This is not
+good (as far as I can tell) so do this:
+
+   **********************************************************
+   * assuming your AmigaDos partition is Linux drive '/dh1' *
+   **********************************************************
+
+   =============================================
+      <B>cd /usr
+      rm src
+      mkdir src
+      cd src
+
+      tar xvzf /dh1/linux/linux-2.0.29.tar.gz</B>
+   =============================================
+
+ This also will take a little while.
+
+
+ Once the compiler is installed, we need to set some softlinks
+for the various 'include' paths.  The first is for C headers,
+the second is for C++ headers:
+
+================================================================
+   <B>ln -s /usr/src/linux-2.0.29 /usr/src/linux</B>
+   <B>ln -s /usr/include/libg++-2.7.1/include/ /usr/local/include</B>
+================================================================
+
+
+<HR>
+
+
+<U><A NAME="Compiling Your Own Kernel"><H1>Compiling Your Own Kernel</H1></A></U>
+
+ You may wish to recompile the Linux kernel to better reflect
+your hardware.  The kernel, as shipped, includes support for a
+wide variety of devices and configurations.  One way to squeeze
+a little bit of free memory from Linux is to compile a custom
+kernel that consists of only the features needed by your
+machine.
+
+ You DO NOT have to build your own kernel, and there have been
+reports of trouble with the stock Watchtower setup, so partake
+of this process at your own risk.
+
+ There has been traffic on the nets about the need to update
+'libc', '/bin', some GNU tools, etc in order to compile a
+kernel.  Even so, I'm going to wait for the dust to settle
+before trying this.  Besides, I have been able to build a
+working kernel with PPP for my A2000 without these updates.
+
+ If you are using anything less than an 040, the 'config' and 'make'
+operations will take quite a LONG time.
+
+ Assuming you have 'set up the sources' and are logged in as
+'root':
+
+   =============================
+      <B>cd /usr/src/linux </B>            # Did you get the sources ?
+
+      <B>make menuconfig</B>               # config for your machine
+
+      <B>make dep ; make clean</B>         # cleanup from any garbage
+      <B>make</B>                          # recompile the kernel.....
+      <B>make modules</B>                  # recompile the modules....
+
+      <B>cp vmlinux /dh1/linux/test_vmlinux</B>    # '/dh1' is MY path
+   =============================
+
+ Restart the machine to AmigaDos mode.  Make a copy of your
+'boot' script, calling it 'test'.  Alter the 'root=vmlinux'
+entry in 'test' to specify the 'test_vmlinux' instead (don't
+forget the path/filename entry).
+
+ Make sure the 'Script' attrib is set on 'test', then execute
+'test'.
+
+ Your machine should startup Linux and load the kernel you just
+built.  If you specified the correct options, the system should
+come up, and there should be a bit more memory available.
+
+ If your machine did not come up, restart your machine and boot
+a normal Linux session (boot).  Re-run the 'menuconfig' portion
+until you specify the right combination of options for your
+machine. Admittedly, this can be a time-consuming operation.
+
+ When you are completely happy with your custom kernel, (i.e.
+after some serious testing) copy 'test_vmlinux' over 'vmlinux'
+so it will become your normal kernel.
+
+
+ Now that you are happy with the kernel, you need to install the
+modules you compiled earlier:
+
+   =============================
+      <B>cd /usr/src/linux </B>            # Did you get the sources ?
+
+      <B>make modules_install</B>          # 'install' the modules
+      <B>depmod -a</B>                     # resolve symbols...
+   =============================
+
+
+ Now reboot linux one final time......
+
+
+<HR>
+
+
+<U><A NAME="Setting Up A Serial PPP Connection"><H1>Setting Up A Serial PPP Connection</H1></A></U>
+
+ There are several ways a PPP connection can be setup.  This
+is probably not the fanciest, but has proven reliable on the
+5 (intel/m68k) machines I use now.
+
+ In order to use PPP, you must recompile your Linux kernel to
+include PPP 'kernel support'.  Refer to the section on compiling
+your own kernel if you have not done this (yet).  If you are
+using an Amiga you must also fix the /dev/mouse softlink.  Refer
+to the appropriate section of this FAQ.
+
+ This PPP section ABSOLUTELY DEPENDS on you properly setting up
+the network configuration.  It really helps to have a nearby
+system to 'ping' in order verify the network settings.  Just so
+you know, I am using an ethernet card, so your 'netconfig'
+options will be a little different if you are running a system
+without a local network.
+
+
+      --------------------------------------------------
+
+
+ In the file /etc/netconfig we need to specify the address of
+our ISP's nameserver (DNS) (which must be provided by your ISP).
+
+Using the 'vi' editor, uncomment the 'ns' entry, and enter
+the address of your ISP's nameserver:
+
+   ===========================
+         -- from --
+      <B># Our nameserver
+      # ns 10.0.32.1</B>
+
+         -- to --
+      <B># Our nameserver
+      ns 204.233.71.1</B>
+   ===========================
+
+   Note: this 'ns' address is my nameserver, you must find the
+         address of your ISP's nameserver (DNS).
+
+
+      --------------------------------------------------
+
+
+ Using 'vi', create file /etc/ppp/options :
+
+   =================
+      <B>cd /etc/ppp</B>
+      <B>vi options</B>
+   =================
+
+       Enter the following starting at the leftmost column
+      (make sure to change '<B>rjflory</B>' to your userid):
+
+<B>/dev/modem1
+38400
+connect "chat -v -f /etc/ppp/dial_sktc"
+crtscts
+defaultroute
+user </B>rjflory<B>
+modem
+debug
+mtu 1500
+mru 1500
+noipdefault</B>
+
+
+      --------------------------------------------------
+
+
+ Using 'vi' enter the following into /etc/ppp/dial_sktc :
+
+<B>ABORT BUSY ABORT 'NO CARRIER' '' 'ATZ ' OK ATDT5220375 CONNECT</B>
+
+
+   Note: The 5220375 entry is the local phone number of my ISP.
+         Make sure to enter your ISP's number here.
+
+         Instead of the simple, yet functional 'ATZ' shown above,
+         I use these modem settings:
+
+<B>                  'ATZ F0 X0 L3 &K3 S0=0'</B>
+
+         which works for my zoom external modem.  They may, or
+         may not work with your modem (RYFM).
+
+          Later you may wish to set the default modem profile
+         with 'minicom'.  Refer to your modem manual for the
+         commands that apply to your modem.
+
+
+      --------------------------------------------------
+
+
+ Using 'vi' enter the following into /etc/ppp/pap-secrets :
+
+<B>your_userid * your_password</B>
+
+   Note: your_userid and your_password apply to your ISP
+         account, not to your Linux machine (Duh).
+
+
+      --------------------------------------------------
+
+
+ If your networking and PPP setups are all correct, you may
+start the ppp daemon by entering (as user 'root'):
+
+   ==========
+      <B>pppd</B>
+   ==========
+
+
+ To hangup your PPP connection, enter:
+
+   ==================
+      <B>killall pppd</B>
+   ==================
+
+
+ If all is well, your modem will dial your ISP and negotiate
+a PPP connection.  Otherwise a look at the ppp log may help
+you debug your connection.
+
+
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!                                              !!!!!!!
+   !!!!!!!! I do not know where debug messages are going !!!!!!!
+   !!!!!!!!         Please help me out here              !!!!!!!
+   !!!!!!!!                                              !!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+ I have found that no two ISP's work quite the same, and some
+do not like Linux (they are Msoft blind), but a bit of twiddling
+will eventually get you on the air.  If you have problems at
+this point:
+
+   1. Refer to the official Linux PPP FAQ.
+   2. post questions to the m68k Linux newgroup.
+
+
+<HR>
+
+
+<U><A NAME="Using An AmigaDos Icon To Start Linux"><H1>Using An AmigaDos Icon To Start Linux</H1></A></U>
+
+ When the system powers up in AmigaDos mode, you might
+consider making an icon in your ramdisk so you can simply
+double-click on a quick ramdisk icon to restart Linux.
+
+ What I have done is to create an image of all the icons that
+I'd like to be in my ramdisk drawer in a directory of my
+AmigaDos boot disk.  I called it 'ram_image'.  Simply copy
+any icons/programs you would like to appear in the -very-
+fast ramdisk into this directory.  To make things show up
+in the ramdisk icon you need to add the following to your
+'user-startup' file:
+
+   ===============================================
+      <B>copy > nil: dh0:ram_image all ram: clone</B>
+   ===============================================
+
+ Within dh0:ram_image I created a script file called 'linux'.
+I then created a (project) icon that uses 'iconx' to execute
+the contents of 'linux'.  The ram_image/linux file contains
+simply:
+
+   ===============================================
+      <B>cd dh1:linux</B>
+      <B>boot</B>
+   ===============================================
+
+ Now all I have to do to startup Linux is double-click on the
+ramdisk then double-click on the 'linux' icon.  Too easy...
+
+
+<HR>
+
+
+<U><A NAME="Helpful, But Dangerous Scripts"><H1>Helpful, But Dangerous Scripts</H1></A></U>
+
+ I have used the following scriptfiles to speed up the install
+of Linux m68k from scratch.  Using them can be dangerous because
+error messages cannot be seen due to the speed of screen
+update.  This is an advanced operation; if you do not understand
+any aspect of this section, please skip it !
+
+ In order to keep from having to re-edit all the config files
+(fstab, exports, netconfig, etc) I keep a current image of them
+on my AFFS drive, so that during a fresh install I can simply
+copy them up to the Linux partition instead of having to do a
+'vi' edit on each of them.
+
+
+ USE THESE SCRIPTS AT YOUR OWN RISK, AND ONLY AFTER YOU
+UNDERSTAND EXACTLY WHAT IS BEING DONE, AFTER A COMPLETE
+MANUAL INSTALL.
+
+
+ The following scriptfile 'extract' is located on my Amiga-
+FastFileSystem containing all the Linux m68k install files.  The
+name of this partition is 'dh1'.  If you wish to use this script
+MAKE SURE you change all '/dh1/linux/' refs to the name where
+these files are located on your system.  Also alter the /dev
+entries to match your machine.
+
+ The purpose of this script is to wipe-out any previous contents
+of my Linux m68k partitions, and re-install a completely fresh
+Linux installation.  To use this script:
+
+   * Set the 'Script' protection bit of 'extract'
+   * Boot up linux ramdisk (install) session.
+   * create a mountpoint for your AFFS disk (my /dh1).
+   * mount your AFFS partition (my /dh1).
+   * execute 'extract' (/dh1/extract).
+<B>
+#! /bin/sh
+#
+# ************************************************************
+#
+# extract - 07/30/97 - Ron Flory - rjflory@feist.com
+#
+# a shell script to automatically 'install' linux FROM SCRATCH
+#
+# ************************************************************
+
+mkdir /dh1
+mount -t affs /dev/sda2 /dh1
+
+ls /dh1
+
+mkswap /dev/sda3
+swapon /dev/sda3
+
+mke2fs /dev/sda4
+
+mount -t ext2 /dev/sda4 /mnt
+cd /mnt
+
+mkdir mnt/cdrom
+mkdir mnt/dh1
+
+tar xvzf /dh1/linux/watchtower-2-root.tar.gz
+tar xvzf /dh1/linux/watchtower-2-usr.tar.gz
+tar xvzf /dh1/linux/watchtower-2-var.tar.gz
+tar xvzf /dh1/linux/watchtower-2-usrdoc.tar.gz
+
+cp /dh1/linux/adduser /mnt/usr/bin/
+
+cp /mnt/etc/passwd /mnt/etc/passwd.OLD
+
+# ************************************************************
+</B>
+
+ The following scriptfile 'fixup' is located on my Amiga-
+FastFileSystem containing all the Linux m68k install files.  The
+name of this partition is 'dh1'.  If you wish to use this script
+MAKE SURE you change all '/dh1/linux/' refs to the name where
+these files are located on your system.  Also alter the /dev
+entries to match your machine.
+
+ The purpose of this script is to fixup the Linux m68k sources
+etc.  To use this script:
+
+   * Set the 'Script' protection bit of 'fixup'
+   * Boot up a normal Linux session.
+   * create a mountpoint for your AFFS disk (my /dh1).
+   * mount your AFFS partition (my /dh1).
+   * execute 'fixup' (/dh1/fixup).
+<B>
+#! /bin/bash
+#
+# ************************************************************
+#
+# fixup - 07/31/97 - Ron Flory - rjflory@feist.com
+#
+# a shell script to automatically 'fixup' linux FROM SCRATCH
+#
+# USE AT YOUR OWN RISK
+#
+# ************************************************************
+
+cd /usr
+rm -r src
+mkdir src
+cd src
+tar xvzf /dh1/linux/linux-2.0.29.tar.gz
+ln -s -v /usr/src/linux-2.0.29 /usr/src/linux
+
+cp /dh1/linux/adduser /usr/bin/
+
+cp /etc/passwd /etc/passwd.OLD
+
+chmod 1777 /tmp
+chmod 1777 /var/tmp
+chmod 0666 /dev/null
+chmod 0666 /dev/zero
+chmod 0700 /usr/bin/adduser
+
+
+# ***** This is for Amiga ONLY *****
+rm /dev/mouse
+ln -s /dev/amigamouse /dev/mouse
+
+# ************************************************************
+</B>
+
+<HR>
+
+
+<U><A NAME="Closing"><H1>Closing</H1></A></U>
+
+ The opinions expressed in this document are my own, and are
+the results of experience with the system.  Many procedures
+may appear obvious, or over-simplified to experienced Linux
+folks, but if I help one beginner get online (and I have),
+then its worth all the effort.  I get a lot of email confirming
+many of the 'gotchas' mentioned above.
+
+ Please let me know about any errors or other misunderstandings
+(yours or mine).  I keep finding errors that are never reported,
+so please help me do better...
+
+ I'll post update notices to the m68k Linux newsgroup from
+time-to-time...
+
+ron
+

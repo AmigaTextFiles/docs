@@ -1,0 +1,41 @@
+XINCLUDE rexxstorage.bb2 ; from rexx/storage.h
+
+DefType.MsgPort *rexxport
+DefType.l
+
+rexxname$="BLITZBLANK"
+*rexxport=CreateMsgPort_()
+If *rexxport
+  *rexxport\mp_Node\ln_Name=&rexxname$
+  AddPort_ *rexxport
+  rxsigflag=1LSL*rexxport\mp_SigBit
+  running=True
+  ;main loop
+  Repeat
+    sig=Wait_(rxsigflag|#SIGBREAKF_CTRL_C)
+    If sig & rxsigflag
+      Repeat
+        *rexxmsg=GetMsg_(*rexxport)
+        If *rexxmsg
+          rexxresultcode=0  
+          rexxresult$="OK"
+          comm$=UCase$(Peek$(*rexxmsg\rm_Args))
+
+          ;do something with comm$
+          ;decide if everything is allright or not -> rexxresultcode<>0
+          ;if everything is allright, you can give back rexxresult$
+
+          If (*rexxmsg\rm_Action & #RXFF_RESULT)<>0 AND rexxresultcode=0
+            *rexxmsg\rm_Result2=CreateArgString_(&rexxresult$,Len(rexxresult$))
+          EndIf
+          ReplyMsg_ *rexxmsg
+        EndIf 
+      Until *rexxmsg=0 
+    EndIf
+    If sig & #SIGBREAKF_CTRL_C
+      running=False
+    EndIf
+  Until running=False
+  RemPort *rexxport
+  DeleteMsgPort_ *rexxport
+EndIf

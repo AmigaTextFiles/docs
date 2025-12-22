@@ -1,0 +1,123 @@
+<HTML>
+<HEAD>
+<!DOCTYPE HTML PUBLIC "-//IETF//DD HTML 3.0//EN">
+<!-- AUTHOR="Paul Morabito" -->
+<!-- EMAIL="amiga_central@bigfoot.com" -->
+<!-- PROGRAM="HTML Client 1.1 for ProgED" -->
+<!-- COMMENT="v1.04" -->
+
+<!-- IMPORTANT!! -->
+<!-- THIS HTML BELONGS TO AMIGA CENTRAL, PLEASE GIVE CREDIT, IE LINK TO MY PAGE, DONT STEAL THE INFO AND REPUBLISH. -->
+<!-- THANKYOU -->
+
+
+<TITLE>Amiga News Central Press Release</TITLE>
+</HEAD>
+<BODY BGCOLOR="#F0F0F0">
+<CENTER>
+<A HREF="../index.html"><IMG SRC="anc.jpg" ALT="Amiga News Central Logo" BORDER="0" WIDTH="278" HEIGHT="37" HSPACE="1" VSPACE="1"></A><BR>
+</CENTER>
+<HR WIDTH="90%">
+<BR>
+<PRE>
+About the Jim Drew statement
+
+The interrupt bug was fixed months ago and only occured with the
+prototype board.  The bug report Email address was included with that
+board, yet I never received any reports from Jim.
+
+Other people who actually cared for the PowerUP development and
+progress (and as such reported the bugs they found), regularly got
+new versions of the ppc.library.
+
+
+History of events with Jim Drew:
+
+o In November 1996 he got a *free* board.
+o In May/June we released a ppc.library so people could adapt to the
+  new dynamic linking system.  This was an *ALPHA* version, and had
+  several bugs, including the interrupt bug.
+o Jim Drew starts to flame P5 on the Picasso96 mailinglist, saying
+  that he fixed a bug in the PPC kernel.
+o Wolf Dietrich mails him asking why he is flaming us behind our back,
+  instead of sending bug reports...  which is what you'd expect from
+  someone who got a free proto board.
+o We recieve a ridiculous mail from Jim, saying that he tried contacting
+  us by mail/phone/fax.  My Email address works fine and I never
+  received anything from him... so I don't believe that he made any
+  attempt at contacting P5 before Wolf Dietrich mailed him.
+o Some weeks later he mailed Wolf Dietrich saying that he wanted 2-3
+  CyberStormPPC boards in exchange for telling us what the problems
+  were that he found.  Lots of problems have been fixed since the last
+  ppc.library that he received, including the problems he found, we
+  believe.
+
+Imagine this:  You give someone a free prototype board which costs alot
+of money.  Then you hear nothing from that person for months...  until
+you notice that he is flaming you on a totally unrelated mailinglist.
+And then the person asks for more free boards before he wants to tell
+you the problem/bugs he found !!!
+
+
+Regarding ppc.library:
+
+The version released on the beta CDs was 44.29*BETA*, and *doesn't*
+have the interrupt problem that the old alpha library had.
+The non-beta library will be released soon.
+
+
+- InvalidCache routine
+
+  This routine doesn`t work as Jim Drew may think because an Invalid
+  can`t work reliable with crossed cache line boundaries. And going
+  down on cacheline boundaries would mean a lot "cinvl" loops which
+  may mean a potential slowdown.  The reason for this routine was to
+  offer a method to get rid of non dirty lines in the fastest possible
+  way. It may get faster if I add some little checks for small data
+  transfers and use cinvl... but that would mean a major slowdown for
+  larger lengths.
+
+  Currently, it does:
+
+  if InvalidSize > 64kb do a cpusha
+  if invalidaddress and invalidsize aren't aligned to 4k boundaries use
+   1) CPUSHP on the first page
+   2) CINVP all pages inbetween
+   3) CPUSHP on the last page if that's still necessary.
+
+  This routine wasn`t meant to do an Invalid Cache over the whole
+  address space.
+  1) This would only work for 16 byte aligned addresses and lengths.
+  2) then you have to do max(4096/16) cinvl's for a not page aligned
+     address in the first and last page of the address area.
+     This may mean a lot overhead
+  3) Inbetween you could then use CINVP for the pages...
+
+  But this gets slower than CPUSHA very easily and that wasn`t the
+  intention of this function.
+
+  If he needs a perfect CacheInvalid function on line base and doesn`t
+  care how long it takes he can send me an email.
+
+
+- The PPCAllocMem not 32-bytes aligned problem Jim Drew observed.
+
+  The old PPCAllocMem aligned to 32, but when I implemented the ability
+  that allocs can be marked by the MMU, I needed to store the *ATTRIBUTE*
+  of the memory allocation, so I know that I have to clean up the MMU
+  stuff when the memory block is freed.
+  The additional 4 byte offset is caused by the internal bookkeeping
+  but the allocation itself is still 32 byte aligned so you don`t have
+  to bother about this.
+  I could align this again to a 32-byte boundary, but that would mean
+  some additional memory waste.  Which is why I didn`t do it.
+  If there`s a demand for an always 32 byte aligned memory ***address***,
+  I can do that.
+</PRE>
+<BR>
+<HR WIDTH="90%">
+<CENTER>
+<A HREF="../index.html">Back to Amiga News Central</A>
+<BR>
+</BODY>
+</HTML>

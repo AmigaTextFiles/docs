@@ -1,0 +1,199 @@
+TITLE: JTime: A Real-Time Clock for the Amiga
+               JTime: A Real-Time Clock for the Amiga
+                         By Michael Keryan
+ 
+Introduction
+ 
+The Amiga computer automatically puts a date and time stamp
+on all your files.  This feature is extremely helpful when
+searching for files.  For example, you can examine statistics
+on all recently created files in the current directory
+with a DOS command such as LIST SINCE SATURDAY.  However,
+for these dates to be meaningful, you must set the time and
+date every time you boot up the system.  If you boot into
+the icon-controlled Workbench environment, you would double-
+click the Preferences icon, then adjust the time and date
+gadgets.  If you boot into the text oriented Command Line
+Interface (CLI), you most likely would set the time and date
+with the AmigaDOS command DATE.  Either way, it doesn't take
+very long to get tired of setting the date.
+  Several third-party firms offer battery backed-up real-time
+clocks for the Amiga computer.  Some of these connect to the
+parallel port and provide another connector for a parallel
+printer.  Although these are advertised to be transparent to
+printer operation, Amiga newsletters and bulletin boards
+indicate a possible contention problem.
+  A second type of connection is similar to clocks used on the
+IBM PC, on a board connected to the bus system.  However, the
+bus on the Amiga is accessible only through the 86-pin
+connector on the side of the computer.  Most firms provide
+this type of interfacing only in conjunction with external RAM
+or multifunction boards.  Most Amiga owners haven't yet taken
+the plunge into the world of two-megabyte ram boards or SCSI
+disk drives.
+  The third type of real-time clock interfacing on the Amiga
+is through the #2 game port connector.  This connector is
+directly behind the mouse cable connector.  It is used only
+for joystick-type games.  Because the clocks contain their
+own battery, they continue to work if unplugged from the
+computer so that the joystick can be plugged in.  This type
+of connection is preferred over the others.  The external
+connection allows easy battery replacement.  The port is
+rarely used for anything else; even when it is used for a
+joystick, there are no contention problems since the clock
+must be physically removed to plug in the joystick.
+  In this article, I describe a method to connect a real-time
+clock to the Amiga through the #2 joyport, and provide
+software to read and set the clock.  The software can be
+installed on your boot disk so that the date and time are
+automatically set every time you turn on the machine.
+ 
+
+TITLE: The Clock Chip
+ 
+The JTime circuit uses an inexpensive, easy-to-get, state-of-
+the-art clock module, the RTC 58321 by SaRonix.  This circuit
+contains just about everything a computer needs for a
+clock:  a complete clock/calendar with leap-year correction,
+a 4-bit bidirectional data bus, and a built-in factory
+trimmed and sealed quartz crystal, all in one 16-pin IC
+package.  The clock circuit requires only about 10 to 20
+microamps at 3 to 5 volts to operate.
+  The RTC 58321 contains sixteen 4-bit wide registers, most
+of which contain the time and date information and can be
+written to and read like standard static RAM memory.  The
+registers are selected by sending to the chip an address
+through the 4-bit bus while pulsing the Address Write line.
+After selecting the address, you can read the contents of
+that register by pulsing the Read line and reading the data
+on the 4-bit bus.  To set the clock, select an address as
+above, then pulse the Write line while sending the clock
+chip the data over the 4-bit bus.  The internal registers
+hold BCD representations of all time and date counters such
+as units of seconds, tens of seconds,... tens of years.
+ 
+ 
+TITLE: The Circuit
+ 
+The Amiga's #2 game port has available seven I/O lines, but
+only two of these are general-purpose I/O; the others are
+used for input only through the Amiga's ROM routines.  Four
+of these lines (normally used for joystick up/down/left/
+right inputs) can be used to read clock data.  However,
+additional circuitry is required to send data to the four
+data lines and four control lines on the clock module over
+only two lines.
+  The circuit I came up with is in Figure 1, and the timing
+diagrams are shown in Figure 2.  (See the discussion on
+jtime.arc below.) One of the two output bits (from the
+computer) is used to pulse a counter. The other bit is used to
+release this count to the clock's data and control lines, to
+trigger either an Address Write cycle, a data Write cycle, or
+a data Read cycle.
+  The computer sends pulses to IC1, wired as an 8-bit binary
+counter.  The lower 4 bits represent the BCD data to the
+clock registers; the upper 4 bits (of which only 3 are
+actually used) control the Address Write, Read, and Write
+lines.  Trace A of Figure 2 shows that this count data is
+loaded before anything else occurs.  As shown in trace B,
+the data from the counter is stable until the counter is
+reset.  After the count is loaded, the other data bit is
+pulsed high for a certain period as shown in trace C.  A
+half-monostable circuit (trace D) creates a counter reset
+pulse at the end of this chip-select period (trace E).
+  As shown in traces F and G, the chip select signal is
+delayed to create a signal to enable a Read pulse.  The bit
+indicating a Read cycle (pin 14 of IC3) is inverted so that
+the Read cycles shut off the bidirectional switches in IC2
+to allow the 4-bit data being sent to the Amiga to consist of
+data from the clock, not data from the counter.  Per trace
+H, a fairly wide window is available to allow the computer
+sufficient time to read valid data.
+  The Address Write and data Write cycles operate in a very
+similar manner.  A half-monostable is used to generate a
+pulse (traces I and J) that enables either an Address Write
+or a Write pulse through bidirectional switch IC3.  An AD WR
+cycle occurs when the counter bit Q4 is high, while a data
+WRITE cycle is triggered by a high level on Q6.  Obviously,
+the software must not allow more than one of any of the
+three control lines to be active at the same time.
+ 
+ 
+TITLE: Required Programs
+
+Programs are required to read the real-time clock and set the
+Amiga clock automatically each time the computer is turned on
+and to read the Amiga clock and set the real time clock twice
+a year during time changes (and if a battery has drained and
+requires replacement). The programs could be written in any
+language, but assembly or stand-alone executable code from a
+compiler (such as C, Modula 2, FORTRAN, etc.) is desired.  To
+read the clock, run the program from CLI with no other
+parameters on the command line:  JTIME.  To set the clock, use
+a parameter "1" following the command:  JTIME 1.
+
+  Data is passed to and from the JTime program through RAM-
+based files:  RAM:TIMEIN and RAM:TIMEOUT.  When the clock is
+read, the file TIMEOUT is created and written to RAM:.  It
+consists of one line of data, the letters "DATE" followed
+by the date and time in AmigaDOS format.  This RAM: file is
+then Executed as an AmigaDOS command which then sets the
+time and date in the computer.  The following can be
+inserted into your S/Startup-Sequence file on the Workbench
+disk you normally use to boot up the system:
+ 
+  JTime
+  Execute RAM:TIMEOUT
+  Delete RAM:TIMEOUT
+ 
+After the initial setting of the real-time clock, the date
+and time only have to be set twice a year for time changes,
+and if the battery needs replaced.  Actually, the battery
+can be changed while the computer is on without losing time
+since 5 volts from the Amiga is provided through diode D2.
+To set the clock, first set the time and date in the
+computer with either the DATE command in the CLI, with
+Preferences, or with other time-setting programs such as the
+public-domain program TimeSet.  Then enter a command to copy
+the current date and time to a RAM: file called TIMEIN.
+Lastly, run the JTime program with a "1" on the command
+line.  This can all be done with a program called SET that
+you can place in the S directory of your Workbench boot
+disk.  To set the clock type in:  EXECUTE SET.  This program
+follows:
+ 
+  Date?              (this prompts you to type in date&time)
+  Date > RAM:TIMEIN
+  JTime 1
+  Delete RAM:TIMEIN
+ 
+ 
+TITLE: Building the Clock
+ 
+You can buy all the parts for the circuit for less than $25;
+see the parts list (see the discussion on jtime.arc below). A
+good source for all parts was found to be Jameco Electronics,
+1355 Shoreway Road, Belmont CA 94002. Jameco sells the real-
+time clock module IC for $7.95.
+  The prototype was wired point-to-point on a small board and
+placed in a small plastic box.  The battery is held snug
+with small strips of Velcro.  A 3-foot 9-conductor cable
+connects the clock circuitry to the computer, allowing you
+to locate the clock in a convenient location.
+  An inexpensive 9-volt battery was used in place of the
+relatively hard to find 3-volt lithium batteries you
+normally see used with this type of circuit.  Due to the low
+power drain, the battery should last to nearly its shelf
+life.
+  Unfortunately, no etched PC board is available at this
+time.  Maybe your users' group can set up a project to make
+up boards for all the members.
+ 
+======== new Startup-Sequence file==========
+JTime
+Execute RAM:TIMEOUT
+Delete ram:TIMEOUT
+Date > LastDate
+LoadWB
+Quit
+

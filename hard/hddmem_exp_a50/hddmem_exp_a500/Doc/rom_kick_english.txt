@@ -1,0 +1,69 @@
+  You need to set the patched kickstart for this board to work
+(it's necessary if pld is not used). Check rom/ROM_A1200_V39.106_M0.dif
+and rom/ROM_A1200_V39.106_M0_c0.dif files for this.
+The first file adds possibility to recognise memory from
+$c00000 and system configuration using joystick, but it doesn't work
+on certain a500s (screen goes yellow...) and also it isn't compatible
+with genlocks that are programmed through joystick port.
+
+  For rom/ROM_A1200_V39.106_M0.dif during reboot hold:
+joystyick left -  change memory priority
+joystyick right - change memory priority
+joystyick up -  chip ram is copied 128Kb up (in order to rip mods from demos)
+joystyick down -   no fast-ram recognition
+joystyick left button - software HDD reset using cs1 and chip ram
+                        clearing (reset won't be intercepted then)
+joystyick right button - no HDD recognition
+
+  Both version are checked and work fine. Futhermore, these changes
+  were made to roms:
+
+1. carddisk.device and carddisk.resourc¥,
+   located at $f8a070-$f8b55b, were removed as a500 has no pcmcia.
+   This space is used for some patches. The rest of this space is filled
+   with $ff.
+2. The algorithm for recognition of 1.5Mb of ram located at $c00000
+   is changed, and recognition of 8Mb of ram located at $200000;
+   ram can be located discontinuously. The case when ram is an image
+   of the active rom is supported, though in pld version a part of ram
+   is physically unavailable. It is made in to make the scheme universal.
+   These roms were workiing with the old hddmem.lha project, which needed
+   that feature sometimes. All the memory recognition is made without
+   loosing its contents. The memory has the kick attribute, so "RAD" disks
+   survive reboots.
+3. Joystick reading during reset was added. See before.
+4. IDE chip recognition removed, resulting in serious pld-free scheme
+   simplifying.
+5. IDE HDD reading and writing 30% speed-up gained, now it's about
+   1.08 Mb/s. This is made changing move.w with move.l. HDD ports are
+   duplicated for full commands anyway, and hardware access is only
+   16-bit. By the way, this works even on a1200 and I see no point not
+   to use it, especially the companies who make kickstart. It's
+   absolutely correct for hardware.
+6. Drive clicks removed by puuting the head to track 0.
+7. "Guru" flashes only 3 times now. ;)
+
+  Some words on how to get two files of 256Kb each for 8-bit roms 27C2000
+from #?.dif files. First you need a1200 rom. It's not included in this
+archive as it would be a copyright violation. So you should get it somehow
+(you may even buy it ;) or rip it from your friend's rom or ask by
+e-mail ;-) - not so important. The point is that it should be the file
+kickstart from $f80000-$ffffff and it has 512Kb. Have a look at offset
+$7ffe8 for these 4 bytes: $8b $56 $e9 $30 - this is the checksum.
+Next you should copy it with the name xxx to rom/ directory of this archive
+and open this directory in the shell so it is made current and type:
+
+  >file_diff/diff_paste xxx rom_a1200_v39.106_m0.dif yyy
+
+or
+
+  >file_diff/diff_paste xxx rom_a1200_v39.106_m0_c0.dif yyy
+
+  After that you'll get a file named yyy with needed kickstart and,
+eventually, 512Kb in size. This is the patched rom. Next you type:
+
+  >rom_split yyy aaa bbb
+
+  aaa and bbb files are 8-bit rom image for 27c2000 chips.
+Even bytes go to file aaa and then to dd14 chip, odd bytes go to
+file bbb and then to dd15 chip.

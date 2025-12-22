@@ -1,0 +1,84 @@
+; Access SuperDuper Via Arexx Using Blitz Basic
+;
+; Written By C.Wilkinson 1994,1995
+;
+; Dynamic Designs
+
+WBStartup
+NoCli
+WBenchToFront_
+WbToScreen 0
+
+LoadFont 0,"",8
+
+#RXCOMM=$1000000
+#RXFF_RESULT=$20000
+#RXFF_STRING=$40000
+If FindPort_("REXX")=0
+Err.l=EasyRequest(1,"Error","Can't Find Arexx"+Chr$(10)+"Please Run
+Rexxmast","Quit")
+End
+EndIf
+
+If FindPort_("SUPERDUPER.1")=0
+Err.l=EasyRequest(1,"Error","Can't Find SuperDuper"+Chr$(10)+"Please Run
+SuperDuper","Quit")
+End
+EndIf
+
+port.l=CreateMsgPort("SD_Arexx")
+msg.l=CreateRexxMsg(port,"","SD_Arexx")
+FindScreen 0
+;CatchDosErrs
+If msg=0 Then DisplayBeep_0:End
+
+.Statements
+Statement Exe{a$}
+  SHARED msg.l,port.l
+com$="ADDRESS 'SUPERDUPER' "+a$
+SendRexxCommand msg,com$,#RXCOMM|#RXFF_STRING|#RXFF_RESULT
+Repeat:Wait:rmsg.l=RexxEvent(port):Until IsRexxMsg(rmsg)
+End Statement
+
+
+Window 0,115,13,400,150,$1008|$6,"SuperDuper Arexx Support (c)
+C.Wilkinson",0,1
+
+GTButton 0,0,10,10,110,12,"ShutDown SD",10
+GTButton 0,1,10,25,110,12,"Stop",10
+GTButton 0,2,10,40,110,12,"Read",10
+
+AttachGTList 0,0
+
+Repeat
+Ev.l=Event
+
+Select GadgetHit
+ Case 0:Gosub Quit
+ Case 1: Gosub Stopped
+ Case 2: Gosub Reads
+
+ ; Etc Etc Etc
+End Select
+
+Until Ev=$200
+
+CloseWindow 0
+
+;DeleteRexxMsg msg
+;DeleteMsgPort_(port)
+End
+;Gosub Quit
+Return
+
+.Stopped
+Exe{"'Stop'"}
+Return
+
+.Reads
+Exe{"'Read'"}
+Return
+
+.Quit
+Exe{"'Quit'"}
+Return

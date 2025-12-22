@@ -1,0 +1,52 @@
+; Standard Initialization
+DEFTYPE .w
+WBStartup
+NoCli
+WbToScreen 0
+ShowScreen 0
+
+; The bitmap with the pattern.
+#PATTERN=0
+
+; Setup
+BorderPens 2,1
+ExScreenObj 0
+BitMap #PATTERN,64,32,3
+Circlef 32,16,30,15,3
+Circlef 32,16,15,7,0
+patwidth=64
+patheight=32
+
+Statement Putpattern {w,close,bor}
+SHARED patwidth,patheight
+Use Window w
+ww=InnerWidth
+wh=InnerHeight
+xa=0:ya=0:ystop=0
+If close=1 Then xa=6:ya=4
+y=2-ya/2
+If patwidth>ww-6+xa Then bw=ww-6+xa:Else bw=patwidth
+If patheight>wh-4+ya Then bh=wh-4+ya:Else bh=patheight
+Repeat
+  x=3-xa/2
+  If patwidth>ww-6+xa Then bw=ww-6+xa:Else bw=patwidth
+  Repeat
+    BitMaptoWindow #PATTERN,w,0,0,x+WBorLeft,y+WBorTop,bw,bh
+    x+bw
+    If x+bw-1=>ww-3+xa/2 Then bw=ww-x-3+xa/2:BitMaptoWindow #PATTERN,w,0,0,x+WBorLeft,y+WBorTop,bw,bh:x=ww-3+xa/2
+  Until x=>ww-3+xa/2
+  y+bh
+  If y=>wh-3+ya/2 Then ystop=1
+  If y+bh=>wh-2+ya/2 Then bh=wh-y-2+ya/2
+Until ystop=1
+If close=0 AND bor=1 GadgetBorder WBorLeft+6,WBorTop+3,ww-8-WBorRight,wh-4-WBorBottom
+If close=1 AND bor=1 GadgetBorder WBorLeft+4,WBorTop+2,ww-4-WBorRight,wh-2-WBorBottom
+End Statement
+
+
+; Let's try it!
+Window 0,20,10,300,150,0,"EXAMPLE WINDOW",-1,-1
+Putpattern {w,0,1}
+
+MouseWait
+End

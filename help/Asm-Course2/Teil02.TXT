@@ -1,0 +1,252 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 2.Teil...
+
+
+So leute, nachdem wir gemoved haben machen wir noch ein paar andere
+spielereien in der Art.
+Geben wir mal ein programm ein, das folgendes macht
+`Einen Wert in ein register schreiben, einen anderen in ein zweites, und
+die beiden addieren`
+Wie muesste das aussehen ?
+Zuerst mal ein Move-befehl mit dem Ziel D0, O.K
+
+Move.w #$4000,d0
+
+Die direkte Adressierung fuer einen Additions befehl wuerde jetzt verlangen
+das wir einen direkten wert addieren.
+Da es aber sehr langsam ist, und viel zu unflexibel werde wir erst einen
+wert in ein register schreiben, und dann die beiden register miteinander
+Addieren.
+
+also...
+
+Move.w #$2000,d1
+
+So, der Additions befehl heisst wie ihr wisst Add, und ist sehr einfach zu
+benutzen, naemlich so
+
+Add.w d0,d1
+
+Es ist mathematisch egal was ich zu was addiere, das ergebnis ist immer
+dasselbe, das weiss man. Allerdings macht der MC 68000 einen Unterschied,
+denn das Register zu dem dazu Addiert wird ist gleichzeitig auch das Ziel
+der Operation. Also muesste das programm so aussehen
+
+Move.w #$4000,d0
+Move.w #$2000,d1
+Add.w  d0,d1
+Rts
+
+In der Tabelle die der Seka ausgibt koennt ihr ueberpruefen ob der MC 68000
+auch richtig gerechnet hat, es muesste jetzt 00006000 in d1 stehen.
+
+Naja, genug der spielerei...weitere einfache Befehle in dieser Ebene sind
+halt Subtrahieren (Sub), Multiplizieren (Muls) und Divdieren (Divs)
+Ihr koennt ja damit ein Bisschen rum Experimentieren. Aber das muesste
+eigentlich jedem klar sein, der Rechnen kann.
+
+Ich werde in diesem Kurs einen Grundstamm von befehlen erklaeren der fuer
+Sichtbare Effekte wichtig ist, damit man nicht die Lust verliert, den
+soviel man auch ueber hunderttausend moeglichkeiten erfaehrt etwas zu
+kopieren, wenn man dabei nicht sieht, oder vorzeigen kann ist es schnell
+langweilig.
+
+Also machen wir bei etwas weiter was sich schwer anhoert, aber ziemlich
+einfach ist.
+
+3.Manipulation und Bedingte verzweigung durch die Bitebene
+
+Hoert sich ja schwierig an, ist es aber nicht. Ein Computer arbeitet den
+groessten Teil seiner Zeit mit bytes, words und langwords, er Kopiert,
+addiert rotiert diese werte und macht alles moegliche. Es gibt aber auch
+viele sachen die werden einfach nur angestellt oder nicht, da gibt es keine
+grossen auswahlmoeglichkeite wie zB. bei der farbgebung wo man halt 4096
+moeglichkeiten hat. Sondern da reicht es ob an oder aus, genau wie beim
+Lichtschalter, entweder an oder aus.
+
+Also Bits sind ja nichts anderes als diese Schalter. Im normalen
+arbeitsspeicher des Amigas werden bits garnicht mehr so benutzt sondern
+immer nur zusammen gefasst zum Byte oder Word. Aber die ganzen
+zusaetzlichen Chip`s die so im Amiga arbeiten werden viel nur durch
+Schalter gesteuert. Entweder ist der Bildschirm an oder aus, ich meine
+damit nicht dem Schalter den du vor dir hast und der Vielleicht rot
+leuchtet wie bei mir, sondern halt der Softwaremaessige an und ausschalter
+den es im Amiga gibt, genauso verhaelt es sich mit Sprites, entweder ja
+oder nein. Das waeren Beispiele fuer das Setzen oder das loeschen von Bits,
+aber was ist mit der Abfrage, was sollte das fuer einen Sinn haben, und was
+koennte das schon fuer einen Sinn, ob Sprites da sind sehe ich ja, oder ob
+der Bildschirm an ist merke ich ja auch. Was koennte man also Abfragen.
+
+Nun, ich schwoere das du die beiden im Moment wichtigsten schalter schon
+benutzt hast, naemlich die Maustasten. Gut, ne ?
+Es soll uns aber jetzt nur eine Interresieren, und zwar die Linke.
+
+Dazu eine Kurze erklaerung....
+Der ganze Computer hat mit der Maus direkt relativ wenig zu tun, sondern
+nur ein Ganz bestimmter Chip, und zwar einer vom typ CIA, keine Bange es
+ist kein Bewaffneter Ami, sondern nur ein Normaler Chip. Er heisst
+richtig Computer Interface Adapter, was soviel bedeutet wie `interne
+Schnittstelle zwischen Hard und Software`. Und ihr koennt ihn direkt ohne
+Aufschrauben des Amigas beruehren, naemliche wenn ihr den Mausstecker zieht
+und die Pins Beruehrt, den die gehen direkt in diesen Chip rein, der wertet
+sie dann aus, und legt das ergebnis dann an seinen I/O port. Dort kann der
+user das dann Abfragen, oder dem CIA anweisungen geben.
+Also der Port des CIA`s der uns Interresiert liegt bei $BFE001, das solltet
+ihr euch merken, man nennt es CIAapra.
+Also wenn ihr Irgendwo dieses Wort lest dann wisst ihr welches es ist.
+
+Naja, wo waren wir doch gleich, achja bei der Linken Maustaste.
+Tja, die kann man halt bei Bit 6 im CIAapra abfragen.
+Wie das erklaere ich jetzt, aber erstmal alle Befehle zur direkten
+Bitmanipulation
+
+Bset
+Bclr
+Bchg
+
+und die Bitabfrage..
+
+Btst
+
+So, also Bset ist Bitsetzen
+
+Bset #6,$40000 , wuerde Bit 6 in der adresse $40000 setzen
+
+Bclr loescht das Bit.
+
+Ein schoener Befehl ist auch noch der Bchg befehl, den er wechselt den
+Momentanen zustand des Bits das man nennt,war es gesetzt wird es geloescht.
+
+Ein Kleines Beispiel waere stark verwandt mit unserem Ziel mit der Maus,
+denn Bit 1 des CIAapra registers ist die Power Led des Amiga. Abfragen hat
+nicht viel Sinn, aber an und ausmachen koennen wir sie, wobei noch ein
+Problem ist, und zwar das alle CIA-schalter die man setzen oder loeschen
+kann, Lowaktiv sind, das heisst, wenn sie an sind, sind sie aus. Also wenn
+die lampe des Amigas an ist, wie jetzt zum Beispiel bei mir, dann ist Bit 1
+vom CIAapra geloescht, ist die lampe aus, zb. beim Guru-Blinken wird sie
+gesetzt.
+
+Wenn ihr also folgendes kurzprogramm eingebt, und es startet, mueste die
+Lampe ausgehen.
+
+Bset #1,$BFE001
+rts
+
+Wie ihr wisst, setzen des Bits ist eigentlich loeschen, somit geht die
+lampe aus. Um sie wieder anzukriegen muesst ihr einfach das Bset in ein
+Bclr umwandeln, starten, und schon geht sie an.
+Das kann man aber schneller haben, indem man einfach den bchg-befehl
+benutzt, denn der aendert halt immer nur das Bit, an aus an aus.
+
+Schoene Spielerei, werden wir aber erst gleich weiter spielen, nachdem wir
+die Maus und warteschleifen beherschen.
+
+O.K weiter mit der Maus....
+Wir Fragen ein Bit mit den Btst-befehl ab. Und was macht der ?
+Nun er kopiert das Bit einfach in des Z-flag des Prozessors...
+
+Ach, die Flags kennt ihr noch nicht..Nun in den Flags merkt sich der Prozessor
+die eigenschaften der letzen operation, wie zum Beispiel, ob es null war,
+oder ob das ergebnis im Negativen bereich war. Und das Z-Flag sagt eben aus
+ob die operation Null war oder nicht.
+Beim Btst befehl uebernimmt der Befehl das setzen des Bits wir muessen es
+nur noch abfragen, naja das hoert sich jetzt leicht an aber es kommt nun
+ein ganze menge auf euch zu, naemlich
+
+4.Bedingtes abzweigen mittels Branchen.
+
+So, wo fangen wir den jetzt an....najut erstmal die Abfrage abhandeln.
+Die beiden befehle zum abfrage ob null oder nicht heisse
+
+Bne und Beq
+
+Bne (Branch if Not Equal) verzweigt wenn nicht null, und Beq (Branch if
+Equal) verzweigt wenn null. Das ist klar, was dann passiert kommt spaeter.
+
+Um euch das Branchen zu erklaeren muss ich nochmal zum normalen
+Sprungbefehl zurueck kommen.
+Wie war das noch, er verbiegt den PC auf eine Neue Adresse, und macht dann
+da weiter. Beim branchen geschieht das auch, aber erst spaeter, denn er
+muss den neuen wert erstmal ausrechnen, und das macht er anhand des wertes
+der hinter den Branch befehl steht, der sagt naehmlich die Distanz zum
+neuen ziel aus, diese distanz wird dann dazu oder abgerechnet, und dann
+gehts weiter, hier mal ein prograemmchen welches das ungefaehr macht was
+dann passiert.
+
+Move.l Distanz,d0       ;Distanz nach d0
+Move.l A7,d1            ;Adresse im PC nach d1
+Add.l (Sub.l) d0,d1     ;Distanz wert Addieren oder Subtrahieren
+Move.l d1,a7            ;Neuen PC schreiben (diesmal ist der zugriff
+                        ;erlaubt.
+
+Tippt dieses programm nicht ab, denn es ruf einen absturz hervor.
+
+Um das ausrechnen des distanzwertes brauchen wir uns nicht zu kuemmern,
+denn das uebernimmt der Seka fuer uns (hoffentlich).
+Wenn wir etwas mit einer solche bedingten verzweigung programmierung,
+bedienen wir uns einer Guenstigen einrichtung, die manche schon vom
+Amiga-basic her kennen, die Labels.
+Das sind Stellen im SourceCode die durch freiwaehlbaere namen genannt
+werden. Das sieht ungefaehr so aus....ich zeige es mal an einer Maustasten
+abrfrage...
+
+
+Wait:                           ;Label `wait`
+        Btst #6,$BFE001         ;Testet mausbit
+        bne.s wait              ;Falls nicht null, war nicht gedrueckt,
+                                ;also wieder nach wait, um weiter zu
+                                ;warten.
+
+Die Distanz die der Assembler berechnet, bildet sich aus der Anzahl der
+byte die Zwischen dem Ende des bne-befehls und dem Anfang des Labels liegt.
+Bei diesem Beispiel waere es...rechnen wir das mal aus.
+
+1 word fuer die Distanz
+1 word fuer den Bne befehl
+1 langword fuer die $BFE001
+1 word fuer die sechs
+1 word fuer den Btst-befehl
+
+gleich 12, da wir zurueck springen ist der wert -12. Klar ?
+
+Wenn ein Branch befehl eingesetzt wird verzweigt er nur dann wenn seine
+bedingung erfuellt ist, das heisst - der Bne befehl verzweigt nur wenn
+nicht null, in unserem Beispiel also nur wenn die maustaste nicht gedrueckt
+ist. Andernfalls macht er nach dem befehl weiter. um also eine lauffaehige
+Maustasten abfrage zu programmieren, muessten wir nur noch ein RTS
+dahitnersetzen. Das Ganze saehe dann so aus.
+
+Wait:   Btst #6,$BFE001
+        Bne wait
+        rts
+
+Gebt das mal ein, und assembliert und startet das.
+Scheisse nichts passiert, schon wieder nichts. Doch er wartet auf die
+maustaste. Wird sie Gedrueckt, kommt er wieder. Toll, ne ?
+
+So, damit sind wir bei ersten Programmwas sich lohnt abzuspeichern...
+Wir gehen raus aus dem Editor und Tippen `W`
+Nun fragt der Seka nach dem Filenamen, geben wir da mal WaitMaus ein.
+Krrrkk, Krrrk...faedich, der Seka hat das jetzt abgespeichert, und an den
+namen ein .S drangehaengt damit du auch Spaeter erkennst was SourceCode ist
+und was nicht.
+Denn wir koennen jetzt mal einen Cli-befehl aus dem ding machen, wie ? ganz
+einfach.
+Zur sicherheit Nochmal assemblieren, aber nicht starten.
+Da wir uns im Kommando modus befinden, tippen wir `WO` fuer Write Object.
+Nach dem Filenamen fragt der Seka natuerlich auch, und dann generiert er
+ein laufaehiges programm auf der Diskette. ihr koennt es Natuerlich wieder
+WaitMaus nennen den der SourceCode hat ein .S dran, beim ObjectCode macht
+der Seka das nicht.
+So um auszuprobieren was ihr jetzt schon gemacht habt, verlasst ihr jetzt
+mal den Seka mit `!` und `Y`, und tippt im Cli den namen des eben
+generierten Programms ein. Es passiert garnichts, nur das der Prompt nicht
+wieder zurueck kommt, denn das Programm ist so kurz das noch nicht mal die
+Drive-Led angeht. Drueckt ihr jetzt die Maus geht es weiter. Kopiert ihr
+das jetzt noch in den C-ordner habt ihr einen Sinnvollen Cli Befehl
+programmiert.
+
+Ciao, bis denne
+
+                Jeff kandle

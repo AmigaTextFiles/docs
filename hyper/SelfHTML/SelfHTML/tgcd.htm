@@ -1,0 +1,166 @@
+<html>
+<head>
+<title>SELFHTML: CGI/Perl / Perl-Sprachelemente / Bedingte Anweisungen</title>
+<meta name="description" content="(SELFHTML 7.0) Wie Sie in Perl bedingte Anweisungen, also if-Abfragen realisieren.">
+<meta name="keywords" content="SELFHTML, Perl, bedingte Anweisungen, if-Abfragen">
+<link rel=stylesheet type="text/css" href="wselfhtm.css"> 
+</head>
+<body bgcolor=#FFFFFF text=#000000 link=#AA5522 vlink=#772200 alink=#000000>
+
+<p><nobr><a class="an" name="top"><img src="x2.gif" width=16 height=13 border=0></a> <a href="selfhtml.htm"><b>SELFHTML</b></a>/<a href="tq.htm" target="_parent">Quickbar</a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tg.htm"><b>CGI/Perl</b></a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tgc.htm"><b>Perl-Sprachelemente</b></a></nobr></p>
+<hr noshade size=1>
+<table cellpadding=4 cellspacing=1 width=100%>
+<tr>
+<td bgcolor=#EEEEEE class="doc" width=110><img src="xweb.gif" width=106 height=109></td>
+<td bgcolor=#EEEEEE class="doc" valign=bottom width=100%><h2>Bedingte Anweisungen</h2></td>
+</tr>
+<tr>
+<td bgcolor=#EEEEEE class="doc" valign=top align=center>
+<img src="x5.gif" width=30 height=20 vspace=6 border=0 alt="Diese Seite ist ein Dokument mit Informationstext">
+</td>
+<td bgcolor=#FFFFFF valign=top nowrap>
+
+<p>
+<img src="xgdown.gif" width=14 height=10 border=0>&nbsp;<a href="#a1"><b>Bedingte Anweisungen mit if/unless/else/elsif</b></a> <br>
+<img src="xgdown.gif" width=14 height=10 border=0>&nbsp;<a href="#a2"><b>Einfache Entweder-Oder-Abfrage</b></a>
+</p>
+
+</td>
+</tr><tr><td colspan=2 bgcolor=#EEEEEE class="doc"><a href="#bottom"><img src="xgdown.gif" width=14 height=10 border=0></a>&#160;</td></tr>
+</table>
+
+
+
+<h2 class="Sh2"><a class="an" name="a1">Bedingte Anweisungen mit if/unless/else/elsif</a></h2>
+
+<p>Sie k&ouml;nnen die Ausf&uuml;hrung von Anweisungen von Bedingungen abh&auml;ngig machen.</p>
+
+<h3 class="xmp">Beispiel:</h3>
+<table width=100% cellpadding=10><tr><td class="xmpcode" bgcolor=#FFFFE0><pre>
+#!/usr/bin/perl
+
+@Passwords = (&quot;Piesepampel&quot;,&quot;Lederstrumpf&quot;,&quot;Hotzenplotz&quot;);        # Passwortliste
+
+# Einfaches CGI-Script fuer Passwortabfrage                            #
+# In der ersten unless-Abfrage wird geprueft, ob die Standard-Eingabe  #
+# das Wort 'geheim' enthaelt. Ist das nicht der Fall, wird eine HTML-  #
+# Datei mit einem kleinen Formular zur Passworteingabe erzeugt. Beim   #
+# Absenden des Formulars wird wieder dieses Script aufgerufen. Da aber #
+# nun der Name des Formularfelds fuer das Passwort 'geheim' lautet,    #
+# kommt das Script in den else-Zweig. Dort wird geprueft, ob das       #
+# eingegebene Wort in der Passwortliste vorkommt.                      #
+
+read(STDIN, $Input, $ENV{'CONTENT_LENGTH'});     # Standard-Eingabe auslesen
+unless($Input =~ /geheim/)                       # Wenn 'geheim' darin nicht vorkommt...
+ {
+  print &quot;Content-type: text/html\n\n&quot;;           # HTTP-Header fuer HTML-Datei
+  print &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Passwort&lt;/title&gt;&lt;/head&gt;\n&quot;;           # HTML-Datei
+  print &quot;&lt;body bgcolor=#C0C0C0&gt;&lt;h1&gt;Passwort&lt;/h1&gt;\n&quot;;
+  print &quot;&lt;form action=\&quot;\\cgi-bin/test.pl\&quot; method=post&gt;\n&quot;; 
+  print &quot;&lt;input type=password name=\&quot;geheim\&quot; maxlength=15 size=15&gt;\n&quot;; 
+  print &quot;&lt;input type=submit value=\&quot;Absenden\&quot;&gt;\n&quot;;
+  print &quot;&lt;input type=reset value=\&quot;Abbrechen\&quot;&gt;\n&quot;;
+  print &quot;&lt;/form&gt;&lt;/body&gt;&lt;/html&gt;\n&quot;;
+  exit(0);
+ }
+else                                             # wenn 'geheim' vorkommt...
+ {
+  print &quot;Content-type: text/html\n\n&quot;;           # HTTP-Header fuer HTML-Datei
+  print &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;Passwort&lt;/title&gt;&lt;/head&gt;\n&quot;;           # HTML-Datei
+  print &quot;&lt;body bgcolor=#C0C0C0&gt;&lt;h1&gt;Passwort&lt;/h1&gt;\n&quot;;
+  ($name, $value) = split(/=/, $Input);   
+  for(@Passwords)                                # Passwortliste abklappern
+   {
+    if($value eq $_)                             # Wenn eingegebener Wert gleich Passwort
+     {
+      $Erfolg = &quot;ja&quot;;
+      last;                                      # for-Schleife abbrechen
+     }
+    else                                         # Wenn eingegebener Wert ungleich Passwort
+     {
+      $Erfolg = &quot;nein&quot;;
+     }
+   }
+  if($Erfolg eq &quot;ja&quot;)
+   {
+    print &quot;&lt;b&gt;Eingeloggt!&lt;/b&gt;\n&quot;; # Hier kann z.B. ein Verweis zu einer geheimen URL folgen
+   }
+  else
+   {
+    print &quot;&lt;b&gt;Sorry, Sie haben hier KEINEN Zutritt oder Ihr Passwort falsch eingegeben!&lt;/b&gt;\n&quot;;
+   }
+  print &quot;&lt;/body&gt;&lt;/html&gt;\n&quot;;
+  exit(0);
+ }
+</pre></td></tr></table>
+
+<h3 class="xpl">Erl&auml;uterung:</h3>
+
+<p>Mit <tt>if</tt> k&ouml;nnen Sie eine Wenn-Dann-Bedingung einleiten (<i>if = wenn</i>). Dahinter folgt, in Klammern stehend, die Formulierung der Bedingung. Um solche Bedingungen zu formulieren, brauchen Sie <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcf.htm#a2"><b>Vergleichsoperatoren</b></a> f&uuml;r Zahlen oder Zeichenketten, oft auch <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcb.htm"><b>Variablen</b></a> oder <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcg.htm"><b>regul&auml;re Ausdr&uuml;cke</b></a>.</p> 
+
+<p>Eine andere M&ouml;glichkeit, um eine Wenn-Dann-Bedingung zu formulieren, steht mit <tt>unless</tt> zur Verf&uuml;gung (<i>unless = wenn nicht</i>). Dabei gelten die gleichen Regeln wie bei <tt>if</tt>. Der Unterschied zu <tt>if</tt> besteht darin, da&szlig; bei <tt>unless</tt> nicht abgefragt wird, welche Bedingung erf&uuml;llt sein mu&szlig;, damit der davon abh&auml;ngige Programmcode ausgef&uuml;hrt wird, sondern welche Bedingung nicht erf&uuml;llt sein darf.</p>
+
+<p>Wenn Sie mehrere Bedingungen in Reihe schalten wollen, sollten Sie f&uuml;r alle weiteren Bedingungen nach der ersten <tt>if</tt>/<tt>unless</tt>-Bedingung anstelle davon <tt>elsif</tt> verwenden (<i>elsif = oder wenn</i>).</p> 
+
+<p>Mit <tt>else</tt> definieren Sie den Zweig Ihrer Abfrage, der ausgef&uuml;hrt werden soll, wenn die Bedingungen von <tt>if</tt>, <tt>unless</tt> oder <tt>elsif</tt> nicht zutreffen (<i>else = sonst</i>). Wenn Sie f&uuml;r diesen Fall keine Anweisungen brauchen, lassen Sie den else-Zweig einfach weg.</p>
+
+<h3 class="inf">Beachten Sie:</h3>
+
+<p>Alles, was innerhalb einer Verzweigung mit <tt>if</tt>, <tt>unless</tt>, <tt>elsif</tt> oder <tt>else</tt> steht, mu&szlig; in geschweifte Klammern eingeschlossen werden, auch, wenn es sich nur um eine einzige Anweisung handelt.</p>
+
+
+<table bgcolor=#EEEEEE class="doc" width=100%><tr><td>
+<a href="#top"><img src="xgoup.gif" width=14 height=10 border=0></a><a href="#bottom"><img src="xgdown.gif" width=14 height=10 border=0></a>&#160;
+</td></tr></table>
+<h2 class="Sh2"><a class="an" name="a2">Einfache Entweder-Oder-Abfrage</a></h2>
+
+<p>F&uuml;r einfache Entweder-Oder-Bedingungen gibt es eine spezielle Syntax, die Sie alternativ zur if/else-Anweisung verwenden k&ouml;nnen.</p>
+
+
+<h3 class="xmp">Beispiel:</h3>
+<table width=100% cellpadding=10><tr><td class="xmpcode" bgcolor=#FFFFE0><pre>
+#!/usr/bin/perl
+
+$Ergebnis = $ENV{'HTTP_USER_AGENT'} =~ /95/ ? &quot;Win 95/NT&quot; : &quot;kein Win 95/NT&quot;;
+print &quot;Content-type: text/html\n\n&quot;; 
+print &quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;User&lt;/title&gt;&lt;/head&gt;\n&quot;;
+print &quot;&lt;body&gt;\n&quot;;
+print &quot;&lt;h1&gt;Sie haben &quot;, $Ergebnis, &quot;!&lt;/h1&gt;\n&quot;;
+print &quot;&lt;/body&gt;&lt;/html&gt;\n&quot;;
+exit(0);
+</pre></td></tr></table>
+
+<h3 class="xpl">Erl&auml;uterung:</h3>
+
+<p>Eine einfache Entweder-Oder-Abfrage wird mit einer Bedingung eingeleitet, im Beispiel <tt>$ENV{'HTTP_USER_AGENT'} =~ /95/</tt>. Dahinter wird ein Fragezeichen notiert. Hinter dem Fragezeichen wird ein Wert angegeben, der aktuell ist, wenn die Bedingung erf&uuml;llt ist. Dahinter folgt ein Doppelpunkt, und dahinter ein Wert f&uuml;r den Fall, da&szlig; die Bedingung nicht erf&uuml;llt ist. Da es sich um Werte handelt, die f&uuml;r die Weiterverarbeitung nur sinnvoll sind, wenn sie in einer Variablen gespeichert werden, wird einer solchen Entweder-Oder-Abfrage in der Regel eine <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcb.htm"><b>Variable</b></a> vorangestellt, im Beispiel der Skalar <tt>$Ergebnis</tt>. Der Variablen wird durch diese Art von Anweisung das Ergebnis der Entweder-Oder-Abfrage zugewiesen.<br>
+Um Bedingungen zu formulieren, brauchen Sie <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcf.htm#a2"><b>Vergleichsoperatoren</b></a>.</p>
+
+
+
+
+<table cellpadding=4 cellspacing=1 width=100%>
+<tr><td colspan=2 bgcolor=#EEEEEE class="doc">
+<a href="#top"><img src="xgoup.gif" width=14 height=10 border=0></a>
+</td></tr>
+<tr><td bgcolor=#EEEEEE class="doc" align=right width=110>weiter:<a href="tgce.htm"><img src="xgnext.gif" width=10 height=10 border=0 hspace=10></a></td>
+<td bgcolor=#FFFFFF><img src="x3.gif" width=15 height=10 border=0> <a href="tgce.htm"><b>Schleifen und Sprungbefehle</b></a>
+</td></tr>
+<tr>
+<td bgcolor=#EEEEEE class="doc" align=right width=110>zur&uuml;ck:<a href="tgcc.htm"><img src="xgprev.gif" width=10 height=10 border=0 hspace=10></a></td>
+<td bgcolor=#FFFFFF width=100%><img src="x3.gif" width=15 height=10 border=0> <a href="tgcc.htm"><b>Vordefinierte Variablen in Perl</b></a>
+</td>
+</tr>
+<tr><td colspan=2 bgcolor=#EEEEEE class="doc">&#160;</td></tr>
+</table>
+<hr noshade size=1>
+<p><nobr><img src="x2.gif" width=16 height=13 border=0> <a href="selfhtml.htm"><b>SELFHTML</b></a>/<a href="tq.htm" target="_parent">Quickbar</a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tg.htm"><b>CGI/Perl</b></a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tgc.htm"><b>Perl-Sprachelemente</b></a></nobr></p>
+<p><nobr><a class="an" name="bottom">&copy; 1998</A> <img src="xgmail.gif" width=15 height=10 border=0>&nbsp;<a href="mailto:muenz@csi.com">Stefan M&uuml;nz, muenz@csi.com</a></nobr></p>
+
+
+
+</body>
+</html>

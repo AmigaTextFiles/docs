@@ -1,0 +1,419 @@
+
+
+Perhaps some people already have heard about this new, fancy product.
+i-glasses! by company Virtual IO in Seattle are a new and affordable
+way into 3d, or Cyberspace, if you want.
+
+There are two parts: The main one are the glasses themselves, a color
+LCD for every eye, independent ones. Provided with the right signals,
+you will see real 3D effects. - The other part is called Head Tracker
+and is a position (or better angular) detector for your head to
+enable real-time looking around in space or do cursor-like movements
+by head movements. - Also mounted to the glasses are stereo headphones.
+
+To provide the right signals for the glasses is nearly trivial. They
+take a fully standard composite video signal (one wire, plus two others
+for stereo sound) as input. Thus there are PAL and NTSC versions of
+the glasses. The NTSC versions already exist, the PAL versions are
+announced RSN. As the video signal is standard, it is always interlaced.
+And then the even lines (or one half field) go to the left LCD and
+the odd lines (the other field) to the right (or the other way round,
+you can choose with a switch a the set, so you don't have to worry
+during programming). This way of coding is also called "field sequential".
+
+When I had the first PAL glasses in my hand and tried my first own
+software, my experience was: You have to make the effect much more drastic
+than I thought. For the nearest point to the face I chose on a HiRes
+screen 15 pixels horizontal spacing. This is far too little I learnt:
+If a pixel is infinitely far away, its two field pixels should be
+a quarter screen apart horizontally, when the pixels gets nearer,
+the field pixels get nearer to each other and cross finally.
+Assume that the view angle is only ca. 40 degrees.
+
+Another hint for programming:
+The resolution is rather low, something like 268 x 230 (don't have
+more concrete figures, sorry).
+
+
+The head tracker part is a bit more complicated, I'll quote below the
+data provided to me by Virtual IO.
+
+
+>Date: Thu, 6 Jul 1995 01:58:14 -0700 (PDT)
+>Subject: Head Tracker Specs
+
+  I tried to format the text the way it is in the developer's kit, but my
+mail program created a mess of it.  The fax line has been busy, so
+hopefully this e-mail will work. 
+
+Contents
+
+Introduction
+
+Basic Tracker orientation
+Communicating with the host computer Using the i-glasses! Tracker 
+The i-glasses! Tracker command set
+ Virtual i-O Tracker Modes
+  Mode 0: Raw data mode
+   Data packet format for mode 0 (Binary) 
+   Data packet format for mode 0 (ASCII) 
+   Send mode for data mode 0
+  Mode 1: Cooked data mode 
+   Data packet format for mode 1 (Binary)
+   Data packet format for mode 1 (ASCII) 
+   Send mode for data mode 1 Mode 2:
+  Euler angles mode 
+   Data packet format for mode 2 (Binary) 
+   Data packet format for mode 2 (ASCII)
+   Send mode for data mode 2 
+  Emulation Modes
+   Mode3: Microsoft mouse emulation mode 
+   Mode 4: CyberMaxx emulation mode
+  Examples 
+   Modes for terminal debugging 
+   Modes useful for applications
+    Emulation modes 
+     Mouse mode 
+  Sample Code Notes:
+
+Introduction The i-glasses! Tracker, available exclusively from Virtual
+i-0 Corporation, sends yaw, pitch, and roll information to a host
+computer.  This information is then available to application software for
+creating immersive, head-tracking, real-time stereoscopic 3D simulations
+called virtual reality.
+
+Basic Tracker orientation
+
+All orientation descriptions are from the perspective of someone actually
+wearing the Tracker: Positive yaw is defined as a left head rotation. 
+Positive pitch is an upward head tilt.  Positive roll is a left head tilt. 
+
+The coordinate system used is +Y up, +Z out, and +X right (The positive
+axes can be formed with the right-hand index, middle finger, and thumb: a
+right-handed coordinate system.  See Computer Graphics, principles and
+practice, by Foley et al for more inf ormation on coordinate systems).
+creating immersive, head-tracking, real-t ime stereoscopic 3D simulations
+called virtual reality. Basic Tracker orientation All orientation
+descriptions are from the perspective of someone actually wearing the
+Tracker: Positive yaw is defined as a left head rotation.  Positive pitch
+is an upward head tilt.  Positive roll is a left head tilt.  The
+coordinate system used is +Y up, +Z out, and +X right (The positive axes
+can be formed with the right-hand index, middle finger, and thumb: a
+right-handed coordinate system.  See Computer Graphics, principles and
+practice, by Foley et al for more inf ormation on coordinate systems). 
+
+Communicating with the host computer The Tracker communicates with the
+host computer via an RS-232C 3-wire serial interface (TXD, RXD, GND).  The
+Tracker can run at 1200, 2400, 4800, 9600, and 19200 bps.  The Tracker can
+be queried and tested using a standard ASCII terminal program. All
+commands are printable ASCII strings, and provide feedback to tell the
+application if a command was successfully processed.  All commands (except
+'S') begin with a '!' (Attention) and end with a carriage return (Hex D). 
+The Tracker responds with an ' O' for OK or an 'E' for an Error.  The 'S'
+(Send data) command requests the Tracker to send data to the host.  In
+this case, only the requested data is returned, and a time-out check must
+be used to determine if an error occurred. Protected mode applications
+will need a bi-modal serial handler. A bi-modal serial handler for Watcom
+C/C++ is provided on the developer kit disk. Using the i-glasses! Tracker
+The Tracker must be initialized to a known state before an application can
+begin using the Tracker.  Since the Tracker may be in a continuous
+streaming mode and at any of six supported bps rates, the host must send a
+reset command until successful.  This will give the Tracker time to stop
+sending data and to change its communications rate if necessary.  After
+the Tracker has been successfully reset, the host must put the Tracker
+into the appropriate mode for the application (polled, streaming, ASCII,
+bina ry, etc.).  For emulation purposes, the Tracker retains its last
+operating modes (data mode, send mode, and send format) when it was
+powered off.  All applications that directly support the Tracker must set
+and verify the operating modes on initial startu p. 
+
+The i-glasses! Tracker command set All commands to the Tracker are
+printable ASCII characters.  Each command (except 'S') is terminated with
+a carriage return (Hex D).  Result codes, 'O' and 'E' are ASCII 'O' and
+'E'.  Tracker orientation data is sent to the host in either ASCII or
+binary. 
+
+  The serial protocol is one start bit, 8 data bits, no parity, and one
+stop bit. Command Description !R Resets the Tracker to the default state:
+cooked, polled, binary mode.  All applications should put the Tracker into
+Cooked, Euler, or an emulation mode before requesting orientation data. !V
+Get the Tracker revision string.  This allows future revisions of the
+protocol to work as applications will know what version of the hardware
+they are talking to.  The string format is:
+   M<16 chars>P<16 chars>T<8 chars>Hxxx.xxxFxxx.xxx where M is for
+Manufacturer followed by a 16 character ID string, P is for Product code
+followed by a 16 character product code or serial number, T defines
+product Type, H is for Hardware revision followed by a C format "%07.3f"
+revision string, and F is for Firmware revision with the same C format
+string.  An 'O' or an 'E' is appended to the end of the returned string to
+indicate whether an internal self test has passed or failed. !M<data
+mode>,<send mode>,<send format>[,<magnetic filter>,<tilt filter>][,<Mouse
+sensitivity>,<Mouse threshold>]<CR> Tells the Tracker to change data mode,
+send mode, send format, and filter modes, and is terminated with a
+carriage return (Hex D).  Data modes are '0'-'4'. Send modes are 'P' for
+polled, 'C' for Continuous, and '0'-'1' in mouse mode. Send formats are
+'A' for ASCII and 'B' for Binary. Filter ranges are '0' for none, and '7'
+for maximum.  These parameters must be sent all at once, separated by
+commas, and in the defined order. Filter modes and mouse parameters are
+the only optional commands and shouldn't be
+ set by the application, but rather by the Tracker manager software.  If
+they are set by the application, the user must be able to change them.  If
+the optional mouse parameters are set, the filter parameters must also be
+specified.  The mouse sensitivity
+ and threshold settings are fully described in the mouse emulation
+section.  Only Tracker manager software should set mouse settings. S Tells
+the Tracker to send a packet of orientation data.  In continuous modes,
+'S' starts the stream.  When a '!' is sent, the stream stops and the
+command is processed.  '!' followed by a carriage return can be used to
+stop the stream. 
+
+Virtual i-O Tracker Modes Mode 0: raw data mode The Tracker sends raw data
+readings from the sensors.  The numeric format is 12 bits unsigned
+(0..4095) stored in 16-bits for all values.  This mode is most useful for
+debugging the hardware. Data packet format for mode 0 (binary) The total
+packet size is 12 bytes.  The byte format is:
+   Byte    Description
+   0  Header (always 255)
+   1  X-axis high byte
+   2  X-axis low byte
+   3  Y-axis high byte
+   4  Y-axis low byte
+   5  Z-axis high byte
+   6  Z-axis low byte
+   7  Pitch high byte
+   8  Pitch low byte
+   9  Roll high byte
+   10 Roll low byte
+   11 Arithmetic checksum (Bytes 0-10 added together) Data packet
+format for mode 0 (ASCII) The data is transmitted in the preceding form in
+ASCII hex with spaces separating each two byte ASCII hex value.  This is
+for debugging only. Send mode for data mode 0 The send modes for data mode
+0 are 'P' for Polled and 'C' for Continuous.  In continuous mode, a
+'!'<CR> command stops the stream and the 'S' command restarts it.  To read
+data in continuous mode, the application searches for a start header
+(255).  Once f ound, the rest of the packet must be read in, the checksum
+computed and compared to the packet's checksum.  If the checksums don't
+match, the application must reread the data one byte beyond where it last
+found a 255 and start the process over again.  Alt ernatively, the
+application can stop the stream with a '!'<CR>, pause a few character send
+times, flush its read buffers, then send an 'S' and begin reading the
+stream. All raw modes should not be used for commercial applications. 
+They are for factory debugging only. 
+
+Mode 1: Cooked data mode The Tracker scales the magnetic vector, centering
+it about the zero, and linearizes the tilt sensor readings based on
+internal factory calibration constants.  This is the mode to use when
+performing the angle computation on the host.  The data format is s igned
+16-bit words.  The x, y, and z magnetometer readings are approximately +/-
+16384 (This varies with the Earth's magnetic field).  The pitch and roll
+readings are converted to linear values where +16384 = 180 degrees and
+-16384 = - 180 degrees. To convert to floating point: degrees =
+(float)reading/16384.0*180.0.  A provided C library routine converts the
+cooked data values into yaw, pitch, and roll. Data packet format for mode
+1 (Binary) The total packet size is 12 bytes.  The byte format is:
+   Byte  Description
+   0  Header (always 255)
+   1  X-axis high byte
+   2  X-axis low byte
+   3  Y-axis high byte
+   4  Y-axis low byte
+   5  Z-axis high byte
+   6  Z-axis low byte
+   7  Pitch high byte
+   8  Pitch low byte
+   9  Roll high byte
+   10 Roll low byte
+   11 Arithmetic checksum (Bytes 0-10 added together) Data packet
+format for mode 1 (ASCII) The data is transmitted in the preceding form in
+ASCII hex with spaces separating each two byte ASCII hex value.  This is
+for debugging only. Send mode for data mode 1 The send modes for data mode
+1 are 'P' for Polled and 'C' for Continuous.  In continuous mode, a
+'!'<CR> command stops the stream and the 'S' command restarts it.  To read
+data in continuous mode, the application searches for a start header
+(255).  Once f ound, the rest of the packet must be read in, the checksum
+computed and compared to the packet's checksum.  If the checksums don't
+match, the application must reread the data one byte beyond where it last
+found a 255 and start the process over again.  Alt ernatively, the
+application can stop the stream with a '!'<CR>, pause a few character send
+times, flush its read buffers, then send an 'S' and begin reading the
+stream.  Continuous mode is not recommended for commercial applications
+(error recovery is dif ficult and serial interrupts and CPU cycles are
+wasted). 
+
+Mode 2: Euler angles mode The Tracker sends yaw, pitch, and roll angles. 
+The data format for yaw, pitch, and roll is a signed 16-bit word, where
++16384 = 180 degrees, and -16384 = -180 degrees. Data packet format for
+mode 2 (Binary) The total packet size is 8 bytes.  The byte format is:
+   Byte  Description
+   0  Header (always 255)
+   1  Yaw high byte
+   2  Yaw low byte
+   3  Pitch high byte
+   4  Pitch low byte
+   5  Roll high byte
+   6  Roll low byte
+   7 Arithmetic checksum (Bytes 0-6 added together) Data packet
+format for mode 2 (ASCII) The data is transmitted in the preceding form in
+ASCII hex with spaces separating each two byte ASCII hex value.  This is
+for debugging only. Send mode for data mode 2 The send modes for data mode
+2 are 'P' for Polled and 'C' for Continuous.  In continuous mode, a '!'
+command stops the stream and 'S' command restarts it.  To read data in
+continuous mode, the application searches for a start header (255).  Once
+found, th e rest of the packet must be read in, the checksum computed and
+compared to the packet's checksum.  If the checksums don't match, the
+application must reread the data one byte beyond where it last found a 255
+and start the process over again.  Alternative ly, the application can
+stop the stream with a '!'<CR>, pause a few character send times, flush
+its read buffers, then send an 'S' and begin reading the stream. 
+Continuous mode is not recommended for commercial applications (error
+recovery is difficult a nd serial interrupts and CPU cycles are wasted). 
+
+
+Emulation Modes Mode 3: Microsoft mouse emulation mode When in binary mode
+and communicating with a mouse device driver, this mode operates at 1200
+bps and simulates a 7 bit data byte (with 1 stop and 1 start) by always
+sending the last data bit as a simulated stop bit. The output format is
+defined by the Mic rosoft mouse data format (3 byte format). While
+operating in mouse mode, X is determined by a scaled yaw angle
+calculation.  Y is determined by a scaled pitch angle sensing. Send mode 0
+for mouse mode
+
+This mode sends values like a mouse.  Delta values are sent as long as the
+Tracker moves.  The size of the deltas depends on how far the Tracker has
+moved. Send mode 1 for mouse mode
+
+When the Tracker is first initialized into this mode, a reference position
+is taken.  Any movement away from this reference position results in
+deltas being continuously sent until the Tracker is moved back to within
+the threshold near the reference posit ion.  The size of the deltas
+depends on how far away the Tracker is moved from the reference position.
+Sensitivity and mouse mode mickey values
+
+   One X mickey is 1/4 degree change in yaw and
+   one Y mickey is 1 degree change in pitch
+
+for a sensitivity of 1.  As sensitivity increases, the change per degree
+increases.  Thus, a sensitivity of 2 represents 1/2 degree change in yaw,
+etc.  A sensitivity of 0 can be used to disable X or Y mickeys.  For
+example, DOOM works best with the Y axi s disabled, where yaw causes the
+head to turn and pitch has no effect.  The range for sensitivity is 0-9. 
+
+
+Mouse threshold settings
+
+The threshold settings determine how far the Tracker has to move before a
+packet is sent.  If the threshold is low, a movement in the Tracker will
+result in packets being sent frequently (small mickey counts sent
+frequently).  If the threshold is high, th e Tracker must move farther
+before a packet is sent (large mickey counts sent infrequently).  The
+threshold is related to sensitivity in that the movement values are first
+adjusted by sensitivity before being compared to the threshold settings. 
+The thres hold range is 0-9. 
+
+Mode 4: CyberMaxx emulation mode [Not yet implemented]
+
+Examples
+Modes for terminal debugging
+!M0,P,A,0,0 Raw polled mode, ASCII, no filtering.
+!M0,C,A,0,0 Raw continuous mode, ASCII, no filtering.
+Modes useful for applications
+!M1,P,B  Cooked polled mode, binary, filtering not changed.
+!M1,P,B,0,0 Cooked polled mode, binary, no filtering.
+!M1,P,B,3,3 Cooked polled mode, binary, medium filtering.
+!M1,P,B,7,7 Cooked polled mode, binary, full filtering.
+!M2,P,B,3,3 Euler polled mode, binary, medium filtering.
+Emulation modes
+Mouse mode
+!M3,P,A,0,0 Mouse mode, polled, ASCII, no filtering.  This is for debugging only.
+!M3,C,A,0,0 Mouse mode, continuous, ASCII, no filtering.  Transmits only when the mouse moves.  For debugging only.
+!M3,C,B,3,3 Mouse mode, continuous (whenever the mouse moves), binary, medium filtering.  For true mouse emulation, this command must be sent at 1200 bps to put the Tracker into 1200 bps mode.
+
+
+Sample Code
+
+/* test.c: Simple program that prints data to the screen. */
+/* Uses src\simple\vstrack1.lib. See the devkit disk for more info. */
+/* Created 2/17/95 */
+/* John Schultz */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <math.h>
+#include "vstrack1.h"
+
+void main(int argc,char ** argv) {
+TrackerData td;
+TrackerStatus ts;
+
+  ts = initTracker(&td,TP_COM1,9600,timerSecs(2));
+  printf("%s.\n",trackerInfo(ts));
+  if (ts != TS_OK) {
+    closeTracker(&td);
+    exit(0);
+  } // if
+
+  ts = sendTrackerCMD(&td,"!M1,P,B\r",timerSecs(2));
+  if (ts != TS_OK) {
+    printf("%s.\n",trackerInfo(ts));
+    closeTracker(&td);
+    exit(0);
+  } // if
+
+  requestTrackerData(&td);
+
+  while (1) {
+    float y,p,r;
+    if (kbhit() && getch() == 'q') break;
+
+    ts = readTracker(&td,timerSecs(1));
+    if (ts != TS_OK) {
+      printf("\n%s.\n",trackerInfo(ts));
+      resetTracker(&td,timerTSecs(1));
+    } // if
+    requestTrackerData(&td);
+
+    y = TOFLOAT(td.euler.y);
+    p = TOFLOAT(td.euler.x);
+    r = TOFLOAT(td.euler.z);
+
+    printf("x %6ld y %6ld z %6ld y %6.2f p %6.2f r %6.2f\n",
+      td.magnetic.x,td.magnetic.y,td.magnetic.z,y,p,r);
+
+  } // while
+
+  closeTracker(&td);
+
+} // main
+
+/* test.c */
+
+ (end of quote)
+
+
+The details about tracker programming are an excerpt of the i-glasses!
+Developers Kit. This kit consists of a PC version of the glasses, docs,
+and a CD with examples and costs $1000. There will be also a version of
+the kit with the developer material only for ca. $50 (Also the PC version
+of the kit comes with a CD with 10 games.) You can purchase this kit
+directly from Virtual-io in Seattle (address next time). You also can
+get such material from their ftp site: ftp.vio.com, look into
+outgoing/docs and especially the file webdev.doc there.
+
+
+To give you an idea what the glasses products are aside from the Amiga:
+There is a VCR version which is made for a WalkMan-like VCR and is just
+the glasses connected to this VCR. The second product is the "PC" version.
+It's much more expensive, because it also contains a VGA-to-composite
+conversion box, and the Head Tracker. The Amiga version of this product
+is not yet defined precisely. This is because it depends on which Amiga
+you use, for the A1200 you need only the glasses and the Head Tracker
+without that conversion box of the PC version. For the A4000, you would
+need some Composite modulator or similar, perhaps we have to produce
+again something like the A520, this is not yet clear, sorry. But anyway,
+for the Amiga, the kit will probably contain the glasses and the Head
+Tracker, which connects directly to the serial Amiga interface. So you
+don't need that VGA-to-composite conversion so that the Amiga version
+should become significantly cheaper than the PC version and end up
+somewhere in the middle between the Video and the PC version.
+

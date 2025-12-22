@@ -1,0 +1,122 @@
+<!-- This HTML file has been created by texi2html 1.29af
+     from ../AmigaFAQ.texinfo on 26 September 1995 -->
+
+<TITLE>Amiga-FAQ - Localizing</TITLE>
+
+<PRE><I>
+&lt;&lt; <A HREF="AmigaFAQ_31.html">AmigaBasic</A>
+&gt;&gt; <A HREF="AmigaFAQ_33.html">WindowPtr</A>
+<HR>
+</I></PRE>
+
+<A NAME="IDX65"></A>
+<A NAME="IDX66"></A>
+<A NAME="IDX67"></A>
+<A NAME="IDX68"></A>
+<A NAME="IDX69"></A>
+<A NAME="IDX70"></A>
+<A NAME="IDX71"></A>
+<A NAME="IDX72"></A>
+<A NAME="IDX73"></A>
+<H2><A NAME="SEC32" HREF="AmigaFAQ_toc.html#SEC32">How do I localize my program?</A></H2>
+Suggest, you want to write a <CODE>HelloLocalWorld.c</CODE>. Your final program
+will look like this:
+<P>
+<PRE>
+    #include "HelloLocalWorld_Cat.h"
+    #include &#60;clib/exec_protos.h&#62;
+
+    struct Library *LocaleBase;
+
+    void main(int argc, char *argv[])
+
+    {
+        /* Open the locale.library. No kill, if not successfull.
+           (Just use the builtin catalog strings instead.) Note, that
+           we open locale.library here, even if our compiler supports
+           AutoOpening.
+        */
+        LocaleBase = OpenLibrary("locale.library", 38);
+        OpenHelloLocalWorldCatalogs(NULL, NULL);
+
+        printf(GetString(MSG_Hello));
+
+        CloseHelloLocalWorldCatalog();
+        if (LocaleBase) CloseLibrary(LocaleBase);
+    }
+</PRE>
+<P>
+The routine GetString checks, if the wished catalogs are available and
+returns a pointer to either the builtin string or the catalog string. (In
+my case the german string.)
+<P>
+You see, the main difference besides the minor opening and closing stuff
+(OpenLibrary, OpenHelloLocalWorldCatalogs, ...) (which too can be
+dropped, too, with FlexCat) is to replace strings with
+a function call. Hence we need a file <TT>`HelloLocalWorld_Cat.c'</TT>, which
+holds OpenHelloLocalWorld, GetString, CloseHelloLocalWorld and the builtin
+strings (this could be an array, where
+<PRE>
+        array[MSG_Hello] = "Hello, local world.\n";
+</PRE>
+is defined) and an include file <TT>`HelloLocalWorld_Cat.h'</TT>, which defines
+the message ID's like MSG_Hello. You don't need to know, how these files
+work internally, especially you don't need to know <CODE>locale.library</CODE>!
+<P>
+There are some catalog generators (in what follows: CGs) available
+(<TT>`CatComp'</TT>, for devlopers only, <CODE>KitCat</CODE>, german docs only,
+<TT>`MakeCat'</TT>, which I don't know and <CODE>FlexCat</CODE>, which I  recommend,
+because it is most flexible in the generated source and supports catalogs
+on 2.0 and any language, even Amiga-E, Cluster, Pascal, ... and besides
+that: I'm the author ;-) are tools, that create  HelloLocalWorld_Cat.h,
+HelloLocalWorld_Cat.c and the real catalogs for you. (The above code might
+differ slightly between the different CGs.) (See Aminet, directory
+<TT>`dev/misc'</TT>.)
+<P>
+Of course they need to know how to use them. First create a so-called
+<CODE>catalog-description</CODE> file. This could look like this:
+<PRE>
+    ; Lines beginning with a semicolon are comment lines.
+    # language english
+    ; the language of the builtin strings
+    # version 0
+    ; the catalog version (0 = any)
+    MSG_Hello (1/15/30)
+    Hello, local world
+</PRE>
+Any string is defined by a line like the last two lines above: MSG_Hello
+is the message-ID, (1/15/30) says, that the value of MSG_Hello should be
+1 (you may omit this, in which case just the next free number is used)
+and the string must not be shorter than 15 characters or longer than 30
+characters. (These may be omitted too.)
+<P>
+Now write your program. Once you are ready, use the CGs to create a
+so-called catalog translation file. (One for any language different than
+the builtin.) In my case (german) this could look
+like this:
+<PRE>
+    ; Lines beginning with a semicolon are comment lines.
+    ## language deutsch
+    ; the catalog language (german)
+    ## version $VER: Deutsch.catalog 1.0 (22.12.93)
+    ; the catalog files version string
+    MSG_Hello
+
+    ; Hello, local world
+</PRE>
+Note the empty line after the message ID. (The arguments of ## language and
+## version would be missing as well.) You have to fill in the german strings
+here. Again using the CGs you create a catalog file from this. Additionally
+note, that no informations on the strings ID or length are behind MSG_Hello.
+They are taken from the catalog description file.
+<P>
+Once you change the program (adding strings, changing the string length)
+you change the catalog description as well, use the CGs in the same way to
+update the catalog translation and hence the catalogs.
+<P>
+
+<PRE><I>
+<HR>
+&lt;&lt; <A HREF="AmigaFAQ_31.html">AmigaBasic</A>
+&gt;&gt; <A HREF="AmigaFAQ_33.html">WindowPtr</A>
+</I></PRE>

@@ -1,0 +1,41 @@
+. Example-47.1
+.
+.KEY name,op1,op2,op3,op4
+.BRA {
+.KET }
+FAILAT 21
+ASSIGN cdir: ""
+CD >nil: {name}
+IF FAIL
+   SKIP errmessage
+ENDIF
+ECHO >t:temp-list-cd "*nDirectory: " NOLINE
+CD >>t:temp-list-cd
+ECHO >t:temp-list-date "As at:     " NOLINE
+DATE >>t:temp-list-date
+LIST >t:temp-list-d {name} {op1} {op2} {op3} {op4} DIRS NOHEAD
+LIST >t:temp-list-f {name} {op1} {op2} {op3} FILES NOHEAD
+ECHO >t:temp-list-b ""
+SORT >nil: t:temp-list-d t:temp-list-ds
+IF ERROR
+   ECHO >t:temp-list-ds "There are no sub-directories in the directory"
+ENDIF
+SORT >nil: t:temp-list-f t:temp-list-fs
+IF ERROR
+   ECHO >t:temp-list-fs "There are no files in the directory"
+ENDIF
+JOIN t:temp-list-cd t:temp-list-date t:temp-list-b t:temp-list-ds t:temp-list-b t:temp-list-fs AS t:temp-list-j
+TYPE t:temp-list-j
+TYPE >ram:sorted-list t:temp-list-j
+DELETE >nil: t:temp-list-#?
+ECHO  "*nThe displayed list is still in ram: AS *"sorted-list*""
+ASK "*nShall I also delete this too?"
+IF WARN
+   DELETE ram:sorted-list
+ENDIF
+SKIP end
+LAB errmessage
+ECHO "*nSorry - no directory found named *"{name}*"*n"
+LAB end
+CD cdir:
+ASSIGN cdir: REMOVE    

@@ -1,0 +1,48 @@
+Short: IFF-DEEP 48/64 Bit extensions
+Type: docs/misc
+Uploader: info@ar-kleinert.de
+Author: info@ar-kleinert.de
+Version: 1.1
+Architecture: generic
+
+ Previously, the IFF-DEEP file format supported
+ the following image data formats basically:
+
+  24 bit -> as RGB  8:8:8       true color pixels
+  32 bit -> as RGBA 8:8:8:(4/8) true color pixels + alpha
+
+ In addition to RGB also other color spaces are
+ supported and the sample order could vary. Basically
+ any kind of bit depth is possible - but yet uncommon.
+ Bit depths also could vary for each sample.
+
+ For compression, only uncompressed, RLE and DELTA
+ are common. For DELTA, instead of single pixels
+ (all samples alternating in a row) separate lines
+ per sample are stored for a row.
+
+ Now the following - as a consequent logical extension
+ of the previously mentioned definitions - is introduced
+ by SView5-Library:
+
+ 48 bit -> RGB  16:16:16    true color pixels
+ 64 bit -> RGBA 16:16:16:16 true color pixels + alpha
+
+ With regards to the Alpha channel it is considered legal
+ to load/save/interpret only the upper 8 bits, thus leading
+ to effectively 56 bit depth - however generation of 56
+ bit files is considered uncommon.
+
+ Instead, prior to loading/saving, the 8/16 bit alpha
+ channel should be properly scaled up/down to 16/8 bit.
+
+ For compression this means:
+
+  - uncompressed: no change (raw buffer size)
+  - RLE:          multiply "bytes per line" by 2;
+                  compress on byte-level
+  - DELTA:        multiply "bytes per line" by 2;
+                  lookup table remains 16*WORD;
+                  delta is relative to UWORD instead
+                  of UBYTE
+  - other:        to be defined

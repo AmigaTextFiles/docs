@@ -1,0 +1,1 @@
+run lcdecho "Test of the LCDaemon version 2 software with support for four-line LCD displays, or even more (if you can actually find such a display)... Like it?? Sure? Of course! Everyone likes this!!!" time 300

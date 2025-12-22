@@ -1,0 +1,443 @@
+BCPL (Handler) Startup Magic and other things that shouldn't be documented...
+-----------------------------------------------------------------------------
+                © 1999 THOR-Software. Read the licence at the end!
+
+$VER: BPCLMagic 1.0 (15.9.99)
+
+    Abstract:
+        This document describes the startup logic of the dos.library
+        for BCPL-type handlers, using a GlobVec entry 0 or -3 in its 
+        mountlist.
+
+In this doc, tradenames and trademarks of some companies and products have
+been used, and no such uses are intended to convey endorsement of or other
+affiliations with the documentation.
+____________________________________________________________________________
+
+NOTE THAT ALL THIS INFORMATION IS OBSOLETE, NO NEW CODE SHOULD DEPEND ON
+THIS *INTERNAL INFORMATION*. THE DOS BCPL HANDLING IS CLEARLY OBSOLETE AND
+WILL BE MOST LIKELY REMOVED IN A FUTURE EDITION OF THE AMIGAOS.
+____________________________________________________________________________
+
+Thanks to Stephan Rupprecht for his Port-Handler and the interesting talk
+that gave the impact of writing this.
+
+Thanks to Ralph Babel for proof-reading this guide, and for some comments
+and corrections.
+____________________________________________________________________________
+
+i)    What is this about?
+
+Device handlers of the dos.library, the programs you find in L:, can be 
+written either in C, Assembly,... or BCPL. BCPL programs require, due to
+the logic of this language, special support from the Os, namely, the Os
+has to build a so-called "global vector", containing handler global data
+and function pointers to global BCPL procedures. Whether a handler requires
+this special threatment is determinated by the "GlobVec" entry in the mount
+list. If this entry is 0 or -3, then the code is recognized as BCPL code, if
+it is -1 or -2, the "usual" startup code is run.
+
+NOTE THAT IT IS LIKELY THAT THE BCPL STARTUP MAGIC WILL BE REMOVED IN 
+FUTURE EDITIONS OF THE AMIGAOS.
+
+
+ii) The "usual" startup code.
+
+If the GlobVec entry in the mount list is -1 or -2, the handler code will
+be run at the first byte of the first hunk of the binary. The dos library
+will sent a startup message to the process port of the handler process,
+which contains information for the handler where its "DosList" structure
+is found. The startup message encodes a standard "DosPacket" structure
+in the same way as all other packets sent to handlers: The pointer to
+the DosPacket is found in the mn_Node.ln_Name pointer of the message.
+
+The following entries in the DosPacket exit:
+
+
+dp_Arg1:            This is a BCPL pointer to a BSTR containing the
+                    device name.
+
+dp_Arg2:            Contains the value found in the dol_Startup field
+                    of the DosList. This information is handler specific,
+                    but a well-accepted standard exist for filing systems.
+                    It is documented in [1], for example.
+
+dp_Arg3:            A BPTR to the DosList structure of the handler. In
+                    case the dos library should launch a process for each
+                    file to be opened, leave the dol_Task field NULL.
+                    Otherwise, fill this field with a pointer to the
+                    process message port of your handler.
+
+dp_Arg4:            This field should be set to an alternative message port
+                    in case you don't want to get incoming packets thru the
+                    process message port.
+                    (Documented in [1], untested by the author.)
+
+The difference between a GlobVec of -1 or -2 is that the device list is
+locked *exclusively* until the startup message is replied, but in the second
+case only a shared lock is applied.
+
+        *NOTE THAT USING THIS STARTUP MECHANISM IS RECOMMENDED*
+
+
+
+iii) The BCPL startup code.
+
+THIS STARTUP MECHANISM IS OBSOLETE. DO NOT USE IT, YOU DON'T GET *ANY*
+ADVANTAGE BY USING THIS OBSOLETE MECHANISM. THE ONLY JUSTIFICATION FOR 
+THIS STARTUP MECHANISM IS THAT IT MUST BE USED WHEN REPLACING OLD CBM
+HANDLERS THAT STILL MAKE USE OF BCPL. These are currently the ram handler,
+(RAM:), the port handler (PRT: SER: and PAR:) and some ROM-mounted filing
+systems like DF0: and DF1:.
+
+In case you want to replace these system handlers, only *ONE* BCPL GlobVec
+entry must be re-defined, namely the startup vector #1 at offset +4, since
+this is the vector the dos library uses to run your code. Unlike the "usual"
+startup code, the dos.library will have removed the startup message already
+for you, and will pass in a BPTR to the DosPacket as first BCPL argument in
+register d1. Much more pre-defined global vectors exist and will be filled
+in by the DOS on startup, but I leave them undocumented as all the function
+pointers can be found as library entries in the dos.library anyways.
+
+The BCPL startup code of the dos library reads the FIRST longword of each
+of the hunks in the binary. Hence, even the first byte of the first hunk
+is NO LONGER executable code. This long word contains the length of BCPL
+segments in long words - which need not to be identical of the segment 
+length stored in the hunk structure, it could be shorter. Hence, this is 
+a long word offset, counted from the start of the segment up to the end of 
+the BCPL segment part. Since this is the place where the GlobVec init data 
+is stored, this offset counts the number of longs up to the end of the 
+setup table. Graphically,
+
+
+                +-------------------------------+
+Segment - 4     | length of segment + 4         |
+                +-------------------------------+
+Segment - 0     | BPTR to the next offset       | <-- BPTR to this is returned
+                |                               |      by LoadSeg()
+                +-------------------------------+
+Segment + 4     | longword offset as # of       |
+                | from SegOffset - 0            |
+                +-------------------------------+
+                |                               |
+                : GlobVec setup data, see       :
+                : below                         :            ^
+                |                               |            |
+                +-------------------------------+            |
+Segment +       | Number of GV slots required   | <-- the dos starts parsing 
+offset * 4      | code                          |      data from here on 
+                +-------------------------------+      backwards
+                | First available byte for      |
+                | code that does not require    |
+                : the BCPL setup magic          :
+                :                               :
+
+
+The dos library handler startup code parses then the data BACKWARDS, starting
+at the indicated longword, i.e. at the  address "Segment + Offset * 4", 
+where "Offset = (Segment+4).L".
+
+The first long word to be parsed - and hence the last long word of the 
+BCPL segment - is the number of slots the dos.library setup code should
+allocate.
+
+Each entry in the table that follows, again read in backwards direction,
+consists of pairs of long words. These pairs give an offset, index
+information for the GlobVec entries to be defined. The first longword of the 
+pair, at the higher address (remember that this table is scanned backwards!),
+is the offset of the address to be put into the GlobVec, as a byte offset
+from the first data byte of the hunk. This offset will, therefore, be added
+to "Segment + 4" to define the data that should end up in the GlobVec. The
+second member of the pair is the index into the GlobVec where this data
+will be put. Since this is, BCPL-typically, a longword index, this index
+has to be multiplied by four to get the byte offset from the beginning of
+the GlobVec.
+
+Only one important GlobVec entry should be mentioned here, namely GV #1
+at location +4, which is the BCPL startup point.
+
+This array of GlobVec setup information is terminated by a NULL-offset 
+longword. Note that offset 0 of the hunk never contains any useful information
+because it was already used to find the start of the setup table.
+
+
+
+Here's the dos library setup code in pseudo-code: 
+Brackets denote indirection, i.e. (xxx).L is "the longword at location xxx".
+
+
+BCPLStartup(segment)            ;segment is a BPTR as returned by LoadSeg
+
+    slots = 0
+    WHILE segment<>0
+        segment = segment * 4            ;get APTR to segment
+        offset  = (segment + 4).L        ;read table offset
+        table   = segment + offset       ;get the start (or end) of the setup
+                                         ;information
+
+        IF slots < (table).L THEN
+            slots = (table).L            ;get the number of GV slots to be
+                                         ;reserved for this program
+        DO
+            table = table - 4            ;next data word
+            func  = (table).L            ;read the function/data offset    
+            IF func=0 THEN BREAK         ;terminate the loop
+            table = table - 4            ;next GV offset loop
+            index = (table).L            ;read the offset information
+        
+            func  = func + segment + 4   ;offset from the first data byte
+            (GlobVec + index * 4) = func ;define the GlobVec data
+                                         ;entries are longwords, hence
+                                         ;the longword index has to be 
+                                         ;multiplied by four
+        LOOP
+
+        segment = (segment).L            ;get the next segment
+    END
+
+
+If the handler segment would be the only segment that would be used to
+build the GlobVec, the GlobVec would end up mainly empty. Hence, before
+running this code on your own segment, it will be run on some (currently
+two) system segments in ROM which define the system default GlobVec entries.
+
+The system functions in the GlobVec are close relatives of the functions
+in the dos.library, hence no advantage can be taken by using them.
+Well, possibly except for Os 1.3, but who's using this anyhow nowadays...
+
+
+After execution of this code, the dos.library will start whatever it
+finds in the GlobVec #1, passing in register d1 the BPTR to the DosPacket
+startup structure (NOT to the message structure). Hence, *IF* this startup
+mechanism must be used, you've to define at least this GV entry. 
+
+At the end of the code, you should *NOT* run into an RTS. BCPL works
+different and has a stack that grows "in the wrong way". The usual BCPL
+function calls are also affected by this, and you've to jump into a 
+procedure whose address is in register a6 that will remove the return 
+address from the BCPL stack which is pointed to by register a1. Hence, your
+code has to preserve this register, at least, and should also preserve
+register a5 because this is the code that must be used to call a BCPL
+procedure... even if you don't want to do that. Possibly, you should also
+leave a0 blank because the original BCPL code assumed that as well. The
+current dos.library implementation of the exit code does no longer require
+this. Other registers have also a special meaning I don't want to document.
+
+Hence, a minimal startup code looks like this:
+
+    movem.l a0/a1/a5/a6,-(a7)       ;keep BCPL registers
+    lsl.l #2,d1                     ;get APTR from BCPL ptr to
+                                    ;startup packet
+    move.l d1,a0                    ;a0 is better suited for this.
+    bsr Main                        ;call the main procedure
+    movem.l (a7)+,a0/a1/a5/a6       ;pop registers
+    jmp (a6)                        ;run the BCPL way of saying "RTS"
+
+
+iv) Examples.
+
+Let's investigate the port handler replacement of Stephan Rupprecht as a
+first example. Here's the startup code as source...
+
+;*************************************************
+;** Port-Handler Startup                        **
+;** BCPL-Magic                                  **
+;*************************************************
+BCPLEntry    =    1                             ;GV #1: entry point
+Start:
+        dc.l (End-Start)/4                      ;offset to the setup table
+Run:
+        bra.s _BCPLInit                         ;jump to the real setup code
+        nop                                     ;just to keep it LW aligned
+
+        dc.l 0                                  ;end of the table
+        dc.l BCPLEntry                          ;define GV #1
+        dc.l Run-Start                          ;function offset
+        dc.l 1                                  ;number of slots required
+                                                ;
+End:                                            ;
+
+_BCPLInit:                                      ;this is the real init-code
+        move.l a1,-(a7)                         ;push back registers
+                                                ;everything else is
+                                                ;preserved by the main
+                                                ;entry point
+        lsl.l #2,d1                             ;get DosPacket APTR
+                                                ;and so on, and so on...
+            :
+            :
+        jmp (a6)                                ;run into BCPL 
+                                                ;"return from subroutine"
+
+The FastFilingSystem uses a "special" trick: If it is run from the ROM, it
+"appears" to be a BCPL handler since the dos.library sets up DF0: and DF1:
+as BCPL handlers. However, if loaded from a file, it is a C handler. However,
+the old BCPL magic is still in there as it is in the ROM.
+
+Here's the binary:
+
+0000: 000003F3 00000000 00000002 00000000    ...ó............     
+0010: 00000001 000017ED 00000000 000003E9    .......í.......é     
+0020: 000017ED 72006008 00000000 00000012    ...ír.`.........     
+0030: 48E700FE E5892441 2F016160 221F4CDF    Hç.þå.$A/.a`".Lß     
+0040: 7F004A81 66024E75 4ED64AFC 00000026    ..J.f.NuNÖJü...&     
+0050: 00000050 002800AF 0000006A 00000056    ...P.(.¯...j...V     
+0060: 00000004 00000000 00000001 00000004    ................     
+0070: 00000096 24564552 3A206673 2034302E    ....$VER: fs 40.     
+
+...and here the interpretation:
+
+000003F3            HUNK_HEADER
+00000000            no resident libraries in use (obsolete feature anyhow)
+00000002            two segments in this binary
+00000000            start loading at segment 0
+00000001            end with segment 1
+000017ED            length of the first segment in long words
+00000000            length of the second segment in long words... it's blank
+000003E9            HUNK_CODE
+000017ED            number of long words to load
+
+Up to now, this is only the data structure expected by the segment loader,
+i.e. LoadSeg(). This is not part of the setup logic.
+
+Next is the C startup. If loaded by the DOS as external handler, it will
+go thru the "usual" startup and execution starts here
+
+72006008            MOVEQ #0,d1             ;setup a blank DosPacket pointer
+                                            ;to inform the startup code to
+                                            ;get it manually
+                    BRA.S *+8               ;jump into the startup code
+
+00000000                                    ;This is now a special trick!
+                                            ;Just the same code is used in
+                                            ;the ROM, and THIS IS where
+                                            ;a "faked" seglist pointer will 
+                                            ;be set to. Hence, this longword
+                                            ;"looks like" a NULL "next
+                                            ;segment" pointer to the dos
+                                            ;startup code
+
+00000012            Offset                  ;to the begining of the BCPL
+                                            ;setup data
+
+48E700FE            movem.l a0-a6,-(a7)     ;startup code, the branch
+    :                                       ;above jumps in here
+    :               lsl.l    #2,d1          ;this is the BCPL startup packet
+                    movea.l    d1,a2        ;or NULL on a "usual" startup
+                    move.l    d1,-(a7)
+                    bsr.s    *+160          ;run the main code
+                    move.l    (a7)+,d1      ;pop the stack argument
+                    movem.l    (a7)+,a0-a6  ;pop registers
+                    tst.l    d1             ;test BCPL or C startup again
+                    bne.s    *+2
+                    rts                     ;on a regular startup just die.
+                    jmp    (a6)             ;on a BCPL startup, run into
+                                            ;BCPL "return".
+
+and later on in the data...
+
+00000000                                    ;end of BCPL setup data
+00000001                                    ;GV #1 has to be defined
+00000004                                    ;function starts at byte offset
+                                            ;+4 of the hunk data, 
+                                            ;this is just the procedure above
+00000096                                    ;this is where the "offset 12"
+                                            ;above points to. The FFS 
+                                            ;indicates therefore to require
+                                            ;150 slots (even though only one
+                                            ;is defined).
+
+Nice trick, what do you think? If you check where the seglist of DF0: points
+to, you'll find a BPTR to the NULL long word above. However, if you check
+what's in front of the NULL, its the C startup code as found in the file,
+and not the segment length, as usual. It's a faked segment pointer, after
+all, but good enough.
+
+______________________________________________________________________________
+
+References:        
+
+[1]            Ralph Babel, The Amiga Guru Book, 2nd. Ed., Taunusstein 1993
+
+[2,3]          Fish Disks 20 and 84.
+
+______________________________________________________________________________
+
+                         The THOR-Software Licence (v2, 24th June 1998)
+
+
+This License applies to the documentation known as "BCPLMagic.doc".
+The "Program", below, refers to this data. The "Archive" refers to the 
+package of distribution, as prepared by the author of the Program, 
+Thomas Richter. Each licensee is addressed as "you".
+
+
+
+The Program and the data in the archive are freely distributable
+under the restrictions stated below, but are also Copyright (c)
+Thomas Richter.
+
+Distribution of the Program, the Archive and the data in the Archive by a
+commercial organization without written permission from the author to any
+third party is prohibited if any payment is made in connection with such
+distribution, whether directly (as in payment for a copy of the Program) or
+indirectly (as in payment for some service related to the Program, or
+payment for some product or service that includes a copy of the Program
+"without charge"; these are only examples, and not an exhaustive enumeration
+of prohibited activities).
+
+
+However, the following methods of distribution
+involving payment shall not in and of themselves be a violation of this
+restriction:
+
+
+(i) Posting the Program on a public access information storage and
+retrieval service for which a fee is received for retrieving information
+(such as an on-line service), provided that the fee is not
+content-dependent (i.e., the fee would be the same for retrieving the same
+volume of information consisting of random data).
+
+
+(ii) Distributing the Program on a CD-ROM, provided that
+
+a) the Archive is reproduced entirely and verbatim on such CD-ROM, including
+especially this licence agreement;
+
+b) the CD-ROM is made available to the public for a nominal fee only,
+
+c) a copy of the CD is made available to the author for free except for
+shipment costs, and
+
+d) provided further that all information on such CD-ROM is redistributable
+for non-commercial purposes without charge.
+
+
+Redistribution of a modified version of the Archive, the Program or the
+contents of the Archive is prohibited in any way, by any organization,
+regardless whether commercial or non-commercial. Everything must be kept
+together, in original and unmodified form.
+
+
+
+
+Limitations.
+
+
+THE PROGRAM IS PROVIDED TO YOU "AS IS", WITHOUT WARRANTY. THERE IS NO
+WARRANTY FOR THE PROGRAM, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY RIGHTS. THE ENTIRE
+RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU. SHOULD
+THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+SERVICING, REPAIR OR CORRECTION.
+
+
+IF YOU DO NOT ACCEPT THIS LICENCE, YOU MUST DELETE THE PROGRAM, THE ARCHIVE
+AND ALL DATA OF THIS ARCHIVE FROM YOUR STORAGE SYSTEM. YOU ACCEPT THIS
+LICENCE BY USING OR REDISTRIBUTING THE PROGRAM.
+
+
+                                                        Thomas Richter
+
+______________________________________________________________________________

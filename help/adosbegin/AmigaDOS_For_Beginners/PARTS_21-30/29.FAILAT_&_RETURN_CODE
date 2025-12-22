@@ -1,0 +1,205 @@
+@DATABASE "ADB29"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 29 - The FAILAT Command and RETURN CODES"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 29 - THE FAILAT COMMAND AND RETURN CODES@{UB}@{UU}
+@{JLEFT}
+@{B}Location of FAILAT@{UB} - v1.x - "c" directory
+                   - v2+  - Internal
+
+@{B}Purpose@{UB}            - To indicate to the system the level of failure at
+                     which a script should cease operation.
+
+@{B}Availability@{UB}       - All AmigaDOS Versions
+
+Having talked about script files in an earlier article, we should now
+look at FAILAT and RETURN CODES which are quite commonly used in scripts.
+@{JCENTER}
+
+@{" Return Codes         " LINK "RC"}
+@{" The FAILAT Command   " LINK "FailAt"}
+@{" An Example of FAILAT " LINK "Example"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "RC" "Part 29 - The FAILAT Command and RETURN CODES - Return Codes"
+
+@{B}@{U}Return Codes@{UB}@{UU}
+
+Whenever a command is executed, it sets the "return code" to a certain
+value depending on the success or otherwise of the command. We have already
+seen some examples of this in the "Condition Codes" that we talked about
+in the article @{"IF_ELSE_ENDIF" LINK "ADB:Parts_21-30/26.If_Else_EndIf/Condition"}.
+
+Return codes used by AmigaDOS commands are:-
+
+   0  No problem - all O.K.
+   5  Warn
+  10  Error
+  20  Failure
+
+(Some software may use other values.)
+
+Non zero codes are different levels of something NOT going as it really
+should.
+
+"Warn" (5) indicates some minor level of fault that can usually be safely
+ignored, or an indication of one condition or another as we will see in
+considering some of the AmigaDOS commands (see @{"Ask" LINK "ADB:Parts_21-30/27.Ask/MAIN"32}).
+
+"Error" (10) indicates that something did not happen that really should
+have happened and probably should be looked at.
+
+"Failure" (20) indicates a more serious level of failure that really should
+not be ignored.
+
+By default, return codes of @{B}less than 10@{UB} will not abort the script whereas
+codes of @{B}10 and more@{UB} will cause a stoppage of the script unless the @{"FAILAT" LINK "FailAt"}
+command has been used to set a higher fail level.
+
+We can test for any of the return codes with @{"IF" LINK "ADB:Parts_21-30/26.If_Else_EndIf/Condition"} by using:-
+
+  IF WARN  - acts if the previous return code is 5 or more
+
+  IF ERROR - acts if the previous return code is 10 or more.
+             FAILAT must be set to 11
+
+  IF FAIL  - acts if the previous return code is 20 or more.
+             FAILAT must be set to 21
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "FailAt" "Part 29 - The FAILAT Command and RETURN CODES - The FAILAT Command"
+
+@{B}@{U}The FAILAT Command@{UB}@{UU}
+
+The way to use FAILAT is simply:-
+
+  FAILAT x
+
+where x is a number.
+
+It is normally used when you are expecting a command to give a certain
+return code value and you don't want the script to abort. The failat number
+is set at @{B}one more@{UB} than the expected return code. For example, if a return
+code of 20 is expected then you would use:-
+
+  FAILAT 21
+
+If FAILAT is used without a number, as in:-
+
+  FAILAT
+
+then the current failat level is displayed. For example:-
+
+  > FAILAT
+  --> Fail limit: 10
+
+If FAILAT is not used then the default value of 10 is used.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Example" "Part 29 - The FAILAT Command and RETURN CODES - Example Script"
+
+@{B}@{U}An Example of FAILAT@{UB}@{UU}
+
+As an example of the use of FAILAT and Return Codes, let's set up a script
+that will copy a file named "test-file" from the disk in df0: to the RAM
+disk and then ask if you want to repeat the process for another disk.
+
+@{B}Note@{UB} you are highly unlikely to have a file on df0: called "test-file"
+so, to try this out, you could either change Line 3 to put a different
+file name in it or create a "test-file" by using something like:-
+
+  > COPY s:startup-sequence df0:test-file
+
+and then delete it again when you have finished with it.
+
+(@{B}v1.2 and earlier users@{UB} note that this will not work as, in early versions,
+COPY does not appear to set a return code when it fails!!)
+
+If you wish to read the whole script in one go then @{"click here" LINK "ADB:Parts_21-30/Example-29.1/MAIN"}. The
+following has the example lines spread out amongst the explanations.
+
+@{B}; Example-29.1
+
+FAILAT 21                             ;  1
+LAB start-here                        ;  2
+  COPY >nil: df0:test-file Ram:       ;  3
+  IF FAIL                             ;  4
+    SKIP fail-message                 ;  5
+  ENDIF                               ;  6@{UB}
+
+If "COPY" can't find the specified file it sets the return code to 20,
+the "failure" level. As we want our script to continue even if the copy
+failed, we use "FAILAT 21" (line 1) then test for failure with the "IF
+fail" command (line 4).
+
+The COPY command output is sent to Nil: (Line 3) so that we can use our
+own message (line 14) instead of the AmigaDOS message that is normally
+produced when the file is not found.
+
+If the file "test-file" is not found, return code is set to 20 and the
+script skips from line 5 to line 13.
+
+If it is found, the copying proceeds and the script continues at line 7.
+
+@{B}  ECHO "*"Test-file*" copied"         ;  7
+  ASK "Copy to another disk? (Y/N)"   ;  8@{UB}
+
+In line 8, "ask" sets a return code of zero if "N", "n" or "return" are
+pressed, and a return code of 5 (warn) if "Y" or "y" are pressed. Thus
+the "IF WARN" can direct the script to either the label "end-file" (line
+10) or the label "start-here" (line 12)
+
+In case you haven't struck it before, you can get the ECHO command to
+@{"output an inverted comma" LINK "ADB:Parts_21-30/21.Echo/Inverted"} by preceding it with an asterisk (see lines 7
+and 15).
+
+@{B}  IF NOT WARN                         ;  9
+    SKIP end-file                     ; 10
+  ELSE                                ; 11
+    SKIP back start-here              ; 12
+  ENDIF                               ; 13
+
+LAB fail-message                      ; 14
+  ECHO "*"test-file*" not on df0:"    ; 15
+
+LAB end-file                          ; 16
+  ECHO "script has finished"          ; 17@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

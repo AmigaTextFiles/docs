@@ -1,0 +1,791 @@
+@DATABASE "ARB40"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 40 - Communications"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 40 - COMMUNICATING BETWEEN AREXX PROGRAMS
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+@{JLEFT}
+
+In Articles @{"23" LINK "ARB:Articles_21-30/23.Talking-Programs-1/Main"} and @{"24" LINK "ARB:Articles_21-30/24.Talking-Programs-2/Main"} we discussed communication between an ARexx program
+and other programs, but not with other ARexx programs. Now that we have
+discussed the @{"Rexxsupport.Library" LINK "ARB:Articles_31-40/39.Support.Library/MAIN"} we can look at how two or more ARexx
+programs can participate in @{"Inter Process Communication" LINK "ARB:Misc/Glossary/IPC"} (IPC), i.e. how
+they can communicate with each other.
+@{JCENTER}
+
+@{" Instructions & Functions Used In IPC " LINK "Used"}
+@{" A Simple Explanation Of IPC          " LINK "Explanation"}
+@{" The OPENPORT()  Function             " LINK "Openport()"}
+@{" The WAITPKT()   Function             " LINK "Waitpkt()"}
+@{" The GETPKT()    Function             " LINK "Getpkt()"}
+@{" The GETARG()    Function             " LINK "Getarg()"}
+@{" The REPLY()     Function             " LINK "Reply()"}
+@{" The WAITFORPORT Command Utility      " LINK "Waitforport"}
+@{" The CLOSEPORT() Function             " LINK "Closeport()"}
+@{" A Possible Program Hang Up!!         " LINK "HangUp"}
+@{" Example Programs                     " LINK "Examples"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Used" "Article 40 - Communications - Inst. & Func. Already Covered"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - INSTRUCTIONS & FUNCTIONS ALREADY COVERED@{UB}@{UU}
+@{JLEFT}
+We have already discussed some of the instructions and functions used
+in IPC. These are:-
+
+  @{" ADDRESS   " LINK "ARB:ARTICLES_21-30/23.Talking-Programs-1/Address"} - In Article 23
+  @{" ADDRESS() " LINK "ARB:ARTICLES_21-30/24.Talking-Programs-2/Address()"} - In Article 24
+  @{" SHOW()    " LINK "ARB:ARTICLES_21-30/24.Talking-Programs-2/Show()"} - In Article 24
+
+@{B}@{U}The RexxSupport.Library Functions and a Command Utility Used in IPC@{UB}@{UU}
+
+The following RexxSupport.Library functions, which will be dealt with
+in this article, are used in IPC:-
+
+  @{" OPENPORT()  " LINK "Openport()"} to open a message port
+
+  @{" WAITPKT()   " LINK "Waitpkt()"} to tell the program to wait until a message packet is
+                 waiting for it.
+
+  @{" GETPKT()    " LINK "Getpkt()"} to check the port for messages and retrieve the memory
+                 address at which the message has been stored.
+
+  @{" GETARG()    " LINK "Getarg()"} to retrieve an argument string, or a command, or a function
+                 name from a message packet
+
+  @{" REPLY()     " LINK "Reply()"} to tell the sending program that the message has been
+                 received
+
+  @{" CLOSEPORT() " LINK "Closeport()"} to close a message port that has been opened with OPENPORT()
+
+Remember that is is @{B}essential@{UB} that you @{"add" LINK "ARB:Articles_31-40/38.Functions-More/Addlib()"} the "RexxSupport.Library" 
+to ARexx's @{"library list" LINK "ARB:Articles_31-40/38.Functions-More/LibraryList"} before any of these functions are used.
+
+The following @{"Command Utility" LINK "ARB:Articles_01-10/03.command_Utilities/Utilities"} is also dealt with in this article:-
+
+  @{" WAITFORPORT " LINK "Waitforport"} to cause a delay of 10 seconds while waiting for a
+                 particular port name to appear.
+
+We have already seen an example of the use of this command utility in
+@{"Line 7 of Example25-5" LINK "ARB:Articles_21-30/25.Options/Results"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Explanation" "Article 40 - Communications - A Simple Explanation of IPC"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - A SIMPLE EXPLANATION OF IPC@{UB}@{UU}
+@{JLEFT}
+Before starting on how to use these functions and commands, let's run
+through, in a simple manner, how the system works. In this explanation
+I will use this terminology:-
+
+* Sender   - the program sending the message
+* Receiver - the program receiving the message
+* Listen   - wait for a message to appear
+
+1. Message Ports are opened in each of the programs with the @{"OPENPORT()" LINK "Openport()"}
+   function.
+
+2. Sender sends a message to Receiver using the @{"ADDRESS" LINK "ARB:ARTICLES_21-30/23.Talking-Programs-1/Address"} instruction.
+
+3. Because the Receiver may not be listening at the moment the message is
+   sent, or may not be ready to receive the message, the message is stored
+   in memory until Receiver is ready to accept it.
+
+4. The Receiver can pause until a message is waiting for it with the
+   @{"WAITPKT()" LINK "Waitpkt()"} function.
+
+5. Receiver uses the @{"GETPKT()" LINK "Getpkt()"} function to check to see if any messages are
+   waiting. If so, GETPKT() will return the address in memory at which the
+   message has been stored.
+
+6. Receiver uses the @{"GETARG()" LINK "Getarg()"} function to recover the message from memory.
+
+7. Receiver replies to Sender with the @{"REPLY()" LINK "Reply()"} function. This gives the
+   Sender a return code and frees up the memory used for the message
+
+8. Ports are closed with the @{"CLOSEPORT()" LINK "Closeport()"} function when all message
+   transfers have been completed.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Openport()" "Article 40 - Communications - The OPENPORT() Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE OPENPORT() FUNCTION@{UB}@{UU}
+@{JLEFT}
+To open a port for IPC we use the OPENPORT() function. Its syntax is:-
+
+  OPENPORT(PortName)
+
+where name is the name you wish to give to the port.
+
+The name is @{B}case sensitive@{UB} and, if it is a string, it @{B}must@{UB} be included
+in quotes. However, it can also be a symbol whose value is the port name.
+
+For example:-
+
+  CALL OPENPORT('MyPort')
+
+  PortName = 'myport'
+  CALL OPENPORT(PortName)
+
+The function returns a value of 1 if the port is successfully opened or
+0 if it is not opened.
+
+If you try to open a port with the same name as one that has already been
+opened by the same program or @{B}another program@{UB} then a return of 0 is received.
+You @{B}cannot@{UB} have two ports open with the same name at the same time.
+
+In order not to have such conflict of names you should try to have some
+name that you feel will be unique. However, keep it as simple as possible
+to avoid errors. No need to go to the extent of:-
+
+  CALL OPENPORT('Thisismyportnamethatnooneelsewilleverduplicate')
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Waitpkt()" "Article 40 - Communications - The WAITPKT() Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE WAITPKT FUNCTION@{UB}@{UU}
+@{JLEFT}
+This function causes the program to suspend operations until it detects
+that a message packet is waiting for it. Its syntax is:-
+
+  WAITPKT(PortName)
+
+The "PortName" @{B}must be identical@{UB} (including the same case) to that used
+in @{"OPENPORT()" LINK "Openport()"}.
+
+The program will now appear to completely stop until it finds that a message
+addressed to its port name has been stored in memory.
+
+This function does @{B}not@{UB} do anything to retrieve the message. This must
+be done with the @{"GETPKT()" LINK "Getpkt()"} and @{"GETARG()" LINK "Getarg()"} functions.
+
+As we will see in @{"Example40-6" LINK "3rd"32} it is not always necessary to use the
+WAITPKT() function. We can write the program so that it only checks for
+messages at certain times or occasions.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Getpkt()" "Article 40 - Communications - The GETPKT Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE GETPKT() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Although you could infer from its name that his function might get the
+message itself, this is @{B}not so!@{UB}. It only gets the address in memory where
+the message has been stored. Its syntax is:-
+
+  GETPKT(PortName)
+
+The "PortName" @{B}must be identical@{UB} (including the same case) to that used
+in @{"OPENPORT()" LINK "Openport()"}.
+
+The value returned by the function is the four byte address in memory
+at which the message has been stored.
+
+It is usually used by equating it to a symbol. For example:-
+
+  MsgAdd = GETPKT(PortName)
+
+I have use the symbol "MsgAdd" as short for "Message Address". However,
+you can use whatever symbol name that you like.
+
+The actual value returned does not need to concern us at all as we
+immediately use the value, or the symbol holding the value, in the
+GETARG() function. However, if you really want to see the value, you could
+use:-
+
+  MsgAdd = GETPKT(PortName)
+  SAY C2X(VALUE('MsgAdd'))
+
+and you will see a hexadecimal number something like this:-
+
+  003A28F0
+
+If you use this function without using the WAITPKT() function, and there
+is no message waiting, then GETPKT() does @{B}NOT@{UB} wait for a message. It
+immediately returns with a hexadecimal value of "00000000". This means
+that you can use something like:-
+
+  MsgAdd = GETPKT(PortName)
+  IF C2X(MsgAdd) = '00000000' THEN DO
+    ... Action if no message there
+  END
+  ELSE DO
+    ... Action for message received
+  END
+
+You can therefore set up a program that will call an internal function
+every so often which will check for a message and, if none is there, go
+on to do something else without having to be hung up on the @{"WAITPKT()" LINK  "Waitpkt()"}
+function. This is illustrated in @{"Example40-6" LINK "3rd"32}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Getarg()" "Article 40 - Communications - The GETARG() Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE GETARG() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Once we have retrieved the address of the message with @{"GETPKT()" LINK "Getpkt()"}, we can
+use the GETARG() function to retrieve the actual message. Its syntax is:-
+
+  GETARG(MsgAdd [,number])
+
+@{B}MsgAdd@{UB} is the message address retrieved by the GETPKT() function.
+
+@{B}Number@{UB} is an optional argument. If omitted, a default value of 0 is used.
+
+This number represents a "slot" number between 0 and 15 but the average
+ARexx user need not worry about any but Slot 0 as all commands and function
+names are held in Slot 0.
+
+When a function is called, its call can consist of the function name and
+one or more argument strings. The function name itself is put into Slot
+0. Any argument strings are put into Slots 1 to 15.
+
+So, if the Sender program is only sending a command to the Receiver program,
+then there is no need to worry about using a number, just the simple usage
+of, for example:-
+
+  Text = GETARG(MsgAdd)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Reply()" "Article 40 - Communications - The REPLY() Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE REPLY() FUNCTION@{UB}@{UU}
+@{JLEFT}
+Until the Receiver program calls the REPLY() function, the message packet
+is still in memory. This means that a second use of GETARG(MsgAdd) with
+the same "MsgAdd" will retrieve exactly the same message.
+
+Also, until the the Receiver program calls the REPLY() function, the Sender
+program will be held up waiting for it.
+
+The syntax for this function is:-
+
+  REPLY(MsgAdd,RC)
+
+@{B}MsgAdd@{UB} is the message address retrieved by the @{"GETPKT()" LINK "Getpkt()"} function.
+
+@{B}RC@{UB} is a return code number that can be sent from the Receiver program to
+the Sender program which will assign its value to a symbol named "RC".
+
+For example:-
+
+  Receiver program   - REPLY(MsgAdd,0)
+  Sender Program     - SAY RC              --> 0
+
+  Receiver program   - REPLY(MsgAdd,5)
+  Sender Program     - SAY RC              --> 5
+
+The Receiver program should be programmed to set the return code to 0
+if all is O.K. or to a higher number if some sort of problem has arisen
+with the message received.
+
+The Sender program can then decide what to do if a non zero return code
+is received back from the Receiver program.
+
+The Receiver program can be programmed to delay the calling of the REPLY()
+function if it is necessary for the Sender program to wait until, for
+example, the Receiver sends back a message of its own.
+
+Or the Receiver program can be programmed to call the REPLY() function
+as soon as the message has been retrieved thus releasing the Sender program
+to go on to do whatever else it needs to do.
+
+If a port is closed before all its messages have been replied to then
+those messages are automatically replied to with a return code of 10.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "HangUp" "Article 40 - Communications - A Possible Program Hangup"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - A POSSIBLE PROGRAM HANGUP@{UB}@{UU}
+@{JLEFT}
+If you make the mistake of opening a port then, in the @{B}same@{UB} program ADDRESS
+this port name, then the program will freeze up. For example:-
+
+  CALL OPENPORT('MyStupidPort')
+  ADDRESS 'MyStupidPort' 'Message Text'
+  MsgAdd = GETPKT('MyStupidPort')
+  Message = GETARG(MsgAdd)
+  CALL REPLY(MsgAdd)
+
+The program would @{B}never@{UB} get passed the ADDRESS instruction. This is because
+the ADDRESS causes the program to stop while it waits for the REPLY()
+from the port that it addresses. However, as the above coding has the
+REPLY() @{B}after@{UB} the ADDRESS, the reply can never been sent!
+
+If this freeze up occurs, then the @{"HI" LINK "ARB:Articles_01-10/03.Command_Utilities/Hi"} command utility will @{B}NOT@{UB} stop the
+program! In fact, I cannot find any way within the ARexx and AmigaDOS
+environments to unfreeze such a program, apart from using the "three finger
+salute" - i.e. reset the Amiga with CTRL-AKey-AKey. If you can find a
+way then please let me know!
+@{JCENTER}
+@{B}YOU HAVE BEEN WARNED!!@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Closeport()" "Article 40 - Communications - The CLOSEPORT() Function"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE CLOSEPORT() FUNCTION@{UB}@{UU}
+@{JLEFT}
+This function is used to close the port when it is no longer needed. Its
+syntax is:-
+
+  CLOSEPORT(PortName)
+
+It returns a value of 1 if the port is successfully closed and 0 if it
+is not (for example, closing a port name that has not been opened will
+return 0).
+
+If a port is closed while there are still messages waiting for it, or
+before a retrieved message has been replied to with the REPLY() function,
+the Sender program is sent a return code of 10 so that the Sender can
+take appropriate action.
+
+If a program finishes while there are still ports open that have not been
+closed with CLOSEPORT() then these ports are automatically closed and
+any unanswered messages have the automatic return code of 10 sent to the
+sender program.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Waitforport" "Article 40 - Communications - The WAITFORPORT Command Utility"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THE WAITFORPORT COMMAND UTILITY@{UB}@{UU}
+@{JLEFT}
+As this is a @{"Command Utility" LINK "ARB:Articles_01-10/03.Command_Utilities/Utilities"} it is used in a Shell/CLI process. It can be:-
+
+- entered at a CLI prompt
+
+- used in an AmigaDOS script file
+
+- sent from an ARexx script to AmigaDOS after ADDRESS COMMAND has been used.
+
+Its syntax is:-
+
+  WAITFORPORT Portname
+
+The PortName is @{B}case sensitive@{UB} so you must get it exactly right. Do @{B}NOT@{UB}
+enclose the name in quotes!!
+
+What it does is check for the presence of the port and, if it is not there,
+wait 10 seconds for the port to appear.
+
+An AmigaDOS Return Code of:-
+
+- 0 is given if the port is found before the 10 seconds is up.
+
+- 5 if the port is not found at the end of 10 seconds.
+
+As an example, if you wanted an ARexx program to start up only after some
+other program had started and opened its port you could have this AmigaDOS
+script running in the background:-
+
+  LAB Start
+    WAITFORPORT PortName
+    IF WARN
+      SKIP BACK Start
+    ENDIF
+
+  RX Program.rexx
+
+Or you could set it up in the ARexx program itself with this coding:-
+
+  /**/
+
+  DO WHILE RC ~= 0
+    ADDRESS COMMAND 'WaitForPort PortName'
+  END
+  ... rest of program
+
+WAITFORPORT will put its return code into the symbol RC and thus the above
+loop will continue to operate until the port is opened by the other program.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Examples" "Article 40 - Communications - Example Programs"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - EXAMPLE PROGRAMS@{UB}@{UU}
+@{JLEFT}
+So let's put all the information in this article into some example programs.
+These programs will have to be in pairs to enable one to talk to the
+other.
+@{JCENTER}
+@{" 1st Example Pair " LINK "1st"}
+@{" 2nd Example Pair " LINK "2nd"}
+@{" 3rd Example Pair " LINK "3rd"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "1st" "Article 40 - Communications - First Example Programs"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - FIRST EXAMPLE PROGRAMS@{UB}@{UU}
+@{JLEFT}
+First up is a pair of programs in which one will be able to send text
+to be displayed in the other's window.
+
+    /* Example40-1 */
+
+ 1. IF SHOW('P','Port40-2') = 0 THEN DO WHILE RC ~= 0
+ 2.   SAY 'Waiting for PORT40-2 to be opened - Please RX Example40-2'
+ 3.   ADDRESS COMMAND 'WaitForPort Port40-2'
+ 4. END
+
+ 5. SAY'c'x'Type in your messages for Port40-2 and see it appear in the
+        other window.'
+ 6. SAY 'Enter QUIT to terminate both programs.'
+
+ 7. DO FOREVER
+ 8.   PARSE PULL Text
+ 9.   ADDRESS 'Port40-2' Text
+10.   IF UPPER(Text) = 'QUIT' THEN LEAVE
+11. END
+
+
+    /* Example40-2 */
+
+ 1. IF EXISTS('Libs:rexxsupport.library') = 0 THEN DO
+ 2.   SAY 'c'x'Sorry - Your Libs: directory does not contain the
+           rexxsupport.library file'
+ 3.   EXIT
+ 4. END
+
+ 5. IF SHOW('L','rexxsupport.library') = 0 THEN DO
+ 6.   CALL ADDLIB('rexxsupport.library',0,-30,0)
+ 7. END
+
+ 8. CALL OPENPORT('Port40-2')
+
+ 9. SAY 'Waiting for a message from Example40-1'
+
+10. DO FOREVER
+11.   CALL WAITPKT('Port40-2')
+12.   MsgAdd = GETPKT('Port40-2')
+13.   Text = GETARG(MsgAdd)
+14.   CALL REPLY(MsgAdd,0)
+15.   IF UPPER(Text) = 'QUIT' THEN LEAVE
+16.   SAY Text
+17. END
+
+Open @{B}TWO@{UB} Shell/CLI windows and RX one of the above programs in each of
+windows.
+
+It does not matter in which order you RX the two programs as you will
+soon see. Try it out by starting Example40-1 first then Example40-2
+first.
+
+@{"Lines 1-4" LINK "1st"8} in Example40-1 will wait for the port, that Example40-2 will
+@{"open" LINK "1st"36}, to appear. The "WaitForPort" command utility will cause a 10 second
+delay if the port is not there. If it is still not there after the 10
+seconds, the loop takes effect and another 10 second delay occurs. If
+the port @{B}IS@{UB} there, the "WaitForPort" command immediately exits without
+any delay or without any further delay.
+
+@{"Line 9" LINK "1st"17} in Example40-1 is the part of the program that sends the text to
+the other program. Note that we can only LEAVE the loop (Lines 7-11) @{B}after@{UB}
+the "QUIT" word has been sent to Example40-2. If we left before, then
+Example40-2 would never end!
+
+@{"Lines 10-17" LINK "1st"40} is the vital part of example40-2. If Example40-1 has not yet
+been started, or if it has not yet sent a message, then Example40-2 stops
+at Line 11 and waits for a message.
+
+The rest of the loop is as explained when we talked about each of the
+functions. The loop is left when the program receives the word
+"QUIT".
+
+By using the UPPER() function at @{"Line 10" LINK "1st"17} of Example40-1 and @{"Line 15" LINK "1st"40} of
+Example40-2 so that it does not matter which case is used when the word
+is entered from the keyboard.
+
+These two programs are O.K. for passing @{B}text@{UB} from one program to the other
+but what if we want to send an @{B}ARexx instruction@{UB} from one ARexx program
+to another?
+
+The @{"2nd Example Pair" LINK "2nd"} shows how.
+
+The @{"3rd Example Pair" LINK "3rd"} will show how to let a program do other things while
+waiting for a message rather than hang around until the message comes.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "2nd" "Article 40 - Communications - Second Example Programs"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - SECOND EXAMPLE PROGRAMS@{UB}@{UU}
+@{JLEFT}
+The @{"1st Example pair" LINK "1st"} of programs are O.K. for passing @{B}text@{UB} from one program
+to the other but what if we want to send an @{B}ARexx instruction@{UB} from one
+ARexx program to another?
+
+The following two programs show how to do it.
+
+    /* Example40-3 */
+
+ 1. IF SHOW('P','Port40-4') = 0 THEN DO WHILE RC ~= 0
+ 2.   SAY 'Waiting for PORT40-4 to be opened - Please RX Example40-4'
+ 3.   ADDRESS COMMAND 'WaitForPort Port40-4'
+ 4. END
+
+ 5. SAY'c'x'Type in your messages for Port40-4 and see it appear in the
+        other window.'
+ 6. SAY 'Enter QUIT to terminate both programs.'
+
+ 7. DO FOREVER
+ 8.   PARSE PULL Text
+ 9.   ADDRESS 'Port40-4' Text
+10.   IF UPPER(Text) = 'QUIT' THEN LEAVE
+11. END
+
+
+    /* Example40-4 */
+
+ 1. IF EXISTS('Libs:rexxsupport.library') = 0 THEN DO
+ 2.   SAY 'c'x'Sorry - Your Libs: directory does not contain the
+          rexxsupport.library file'
+ 3.   EXIT
+ 4. END
+
+ 5. IF SHOW('L','rexxsupport.library') = 0 THEN DO
+ 6.   CALL ADDLIB('rexxsupport.library',0,-30,0)
+ 7. END
+
+ 8. CALL OPENPORT('Port40-4')
+
+ 9. SAY 'Waiting for a message from Example40-1'
+
+10. DO FOREVER
+11.   CALL WAITPKT('Port40-4')
+12.   MsgAdd = GETPKT('Port40-4')
+13.   Text = GETARG(MsgAdd)
+14.   CALL REPLY(MsgAdd,0)
+15.   IF UPPER(Text) = 'QUIT' THEN LEAVE
+16.   INTERPRET Text
+17. END
+
+These two programs are almost identical to @{"Example 40-1" LINK "1st"6} and @{"Example 40-2" LINK "1st"24}.
+The differences are:-
+
+@{B}40-3@{UB} - All references to "Port40-1" have been changed to "Port40-3".
+
+There is no other difference in Example40-3
+
+@{B}40-4@{UB} - The only other difference here that Line 16 has had the SAY in
+40-2 @{"(Line 16)" LINK "1st"40} changed to "INTERPRET". This means that ARexx will attempt
+to @{"INTERPRET" LINK "ARB:Articles_31-40/32.Interpreting/Usage"} the "Text" received as an ARexx instruction clause(s).
+
+To demonstrate how this works, open @{B}TWO@{UB} Shell/CLI windows and RX one of
+the programs in each window.
+
+Try entering these lines in the Example40-3 window:-
+
+  > SAY 'This is some text for Example40-4'
+
+The window for Example40-4 should now display:-
+
+  This is some text for Example40-4
+
+Example40-4 has interpreted the line as a SAY instruction.
+
+Now try entering:-
+
+  > DO x = 1 TO 5 ; SAY 'x =' x ; END
+
+Example40-4's window should now display:-
+
+  x = 1
+  x = 2
+  x = 3
+  x = 4
+  x = 5
+
+Another line to try in Example40-3's window is:-
+
+  ADDRESS 'COMMAND' 'Dir Sys:'
+
+Example40-4's window should now display the directory of your boot
+disk.
+
+Of course, you would not normally have a program that let the user enter
+instruction clauses. There would be too much risk of errors in the entry
+and there is no real practical purpose to it. But these examples @{B}will@{UB}
+let you enter all sorts of instruction clauses to test it out without
+having to write long and complicated example programs. Keep it simple,
+though, as the more complex you make it the greater the possibility of
+errors!!
+
+The @{"3rd Example Pair" LINK "3rd"} will show how to let a program do other things while
+waiting for a message rather than hang around until the message comes.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "3rd" "Article 40 - Communications - Third Example Programs"
+
+@{B}@{U}@{JCENTER}COMMUNICATIONS - THIRD EXAMPLE PROGRAMS@{UB}@{UU}
+@{JLEFT}
+The @{"1st" LINK "1st"} and @{"2nd" LINK "2nd"} example pairs of programs needed the second program in
+the pair to sit around waiting for the message to arrive.
+
+The following two example programs show that one program @{B}need not@{UB} just
+sit around waiting for a message. It can be doing something else and just
+check for messages every so often.
+
+Example40-5 is identical to @{"Example 40-1" LINK "1st"6} except that all reference to
+"Port40-2" has been changed to "Port40-6"
+
+    /* Example40-5 */
+
+ 1. IF SHOW('P','Port40-6') = 0 THEN DO WHILE RC ~= 0
+ 2.   SAY 'Waiting for PORT40-6 to be opened - Please RX Example40-6'
+ 3.   ADDRESS COMMAND 'WaitForPort Port40-6'
+ 4. END
+
+ 5. SAY'c'x'Type in your messages for Port40-6 and see it appear in the
+       other window.'
+ 6. SAY 'Enter QUIT to terminate both programs.'
+
+ 7. DO FOREVER
+ 8.   PARSE PULL Text
+ 9.   ADDRESS 'Port40-6' Text
+10.   IF UPPER(Text) = 'QUIT' THEN LEAVE
+11. END
+
+Example40-6 is quite a bit different to @{"Example40-2" LINK "1st"24} from Line 9 onwards:-
+
+    /* Example40-6 */
+
+ 1. IF EXISTS('Libs:rexxsupport.library') = 0 THEN DO
+ 2.   SAY 'c'x'Sorry - Your Libs: directory does not contain the
+          rexxsupport.library file'
+ 3.   EXIT
+ 4. END
+
+ 5. IF SHOW('L','rexxsupport.library') = 0 THEN DO
+ 6.   CALL ADDLIB('rexxsupport.library',0,-30,0)
+ 7. END
+
+ 8. CALL OPENPORT('Port40-6')
+ 9. Count = 0
+
+10. DO FOREVER
+11.   Count = Count + 1
+12.   SAY 'Doing something else rather than wait for message - Count ='
+          Count
+13.   IF Count // 10 = 0 THEN CALL CheckMessage
+14. END
+
+15. CheckMessage:
+
+16.   MsgAdd = GETPKT('Port40-6')
+17.   IF C2X(MsgAdd) = '00000000' THEN RETURN
+
+18.   Text = GETARG(MsgAdd)
+19.   CALL REPLY(MsgAdd,0)
+20.   IF UPPER(Text) = 'QUIT' THEN EXIT
+21.   SAY 'a'x'Attention HUMAN!! - A message has been received as
+          follows:-'
+22.   SAY 'a'x||Text
+23.   SAY 'a'x'Press RETURN to continue'
+24.   PULL Nothing
+25. RETURN
+
+@{"Line 9" LINK "3rd"44} sets up a variable to show, in @{"Line 12" LINK "3rd"47}, that the program is really
+doing something other than wait for a message.
+
+We do not want to check for messages all the time so we will only do it
+at every tenth iteration of the loop contained by @{"Lines 10-14" LINK "3rd"47}.
+
+@{"Line 13" LINK "3rd"47} checks to see if the symbol "Count" is exactly divisible by 10.
+If it is the remainder (as given by the operator // ) is 0 (zero) and
+the function @{"CheckMessage" LINK "3rd"54} is called. Thus the function is only called
+every tenth iteration.
+
+@{"Line 17" LINK "3rd"55} checks to see if the symbol "MsgAdd" has a real memory address.
+If it holds hexadecimal 00000000 then there is no message and a RETURN
+to the main program is effected.
+
+@{"Line 18" LINK "3rd"58} is reached if there is a message. @{"Lines 21-22"  LINK "3rd"63} allow the human
+user of the program to read the message and @{"Lines 23-24" LINK "3rd"66} pause the program
+until RETURN is pressed.
+
+@{B}Take Note@{UB} that this pair of programs require input to @{B}both@{UB} windows - the
+message in Example40-5's window and the RETURN key in Example40-6's window.
+You will have to make sure that each window is activated by clicking in
+it with the left mouse button before making the entries.
+
+While these two programs are running, you can demonstrate that more than
+one message can be queued up in memory waiting for the receiving program
+to get them. Just enter quite a few lines into Example40-5's window without
+pressing RETURN in Example40-6's window. For example, you could
+enter:-
+
+  Message 1 [Return]
+  Message 2 [Return]
+  Message 3 [Return]
+  .......
+  Message 10 [Return]
+
+After entering, say, 10 such lines in Example40-5's window, go to
+Example40-6's window and press the RETURN key for each message.
+
+Note, as you do this, that 10 iterations of the loop are made between
+each message even though there are a lot of message waiting.
+
+As usual, @{B}not a practical program@{UB} but not too bad at demonstrating the
+point. The trouble is that @{B}practical@{UB} examples take a lot of programming!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

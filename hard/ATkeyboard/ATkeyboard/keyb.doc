@@ -1,0 +1,252 @@
+
+	«» AT-keyboard interface project by Henrik Jonsson 1996. «»
+	-----------------------------------------------------------
+		e-mail: y96he0jo@isy.liu.se
+
+(English is not my native language so please have mercy with my way of
+maltreating the English language :-)
+
+	What the heck is it?
+	--------------------
+This hardware hack makes it possible to connect & use an (PC) AT-keyboard
+on an Amiga. The Amiga keyboard & the AT keyboard does (ofcourse) not use
+the same scancodes. Therefor we need a onechip computer to convert the
+AT-scancodes into Amiga-scancodes. In this hack I've used a cheap, common,
+small, fast, RISC onechip computer by Microchip called PIC 16C84.
+
+NOTE: This hack does not work with old (PC) XT-keyboards.
+
+	Diclaimer
+	---------
+Although this hack has been tested on several Amiga's, & works just
+great on these machines, I can *NOT* be held responsible for *ANY*
+damage this hack may cause, or any damage you may cause while trying
+to rebuild or install this hack in your computer !
+If you don't have much experience with projects like this, it may be a
+good idea to let someone else build it for you.
+
+	Introduction
+	------------
+I have tried to make this project as dynamic as possible so that it will be
+easier for the builder of this project to change it to his/her need/taste.
+
+In this sourcecode in its present form I've made "special mission commands"
+on six keys, pause, "print screen", home, end, pageup, pagedown & menu95.
+
+If you press:
+
+*	"Pause" twice right after each other your Amiga will boot.
+
+*	"Home" your Amiga will receive "right shift + arrow left".
+
+*	"End" your Amiga will receive "right shift + arrow right".
+
+*	"Pageup" your Amiga will receive "right shift + arrow up".
+
+*	"Pagedown" your Amiga will receive "right shift + arrow down".
+
+*	"Print Screen" your Amiga will receive "left Amiga + m".
+	(ie cycle screens.)
+
+*	"menu95" your Amiga will receive "left Amiga + m".
+	(ie cycle screens.)
+
+These "special mission commands" can easily be changed to do something else
+just by making some minor changes in the sourcecode.
+
+If you own one of those 102+ keys keyboards it is quite easy to change
+the sourcecode so that you can put some usefull command into every key.
+If you have some experince in programming assembler you will find it
+very easy to change the "special mission keys" setup to your own need.
+
+Suppose you have a non-standard AT-keyboard with alot of extra keys, & you
+want to use some of them to do something useful but you do not know the
+scancodes to those extra keys. You're in a big trouble unless you have access
+to a logicanalyser, but I have allready solved that problem for you.
+In this archieve I've included a small executable called kb-scan that will
+take care of the scancode problem. Kb-scan is a program that will capture
+the "AT-keyboard scancodes" using the Amiga paralellport & then save the
+scancodes into a file. Before you use kb-scan you'll have to build a very
+simple buffer to prevent your 8520:s from overload. The schematics on how to
+build the buffer can be found in kb-scan.iff. When you have connected the
+buffer & AT-keyboard to the paralellport you are ready to use kb-scan.
+
+To use kb-scan is very simple, you just have to speify a filename into wich
+you want the scancodes to be saved & off you go. If you have connected
+everything correct the scroll-lock led will lit right after you have executed
+kb-scan. If it does not lit you'd better turn the power of imediately to
+lower the risc of blowing either your AT-keyboard or the Amiga-paralellport.
+
+When the scroll-lock led is lit you just have to tap a key that you want to
+examine & then press left mousebutton to save the scancode into the file
+that you have specified.
+
+Now you can include that scancode in the correct position in the key-lookup
+table in the sourcecode & associate it with some useful key/keycombination.
+If you don't understand were in the source to put the scancodes you could
+try to e-mail me the scancodes & if I have time I'll try to help you out.
+
+Since the Amigakeyboard have some keys that the AT-keyboard doesn't have &
+vice versa I have made some substitutes.
+
+	AT	>>>>>	Amiga
+	--------------------------
+	left alt	left Amiga
+	right alt	right Amiga
+	left ctrl	left alt
+	right ctrl	right alt
+	capslock	ctrl
+	insert		help
+	scrolllock	capslock
+	f11		\| (the key at the left from backspace)
+	f12		[{ (the key in the upper left corner on the keypad)
+	left win95	left Amiga
+	right win95	right Amiga
+
+If you intend to use a win-95 keyboard & you do not like the setup described
+above I have included an alternative win-95 source just to show an very
+simple example on how to change the keylookup-table setup. In this source the
+changed keys have the following setup:
+
+	AT	>>>>>	Amiga
+	--------------------------
+	left alt	left alt
+	right alt	right alt
+	left ctrl	ctrl
+	right ctrl	ctrl
+	capslock	capslock
+	left win95	left Amiga
+	right win95	right Amiga
+
+NOTE:	I do not own a win-95 keyboard so the scancodes that I have used
+	for the win-95 specific keys has not been tested. If it should turn
+	out that they do not work as described above just use kb-scan to
+	get the correct scancodes.
+
+	How's it done then?
+	-------------------
+Well, first of all you need a "PIC 16c84 programmer" so that you can put
+the program (keyb.hex or keyb_w95.hex) into the cpu's eeprom. As far as i
+know there are two Amiga programs available on the Aminet that would take
+care of this. These programs are Epic & "PIC kit". Both of them can be
+found in hard/hack as Epic1_0.lha & PICKIT09.LHA. Notice that i haven't
+tried neither of these but i hope that they will work just fine. In case
+that you have access to a pc there are several "PIC programmers" available
+on the internet. For example you could check out the official microchip
+site : www.microchip.com .
+
+Before programming the cpu you must specify some options to the programing
+software you're using:
+
+*	Power-up timer  = ON
+*	Watchdog timer  = OFF
+*	Codeprotection  = OFF
+*	Oscillator type = XT
+
+As you can see in keyb.iff the circuit itself is very simple. The only thing
+that could be a bit tricky is if you want to connect it to an A1200. I have
+not included any desciption on how to connect this project to an A1200 since
+there are several good descriptions available on the Aminet. Most of these
+descriptions use a special reset-switch but that is unnecessary with this
+project provided that you have connected the KbReset-line to the A1200.
+I have not cut the KbClk & KbDat lines on my A1200-motherboard as described
+in most descriptions. I use the original A1200-keyboard toghether with this
+project & it works just great.
+
+The +5V powersupply can be taken from the floppy powersupply or from any
+other suitable place were +5V is available in your Amiga. Remember that there
+is also +12V available in the floppy powersupply, make sure you got the right
+one.
+
+To make the PCB-procedure easier I have included a PCB-layout for this
+project both as postscript & "HP laserjet"-file.
+
+So far this project has only been tested on A500 & A1200. I am pretty sure
+of that this project will work on allmost any Amiga. The only thing that
+differs (as I know of) between keyboard handling on differnt Amigas
+is the reset signal. On A500 & A1200 there is a special resetline coming
+from the keyboard that will be driven low when you press ctrl+Lamiga+Ramiga.
+The A2/3/4/000 keyboard haven't got any resetline so instead it will drive
+the clock line low for atleast 500ms to make a reset. Therefore you'll have
+to connect a small wire to the rb3-pin (refer to keyb.iff). This wire should
+be connected to GND if you are using an A500, if you are using an A1200 or an
+A2/3/4/000 it should be connected to +5v. I've been forced to do this since
+the keyboard handling on the A500 will totally hung if you try to send
+a resetwarning code. According to RKM HW-ref the A2/3/4/000 should have a
+resetwarning code sent before the keyboard performs a hard-reset so that is
+why you have to define what type of Amiga you are using.
+
+	Should I note anything else?
+	----------------------------
+Yes, there are some things worth noting:
+
+As far as i know the A3000 & the A2000 uses the same type of 
+keyboard-connector. I haven't got any info on the A4000 keyboard-connector so
+you'll have to check that up yourself.
+
+Do *NOT* forget to connect the shield between the AT-keyboard & the Amiga.
+Otherwise there is a big risc that your computer starts to behave strangely
+due to heavy interference.
+
+The sourcecode is made to be assembled with Mpasm. Mpasm is a PIC-assembler
+for the PC that is available for free at www.microchip.com. So far I haven't
+seen any good PIC-assembler available for the Amiga that fulfils my needs.
+
+If you want to make any changes in the source-code remember that the only
+parts in the source that you should change is the "keylookup-table" & the
+"specail mission commands routines". This project has been tested with 
+several AT-keyboards & I haven't found any yet that wont work with this
+project so you'd better leave the transmitting/receiving-routines
+the way they are. In fact there are keyboards that i have tested that works
+great with this project but does not work with some pc:s.
+
+The reason that i have put a boot command on the pause key is that there
+are some cheap lousy AT-keyboards on the market that has big trouble
+handling three keys pressed at the same time. Don't be surprised if you
+find out that you own one of those AT-keyboards that can't handle any other
+three-keykombination than ctrl-alt-del.
+
+Everytime you switch the power on or boot your Amiga with the AT-keyboard it
+will flash its leds & then the capslock-led will be lit (about 1s) while the
+PIC 16c84 is syncronizing with the Amiga. If the capslock-led does not lit as
+described you have an AT-keyboard that is not compatible with this project or
+you have failed in building this project properly.
+
+	Is it possible I'm going to brake something?
+	--------------------------------------------
+Definitly yes if you are not careful enough. As always when building a
+project like this you should doublecheck everything before testing.
+Make really sure that you got the DIN-connectors connected the right way.
+If you check the pin-numbers shown in the schematics against the pin-numbers
+printed on the DIN-connector there should be no problem.
+When you have checked everything atleast twice you're ready to turn
+the power on & try to type something. Hopefully you will have a new
+perfectly working Amiga-keyboard.
+
+A small hint for troubleshooting: If you get a lot of "'"-signs, you have
+switched KbClk & KbDat.
+
+	Last words.
+	-----------
+If you have some ideas about this project that you want to carry out,
+dont hesitate to e-mail me if you have some trouble that you think
+I could help you with. Currently I am busy with my studies & it takes alot
+of my spare time so you'll have to keep that in mind if it takes some time
+before I can reply your letters.
+
+Greetings goes out to:
+Eric Rudolph	Without the inspiration from his "IBM Keyboard Interface
+		Project" this project would never have been done.
+
+Hans Luijten	for his extraordinary description on how to connect an
+		external keyboard to an A1200.
+
+& finally:
+		GREETS GO OUT TO ALL AMIGA CREWS
+		WHO WORK HARD TO SHOW THE WORLD
+		THE GREATEST COMPUTER IS STILL
+			THE MIGGY!
+
+	«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»««»«»«»«»«»
+	«» We are reasonable people. 100% independent. «»
+	«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»«»««»«»«»«»

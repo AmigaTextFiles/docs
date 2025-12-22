@@ -1,0 +1,170 @@
+; chunky copper display: 92x120
+;
+; copper loads 91 colors in alternate banks switching display bit at end
+; bank1 = 32...127
+; bank2 = 160..255
+
+a=1
+
+ps=2:chw=90:chh=90:chc=chw+chw/32+1+2
+
+;#ps=3                           ;pixel size (2 or 3)
+;#chw=20                         ;chunky width
+;#chh=84                         ;chunky height
+;#chc=#chw+#chw/32+1+2           ;coppers per line
+
+ox=3                            ;window offset
+
+builddisplay:
+  InitPalette 0,256:PalRGB 0,1,15,15,15:PalRGB 0,129,15,15,15
+  BitMap 0,384+64,280+20,7:BitPlanesBitMap 0,1,$f0
+  For x.w=0 To chw-1:dx=x*ps+ox:Boxf dx,3,dx+ps-1,2+chh*ps,255-x:Next
+;  Box 0,0,367,255,1:Box ox-1,2,chw*ps+ox,chh*ps+3,1
+  ;
+  ccc.l=CustomChunkySize(chw,chh)
+
+  InitCopList 0,44,256,$13007,8,256,ccc
+  InitCopList 1,44,256,$13007,8,256,ccc
+
+  DisplayPalette 0,0:DisplayBitMap 0,0
+  DisplayPalette 1,0:DisplayBitMap 1,0
+
+  CustomChunky 0,0,ps,chw,chh,ps
+  CustomChunky 1,0,ps,chw,chh,ps
+
+  BLITZ
+
+  Mouse On
+
+  CreateDisplay 0:Use CopList 0
+
+Repeat
+
+  For z.w=0 To 15
+    VWait
+    For x.w=0 To 15
+      For y.w=0 To 15
+        ChunkyPlot x,y,x+16*y+256*z,$ff
+      Next
+    Next
+  Next
+
+  For z=15 To 0 Step -1
+    VWait
+    For x=0 To 15
+      For y=0 To 15
+        ChunkyPlot x,y,x+16*y+256*z,$ff
+      Next
+    Next
+  Next
+
+Until Joyb(0)<>0
+While Joyb(0)<>0:Wend
+
+Repeat
+  ChunkyPlot Rnd(90),Rnd(90),Rnd(4096)
+Until Joyb(0)<>0
+While Joyb(0)<>0:Wend
+
+Repeat
+  For n=15 To 0 Step -1
+    VWait
+    ChunkyCLS 256*n
+  Next
+Until Joyb(0)<>0
+While Joyb(0)<>0:Wend
+
+Repeat
+  rr.q=0
+  gg.q=0
+  vv.q=0
+  vr.q=Rnd
+  vg.q=Rnd
+  vb.q=Rnd
+
+  For n=0 To 90
+    ChunkyVlin n,0,89,Int(rr)*256+Int(gg)*16+bb
+    rr+vr
+    gg+vg
+    bb+vb
+    If rr>15 OR rr<0 Then rr-vr:vr=-(Sgn(vr)*Rnd)
+    If gg>15 OR gg<0 Then gg-vg:vg=-(Sgn(vg)*Rnd)
+    If bb>15 OR bb<0 Then bb-vb:vb=-(Sgn(vb)*Rnd)
+  Next
+  VWait 30
+Until Joyb(0)<>0
+While Joyb(0)<>0:Wend
+
+For x=0 To 89
+  For y=0 To 89
+    ChunkyPlot x,y,x*y
+  Next
+Next
+
+While Joyb(0)=0:Wend
+
+For x=0 To 89
+  For y=0 To 89
+    ChunkyPlot x,y,2048+2047*Cos(Sqr(x*y/100))
+  Next
+Next
+
+While Joyb(0)=0:Wend
+
+For x=0 To 89
+  For y=0 To 89
+    ChunkyPlot x,y,8+7*Cos(x/7)+16*Int(8+7*Sin(y/7))+256*Int(Rnd(x/5))
+  Next
+Next
+
+While Joyb(0)=0:Wend
+
+ChunkyCLS 0
+
+Dim vx(200)
+Dim vy(200)
+Dim x(200)
+Dim y(200)
+Dim ccr(200)
+Dim ccg(200)
+Dim ccb(200)
+Dim ccv(200)
+
+Main:
+num=48
+vel=2+(Rnd*12)
+durata=16
+
+  cr.q=Rnd(15)
+  cg.q=Rnd(15)
+  cb.q=Rnd(15)
+For n=0 To num-1
+  vx(n)=vel*(Rnd(2)-1)
+  vy(n)=(vel*1.2)*(Rnd(2)-1)
+  ccr.q(n)=QLimit(cr+Rnd(8),0,15)
+  ccg.q(n)=QLimit(cg+Rnd(8),0,15)
+  ccb.q(n)=QLimit(cb+Rnd(8),0,15)
+  ccv.q(n)=.05+Rnd/2
+Next
+
+  For mm.q=0 To durata Step .15
+    VWait
+    For nn.w=0 To num-1
+      x2=vx(nn)*mm
+      y2=(-vy(nn)*mm)+(mm*mm)
+      If x(nn)>-45 AND x(nn)<45 AND y(nn)>-45 AND y(nn)<45 Then ChunkyPlot x(nn)+45,y(nn)+45,0
+      x(nn)=x2
+      y(nn)=y2
+      If x(nn)>-45 AND x(nn)<45 AND y(nn)>-45 AND y(nn)<45
+        ChunkyPlot x(nn)+45,y(nn)+45,Int(ccr(nn))+Int(ccg(nn))*16+Int(ccb(nn))*256
+      EndIf
+
+      ccr(nn)=QLimit(ccr(nn)-ccv(nn),0,15)
+      ccg(nn)=QLimit(ccg(nn)-ccv(nn),0,15)
+      ccb(nn)=QLimit(ccb(nn)-ccv(nn),0,15)
+
+    Next
+  Next
+
+If Joyb(0)=2 Then End
+Goto Main

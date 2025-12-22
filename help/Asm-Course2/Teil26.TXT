@@ -1,0 +1,274 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                26.Teil...
+
+So, das war ein etwas laengerer Einschub einer vollkommen anderen Sache.
+Machen wir aber jetzt weiter mit dem Blitter, denn wir sind ja noch lange
+nicht fertig mit ihm.
+
+21.Logische Verknuepfungen bei Kopieraktionen mit dem Blitter
+
+Wie der Titel schon sagt kann man beim Kopieren zwei oder drei Quellen
+logisch miteinander Verknuepfen.
+Den Sinn erfahren wir im Laufe der Zeit...
+
+Machen wir erstmal mit den Bobs weiter, wo wir aufgehoert haben.
+
+Nun, im Grunde genommen habt ihr die einfachste Art und Weise der Bobs
+schon praktiziert. Naemlich als wir bei dem einfachen Laufschrift Programm
+die neuen Buchstaben in den Puffer kopiert haben.
+Genausogut koennten wir auch einen Konvertierten Dpaint-Brush dafuer an
+irgendeine Stelle auf dem Playfield schreiben.
+
+Nun verstehen manche von euch unter dem begriff Bobs, kleine oder grosse
+Grafiken die Munter auf dem Bildschirm rumflitzen.
+Das ist aber falsch, denn fuer das rumflitzen sind ausgekluegelte Bob_Move
+routinen zustaendig, die sich Positionen holen und alles selber ausrechnen.
+
+Um einen Bob an eine durch X und Y Koordinate fesgelegte Position muss
+diese Routine naemlich drei werte aus diesen Koordinaten errechnen.
+
+1. Hardscrollwert X
+2. Softscrollwert X
+3. Softscrollwert Y
+
+Sobald sie die errechnet hat muessen die Werte in eine Universale
+Kopierroutine eingesetzt werden, damit der Blitter diese Aktion auch
+ausfuehrt.
+
+Wir arbeiten, wenn wir mit BOBS (Blitter OBjectS) arbeiten, grundsaetzlich
+mit den verschachtelten Planes. Das reduziert die Kopieraktion auf eine Pro
+Bob, egal wieviel Farben er hat.
+Zeitlich ist die Handhabung von Bobs naemlich schon schwer genug. Wenn man
+da noch fuer jeden Bobs 2,3 oder sogar 4 Aufrufe machen muesste, das waere
+ja zum Heulen.
+
+Manche werden sich jetzt fragen: `Wieso Zeit-Probleme, ich denk der Blitter
+arbeitet mit einer Geschwindigkeit von 16 Millionen Punkte in der Sekunde.`
+
+Das stimmt auch im groben und ganzen....aber !!
+
+Rechnen wir mal aus wieviel Zeit wir pro Bildschirmaufbau haben, und ziehen
+daraus schluesse, wieviel Punkte dann noch Kopiert werden.
+
+Also bleiben wir erstmal bei der Sekunde.
+
+ 16 Millionen Punkte = 2 Millionen Byte
+
+Wir haben eine Bildschirmaufbau Frequenz von 50 Hertz. Das heisst alle
+50 stel Sekunde wir ein Neuer Bildschirm aufgebaut. Um Ruckelfrei und ohne
+Stoerungen arbeiten zu koennen, muessen die Bobs alle 50 stel Sekunde neu
+gesetzt werden.
+Dieses neusetzen bedeutet aber ->  Alten Screen loeschen
+                                   Neue Bobkoordinaten holen
+                                   Hard und Soft Adressen errechnen
+                                   Bobs setzen
+
+Naja, soviel dazu...Aus den 2 Millionen Byte pro Sekunde sind nun
+40000 Byte pro Bildschirm aufbau geworden. Da aber ungefaehr die haelfte
+der Zeit fuer das loeschen des Bildschirms und die errechnung der noetigen
+Werte drauf gehen, kann der Blitter nur noch eine 100 stel Sekunde genutzt
+werden. Und das sind nur 20000 Byte.
+
+Treiben wirs mal weiter..
+Gehen wir mal von einem Bobs aus der ungefaehr so gross ist..
+
+
+                ---------
+                [       ]
+                [       ]
+                [       ]
+                [       ]
+                ---------
+
+Und in 5 Farben.
+
+Er ist 48 * 50 von den massen, und das ganze mal 5
+
+(48/8 (fuer die Byteanzahll)) * 50 *3 = 1500 Byte
+
+Nun ist das noch ein sehr kleiner Bob. Wenn man aber bedenkt das diese
+niedlichen kleinen Geschoepfe immer in Scharen auftreten, dann kann man
+sich vorstellen das man echt in schwierig keiten kommt. Wenn man 10 Stueck
+Kopiert hat, dann ist die Zeit Floeten gegangen. Und es ist noch nichts
+anderes in unserem Schein-Intro gelaufen. Denn da ist noch eine Musik und
+mindestens noch die noetige Laufschrift, an der leider die meisten Demos
+gemessen werden. Dann weiss man was da getrickst werden muss damit doch
+manchmal bis zu 20 oder mehr Bobs auf den Bildschirm kommen.
+
+Dieser Teil des Assemblerkurses ist etwas anders als wie die anderen.
+Bisher habe ich bis auf ein paar Werte alles aus der Hand geschrieben, und
+auch die Source Codes zusammen mit dem Text geschrieben und hinterher nur
+auf Funktion und Fehler ueberprueft. Jetzt wird es anders, denn ich habe
+mich bisjetzt nicht an dem Bob-Rekordversuchen mancher Demo/Intro-Schreiber
+beteiligt. Jetzt moechte ich das aber gleichzeitigt mit diesem Kurs tun.
+Wie ihr seht hab auch ich noch eine ganze Menge noch nicht gemacht. Aber was
+soll es, je mehr man kann desto mehr Routine ist dabei. Und ob ihr es glaubt
+oder nicht, Copperlisten und Playfields erroeffnen, Blitter Operationen und
+Bootbloecke schreiben wird auf die Dauer so laestig das man sich die Sachen
+die man braucht einfach aus eigenen alten Source Codes herausschneidet, und
+gegebenenfalls noch ein bisschen Editiert.
+
+Das ist nicht besonders gut fuer das Intro oder Demo, da man sich so sehr
+wenig mit der Arbeit an dem eigenen Programmierstil beschaeftigt, und das
+ist Mist. Aber so laeuft das...
+
+Wir werden also langsam mit den Einfachen Bobs beginnen, und das ist schon
+schwer genug, und dann langsam die Anzahl hochschrauben, O.K !
+
+Also fangen wir erstmal mit dem ganz einfachen Bob an.
+
+Erstmal muessen wir ihn Zeichnen..
+
+Um etwas Zeit vornerein zu sparen malen wir nur mit 8 Farben, stellt das
+also ein. Und wir malen diesmal auf einem NTSC-Schirm. Das koennt ihr ja
+wenn ihr die 3.21 Version von Dpaint benutzt die ich euch empfohlen habe,
+einstellen. Ansonsten muesst ihr das mit Dpaint 1 malen.
+Wir brauchen einen 32*32 Bob. Stell euch bei Dpaint die Coords ein und
+zeichnet ein Rechteck mit dem massen 31*31. Da es bei 0 anfaengt zu
+Zaehlen, ist das genau das richtige.
+Dieses Rechteck setzt ihr dann in die Linke obere Ecke. Malt nun mit 8
+Farben, irgendwas dort rein. Evtl. einen Buchstaben, oder ein kleines Logo.
+
+Sobald das passiert ist, speichert ihr das GANZE Bild ab und verlasst
+Dpaint.
+Nun beearbeitet ihr das Bild mit dem Kefrens-Converter.
+Laden is klar...Ihr stellt danach das Format auf RAW-Blit..
+Jetzt fahrt ihr mit der Maus in den Bereich wo das Bild dargestellt wird.
+Ihr seht jetzt ein Fadenkreuz. Nun Fahrt ihr auf die Obere linke Ecke des
+Bildes und drueckt den Mausknopf (nich wieder loslassen) Jetzt fahrt ihr in
+die Mitte des Screens. Wir ihr seht erscheint ein Netz auf dem Bildschirm.
+Es stellt die Wortgrenzen des Blitters dar. Fahrt jetzt auf die unterste
+Zeile des Bobs. Wenn ihr bis an die rechte untere grenze fahrt, dann muesst
+genau in der Mitte des Bobs ein Strich sein. Gut, jetzt fahrt mit der Maus
+weiter nch Rechts, bitte nicht die unterste Linie verlassen. Ihr fahrt
+solange bis ein neuer Teilstrich erscheint. Sobald ihr ihn seht, fahrt ihr
+soweit zurueck bis der Strich unter dem Y-Achsen Strich der Maus
+verschwindet. Jetzt koennt ihr loslassen, endlich !
+
+Ihr habt jetzt aus dem Bild den Bob mit Sicherheitsrand ausgeschnitten.
+Jetzt koennt ihr dem Ding den Namen `Bob.Raw` geben, und auf Save gehen.
+Das mit dem Sicherheitsrand kommt spaeter. Als Grundlage fuer die
+Bobbearbeitung soll uns folgendes Listing dienen.
+Mit ihm kann man den Eben erstellten Bob auf einem Overscan Bildschirm
+Darstellen.
+
+Start:
+Execbase=       4
+Openlibrary=    -408
+Vhposr=         $dff006
+Forbid=         -30-102
+Permit=         -30-108
+Bltafwm=        $dff044
+Bltalwm=        $dff046
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltamod=        $dff064
+Bltdmod=        $dff066
+Bltapt=         $dff050
+Bltdpt=         $dff054
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltsize=        $dff058
+Cop1lc=         $dff080
+
+        Move.w  #$0020,Dmacon
+        Move.w  #$4000,Intena
+        Move.l  Execbase.w,a6
+        Jsr     Forbid(a6)
+
+
+        Move.l  #$60000,a0              ; Clearloop -> Fuellt bereich mit
+        Move.l  #$9588/4,d0             ; $ff auf.
+Clearloop:
+        Move.l  #-1,(a0)+
+        Dbf     d0,Clearloop
+
+
+        Bsr.l   Makecl                  ; Copperliste erstellen
+        Bsr.l   Set_bob                 ; Bos setzen
+
+Wait:
+        Btst    #6,$bfe001
+        Bne.s   Wait
+
+        Move.l  Execbase.w,a6
+        Jsr     Permit(a6)
+        Lea     Gfxname(pc),a1
+        Jsr     Openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,Dmacon
+        Move.w  #$c000,Intena
+        Move.l  38(a6),Cop1lc
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $05f000,a0
+        Move.l  a0,$dff080
+
+        Move.l  #$00e00006,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$00e40006,(a0)+
+        Move.l  #$00e6002c,(a0)+
+        Move.l  #$00e80006,(a0)+
+        Move.l  #$00ea0058,(a0)+
+        Move.l  #$008e1a64,(a0)+
+        Move.l  #$009039d1,(a0)+
+        Move.l  #$00920030,(a0)+
+        Move.l  #$009400d8,(a0)+
+        Move.l  #$01003200,(a0)+
+        Move.l  #$01080058,(a0)+
+        Move.l  #$010a0058,(a0)+
+;----------------------------------------------
+        Move.l  #$01800000,(a0)+
+        Move.l  #$0182071d,(a0)+
+        Move.l  #$0184088e,(a0)+
+        Move.l  #$0186044f,(a0)+
+        Move.l  #$0188000f,(a0)+
+        Move.l  #$018a000c,(a0)+
+        Move.l  #$018c0008,(a0)+
+        Move.l  #$018e0004,(a0)+
+;----------------------------------------------
+        Move.l  #$fffffffe,(a0)+
+        Rts
+Waitblit:
+        Btst    #6,Dmaconr              ; Auf Blitter warten
+        Bne.s   Waitblit
+        Rts
+Set_bob:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,Bltafwm
+        Move.w  #$ffff,Bltalwm
+        Move.w  #%0000100111110000,Bltcon0
+        Move.w  #0,Bltamod              ; Quellmodulo = 0 (rawblit)
+        Move.w  #38,Bltdmod             ; Zielmodulo = 38 (planes = $2c)
+        Move.l  #$5e000,Bltapt          ; Quelladr.
+        Move.l  #$61088,Bltdpt          ; Zieladr.
+        Move.w  #96*64+3,Bltsize        ; Bltsize und Start
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+
+>Extern         "bob.raw",$5e000
+
+
+Das Programm ist sehr einfach gehalten. Schaut euch aber die Set_Bob
+Routine gut an. Mit ihr wird im Laufe des Bobabschnitts eine Ganze Menge
+passieren.
+Ihr koennt die Farben aendern, damit euer Bobs die Orginal Farben. Ihr
+koennt das ausprobieren, oder ihr schreibt euch einfach die Farbwerte aus
+den Dpaint ab.
+Ich habe zwar eine Clear-Routine drin, sie Cleart aber nicht sondern fuellt
+den ganzen Bereich mit $ff, somit erhaelt alles eine Farbe, und man kann
+den Sicherheitsabstand sehr gut erkennen, denn er ist auch von grosser
+Wichtigkeit.
+
+Ueberlegt euch schonmal was der naechste Schritt waere, wenn wir anhand
+zwei fester Koordinaten, die Adresse ausrechnen wollen an der der Bob
+dargestellt werden soll, und wie man so etwas mit einfachen Befehlen
+ermitteln kann.
+
+Ari Viderci
+
+                Jeff Kandle

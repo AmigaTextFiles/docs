@@ -1,0 +1,116 @@
+A1200 Clock Port Info
+
+Version 1.2    4th December  2000
+
+Introduction
+
+On the A1200, there is an area of the motherboard that may have between 20 
+& 80 pins on it. This is the ubiquitous 'Clock Port.' It is a popular 
+interface for add on I/O card as it connects directly to the A1200's DRAM 
+data bus. 
+
+Why is it so Called?
+
+According to my sources, Commodore were unsure whether they should add a 
+Clock to the A 1200 and how much memory to fit as standard, 1 or 2 MByte.
+To allow for easily changing their minds, they built an interface 
+straight onto the A1200's DRAM bus and provided it with the appropriate 
+interface lines. Commodore decided to add a full 2 mbyte of RAM and leave 
+the real time clock off the A1200. 
+
+How many pins are there?
+Most Amiga's do not have the full 80 pins, just a space on the motheroard 
+for them. The full 80 pins were apparently fitted to early A1200 models 
+but removed from subsequent models. In theory it should be possible to 
+add on the missing pins and make full use of this bus interface. I am 
+told that these pins are 2mm pitch, the same as those used on the 2.5" 
+internal IDE port. 
+
+How do I interface to this port?
+You will need to know about microprocessor interfacing to do this.
+Insert info here later.
+block diagram of Read/Write lines, chip selects and wait state info?
+
+How do I access the Clock port?
+
+Use the following addresses from the A1200 memory map
+
+D80000 to D8FFFF  64 KB SPARE chip select  
+    (The area of memory where the clock port resides)
+D90000 to D9FFFF  64 KB ARCNET chip select
+DC0000 to DCFFFF  64 KB Real Time Clock(RTC)
+
+A note on chip selects and wait states
+
+As this is a CPU bus interface
+SPARE_CS 64K, 3 wait read/4 write, _IORD/_IOWR/_WAIT
+
+Nominally an Z8530 or 1NS8250 derivative UART. Note that while slow timing 
+is provided there is no hardware support for the PCLK "holdoff" required 
+by the Z8530 chips, this must be insured by software and/or using one of 
+the derivative chips which minimize this requirement.
+_RTC_CS 64K, 3 wait read/4 write, _IORD/_IOWR/_WAIT
+
+Nominally a OKI M5M6242 or Ricoh RF5C01 Real-Time clock chip.  Note that 
+there is provision for this chip both on board and on a "A501 style" 
+chip memory expansion header.
+
+_NET_CS64K, 0 wait read/1 write, _IORD/_IOWR/_WAIT
+ Nominally a network interface chip such as the SMC C0M2020 Arcnet controller
+ chip or one of the various  "single chip" Ethernet controller chips.
+
+Addendum the CS8900 ISA ethernet IC should have a near Glueless interface to
+ this port. a full design should be easy to draw up. Hopefully available on Aminet soon
+
+Clock Header Pinout information
+Two 40 Pin DIL headers have been provided on the A1200 for a Memory/RTC expander. 
+This is the pinout for the complete "clock" header - the space for which is visible above and below the Chip Mem IC's.  Note that only the P9B pins 19-40 actually have a header soldered in in most machines, although some earlier revisions (such as 1B) had a complete P9B, and the earliest of prototypes had both P9A and P9B complete, probably in conjunction with 1mb Chip RAM.
+                 P9B (Bottom)                               |           P9A (Top)
+   --------------------------------------------------+-------------------------------------------------
+                                                                     |
+     1: GND        Ground                  |   1: GND       Ground
+     2: VCC        +5v DC                  |   2: VCC       +5v DC
+     3: DRD0        DRAM Data Bus Bit 0    |   3: DRD16      DRAM Data Bus Bit 16
+     4: DRD15      DRAM Data Bus Bit 15   |   4: DRD31      DRAM Data Bus Bit 31
+     5: DRD1        DRAM Data Bus Bit 1    |   5: DRD17      DRAM Data Bus Bit 17
+     6: DRD14      DRAM Data Bus Bit 14   |   6: DRD30      DRAM Data Bus Bit 30
+     7: DRD2        DRAM Data Bus Bit 2    |   7: DRD18      DRAM Data Bus Bit 18
+     8: DRD13      DRAM Data Bus Bit 13   |   8: DRD29      DRAM Data Bus Bit 29
+     9: DRD3        DRAM Data Bus Bit 3    |   9: DRD19      DRAM Data Bus Bit 19
+    10: DRD12     DRAM Data Bus Bit 12   |  10: DRD28     DRAM Data Bus Bit 28
+    11: DRD4       DRAM Data Bus Bit 4    |  11: DRD20     DRAM Data Bus Bit 20
+    12: DRD11     DRAM Data Bus Bit 11   |  12: DRD27     DRAM Data Bus Bit 27
+    13: DRD5       DRAM Data Bus Bit 5    |  13: DRD21     DRAM Data Bus Bit 21
+    14: DRD10     DRAM Data Bus Bit 10   |  14: DRD26     DRAM Data Bus Bit 26
+    15: DRD6       DRAM Data Bus Bit 6    |  15: DRD22     DRAM Data Bus Bit 22
+    16: DRD9       DRAM Data Bus Bit 9    |  16: DRD25     DRAM Data Bus Bit 25
+    17: DRD7       DRAM Data Bus Bit 7    |  17: DRD23     DRAM Data Bus Bit 23
+    18: DRD8       DRAM Data Bus Bit 8    |  18: DRD24     DRAM Data Bus Bit 24
+    19: GND         Ground                |  19: GND       Ground
+    20: VCC        +5v DC                  |  20: VCC       +5v DC
+    21: INT6        Interupt Request       |  21: _BWE
+    22: _SPARE_CS                         |  22: _ROE
+    23: _RTC_CS    Real Time Clock CS     |  23: _BRAS0         Budgie Row Addr. Bit 0
+    24: _PWR_BAD                          |  24: _BRAS1         Budgie Row Addr. Bit 1
+    25: _IORD      IO Read                |  25: _BCAS_UU   Budgie Col. Addr. Strobe
+    26: _IOWR      IO Write               |  26: _BCAS_UM   Budgie Col. Addr. Strobe
+    27: A5          Address Bus Bit 5      |  27: _BCAS_LL    Budgie Col. Addr. Strobe 
+    28: A4          Address Bus Bit 4      |  28: _BCAS_LM   Budgie Col. Addr. Strobe
+    29: A3          Address Bus Bit 3      |  29: BDRA0
+    30: A2          Address Bus Bit 2      |  30: CCK_A     Colour Clock
+    31: D23        Data Bit Bit 23        |  31: BDRA1
+    32: D22        Data Bit Bit 22        |  33: BDRA8
+    33: D21        Data Bit Bit 21       |  33: BDRA2
+    34: D20        Data Bit Bit 20       |  34: BDRA7
+    35: D19        Data Bit Bit 19        |  35: BDRA3
+    36: D18        Data Bit Bit 18       |  36: BDRA6
+    37: D17        Data Bit Bit 17        |  37: BDRA4
+    38: D16        Data Bit Bit 16        |  38: BDRA5
+    39: GND      Ground                  |  39: GND       Ground
+    40: _RESET Reset                   |  40: VCC       +5v DC
+
+
+by Ian Stedman, Ian.Stedman@zoom.co.uk
+
+Info gathered from a number of sources. Keep a lookout for more info coming soon.
+

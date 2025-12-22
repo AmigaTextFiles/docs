@@ -1,0 +1,132 @@
+@node Emulationen
+@chapter Emulationen
+@cindex Emulationen
+Was? Der Amiga ist nicht gut genug? Sie wollen noch eine andere Maschine?
+Also gut, dann schauen Sie hier@dots{}
+
+@menu
+* Unix:: Kann ich meinen Amiga unter Unix benutzen?
+* X11:: Ist es möglich, den Amiga als X11-Terminal zu benutzen?
+* IBM-Kompatible:: Was kann ich tun, wenn ich ein MS-Dos-Programm benutzen muß?
+* MsDos-Syquest:: Wie verwende ich MsDos-formatierte Wechselplatten?
+@end menu
+
+
+@node Unix
+@section Kann ich meinen Amiga unter Unix benutzen?
+@cindex Unix
+@cindex NetBSD
+@cindex Linux
+Es gibt derzeit drei Unix-Versionen für den Amiga. Alle benötigen mindestens
+einen 68030 wegen der MMU (@pxref{68EC0xx,MMU,MMU}), 68040-Unterstützung
+ist erst in Arbeit. Alle scheinen
+Probleme mit manchen Harddisk-Controllern zu haben, man sollte sich deshalb
+anhand der Dokumentation informieren, ob sie auf der eigenen Maschine
+überhaupt laufen. Unix benötigt natürlich eine ungeheure Menge von Resourcen,
+8Mb RAM und eine 150Mb-Partition für Unix dürften eher die Untergrenze sein.
+
+@enumerate
+@item Commodore hat in der Vergangenheit ein System-V-Unix angeboten. Es
+enthielt TCP/IP, X11 und andere Software und hat eigentlich einen guten
+Eindruck gemacht, aber war teuer und wird vor allem nicht mehr
+weiterentwickelt. Commodore-Unix benötigt einen Streamer, denn es wird auf
+solchen Bändern ausgeliefert.
+
+@item Ein Linux-Port wird vorbereitet, allerdings gibt es derzeit nur den
+Kernel, das heißt die untersten Funktionen des Betriebssystems. Für
+Spezialisten könnte es interessant sein, kann aber wohl nicht empfohlen
+werden. Linux ist frei kopierbar. Quellen: @code{ftp.uni-paderborn.de}
+oder @code{ftp.uni-erlangen.de}, beide Directory @file{/pub/Linux/MIRROR.tsx-11/680x0}.
+Oder @code{ftp.leo.org}, directory @file{/pub/comp/os/linux/680x0}.
+
+@item NetBSD ist ebenfalls frei kopierbar. Wie Linux ist es noch nicht
+fertig, aber macht derzeit gute Fortschritte. Beispielsweise läuft wohl
+schon die meiste GNU-Software, vor allem Emacs und gcc. Es ist auf jeden
+Fall einen Blick wert. Quellen: @code{ftp.uni-erlangen.de}, Directory
+@file{/pub/amiga/unix/NetBSD-regensburg}.
+@xref{Fish-CD}.
+@end enumerate
+
+
+@node X11
+@section Ist es möglich, den Amiga als X11-Terminal zu benutzen?
+@cindex X11
+@cindex DaggeX
+@cindex GfxBase
+Es gibt drei Softwarepakete, die das möglich machen:
+
+GfxBase bietet ein kommerzielles Paket an. Es enthält verschiedene
+Window-Manager und Clients. Eine Demo-Version ist auf dem Aminet.
+(@file{gfx/x11/GfxBase-X11-Demo.lha})
+
+AmiWin (Shareware) ist ein X11R6-Paket, das AmiTCP, AS225 und
+diverse Grafikkarten unterstützt. Eine Demoversion liegt auf dem Aminet,
+@file{gfx/x11/AmiWin*.lha}.
+
+Frei kopierbar ist DaggeX. Allerdings ist dieses möglicherweise noch
+nicht ganz fertig, zumindest wird die Versionsnummer mit 0.91 angegeben.
+Zu finden ist es ebenfalls auf dem Aminet. (@file{gfx/x11/DaggeX-0.91.lha}
+und @file{gfx/x11/twm_930531.lha})
+
+
+@node IBM-Kompatible
+@section Wie kann ich MS-Dos-Programme starten?
+@cindex IBM-Kompatible Emulator
+@cindex MS-Dos (Emulator)
+PC-Task ist ein softwaremäßiger IBM-Emulator für alle Amiga-Rechner, der
+die Nutzung von MSDOS- und MS Windows 3.1 - Software erlaubt (vorausgesetzt, es
+ist genug RAM und Plattenplatz da).
+Die momentane Version 3.1 bietet die Emulation von 80286 mit MDA/CGA/EGA/VGA/SVGA,
+seriellem und parallelem Port, Maus, zwei Festplatten, zwei Diskettenlaufwerke
+und CDROM-Unterstützung..
+Eine Demoversion liegt auf dem Aminet in @file{/pub/aminet/misc/emu/PCTaskDemo31.lzh}.
+Autor Chris Hames (bytey@@werple.mira.net.au)
+Vertreiber (pctask@@quasar.dialix.oz.au)
+
+
+@node MsDos-Syquest
+@section MsDos-formatierte Wechselplatten am Amiga verwenden
+@cindex Wechselplatten
+@cindex Syquest
+@cindex MS-Dos (Wechselplatten)
+Um eine Syquest mit MSDOS-Format am Amiga zu mounten, benötigt man mit
+einem Adaptec-Controller auf DOS-Seite folgenden Mounteintrag in
+@file{DEVS:mountlist}:
+Für mehrere Partitionen auf dem Medium muß man folgenden Eintrag mehrfach
+kopieren und jedem Eintrag einen anderen Namen geben
+(z.B. SyC:, SyD:, SyE: usw.).
+Die Werte für Low- und Highcylinder brauchen dafür nicht angepaßt zu
+werden; dies erledigt CrossDOSFileSystem von alleine.
+
+@example
+SyC:   /* SyD:, SyE:, usw. */
+        Filesystem      = L:CrossDOSFileSystem
+        Device          = scsi.device
+        Unit            = 2
+        Flags           = 1
+        Surfaces        = 1
+        BlocksPerTrack  = 1
+        BlockSize       = 512
+        Reserved        = 1
+        Interleave      = 0
+        LowCyl          = 0
+        HighCyl         = 524287
+        Buffers         = 128
+        BufMemType      = 0
+        Stacksize       = 4000
+        Priority        = 5
+        GlobVec         = -1
+        DosType         = 0x4D534800
+        Activate        = 1
+#
+@end example
+
+Für andere Kontroller auf MSDOS-Seite sollte dieser Eintrag auch
+funktionieren, muß aber evtl. entsprechend angepaßt werden.  Beim
+Einlegen des Syquest-270-MB-Mediums wird dies (hier jedenfalls)
+automatisch angemeldet (als Laufwerk SyC:) und kann über das
+CrossDos-Filesystem ganz normal genutzt werden.
+
+Gerhard Schneider (fido@@incubus.sub.org)
+Andre Keller (keller@@rs11.hrz.th-darmstadt.de)
+

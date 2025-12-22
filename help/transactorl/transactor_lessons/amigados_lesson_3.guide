@@ -1,0 +1,260 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "AmigaDos Terza Lezione"
+
+@{JLEFT}
+@{b}Terza Lezione: Message Port@{ub}
+                                           
+
+
+
+la lezione precedente, abbiamo cominciato a vedere le procedure e
+funzioni che exec mette a disposizione del programmatore per gestire
+efficacemente le porte messaggi. Riassumiamole ancora una volta,
+evidenziandone i parametri richiesti e l'eventuale valore di ritorno:
+
+
+  1) @{i}struct MsgPort *CreateMsgPort(void);@{ui}
+
+  2) @{i}void AddPort(struct MsgPort *);@{ui}
+
+  3) @{i}struct MsgPort *FindPort(STRPTR);@{ui}
+
+  4) @{i}void PutMsg(struct MsgPort *,struct Message *);@{ui}
+
+  5) @{i}struct Message *GetMsg(struct MsgPort *);@{ui}
+
+  6) @{i}struct Message *WaitPort(struct MsgPort *);@{ui}
+
+  7) @{i}void ReplyMsg(struct Message *);@{ui}
+
+  8) @{i}void RemPort(struct MsgPort *);@{ui}
+
+  9) @{i}void DeleteMsgPort(struct MsgPort *);@{ui}
+
+
+Vediamole nel dettaglio: la 1 e la 9, servono rispettivamente per creare
+e distruggere una porta. La 2 e la 8, servono solo nel caso in cui
+vogliamo che la nostra porta messaggi diventi pubblica e quindi
+accessibile anche da altri task a noi estranei (tipo AREXX per
+intenderci). Infatti, la funzione 3 serve proprio per ricercare nella
+lista delle porte pubbliche quella con il nome specificato, ad esempio
+FindPort("Pippo's port") cercherà nella lista delle porte di exec,
+quella che ha il nome Pippo's port. Ovviamente ritornerà un puntatore
+alla porta in caso di successo e NULL in caso contrario.
+
+Le funzioni 4, 5, 6 e 7, invece servono per l'invio e la ricezione dei
+messaggi.
+
+Una nota a parte meritano 5, 6 e 7. La differenza tra 5 e 6 è che la
+@{i}GetMsg@{ui} se non sono presenti task sulla porta, ritorna NULL senza
+sospendere il task, mentre la @{i}WaitPort@{ui} (come il nome lascia intendere)
+se non sono presenti messaggi, sospende il task fino all'arrivo di nuovi
+messaggi. Quando un nuovo messaggio arriva, la @{i}WaitPort@{ui}, risveglia il
+task restituendo inoltre il puntatore al primo messaggio presente sulla
+porta, senza rimuoverlo. Conviene sempre, una volta che il task è stato
+risvegliato, effettuare un ciclo con la @{i}GetMsg@{ui} finché non ritorna NULL
+e gestire tutti gli eventuali messaggi presenti sulla porta. In questo
+modo:
+
+
+        [...]
+
+        struct MsgPort port;
+
+        struct IntuiMessage *RMsg,GMsg;
+
+
+
+        WaitPort(port);
+
+        while((RMsg = (struct IntuiMessage *)GetMsg(port)))
+
+        {
+
+                CopyMem(RMsg,&GMsg,sizeof(struct IntuiMessage));
+
+                ReplyMsg((struct Message *)RMsg);
+
+                switch(GMsg.Class)
+
+                {
+
+                        [...]
+
+                }
+
+        }
+
+        [...]
+
+
+Ovviamente, questo è uno dei tanti modi possibili per gestire un flusso
+di messaggi. In questo scorcio di programma, comunque, è possibile
+vedere come si possono gestire messaggi che non siano necessariamente di
+tipo @{i}struct Message@{ui}. Infatti, come molte altre procedure Amiga
+permettono, è possibile "appendere" alla struttura standard di exec, la
+nostra (in questo caso quella del messaggio di @{b}intuition@{ub}).
+
+La funzione 7, serve generalmente per restituire il messaggio al
+mittente in modo che questi possa riusarlo, liberarlo o altro. Se questa
+funzione non viene chiamata, molto probabilmente il mittente penserà
+che il destinatario non ha ancora ricevuto e gestito il messaggio ed
+aspetterà.
+
+Chiaro, che se abbiamo realizzato una determinata implementazione che
+non richiede l'uso di questa funzione, possiamo farne a meno.
+
+
+N.B.: Se si devono ricevere messaggi da intuition, bisogna @{u}sempre@{uu} usare la @{i}ReplyMsg@{ui} dopo
+         aver finito di usare il messaggio.
+
+
+Vediamo ora le strutture interessate:
+
+
+  struct MsgPort
+
+  {
+
+          struct  Node mp_Node;     /* collegamento nella lista */
+
+          UBYTE   mp_Flags;         /* possibili flag della porta */
+
+          UBYTE   mp_SigBit;        /* signal bit number */
+
+          void   *mp_SigTask;       /* task da risvegliare */
+
+          struct  List mp_MsgList;  /* la lista di messagi  */
+
+  };
+
+
+
+  struct Message
+
+  {
+
+          struct  Node mn_Node;
+
+          struct  MsgPort *mn_ReplyPort;  /* message reply port */
+
+          UWORD   mn_Length;         /* total message length, in bytes */
+
+                                   /* (include the size of the Message */
+
+                                   /* structure in the length) */
+  };
+
+
+
+  /* Esempio di messaggio "nostro" */
+
+
+  struct IntuiMessage
+
+  {
+
+           struct Message ExecMessage;
+
+
+
+           /* the Class bits correspond directly with the IDCMP Flags,
+
+            * except for the special bit IDCMP_LONELYMESSAGE
+
+            * (defined below)
+
+            */
+
+
+           ULONG Class;
+
+
+
+           /* the Code field is for special values like MENU number */
+
+           UWORD Code;
+
+
+           /* the Qualifier field is a copy of the current InputEvent's Qualifier */
+
+           UWORD Qualifier;
+
+
+
+           /* IAddress contains particular addresses for Intuition functions, like
+
+            * the pointer to the Gadget or the Screen
+
+            */
+
+           APTR IAddress;
+
+
+
+           /* when getting mouse movement reports, any event you get will have the
+
+            * the mouse coordinates in these variables.  the coordinates are relative
+
+            * to the upper-left corner of your Window (WFLG_GIMMEZEROZERO
+
+            * notwithstanding).  If IDCMP_DELTAMOVE is set, these values will
+
+            * be deltas from the last reported position.
+
+            */
+
+           WORD MouseX, MouseY;
+
+
+
+           /* the time values are copies of the current system clock time. Micros
+
+            * are in units of microseconds, Seconds in seconds.
+
+            */
+
+           ULONG Seconds, Micros;
+
+
+
+           /* the IDCMPWindow variable will always have the address of the Window of
+
+            * this IDCMP
+
+            */
+
+           struct Window *IDCMPWindow;
+
+
+
+           /* system-use variable */
+
+           struct IntuiMessage *SpecialLink;
+
+  };
+
+
+Come si può vedere dall'ultima struttura mostrata, per utilizzare un
+nostro messaggio, è sufficente includere nella nostra struttura, la
+struttura Message.
+
+Questo perchè le procedure coinvolte, "toccano" i byte occupati da
+questa struttura e non si interessano di quelli successivi.
+
+
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link amigados_lesson_2.guide}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link amigados_lesson_4.guide}
+@ENDNODE                                                                                             

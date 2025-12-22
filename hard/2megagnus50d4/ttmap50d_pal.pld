@@ -1,0 +1,152 @@
+Name       TTMAP;
+Partno     ;
+Date       8/9/92;
+Revision   12;
+Designer   Neil Coito;
+Company    Structured Applications & Designs, Inc.;
+Assembly   The Two Meg Agnus Project (TTMAP);
+Location   U9;
+
+
+/********************************************************************/
+/*                                                                  */
+/* Memory Selector  and Clock multiplexer for The Two Meg Agnus     */
+/* Project  (TTMAP)                                                 */
+/*                                                                  */
+/* This PAL is used to supply the *RAS, *CAS, and *RAMOE signals to */
+/* the RAM chips and specify which 512K chunk of memory the Two Meg */
+/* Agnus Project is using.                                          */
+/* This PAL also supplies the multiplexed clock signal to the 2 Meg */
+/* Agnus.                                                           */
+/*                                                                  */
+/********************************************************************/
+/*                                                                  */
+/*  Allowable Target Device Types:    PAL20L8                       */
+/*                                                                  */
+/********************************************************************/
+
+
+/********************************************************************/
+/*****************************  Inputs  *****************************/
+/********************************************************************/
+
+
+Pin 1        = MA9       ;      /* MULTIPLEXED ADDRESS LINE 9       */
+                                /* FROM PIN 56 OF 2 MEG AGNUS       */
+
+Pin 2        = !RAS      ;      /* ROW ADDRESS STROBE               */
+                                /* FROM PIN 57 OF 2 MEG AGNUS       */
+
+Pin 3        = !CASU     ;      /* COLUMN ADDRESS STROBE UPPER BYTE */
+                                /* FROM PIN 55 OF 2 MEG AGNUS       */
+
+Pin 4        = !CASL     ;      /* COLUMN ADDRESS STROBE LOWER BYTE */
+                                /* FROM PIN 54 OF 2 MEG AGNUS       */
+
+Pin 5        = C3        ;      /* CCKQ (C3)                        */
+                                /* FROM PIN 39 OF 2 MEG AGNUS       */
+
+Pin 6        = !CDAC     ;      /* !CDAC                            */
+                                /* FROM PIN 37 OF 2 MEG AGNUS       */
+
+Pin 7        = !BLIT     ;      /* !DBR (!BLIT)                     */
+                                /* FROM PIN 20 OF 2 MEG AGNUS       */
+
+Pin 8        = !WE       ;      /* WRITE ENABLE (ACTIVE LOW)        */
+                                /* FROM PIN 21 OF 1 MEG AGNUS PLUG  */
+
+Pin 9        = 28MHZ     ;      /* SYSTEM 28MHZ FROM MOTHER BOARD   */
+                                /* FROM PIN 34 OF 1 MEG AGNUS PLUG  */
+
+Pin 10       = !XCLKEN   ;      /* EXTERNAL CLOCK ENABLE            */
+                                /* FROM PIN 36 OF 1 MEG AGNUS PLUG  */
+
+Pin 11       = XCLK      ;      /* EXTERNAL CLOCK                   */
+                                /* FROM PIN 35 OF 1 MEG AGNUS PLUG  */
+
+Pin 14       = !IRAMOE   ;      /* *RAMOE INPUT FOR HOLD            */
+                                /* FROM PIN 15 OF PAL               */
+
+/*Pin 13       =           ;*/
+
+/*Pin 23       =           ;*/
+
+
+/********************************************************************/
+/****************************  Outputs  *****************************/
+/********************************************************************/
+
+
+Pin 22       = CLKOUT    ;      /* MULTIPLEXED CLOCK OUTPUT         */
+                                /* TO PIN 34 OF 2 MEG AGNUS         */
+
+Pin 21       = !RAS0     ;      /* !RAS BANK 0                      */
+                                /* TO PIN 57 OF 1 MEG AGNUS PLUG    */
+                                /* AND PIN 1 OF RP3 ON TTMAP BOARD  */
+
+Pin 20       = !RAS1     ;      /* !RAS BANK 1                      */
+                                /* TO PIN 56 OF 1 MEG AGNUS PLUG    */
+                                /* AND PIN 3 OF RP3 ON TTMAP BOARD  */
+
+Pin 19       = !CASU0    ;      /* !CASU BANK 0                     */
+                                /* TO PIN 55 OF 1 MEG AGNUS PLUG    */
+
+Pin 18       = !CASL0    ;      /* !CASL BANK 0                     */
+                                /* TO PIN 54 OF 1 MEG AGNUS PLUG    */
+
+Pin 17       = !CASU1    ;      /* !CASU BANK 1                     */
+                                /* TO PIN 5 OF RP3 ON TTMAP BOARD   */
+
+Pin 16       = !CASL1    ;      /* !CASL BANK 1                     */
+                                /* TO PIN 7 OF RP3 ON TTMAP BOARD   */
+
+Pin 15       = !RAMOE    ;      /* RAM OUTPUT ENABLE                */
+                                /* TO PIN 9 OF RP3 ON TTMAP BOARD   */
+
+
+/********************************************************************/
+/************************  Logic Equations  *************************/
+/********************************************************************/
+
+
+RAS0 = !MA9 & RAS & !RAS1  /* DECODES RAS0 SIGNAL                   */
+     # RAS0 & RAS & !RAS1; /* HOLDS RAS0 UNTIL RAS CYCLE IS FINISHED*/
+                           /* DOES NOT ALLOW ACTIVATION DURING RAS1 */
+
+RAS1 =  MA9 & RAS & !RAS0  /* DECODES RAS1 SIGNAL                   */
+     # RAS1 & RAS & !RAS0; /* HOLDS RAS1 UNTIL RAS CYCLE IS FINISHED*/
+                           /* DOES NOT ALLOW ACTIVATION DURING RAS0 */
+
+
+
+CASU0 = !MA9 & CASU & !BLIT & CDAC & C3 /* DECODES CAS, 68000 CYCLE */
+      # !MA9 & CASU &  BLIT & CDAC & C3 /* DECODES CAS, CHIP CYCLE  */
+      # CASU0 & CASU ;                  /* HOLDS CASU0 UNTIL CASU   */
+                                        /*       CYCLE IS FINISHED  */
+
+CASL0 = !MA9 & CASL & !BLIT & CDAC & C3 /* DECODES CAS, 68000 CYCLE */
+      # !MA9 & CASL &  BLIT & CDAC & C3 /* DECODES CAS, CHIP CYCLE  */
+      # CASL0 & CASL ;                  /* HOLDS CASL0 UNTIL CASL   */
+                                        /*       CYCLE IS FINISHED  */
+
+
+CASU1 = MA9 & CASU & !BLIT & CDAC & C3  /* DECODES CAS, 68000 CYCLE */
+      # MA9 & CASU &  BLIT & CDAC & C3  /* DECODES CAS, CHIP CYCLE  */
+      # CASU1 & CASU ;                  /* HOLDS CASU1 UNTIL CASU   */
+                                        /*       CYCLE IS FINISHED  */
+
+
+CASL1 = MA9 & CASL & !BLIT & CDAC & C3  /* DECODES CAS, 68000 CYCLE */
+      # MA9 & CASL &  BLIT & CDAC & C3  /* DECODES CAS, CHIP CYCLE  */
+      # CASL1 & CASL ;                  /* HOLDS CASL1 UNTIL CASL   */
+                                        /*       CYCLE IS FINISHED  */
+
+
+
+!CLKOUT = 28MHZ & !XCLKEN               /* CLOCK MULTIPLEXER        */
+        # !XCLK & XCLKEN  ;             /*                          */
+
+RAMOE = !WE                             /* RAM OUTPUT ENABLE        */
+      # IRAMOE & (CASU # CASL) ;        /* HOLDS RAMOE UNTIL CAS    */
+                                        /*       CYCLE IS FINISHED  */
+

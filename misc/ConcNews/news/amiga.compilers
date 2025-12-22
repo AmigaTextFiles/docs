@@ -1,0 +1,2365 @@
+Article 20895 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!wupost!darwin.sura.net!cs.ucf.edu!kruse
+From: kruse@cs.ucf.edu (Holger Kruse )
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS C 6.0 weirdness with __inline
+Message-ID: <kruse.719496887@eola.cs.ucf.edu>
+Date: 19 Oct 92 12:14:47 GMT
+References: <0s6zr9@rpi.edu>
+Sender: news@cs.ucf.edu (News system)
+Organization: University of Central Florida
+Lines: 38
+
+pooler@aix02.ecs.rpi.edu (Robert Peter Poole) writes:
+
+
+>I've been trying to write code to take advantage of the __inline feature of
+>SAS C 6.0.  For example
+
+>int __inline foo(int uplim)
+>{
+>	return((rand48() >> 3) % uplim);
+>}
+
+>Or something similar.  Now, it compiles fine, but when I go to use the linker,
+>slink gives an error!  Can't find the symbol, etc.
+
+>What gives?  Is there some special linker option I should set to use inline
+>function declarations?
+
+>I'd be asking EMITS this question, except that I rather intelligently left
+>my old registration number back home (and I'm here at grad school with no
+>way to check it).
+
+>Ah, well, perhaps someone has had the same problem?
+
+Yes, I had the same problem. When you use the global Optimizer and call
+the __inline-function ONLY from the module where it has been defined,
+everything works fine. But if you compile without global optimizer or
+call the function from a different module, the linker will complain about
+an undefined symbol.
+At least this was my experience.
+
+I reported that bug via EMITS about a week ago.
+
+>Rob Poole
+>pooler@rpi.edu
+>pooler@cs.rpi.edu
+
+Holger Kruse
+kruse@eola.cs.ucf.edu
+
+
+Article 20915 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS C 6.0 weirdness with __inline
+Message-ID: <BwDGJJ.452@unx.sas.com>
+Date: 19 Oct 92 14:06:54 GMT
+References: <0s6zr9@rpi.edu> <kruse.719496887@eola.cs.ucf.edu>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 37
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <kruse.719496887@eola.cs.ucf.edu>, kruse@cs.ucf.edu (Holger Kruse ) writes:
+|> Yes, I had the same problem. When you use the global Optimizer and call
+|> the __inline-function ONLY from the module where it has been defined,
+|> everything works fine. But if you compile without global optimizer or
+|> call the function from a different module, the linker will complain about
+|> an undefined symbol.
+|> At least this was my experience.
+|> 
+|> I reported that bug via EMITS about a week ago.
+
+|> Holger Kruse
+|> kruse@eola.cs.ucf.edu
+
+This is not a bug.  The inlining is performed by the global optimizer.
+Hence, if you don't run the global optimizer, you don't get inlining.
+You will need to declare a "real" version of the function to compile
+without the global optimizer in this case.
+
+The global optimizer can't go around looking in all your .c files
+for inline function definitions; it can only see the .c file you
+are compiling and the .h files that it includes.  Hence, your
+__inline function definition has to be in one of those files or it
+won't be found.  The __inline substitution is done at compile-time,
+NOT at link time.  It's exactly like #define macros; the preprocessor
+only honors #define macros present in the .c file or a .h file
+included by the .c file.  It doesn't even know about #defines in
+some other .c file.
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 20928 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!europa.asd.contel.com!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS C 6.0 weirdness with __inline
+Message-ID: <BwDv6w.M3L@unx.sas.com>
+Date: 19 Oct 92 19:23:19 GMT
+References: <0s6zr9@rpi.edu> <kruse.719496887@eola.cs.ucf.edu> <BwDGJJ.452@unx.sas.com>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 28
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <BwDGJJ.452@unx.sas.com>, walker@twix.unx.sas.com (Doug Walker) writes:
+|> This is not a bug.  The inlining is performed by the global optimizer.
+|> Hence, if you don't run the global optimizer, you don't get inlining.
+|> You will need to declare a "real" version of the function to compile
+|> without the global optimizer in this case.
+|> 
+
+Oops, I was wrong.  I double-checked the code to make sure, and
+it looks like the intent is to generate code for the __inline
+functions so they will work even if GO is not run.  This does
+not seem to be working correctly.
+
+Until a fix is available, you'll need to create a callable version
+of the function (one without the __inline keyword) and link that
+in.  A convenient way to do this is to put it in a seperate .o
+file, then use the LIB keyword on SC or SLINK to link it into
+your program.  This way, if inlining has been done, it won't
+get linked in; if not, it will get linked in.
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 21070 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!Germany.EU.net!news.netmbx.de!mailgzrz.TU-Berlin.DE!math.fu-berlin.de!Sirius.dfn.de!darwin.sura.net!zaphod.mps.ohio-state.edu!cs.utexas.edu!rutgers!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS/C 6.0: schelp crashes w/KS1.2
+Message-ID: <BwJ11M.5q5@unx.sas.com>
+Date: 22 Oct 92 14:17:45 GMT
+References: <1992Oct15.143152.7957@ugle.unit.no> <Bw82Fr.5H2@unx.sas.com> <1992Oct20.171858.7826@ugle.unit.no> <BwH38I.FGD@unx.sas.com> <1992Oct21.164539.26394@ida.liu.se>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 50
+Originator: jamie@cdevil.unx.sas.com
+Nntp-Posting-Host: cdevil.unx.sas.com
+
+
+In article <1992Oct21.164539.26394@ida.liu.se>, micja@ida.liu.se (Michael Jansson) writes:
+>
+>In article <BwH38I.FGD@unx.sas.com>, walker@twix.unx.sas.com (Doug Walker) writes:
+>
+>> |> Changing the __stack variable doesn't seem to do anything to my stack size, according
+>> |> to Xoper. I always get the stack size I set in the shell. Is there anything special I
+>> |> should do?
+>>
+>> It's working.  Xoper reports the stack size and limits given in the Task structure for
+>> the task; when you specify __stack, you get a new stack allocated, but the Task
+>> structure fields are not modified.
+>
+>Is there a reason for that? I guess I role my own code with SwapStack (or was it
+>StackSwap :-) then, since programs with __stack will be slower otherwise. The
+>reason for that is that some functions in the OS checks for the size of the stack
+>of the caller. If the stack is too small or bogus (as with SAS) then they will
+>allocate a new stack, swap it in, and then de-allocate it when finished. This
+>takes time, especially the de-allocation. The same thing goes for other resident
+>libraries that are written in a sensible way, i.e. check the stack of the caller.
+
+Yes, there's a reason.  StackSwap() doesn't exist prior to 2.0, so we'ld
+have to special case it (since there are a lot of 1.3 users still out
+there), which would make your code bigger, and people are always yelling
+when their programs come out bigger...  :-\
+
+Also, if I remember correctly, the system libraries check the amount of
+stack *left*, not the amount total.  This means they should use the
+stack already in place in the task structure, since we won't have put
+anything at all on it... the only thing that will be there is whatever
+the system puts in place at process startup time.
+
+Besides, this doesn't always happen!  We check the amount of stack the
+task already has allocated, and if that amount is >= the value in the
+__stack variable, we don't allocate a new stack, we just let it use the
+current one, just like it always did.
+
+__stack is both a safety feature and a documentation saver.  For safety,
+it makes sure your code has a big enough stack, no matter what size the
+user has set in his shell, and you no longer have to document a stack
+size to set, since the startup code will allocate it for you if the user
+didn't set enough beforehand.
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+
+Article 21803 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!usc!zaphod.mps.ohio-state.edu!cis.ohio-state.edu!magnus.acs.ohio-state.edu!usenet.ins.cwru.edu!ukma!rutgers!cbmvax!cbmehq!cbmger!edohwg!heinz
+From: heinz@edohwg.adsp.sub.org (Heinz Wrobel)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re:  Suggestion for SAS/C 6.01
+Message-ID: <heinz.04a1@edohwg.adsp.sub.org>
+Date: 27 Oct 92 18:22:23 GMT
+References: <BwKrFE.8tE@unx.sas.com> <paulk.23qu@terapin.com> <BwqFFu.FpB@unx.sas.com>
+Organization: Edotronik GmbH
+Lines: 64
+
+In article <BwqFFu.FpB@unx.sas.com> walker@twix.unx.sas.com (Doug Walker) writes:
+>|> _cli_parse	    turns arguments into argc and argv -- replaceable
+>
+>????  I don't understand what this does.
+
+/*
+ *	This routine is called from the _main() routine and is used to
+ *	parse the arguments passed from the CLI to the program. It sets
+ *	up an array of pointers to arguments in the global variables and
+ *	and sets up _argc and _argv which will be passed by _main() to
+ *	the main() procedure. If no arguments are ever going to be
+ *	parsed, this routine may be replaced by a stub routine to reduce
+ *	program size.
+ *
+ *	If _arg_lin is non-zero, the _exit() routine will call FreeMem()
+ *	with _arg_lin as the memory to free and _arg_len as the size.
+ *
+ */
+_cli_parse(pp, alen, aptr)
+struct Process *pp;
+long alen;
+register char *aptr;
+{
+
+
+>|> scr_..	    cursor control functions
+>
+>I would need more information, but offhand I don't think they are
+>in there.
+
+Easy to replace. Basically you can just write the standard ANSI sequences
+out to the console. These functions just supply standrad functionality like
+scr_beep(), scr_tab(), scr_clear(), bla bla ...
+
+>|> _wb_parse	    called in Workbench startup -- reads WINDOW= tooltype
+>
+>???? Need more information.
+
+/*
+ *	This routine is called from the _main() routine and is used to
+ *	open a window for standard I/O to use. The window is actually
+ *	defined by setting the ToolType, "WINDOW", to the desired window
+ *	specification. If this is not required, this routine may be
+ *	replaced by a stub in the users main program. Note that even if
+ *	this code is called by _main(), if the WINDOW tool type is not
+ *	defined, there will be no window.
+ *
+ *	EXAMPLE:	WINDOW=CON:0/0/640/200/Test Window
+ */
+_wb_parse(pp, wbm)
+register struct Process *pp;
+struct WBStartup *wbm;
+{
+
+
+>=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+
+--
+Heinz Wrobel, Edotronik GmbH (ECG018)
+FAX +49 89 850 51 25 / TEL +49 89 850 25 20 (HOME!&VOICE, sometimes...)
+Path: cbmehq!cbmger!edohwg!heinz@cbmvax.commodore.com
+"It's good to have a mouse, it's faster if you can do without one..."
+"He who doesn't develop with an A2024 doesn't know about font independent
+ user interfaces..."
+
+Article 22095 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!zaphod.mps.ohio-state.edu!caen!uvaarpa!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: help with error: NEAR/FAR reference
+Message-ID: <BxtAtJ.KC6@unx.sas.com>
+Date: 16 Nov 92 13:58:30 GMT
+References: <1992Nov14.232146.2366@sol.UVic.CA>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 46
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <1992Nov14.232146.2366@sol.UVic.CA>, aramsey@ugly.UVic.CA (Aaron  Ramsey) writes:
+|> I've got a program that gives me a warning.. and I can't figure it out..
+|> 
+|> <programname> 209 Warning 169: too much global data for NEAR reference, change
+|> 			       some to FAR
+|> 
+|> How do I change it to FAR reference? I'm using SAS 5.10. I tried moving my
+
+Put the __far keyword on one or more of your larger data items,
+or compile with the -b0 option to make all data references far.
+If you use -b0, make sure to link with the 'nb' versions of the
+libraries - the LC command will do this automatically for you,
+but if you use BLINK directly, you will have to modify your
+library list.
+
+|> subroutines around to try and compensate for any jumps being made by calls to
+|> subroutines, but it made no difference. This error shows up at the very 
+|> last line of my program (which happens to be blank). How can I get rid of this?
+|> And what is causing it exactly? My main() is about 160 line or so, with
+|> quite a few if statements... nothing that I would have thought would take
+|> up tons of memory when put into assemly... I dunno.
+
+It isn't your CODE that's too big, it's your DATA - read the message.
+You have more data than can be accessed via a 16-bit offset, so you
+have to tell the compiler to generate 32-bit offsets to at least 
+some of it.  The __far keyword tells it to generate 32-bit offsets
+to the marked items; -b0 tells it to generate 32-bit offsets to
+everything.
+
+Another thing to consider would be to allocate space for that large
+array dynamically instead of declaring it as an extern.  Use the
+malloc() function and the memory will automatically be freed when
+you exit.  (I assume you have a large array since I doubt that you
+have declared 64k worth of non-array "int" variables 8^)
+
+|> -Aaron Ramsey...........  bewildered beginning C programmer.  8-)
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 24271 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cs.utexas.edu!zaphod.mps.ohio-state.edu!howland.reston.ans.net!paladin.american.edu!gatech!concert!rutgers!cbmvax!peter
+From: peter@cbmvax.commodore.com (Peter Cherna)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SASC 6.1 Wrong Protos
+Message-ID: <38281@cbmvax.commodore.com>
+Date: 4 Jan 93 20:30:06 GMT
+References: <1993Jan4.091145.1581@ghost.dsi.unimi.it>
+Reply-To: peter@cbmvax.commodore.com (Peter Cherna)
+Organization: Commodore-Amiga, Inc.  West Chester, PA.
+Lines: 56
+
+In article <1993Jan4.091145.1581@ghost.dsi.unimi.it> labenrsa@ICIL64.CILEA.IT writes:
+>Hullo,
+>
+>Has anyone noticed that the protos for the BOOPSI method functions
+>distributed with SASC (as of patch 6.1) are wrong?
+>
+>The Msg argument is referred to as Msg *msg, which is incorrect,
+>since Msg is already typedef'ed as a pointer. The most recent
+>AutoDocs from CBM I have show  this clearly.
+
+That was my typo in the Commodore prototypes (since fixed), which
+SAS licenses and supplies.  The autodocs have been right since
+they were written.
+
+>And, by the way, either the proto or a pragma file somewhere should
+>mention that these functions are __stdargs, or somebody should provide
+>a double-standard amiga.lib (like the 6.X standard libraries).
+
+This would be a prototype change.  It couldn't be a pragma, since
+these functions are in a linked library, and pragmas bind to
+shared-library functions.
+
+>And oh, it seems that the 6.1 Amiga.lib has no HookEntry(), and
+>maybe none of the shorthands for BOOPSI methods mentioned in
+>AmigaMail and BOOPSI examples that are floating around (DM, DSM).
+
+The original Boopsi examples used functions like DM() and DSM(),
+before these functions were added to amiga.lib.  When we added them to
+amiga.lib, we opted for the more clear names (eg., DoMethod() and
+DoSuperMethod()).  The autodocs for those functions mention the old
+names.
+
+HookEntry() is in amiga.lib.  The purpose of HookEntry() is to
+convert the hook call (which passes arguments in registers) to a
+stack-based call for use with the standard C calling convention of
+stack-based arguments.  Hence, HookEntry() is called _HookEntry in
+amiga.lib, since a pre-pended underscore signifies a standard
+function.  (Note that while HookEntry() actually takes its parameters
+in registers, it's never called from C, but is used by stdargs C
+programs, so the use of the underscore may be confusing, but it is
+necessary).  If you're compiling with registerized arguments, you
+don't need a HookEntry() function.  Just have the hook jump directly
+to your code, using explicit registers for parameters (__asm and
+__register).
+
+If the linker is complaining that it can't find @HookEntry, this
+is the problem.  (@ is prepended to regargs functions).
+
+>					Andy
+
+     Peter
+--
+Peter Cherna, User Interface Development Group, Commodore-Amiga, Inc.
+{uunet|rutgers}!cbmvax!peter    peter@cbmvax.commodore.com
+My opinions do not necessarily represent the opinions of my employer.
+"Opinions enlarged to show detail"
+
+Article 27393 of comp.sys.amiga.programmer:
+Path: cs.chalmers.se!chalmers.se!sunic!mcsun!uunet!europa.eng.gtefsd.com!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS/C V6.x's break disabling
+Message-ID: <C3KwBF.D6u@unx.sas.com>
+Date: 8 Mar 93 16:26:03 GMT
+References: <1993Mar8.064632.15929@sfu.ca>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 37
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <1993Mar8.064632.15929@sfu.ca>, samy@fraser.sfu.ca (Sam Yee) writes:
+|> I can't seem to disable SAS/C V6.x's breaking.
+|> Here is roughly what I have:
+|> ---------------------
+|> #include <stdio.h>
+|> 
+|> int CXBRK(void){return(0);} /* disables ^C break? */
+|> int chkabort(void){return(0);}
+
+The names have changed in V6.0 in order to comply with the
+ANSI restrictions on non-ANSI library function names.  Use
+the following:
+
+   int __chkabort(void){return 0;}
+
+Note that you will need to make sure that this gets compiled
+with registerized parameters as well;  the easiest thing is
+to simply compile with PARMS=REG.  You could also add the
+__regargs keyword:
+
+   int __regargs __chkabort(void){return 0;}
+
+but then you also need to add it to the prototype in 
+include:dos.h if you include that file.
+
+Note also that the new name for CXBRK is _CXBRK, but you do not
+need to define it if you redefine __chkabort correctly.
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 29955 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!mcsun!uknet!bnr.co.uk!bnrgate!nott!torn!utnut!cs.utexas.edu!uwm.edu!zaphod.mps.ohio-state.edu!howland.reston.ans.net!darwin.sura.net!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: SAS Institute contact information
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <C67HqF.3vL@unx.sas.com>
+Date: Wed, 28 Apr 1993 18:23:03 GMT
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 85
+
+
+Here's some new contact information for SAS Institute.  We now have
+internet mail addresses for contacting our sales divisions in the
+US and Europe.
+
+   US:     sasdsb@vm.sas.com    Diane Gomez
+   EUROPE: eurdoc2@vm.sas.com   Gerlinde Schuster
+
+Keep in mind that internet mail is not secure, so we can't take
+any orders via net mail (DO NOT SEND CREDIT CARD NUMBERS!)
+However, our sales people will be glad to answer your non-technical
+questions about pricing, shipping options, registration, and so
+forth.  You can also ask them to change your address or change
+the name your copy of the compiler is registered to.
+
+The sales people are not programmers, and will not be able to answer
+technical questions about the product.  Version 6 customers can
+contact techical support via the EMITS facility described in
+Chapter 3 of your User's Guide, Volume I for help.  Anyone interested
+in technical information on the product can contact Jim Cooper or
+me (jamie@unx.sas.com or walker@unx.sas.com).
+
+Since it seems to be a FAQ in this conference, here once again is full
+contact information for non-email contact with SAS Institute:
+
+USA:
+
+SAS Institute, Inc.
+Book Sales
+SAS Campus Drive
+Cary, NC 27513
+USA
+
+Phone (919)677-8000
+Fax   (919)677-8123
+
+
+Europe:
+
+Ms. Gerlinde Schuster
+SAS Institute GmbH
+PO Box 10 53 07
+Neuenheimer Landstrasse, 28-30
+D6900 Heidelberg 1
+
+Telephone (49)6221-4160
+Fax       (49)6221-474850
+
+Canada:
+
+Meret Raouf
+SAS Institute (Canada) Inc.
+225 Duncan Mill Road
+Suite 300
+North York, Ontario  M3B 3K9
+Canada
+
+Telephone:  (416)443-9811
+Fax:        (416)443-1269
+
+New Zealand:
+
+SAS Institute (NZ) Ltd.
+PO Box 10-109, The Terrace
+Wellington, New Zealand
+Tel  : (64)4-4727-595
+Telex: NZ31525 MED
+Fax:   (64)4-4727-055
+
+Australia:
+
+SAS Institute Australia Pty. Ltd.
+Private Bag No. 52
+Lane Cove, NSW 2066
+Tel: (61)2-428-0428
+Fax: (61)2-418-7211
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 24820 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!lunic!eru.mt.luth.se!enterpoop.mit.edu!ira.uka.de!math.fu-berlin.de!umn.edu!spool.mu.edu!agate!stanford.edu!rock!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: ETA for SAS 6.2?
+Message-ID: <C0v55J.AB8@unx.sas.com>
+Date: 14 Jan 93 21:32:07 GMT
+References: <C0CAvt.JI8@undergrad.math.waterloo.edu> <C0Cp2w.1Gr@unx.sas.com> <JRAJA.93Jan14170922@vipunen.hut.fi>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 25
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <JRAJA.93Jan14170922@vipunen.hut.fi>, jraja@vipunen.hut.fi (Jarno Tapio Rajahalme) writes:
+|> And __saveds still loads the A4 in the beginning of the function body.
+|> If __saveds is an explicit request to "restore" A4, then why is it
+|> called __saveds? geta4() is just fine in this case. I'd interpret the
+|> __saveds to mean "Make sure that global data can be referenced even
+|> when called from another program".
+
+It's called __saveds for historical reasons.  I don't know why the
+keyword was originally named that.
+
+__saveds does mean exactly what you state there, with the addition
+of one word - "near".  "Make sure that NEAR global data can be 
+referenced even when called from another program."
+
+|> | Address: Jarno Rajahalme            | EMail:                              |
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 26396 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!Germany.EU.net!news.netmbx.de!mailgzrz.TU-Berlin.DE!math.fu-berlin.de!ira.uka.de!yale.edu!qt.cs.utexas.edu!cs.utexas.edu!usc!howland.reston.ans.net!bogus.sura.net!udel!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Auto opening libraries by SAS/C
+Message-ID: <C2HvE1.2xL@unx.sas.com>
+Date: 15 Feb 93 14:39:37 GMT
+References: <729632360.F00001@monly.wlink.nl>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 52
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <729632360.F00001@monly.wlink.nl>, Bart.Schraa@f115.n100.z60.wlink.nl (Bart Schraa) writes:
+|> Hi,
+|> 
+|> How do I actually auto open a system library with SAS/C 6.2. I tried some things which were stated in the manual. I only should do this wouldn't I?
+|> 
+|> long oslibversion = 38L;
+|> 
+|> struct Library *DOSBase;
+|> 
+|> Then my program shouldn't run under V37, would it? I also tried the other one : 'long OSlibversion = 38L'. I linked all of these with c.o, but all attempts I did were running, but they really shouldn't.
+|> 
+|> Maybe there is someone with a solution? Doug?
+|> 
+|> Kind Regards, Bart.
+
+
+Firstly, DOSBase is a special case.  It is autoopened by the STARTUP 
+code, not by the autoinit code in the libraries.  The startup code
+doesn't look at __oslibversion.  SysBase is the only other such
+exception.
+
+Secondly, NOTHING looks at oslibversion.  The non-DOSBase code
+looks at __oslibversion, though.  The name is extremely important!
+
+Thirdly, remember that if you want to autoinitialize a library
+base, you cannot DEFINE it in your code, you can only DECLARE
+it in your code.  Therefore, you need to say
+
+   extern struct Library *IntuitionBase;
+
+rather than
+
+   struct Library *IntuitionBase;
+
+to tell the compiler that you want IntuitionBase to be autoinitialized.
+
+Fourthly, the best way to initialize these library bases is to simply
+#include the appropriate header:
+
+   #include <proto/intuition.h>
+
+instead of trying to declare them in your own code.
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 26589 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!uunet!ogicse!emory!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Auto opening libraries by SAS/C
+Message-ID: <C2nEHC.537@unx.sas.com>
+Date: 18 Feb 93 14:20:00 GMT
+References: <729977726.F00003@monly.wlink.nl>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 50
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <729977726.F00003@monly.wlink.nl>, Bart.Schraa@f115.n100.z60.wlink.nl (Bart Schraa) writes:
+|> What I tried is this:
+|> 
+|> #include <stdio.h>
+|> #include <proto/intuition.h>
+|> 
+|> long __oslibversion = 38L;
+|> 
+|> void main(void)
+|> {
+|>   printf("!\n");
+|> }
+|> 
+|> As my version of the OS is 37, I assume it shouldn't print anything, or at least not a '!'. What am I doing wrong???
+|> 
+
+You didn't use IntuitionBase, so it didn't get linked in, so it
+didn't get initialized.  Declaring it is not the same as using it.
+
+You can use it either by calling any Intuition function (the normal
+way) or by referring to it in code.
+
+Try the code below.  Note that DisplayBeep is an Intuition function.
+
+   #include <stdio.h>
+   #include <proto/intuition.h>
+
+   long __oslibversion = 38L;
+
+   void main(void)
+   {
+      DisplayBeep(NULL);
+   }
+
+What I get is a line to stdout saying
+
+   Can't open version 38 of "intuition.library"
+
+and the DisplayBeep never happens.  Change __oslibversion to 37,
+and the DisplayBeep will happen (your screen will flash).
+
+-- 
+  *****
+=*|_o_o|\\=====Doug Walker, Software Distiller====== BBS: (919)460-7430 =
+ *|. o.| ||                                          1200/2400/9600 Dual
+  | o  |//     For all you do, this bug's for you!
+  ====== 
+usenet: walker@unx.sas.com                            bix: djwalker 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 26662 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!Germany.EU.net!news.netmbx.de!mailgzrz.TU-Berlin.DE!math.fu-berlin.de!umn.edu!spool.mu.edu!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: Input Handlers
+Keywords: input.device handler, 'C'
+Message-ID: <C2pAnC.5np@unx.sas.com>
+Date: 19 Feb 93 14:52:23 GMT
+References: <bookie.730093668@teal>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 25
+Originator: walker@twix.unx.sas.com
+Nntp-Posting-Host: twix.unx.sas.com
+
+
+In article <bookie.730093668@teal>, bookie@teal.csn.org (Wayne Hannam) writes:
+|> 
+|> I am attempting to write an Input Handler for the input device in 'C' using
+|> SAS 6.2, does anyone out there have some example code I could peek at, my
+|> attempts keep failing in a locked system.This seems like it should be
+|> relitivley simple stuff, but for some reason the truth of the matter is
+|> that it is not, and I am at wits end.  Please HELP, TIA
+
+Check out SC:EXAMPLES/CBACK/SCHELP.C .  It's got an example of an
+input handler.
+
+Make sure you are compiling with the NOSTACKCHECK option, or
+declaring your input handler with the __interrupt keyword (or both).
+Also, you probably want to declare it with __saveds if you want
+to access string literals or global data.
+
+Article 31299 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!uunet!haven.umd.edu!darwin.sura.net!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: CTRL-C Trapping
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <C7Mvxz.1yq@unx.sas.com>
+Date: Wed, 26 May 1993 12:27:34 GMT
+References:  <dave.03zr@ddreams.UUCP>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 32
+
+
+In article <dave.03zr@ddreams.UUCP>, dave@ddreams.UUCP (David Prothero) writes:
+|> Quick, easy question...
+|> 
+|> How do I trap a CTRL-C on a program that runs from the CLI so that I can do 
+|> some clean up on my program before I exit?
+|> 
+|> Thanks... reply here or via e-mail.
+
+You don't say what language you are using.  This is very important
+information!  Please give us enough information to help you when
+you ask the question.
+
+If you are using C, your compiler's library is trapping CTRL-C for
+you and exiting.  Look in your library documentation for information
+on how to control this.
+
+In SAS/C 6.0, you would simply declare a function like so:
+
+   void __regargs _CXBRK(void)
+   {
+      /* Do your cleanup here */
+   }
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+Article 31185 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: cs.chalmers.se!news.chalmers.se!sunic!uunet!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re:  Exec RawDoFmt
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <C7J7p8.Enq@unx.sas.com>
+Date: Mon, 24 May 1993 12:51:07 GMT
+References: <C6v9wr.CvH@unx.sas.com> <1993May12.133954.3498@imada.ou.dk> <C6xCB7.3CG@unx.sas.com> <7468@pdxgate.UUCP> <C719F4.H4y@unx.sas.com> <heinz.09d8@edohwg.adsp.sub.org>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 19
+
+
+In article <heinz.09d8@edohwg.adsp.sub.org>, heinz@edohwg.adsp.sub.org (Heinz Wrobel) writes:
+|> In article <C719F4.H4y@unx.sas.com> walker@twix.unx.sas.com (Doug Walker) writes:
+|> >Plus, the code as shown works fine.
+|> 
+|> Doas SAS/C 6.x always do word alignment for string constants. I didn't find
+|> anything in the manuals about alignment of string constants.
+|> 
+
+Yes, string constants are word-aligned.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 5022 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!usenet.ins.cwru.edu!lerc.nasa.gov!news.larc.nasa.gov!xanth.cs.odu.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: SAS C 6.51 and PGP....
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKB015.E2K@unx.sas.com>
+Date: Thu, 27 Jan 1994 19:41:29 GMT
+References:  <FLAX.94Jan27200550@frej.teknikum.uu.se>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 52
+
+
+In article <FLAX.94Jan27200550@frej.teknikum.uu.se>, flax@frej.teknikum.uu.se (Jonas Flygare) writes:
+|> 
+|> Problem: After downloading latest PGP source (pgpamiga23a2_src.lha)
+|> and unpacking I tried a compile. The supplied smakefile would not
+|> proceed with the link phase. After moving the link command to another
+|> place on the commandline it would link, but the linker would complain
+|> about lots of undefined symbols. (And they were not undefined, as a
+|> quick glance in the source told me)
+|> Rather than assuming this is a compiler bug, I thought I'd start by
+|> asking.. Is there anyone out there who have managed to compile the
+|> latest PGP with SAS C 6.51, and if so, what do I need to do in order
+|> to make it. :) Email preferred.
+
+Sounds like you've run into a bug in the 6.51 SC command that has bitten
+a lot of people.  Unfortunately, we linked the SC command with the 
+wrong startup code, and it is limited to only 30 command-line parameters
+in 6.51.  6.50 and 6.0 were limited to 126.
+
+We modified the 6.51 startup code to allow unlimited parameters, and
+we thought the 6.51 SC command was being linked with the new startup;
+unfortunately, this wasn't the case.  6.51 SC got linked with an older
+startup module.
+
+To fix it, change the SMAKEFILE to use a temporary file.  You can do
+this as follows.  Instead of this:
+
+   target: $(OBJS)
+      sc link $(OBJS)
+
+use this:
+
+   target: $(OBJS)
+      sc link with <<
+   $(OBJS)
+   <
+
+The << tells SMAKE to start a temporary file; the < tells it to finish
+the file and substitute the filename for the stuff between the << and
+the <.
+
+The MKMK smakefile generator automatically does this for you, by the
+way, so if you have questions about the syntax, just run MKMK.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 5289 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!wonka.unx.sas.com!sassek
+From: sassek@wonka.unx.sas.com (Steve Krueger)
+Subject: Re: SAS/C debugger good or not???
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKJx1x.EL4@unx.sas.com>
+Date: Tue, 1 Feb 1994 15:15:32 GMT
+References: <Richard_Johnson.0ixi@eaglesnest.albedo.com> <harry.064a@elfuerte.fipnet.fi>
+Nntp-Posting-Host: wonka.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 49
+
+In article <harry.064a@elfuerte.fipnet.fi> harry@elfuerte.fipnet.fi (Harri Pesonen) writes:
+>Richard Johnson (Richard_Johnson@eaglesnest.albedo.com) wrote:
+>
+>Yes.  CPR would be much better if it had the following features:
+>
+>o  automatic display of the function arguments and local variables
+
+CPR can display all the function arguments with the ARGS command.
+
+
+>o  ability to display a given function in the source window
+
+CPR has this ability with the SHOW command. I just checked the doc,
+and it's not in there, I don't know why it got left out. Anyway,
+heres the syntax:
+
+ SHOW [\module\][function] [line_number]
+ 
+Here's some examples:
+
+ show main
+ show \test.c
+ show \test.c\main 10
+ show 50
+
+>o  ability to display external variables and structures, even if the
+    variable is not defined in the current module
+
+This was a design implementation decision. CPR is able to display anything
+that the C program is able to access in a given module. If we made it
+search the entire EXE, you might get a very long delay if you misspelled
+the name of the variable you were trying to display. You can display
+a variable in another module with full debug info, if you give a context
+to search in. For example
+
+display \test.c\foo\a
+
+will go to module test.c, function foo, and start the search for variable 'a'.
+If 'a' is a global variable in that module, CPR will diplay it.
+
+>o  automatic breakpoint save and restore
+
+You can do this now with the bd and be commands (break disable and break enable).
+Just set the breakpoint normal. Use BD to turn it off, and BE to turn it
+back on. The same functionality exists for watch breaks.
+
+>o  ability to watch a pointer as a zero terminated string
+
+That would be nice. There is no way to do this currently.
+
+
+Article 5300 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-2.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: _MemCleanup problem
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKK40w.63G@unx.sas.com>
+Date: Tue, 1 Feb 1994 17:46:06 GMT
+References:  <2ikk6r$kjc@charm.magnus.acs.ohio-state.edu>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 20
+
+
+In article <2ikk6r$kjc@charm.magnus.acs.ohio-state.edu>, kgreiner@magnus.acs.ohio-state.edu (Kurt W. Greiner) writes:
+|>      when i link my program with any lib or o files i get a undefined error in
+|> the c.o file. and askes me to _stub it. I do not know what is going on. it 
+|> worked when i used 6.3 but under 6.50. the function it askes to __stub is
+|> _MemCleanup in the c.o
+
+You're linking with an old version of c.o, or old libraries.
+
+_MemCleanup went away in V6.50 in favor of an autoterminator
+function.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 5235 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: SAS Keywords (__saveds etc)
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKCG1B.Lzq@unx.sas.com>
+Date: Fri, 28 Jan 1994 14:24:45 GMT
+References:  <inf01.759746947@apollo23>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 72
+
+
+In article <inf01.759746947@apollo23>, inf01@apollo23.uni-trier.de (Hans-Joerg Frieden) writes:
+>I recently had some difficulties porting some source from SAS to Aztec. The
+>problem arises with all those SAS keywords. Can someone post a list or explain
+>what the following keywords are meant to be?
+>a) __saveds
+>   I guess this is the same as doing a geta4() (right)?
+
+Correct.  We also support using geta4(), but it is easier to tell
+directly from a prototype that this will happen if you use the keyword
+instead.
+
+>b) __asm
+>   I have no clue for this one, except that it might have something
+>   to do with register allocation.
+
+Yes.  This tells the compiler that this function takes parameters in
+specific registers.
+
+>c) __register
+>   I think this is to force a parameter into a register for library
+>   calls.
+
+*Must* be used with __asm (mentioed above); it specifies the register a
+parameter will arrive in when the function in called.
+
+        int __asm foo(register __a3 char *bar);
+
+This says that function "foo" will receive its only parameter in register
+A3, rather than the default for pointers of A0.
+
+>d) everythink I forgot.
+
+__aligned       -       force a particular item to be LONGWORD aligned
+__chip          -       force a particular item to load directly to CHIP
+__near          -       force a data item into the NEAR data section
+__far           -       force a data item into the FAR data section
+__interrupt     -       similar to adding int_start()/int_end()
+__regargs       -       force a function to take parameters in registers,
+                        rather than on the stack
+__stdargs       -       force a function to take parameters from the
+                        stack, rather than in registers
+__inline        -       tells the optimizer to put the code for this
+                        function inline wherever it is called, rather
+                        than generating a function call
+
+>Why aren't those things done via #pragma's, this would make porting
+>much easier (sigh).
+
+We do supply alternatives to a few of the keywords, but it is usually a
+lot easier to just use 'em directly (when you need one, of course!).
+
+>I hope someone can help me out.
+
+(Blatant favoritism alert! :-)
+
+Well, my best recommendation is (of course), to upgrade to SAS/C.  :-)
+
+In the latest version of our compiler, we support most "MANXisms"
+directly, such as #pragma amicall, etc.  We even have utilities so you
+can use the same command line switches you are used to, but drive our
+compiler instead.
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article 5221 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!swrinde!emory!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: SAS Keywords (__saveds etc)
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKI0po.EAF@unx.sas.com>
+Date: Mon, 31 Jan 1994 14:39:23 GMT
+References: <inf01.759746947@apollo23> <CKCG1B.Lzq@unx.sas.com> <2iiptt$soe@ugle.unit.no> <CKI0Ip.DrF@unx.sas.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 37
+
+
+In article <CKI0Ip.DrF@unx.sas.com>, walker@twix.unx.sas.com (Doug Walker) writes:
+|> 
+|> In article <2iiptt$soe@ugle.unit.no>, shansen@idt.unit.no (Staale L. Hansen) writes:
+|> |> In article <CKCG1B.Lzq@unx.sas.com>, jamie@cdevil.unx.sas.com (James Cooper) writes:
+|> |> [...]
+|> |> |> >c) __register
+|> |> |> >   I think this is to force a parameter into a register for library
+|> |> |> >   calls.
+|> |> |> 
+|> |> |> *Must* be used with __asm (mentioed above); it specifies the register a
+|> |> |> parameter will arrive in when the function in called.
+|> |> |> 
+|> |> |>         int __asm foo(register __a3 char *bar);
+|> |> |> 
+|> |> |> This says that function "foo" will receive its only parameter in register
+|> |> |> A3, rather than the default for pointers of A0.
+|> |> 
+|> |> But how do you specify which register the return value will be in? As
+|> |> far as I can see there is NO way to do this, you get register D0
+|> |> whether you like it or not.
+|> 
+|> The return value is always in D0 unless the function is returning
+|> a long, in which case it's in D0/D1.
+
+AACK!  AACK!  NO, DON'T SEND ME EMAIL!  I MEANT "double", NOT "long"!
+
+double double double double double long (slap!  Ow!) double double...
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 5227 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!usc!elroy.jpl.nasa.gov!swrinde!emory!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: SAS Keywords (__saveds etc)
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKI3Kr.L4t@unx.sas.com>
+Date: Mon, 31 Jan 1994 15:41:13 GMT
+References: <inf01.759746947@apollo23> <CKCG1B.Lzq@unx.sas.com> <2iiptt$soe@ugle.unit.no> <CKI1BK.FMH@unx.sas.com> <CKI30G.Jwn@unx.sas.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 33
+
+
+In article <CKI30G.Jwn@unx.sas.com>, walker@twix.unx.sas.com (Doug Walker) writes:
+|> 
+|> In article <CKI1BK.FMH@unx.sas.com>, jamie@cdevil.unx.sas.com (James Cooper) writes:
+|> |> Well, if you have SAS/C V6.50+, you could use the '#pragma amicall'
+|> |> directive we added for MANX support.  It allows specifying a different
+|> |> return register than D0 (though D0 is still the default).
+|> 
+|> The SYNTAX allows for a different register specification, but the
+|> SAS/C version of #pragma amicall flags it as an error if you 
+|> specify anything other than D0.
+|> 
+|> Return registers other than D0 are not supported by SAS/C.
+
+Well, this just isn't my day.  I checked the doc, it didn't
+mention that limitation; I checked the code produced, and it
+does seem to work.  (chomp, chomp, munch munch.)
+
+In actuality, register D0 is the only supported return register
+for #pragma regcalls, but not for #pragma amicalls.
+
+Sorry for the false alarm.  I'm getting old and the memory is the
+second thing to go, you know (I can't remember what the first
+thing is.)
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+
+Article 5222 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-2.peachnet.edu!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: SAS Keywords (__saveds etc)
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKI1BK.FMH@unx.sas.com>
+Date: Mon, 31 Jan 1994 14:52:30 GMT
+References: <inf01.759746947@apollo23> <CKCG1B.Lzq@unx.sas.com> <2iiptt$soe@ugle.unit.no>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 30
+
+
+In article <2iiptt$soe@ugle.unit.no>, shansen@idt.unit.no (Staale L. Hansen) writes:
+>In article <CKCG1B.Lzq@unx.sas.com>, jamie@cdevil.unx.sas.com (James Cooper) writes:
+>[...]
+>|>         int __asm foo(register __a3 char *bar);
+>|>
+>|> This says that function "foo" will receive its only parameter in register
+>|> A3, rather than the default for pointers of A0.
+>
+>But how do you specify which register the return value will be in? As
+>far as I can see there is NO way to do this, you get register D0
+>whether you like it or not.
+
+Well, if you have SAS/C V6.50+, you could use the '#pragma amicall'
+directive we added for MANX support.  It allows specifying a different
+return register than D0 (though D0 is still the default).
+
+I've never needed this, but I'm sure someone could come up with a case
+where it would be handy... I probably could as well, if I thought about
+it a while...  :-)
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article 5394 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!uunet!cs.utexas.edu!swrinde!elroy.jpl.nasa.gov!decwrl!concert!sas!mozart.unx.sas.com!wonka.unx.sas.com!sassek
+From: sassek@wonka.unx.sas.com (Steve Krueger)
+Subject: Re: SASC 6.51 CPR question
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CKnJ1F.KyG@unx.sas.com>
+Date: Thu, 3 Feb 1994 14:03:14 GMT
+References: <2ipe8p$m9d@courier.urbana.mcd.mot.com>
+Nntp-Posting-Host: wonka.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 12
+
+In article <2ipe8p$m9d@courier.urbana.mcd.mot.com> qbarnes@urbana.mcd.mot.com (Quentin Barnes) writes:
+>Is there a way to get CPR to continue executing until the current
+>function returns?
+>
+>Sometimes I'll single-step along and enter a function (sometimes
+>intentionally, sometimes not) and then I want it to continue
+>execution until it returns back to the caller.
+
+
+Use the GO RETURN command or just g r for short.
+
+sk
+
+
+Article 5751 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!usc!elroy.jpl.nasa.gov!decwrl!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: SASC 6.51 CPR question
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CL0D52.8xy@unx.sas.com>
+Date: Thu, 10 Feb 1994 12:24:37 GMT
+References: <2ipe8p$m9d@courier.urbana.mcd.mot.com> <CKntF1.Mv3@unx.sas.com> <2jbi5h$4ao@courier.urbana.mcd.mot.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 35
+
+
+In article <2jbi5h$4ao@courier.urbana.mcd.mot.com>, qbarnes@urbana.mcd.mot.com (Quentin Barnes) writes:
+|> >|> Sometimes I'll single-step along and enter a function (sometimes
+|> >|> intentionally, sometimes not) and then I want it to continue
+|> >|> execution until it returns back to the caller.
+|> 
+|> >"go return" or just "g r".
+|> 
+|> >Please read the documentation.  Honest, it's all in there.
+|> 
+|> When I got the docs, I read it cover to cover. I have and ran across
+|> the "go return" somewhere, but I can't find it now.  When I did, the
+|> description didn't seem to imply that behavior and it's not on the
+|> "go" reference page (p 140 from memory, my docs are currently not
+|> handy).
+
+I apologize.  I just checked both the 6.0 and the 6.50 doc, and
+apparently "go return" didn't get documented.  The closest thing
+I could find was a mention of the analagous "jump return" in the
+description of the "return" command.  My only excuse is that your
+query looked just like hundreds of other email and news postings
+that have asked questions that ARE clearly answered in the manual;
+I got lazy and didn't bother to check that "go return" was actually
+documented.
+
+(I know it works, I use it frequently!)
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 6305 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Problems with SCMSG
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CLL7xn.806@unx.sas.com>
+Date: Mon, 21 Feb 1994 18:41:45 GMT
+References:  <CLKypA.5Jt@mail.auburn.edu>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 31
+
+
+In article <CLKypA.5Jt@mail.auburn.edu>, beckwwp@eng.auburn.edu (Wendell P. Beckwith) writes:
+|> >I have a small ARexx script called "BuildSAS.edge" that is executed with a
+|> >keypress from within Edge. It works as desired, getting the current portname,
+|> >storing it in SCMSG's environment file, then calling SCMSG, then telling it to
+|> >build after setting up a PROJDIR environment variable. I have the SCMSG window
+|> >opening on EDGE's screen. The problem that I'm having is that the browser
+|> >isn't seeming to send out the ARexx messages specified. For example, an
+|> >ARexx-script-modified SCMSG environment file looks like:
+|> 
+|> I have recently gotten Edge and I'm trying to learn Arexx to get it to
+work with SASC/C++ 6.51.  I also have the SCMSG window popping up on the
+Edge screen.  However I can't find any information on setting up a PROJDIR
+enviromental variable, except f r a |> small paragraph in the SCMSG utility
+documentation that says if I double-click on BUILD then one is created for
+me automatically.  Can someone explain what a PROJDIR enviromental variable
+is and how to set one up?  |>
+
+Just put a pathname into a file called ENV:SC/PROJDIR and the builds
+that SCMSG invokes will be invoked in that directory.
+
+BTW, I suggest using a somewhat shorter line length.  259 characters
+is a little more than most editors/news readers can display well.
+Try 80 or less.
+
+
+Article 6664 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Best editor and SAS/C
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CLxw0w.GCC@unx.sas.com>
+Date: Mon, 28 Feb 1994 14:53:18 GMT
+References: <2kn28a$8t3@hermes.unt.edu> <24773.1206.uupcb@nezuld.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 50
+
+
+In article <24773.1206.uupcb@nezuld.com>, bob.tomasevich@nezuld.com (Bob Tomasevich)  writes:
+|> JBW> I have CygnusEd3.5 - but it gives an Enforcer hit
+|> JBW> when I start it and load/save files.  
+|> 
+|> Change the stack size to the minimum mentioned in the CygnusEd
+|> 3.5 manual, which is, if I remember right, 8192.  You'll also
+|> have to change the SAS icon used for text files to this stack
+|> size.  The same thing happened to me on my A4000/040.
+|> 
+|> I use CygnusEd all the time for programming and other stuff.
+
+BTW, a quick and easy way to change all your text icons:
+
+   1. Change the icons in SC:ICONS that refer to SE
+      (DEF_C.INFO, DEF_H.INFO, DEF_A.INFO, DEF_CXX.INFO,
+       DEF_LST.INFO, lots of others)
+
+   2. Run SCSETUP FORCE on all your project directories.
+      The FORCE option causes SCSETUP to copy over any existing
+      icons with the ones from SC:ICONS.  (This is also a good
+      way to change the default icon imagery, btw.)
+
+Remember, you can add default icons to SC:ICONS and SCSETUP will
+automatically use them.  An icon called DEF_abc.INFO in the SC:ICONS
+directory will be used for files with the extension ".abc" or files
+called "abc" with no extension.
+
+Also remember that you can use SCSETUP to attach icons to files in 
+non-project directories by using the NOSTARTER option.  NOSTARTER 
+tells SCSETUP not to copy the contents of the SC:STARTER_PROJECT 
+directory, but to just add icons for files that it recognizes.
+
+Also also remember that you can add files to the SC:STARTER_PROJECT
+directory if you like, and SCSETUP will copy them for you.  A good
+example is a SCOPTIONS file - the project will be "seeded" with that
+SCOPTIONS file.  If you have other utilities you'd like in all your
+projects, you can add them as well - or you could delete one of ours,
+for example the "Find" utility if you never use it.
+
+Enough tips for today...
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 7005 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: interrupt in SAS/C 6.51
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CMAttx.Ltn@unx.sas.com>
+Date: Mon, 7 Mar 1994 14:34:41 GMT
+References:  <1994Mar6.035403.28339@cdf.toronto.edu>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 45
+
+
+In article <1994Mar6.035403.28339@cdf.toronto.edu>, a228grai@cdf.toronto.edu (Darrell Grainger) writes:
+|> Now if I create the function VertBServer using assembler I can get this to
+|> work fine but what I would like to do (and this is just for experimental
+|> purposes) is create the function VertBServer using C language. The code
+|> for VertBServer is simply:
+|> 
+|> 	Signal(task, SIGBREAKF_CTRL_F);
+|> 
+|> The variable task is a global variable initialized by the main code using:
+|> 
+|> 	task = FindTask(NULL);
+|> 
+|> I've read some stuff about __interrupt in the SAS/C manual but it is not
+|> entirely clear. I think I am probably not setting the Z flag when exiting
+|> the VertBServer function. References to the manuals would actually be
+|> appreciated.
+
+How about this?
+
+   struct Task *task;
+
+   void __interrupt __saveds VertBServer(void)
+   {
+      Signal(task, SIGBREAKF_CTRL_F);
+   }
+
+or just add __far to the definition of the extern and you can do
+away with the __saveds keyword on the function.
+
+What's probably happening is that register A4 is not set up to
+point to your near data section.  Globals are by default accessed
+relative to A4 (NEAR data).  You can either add the __saveds keyword
+to set up register A4, or you can access the global with FAR data
+accessing by adding the __far keyword to it.
+
+
+Article 7008 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: interrupt in SAS/C 6.51
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CMAuIr.FH@unx.sas.com>
+Date: Mon, 7 Mar 1994 14:49:39 GMT
+References:  <1994Mar6.035403.28339@cdf.toronto.edu>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 49
+
+
+In article <1994Mar6.035403.28339@cdf.toronto.edu>, a228grai@cdf.toronto.edu (Darrell Grainger) writes:
+>I just received my upgrade to SAS/C 6.50 and thought I'd try whipping up a
+>few programs. One of the programs I have created uses AddIntServer to add
+>a vertical blank interrupt. Here is the set up in the C code:
+>
+> [code deleted]
+>
+>Now if I create the function VertBServer using assembler I can get this to
+>work fine but what I would like to do (and this is just for experimental
+>purposes) is create the function VertBServer using C language. The code
+>for VertBServer is simply:
+>
+>       Signal(task, SIGBREAKF_CTRL_F);
+>
+>The variable task is a global variable initialized by the main code using:
+>
+>       task = FindTask(NULL);
+>
+>I've read some stuff about __interrupt in the SAS/C manual but it is not
+>entirely clear. I think I am probably not setting the Z flag when exiting
+>the VertBServer function. References to the manuals would actually be
+>appreciated.
+
+Look up two SAS specific keywords (you'll need both of them).
+
+        __interrupt     -       page 173, User's Guide Volume 1
+
+                                This will set your code up properly to
+                                be an Interrupt function, and will take
+                                care of the return code, flags, etc. on
+                                exit from the routine.
+
+        __saveds        -       pages 174-175, User's Guide Volume 1
+
+                                This will set up A4 properly on entry to
+                                your function, so that you can access
+                                global data for your code (such as your
+                                'task' variable).
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article 7693 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!cs.utexas.edu!swrinde!emory!news-feed-2.peachnet.edu!news-feed-1.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Wanted: Aztec C Bugs...err...
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <Cn0ovr.8nM@unx.sas.com>
+Date: Mon, 21 Mar 1994 13:45:26 GMT
+References: <763178404.AA00960@1choice.login.qc.ca> <heinz.0jsh@hwg.muc.de> <herbert.04zo@lynn.adsp.sub.org> <shfCMJM9H.BtC@netcom.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 27
+
+
+In article <shfCMJM9H.BtC@netcom.com>, shf@netcom.com (Stuart Ferguson) writes:
+|> +-- herbert@lynn.adsp.sub.org (Herbert Schneider CIS ECGxyz) writes:
+|> | In article <heinz.0jsh@hwg.muc.de> heinz@hwg.muc.de (Heinz Wrobel) writes:
+|> | > SAS/C is _better_. ;^)
+|> | >     - great debugger (though I miss very few nice db/sdb features)
+|> |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+|> | Can you tell me a bit more of this please?
+|> 
+|> The oddly named `fu' command.  "Frame Up."  You could set a 
+|> breakpoint and then go up the call stack and examine variables
+|> in the calling routines.  Very useful.  I've seen no apparent
+|> equivalent in CPR, although I would be thrilled to hear that
+|> there is one that I haven't found (I'm new to SAS/C).
+
+Check out the "env" command.  It does exactly this.  "env -1" goes
+to the environment of your immediate caller, "env -2" to its caller,
+etc.  or you can use a function name: "env foofunc".
+
+
+Article 7694 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-2.peachnet.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: CPR wish list (Was: Re: Wanted: Aztec C Bugs...err...)
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <Cn0p81.96K@unx.sas.com>
+Date: Mon, 21 Mar 1994 13:52:48 GMT
+References: <763178404.AA00960@1choice.login.qc.ca> <heinz.0jsh@hwg.muc.de> <herbert.04zo@lynn.adsp.sub.org> <heinz.0jw3@hwg.muc.de>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 45
+
+
+In article <heinz.0jw3@hwg.muc.de>, heinz@hwg.muc.de (Heinz Wrobel) writes:
+|> Pretty much the only "features" I miss from db/sdb, is that you can't run
+|> CPR standalone without something to debug and that you can't define symbols
+
+No, but "cpr c:dir" is a good workaround.  You can then catch the
+tasks you want to debug and detach the original task.
+
+|> like you could with db and the "v/V" commands. This came in handy very
+|> often when I had too look at unknown assembly code. I could just set
+|> "labels" at the points I wanted to remember by defining symbols. No, I am
+|> not doing illegal things, but I already had to trace devices, link libs and
+|> even functions in KS images to find obscure bugs. I just loved that
+|> feature.
+
+The "define" command in CPR helps you work around this somewhat.  No,
+you can't define a label that will show up in the disassembly, but you
+can say "define foo 0x7ef4430" to define a shorthand for that address.
+The define command works just like a #define in C, so you can give it
+macro-style arguments as well:  
+
+   define foo(x) ((struct FOO *)(x+0x20))
+   d foo(x)->field
+
+Your other suggestions are good ones, and are either already in our
+database or will be soon.
+
+|> To you non SAS/S users out there: CPR is by no means bad. It is actually
+|> rather great like all of SAS/C. But it could IMHO still be improved.
+
+It's always possible to improve, and it helps to have good suggestions.
+Thanks for the input.
+
+|> Heinz Wrobel        Edotronik GmbH: heinz@edohwg.adsp.sub.org
+|>                     Private Mail:   heinz@hwg.muc.de
+|> My private FAX: +49 89 850 51 25, I prefer email
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 7847 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!emory!news-feed-2.peachnet.edu!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: student pricing for SAS/C?
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <Cn2KCD.6Cu@unx.sas.com>
+Date: Tue, 22 Mar 1994 14:02:35 GMT
+References:  <sgberg.66j9@charon.bloomington.in.us>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 30
+
+
+In article <sgberg.66j9@charon.bloomington.in.us>, sgberg@charon.bloomington.in.us (Stefan G. Berg) writes:
+>Does anybody know what the student pricing for SAS/C is? Version
+>6.51... or whatever the latest is. I think street prices for SAS/C
+>tends to be around $300.
+
+US Student price is $197.50.  Send EMail to
+
+        sasdsb@vm.sas.com
+
+for details on how to qualify for the discount.
+
+European Student discount is DM320.  Send EMail to
+
+        eurdoc2@vm.sas.com
+
+for details.
+
+The above addresses *CANNOT* accept orders, they are for information
+only.
+
+
+Article: 32000 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Hello World lives on!
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CpozDt.F60@unx.sas.com>
+Date: Thu, 12 May 1994 13:41:52 GMT
+References:  <Evan_Hillas.dqk9@equinox.gen.nz>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 173
+
+
+In article <Evan_Hillas.dqk9@equinox.gen.nz>, Evan_Hillas@equinox.gen.nz (Evan) writes:
+|> The following posting is a continuation of a local happening.
+|> 
+|> 
+|> Jayson_Mackie@equinox.gen.nz wrote:
+|> > This is just a little demo of how to open a screen and a window, then
+|> > send some graphical output to it.  It doesn't use any of the window flags
+|> > [...]
+|> 
+|> Here's my two cents worth:  I decided to make it as small as possible
+|> without dropping to assembly - with the following results.
+|> 
+|> Intui_Hello.c     A modified version of Jayson's "HelloWorld.intuition.c"
+|>                   This gave me a reduced executable size of 2360 bytes.
+|> 
+|> Intui_Hello3.c    A rewrite using NOSTARTUP.  This reduced the executable
+|>                   a further 900 bytes or so.  But about 600 bytes of c.o or
+|>                   sc.lib was still getting linked into the executable and
+|>                   of course not used.  So I cut it out with a hex editor:-)
+|> 
+|> Intui_Hello3.exe  Size, 884 bytes.  Only run from shell!!!
+|>                   Compiled with SAS/C 6.51
+|> 
+|> SCOPTIONS         The option file used to compile Intui_Hello3.c
+|>                   To use with "Intui_Hello.c" just remove NOSTARTUP
+|> 
+|> 
+|> PS: The chunk of executable I removed was auto-lib-init code.  Is it the
+|> norm for SAS/C to add it in no matter what, or have I missed something?
+|> 
+
+SAS/C won't link in anything that you don't tell it to.  I tried your code
+with the MAP MAPHUNK MAPXREF options, and discovered that you were linking in
+autoinit code for the Intuition, Graphics, and DOS libraries (even though it
+was never called).  Why?  Because you weren't declaring IntuitionBase,
+GfxBase, and DOSBase.  Instead, you pulled their definitions in from the
+library.
+
+If you pull them in from the library, you also get the autoinit code.
+
+Moral: If you're not using a startup that calls __fpinit() and __fpterm(),
+make sure to define all your library bases explicitly.
+
+(By the way, I got your example down to 748 bytes by defining those library
+bases.)
+
+Here's detail on how to figure this out.  The linker map file is VERY 
+useful when you want to figure out how to get rid of unneeded stuff, BTW.
+
+I compiled with MAP MAPHUNK MAPXREF and some formatting options and got 
+this map file:
+
+=====================
+4 09:23:Page 1-1
+
+ num hunk         size filename         punit            type         base  alv     size
+   0 text          4b4 Intui_Hello3.o   Intui_Hello3.c   code            0    0      264
+                       LIB:sc.lib       _construct.c     code          264    0       34
+                       LIB:sc.lib       dummy.c          code          298    0        4
+                       LIB:sc.lib       autoopenfail.c   code          29c    0       fc
+                       LIB:sc.lib       doslib.c         code          398    0       5c
+                       LIB:sc.lib       gfxlib.c         code          3f4    0       60
+                       LIB:sc.lib       intuitlib.c      code          454    0       60
+   1 __MERGED       90 Intui_Hello3.o   Intui_Hello3.c   data            0    0       30
+                       T:3JQM5.0000     _ctdt.o          data           30    0       24
+                       LIB:sc.lib       _construct.c     data           54    0        4
+                       LIB:sc.lib       _stdwin.c        data           58    0       14
+                       LIB:sc.lib       wbmsg.c          bss            6c    0        4
+                       LIB:sc.lib       _construct.c     bss            70    0        4
+                       LIB:sc.lib       oslibversion.c   bss            74    0        4
+                       LIB:sc.lib       doslib.c         bss            78    0        8
+                       LIB:sc.lib       gfxlib.c         bss            80    0        8
+                       LIB:sc.lib       intuitlib.c      bss            88    0        8
+
+4 09:23:Page 3-1
+
+symbol                   (Def) Module  Off
+@__autoopenfail  autoopenfail.c          0 intuitlib.c            22
+                                           gfxlib.c               22
+                                           doslib.c               22
+_DOSBase         doslib.c                0 Intui_Hello3.c         1c
+                                           Intui_Hello3.c         bc
+                                           Intui_Hello3.c        100
+_GfxBase         gfxlib.c                0 Intui_Hello3.c         40
+                                           Intui_Hello3.c         8c
+                                           Intui_Hello3.c         e0
+_IntuitionBase   intuitlib.c             0 Intui_Hello3.c         2e
+                                           Intui_Hello3.c         4c
+                                           Intui_Hello3.c         c6
+                                           Intui_Hello3.c         d4
+                                           Intui_Hello3.c         f0
+_LinkerDB              (0:*)               Intui_Hello3.c          6
+__STD_110_closed doslib.c               3a _ctdt.o                14
+__STD_110_closeg gfxlib.c               40 _ctdt.o                1c
+__STD_110_closei intuitlib.c            40 _ctdt.o                18
+__STI_110_opendo doslib.c                0 _ctdt.o                 c
+__STI_110_opengf gfxlib.c                0 _ctdt.o                 4
+__STI_110_openin intuitlib.c             0 _ctdt.o                 8
+__WBenchMsg      wbmsg.c                 0 autoopenfail.c         1c
+                                           autoopenfail.c         98
+___construct     _construct.c            0 _ctdt.o                 0
+___ctors         _ctdt.o                 4 _construct.c            0
+___oslibversion  oslibversion.c          0 intuitlib.c             8
+                                           gfxlib.c                8
+                                           doslib.c                8
+                                           autoopenfail.c         46
+___stdiowin      _stdwin.c               0 autoopenfail.c         2a
+=====================
+
+(Note: In the XRef section (page 2), column 1 is the name of the symbol
+being defined; column 2 is the name of the module it is defined in;
+column 3 is the offset within that module; and the other module-offset
+pairs are the locations that refer to the symbol.)
+
+One thing that jumps out right away from looking at the Xref section is the 
+autoinit and autoterm routines (the ones starting with __STD and __STI).
+We don't need 'em, we don't want 'em, let's get rid of 'em.  The Xref 
+section tells us they are defined in doslib.c, gfxlib.c, and intuitlib.c.
+These are files in sc.lib.  What are these files doing in our program?
+Time to go back to the Xref.
+
+Other than the _STD and _STI routines, the only stuff defined in these
+three files are _DOSBase, _GfxBase, and _IntuitionBase.  These symbols
+are referred to from Intui_Hello3.c in several places.  Therefore,
+the linker pulled in doslib.c, gfxlib.c, and intuitlib.c in order to
+satisfy those references, and got the _STD and _STI routines because
+they were in the same module.
+
+OK, so far so good.  The logical leap that you have to make is to accept
+the fact that the linker does some "magic".  If the linker sees at least
+one _STI or _STD routine, it creates and links in a file called _ctdt.o,
+which contains setup information that allows the startup to work on
+autoinit/autoterm routines.  As you can see from the Xref, almost everything
+else linked in was linked in because _ctdt.o was there.  Therefore, if you
+get rid of the _STI and _STD routines, you're home free.
+
+I declared these three library bases in the .c file and the executable turned
+out to be 748 bytes, and produced this map:
+
+=====================
+4 09:34:Page 1-1
+
+ num hunk         size filename         punit            type         base  alv     size
+   0 text          248 intui_hello4.o   intui_hello4.c   code            0    0      244
+                       LIB:sc.lib       dummy.c          code          244    0        4
+   1 __MERGED       5c intui_hello4.o   intui_hello4.c   data            0    0       50
+                       intui_hello4.o   intui_hello4.c   bss            50    0        c
+
+4 09:34:Page 3-1
+
+symbol                   (Def) Module  Off
+_LinkerDB              (0:*)               intui_hello4.c          6
+
+=====================
+
+MUCH better!  As you can see, all symbols are now defined in intui_hello4.c except
+for one pulled in from dummy.c in sc.lib.  This symbol turns out to be the dummy
+version of __chkabort that gets pulled in because you specified the NOCHKABORT
+option.  It's only 4 bytes, and you're not going to do any better in your code,
+so there's no point in worrying about this one.  _LinkerDB is a linker-defined
+symbol used by the startup code to locate the beginning of external data, so
+there's nothing you can do about that one either.  This is as good as it will
+get without tinkering with the actual program's algorithm.
+
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 10499 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: XCEXIT, please explain (was: SAS/C 6.50 bug/feature ?)
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CpJDFq.CF7@unx.sas.com>
+Date: Mon, 9 May 1994 12:59:49 GMT
+References: <1994May1.070050.19084@philips.oz.au> <zp6177a8UgO3Z1@da23.darkness.gun.de>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 32
+
+
+In article <zp6177a8UgO3Z1@da23.darkness.gun.de>, zodiac@darkness.gun.de (Ralph Seichter) writes:
+|> the  NoStackCheck option. It uses ANSI-C file I/O (fread, fwrite, etc.) and
+|> I  guess that at least one of these functions refers to _XCEXIT. As I don't
+|> want any startup code, I use my own replacement function:
+|> 
+|>    VOID __stdargs _XCEXIT (LONG dummy) { return; }
+|> 
+|> This  is  almost certainly no wise behaviour, but maybe someone can tell me
+|> what else to do if I need to use "lib:sc.lib" without "lib:c.o".
+
+ANSI I/O checks for CTRL-C, and the CTRL-C processing code calls
+exit(), which calls _XCEXIT() eventually.  You need to disable CTRL-C 
+checking if you don't want to have this reference.  Do it by adding
+this function to your code somewhere:
+
+   void __regargs __chkabort(void){}
+
+The __regargs is important; what you are doing is replacing the
+library version of __chkabort() with your own.  The library code
+in the ANSI I/O functions calls the regargs version of __chkabort(),
+not the stdargs version, so if you define a stdargs version, it won't
+work.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 10841 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!usenet.ins.cwru.edu!eff!news.duke.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Help - Boopsi
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CpwKKB.D6B@unx.sas.com>
+Date: Mon, 16 May 1994 16:02:35 GMT
+References:  <44798@mindlink.bc.ca>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 108
+
+
+In article <44798@mindlink.bc.ca>, Dave_Thomas@mindlink.bc.ca (Dave Thomas) writes:
+|> I was having exactly the same problem.  When I read this message, I got so
+|> excited I just had to log-off and try it, and, lo & behold, it worked!
+|> Now, the next question is, can anyone explain this to me?  Tell me if this
+|> is what's happening:  whenever the dispatcher is called, the program is
+|> saving variables, addresses, etc. on the stack, and since the dispatcher is
+|> called quite often, the program runs out of stack space.  If this is the
+|> case, and we're turning off stack checking, isn't the program going to
+|> write past the end of the stack and corrupt some other part of memory?  Is
+|> this safe?
+|> 
+|> Thanks for your help!
+
+OK, here's a general discussion of stacks, stack checking, and
+callback routines, since I've answered similar questions frequently
+in the past couple of months.  Note that the discussion applies to
+BOOPSI callbacks, software interrupts, input event handlers, shared
+libraries, and lots of other callback-type situations.
+
+As functions get called, they require space for local variables,
+parameters, and compiler work space.  The amount needed varies
+for different function, but it's always the same for the same
+function: i.e. if you call function foo() four times, the amount
+of stack needed is the same for each call.
+
+When functions return, all the stack space they use is made
+available for other functions to use.  After the return(),
+the function isn't using any stack.  Therefore, it doesn't
+matter how many times the dispatcher is called - it will never
+use any more stack than the first time, assuming it doesn't
+call itself recursively.
+
+One more thing to note: each task in the Amiga OS has its own stack.
+When BOOPSI calls your function, it calls your code from BOOPSI's task
+context; this means that your function is using BOOPSI's stack during
+that call.  This becomes important when you realize how stack checking
+works.
+
+How Stack Checking Works:
+
+   When the program starts up, the startup code (c.o or equivalent) 
+   makes a note of the lowest valid address in the stack.  The stack 
+   pointer is set to a value in the high end of the stack, and gets 
+   smaller as more data is added.
+
+   At the beginning of each function, the compiler generates code to 
+   compare the current stack pointer with the minimum stack location
+   that the startup code stored.  If the difference is smaller than
+   the amount of stack required for the current function, it aborts the
+   program.  (If you're using stack EXTENSION instead of stack CHECKING,
+   it actually allocates a new stack for you instead of aborting.)
+
+Now, putting two and two together, we see that stack checking will only
+work for one task's stack.  Why?  Because we're assuming that we know
+the correct minimum stack value.  Since BOOPSI calls you on BOOPSI's 
+stack, we don't know this correct value, and there is no way that stack
+checking (or stack extension) can work!
+
+You mention that your dispatcher stores values on the stack, so you're
+worried that stack checking is necessary.  As long as you make sure
+that your function doesn't allocate very much stack (a couple of 
+hundred bytes at most) then you will be OK.  Your function will 
+allocate stack for all AUTOMATIC variables and function parameters.
+Static and extern variables are fine.
+
+Speaking of static and extern variables, there is one other gotcha with
+callbacks: the near data register.
+
+Register A4 is usually set up by the compiler to point to your global
+data.  The compiler generates code to access the global data relative
+to register A4 instead of at an absolute memory address.  There are 
+several advantages to this, including smaller code, faster code, and
+reentrant code (code that can be part of several processes at the
+same time.)
+
+When BOOPSI calls your callback function, it does not set up register
+A4 for you.  You have to make sure it is set up if you want to use it.
+There are many solutions to this problem, including the following:
+
+   1. If you don't care about using near data, compile with DATA=FAR.
+      This will eliminate the use of register A4 for global data.
+      
+   2. If your program was not linked with cres.o, declare your BOOPSI
+      callback with the __saveds keyword.  This will force the compiler
+      to generate code to load A4 at the start of the function.  This
+      will not work from cres.o programs.
+
+   3. From cres.o programs, pass the correct A4 value as your UserData
+      parameter.  Get its value with the "getreg()" function (defined 
+      in <dos.h>):
+
+         long UserData = getreg(REG_A4);
+
+      once you receive it in your callback, put it with putreg:
+
+         putreg(REG_A4, UserData);
+
+Note that "string literals" are also global data, so you may need 
+global data in places that you don't think you do...
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article 10912 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!cs.utexas.edu!convex!news.duke.edu!concert!sas!mozart.unx.sas.com!sassek
+From: sassek@unx.sas.com (Steve Krueger)
+Subject: Re: SECTION name,DATA,CHIP ?
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <sassek.769179607@wonka>
+Date: Tue, 17 May 1994 13:00:07 GMT
+References: <1994May16.153942@informatik.uni-kl.de>
+Nntp-Posting-Host: wonka.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 12
+
+feck@informatik.uni-kl.de (Christoph Feck IRZ) writes:
+
+>What is the correct SAS 5.10b asm syntax to put a section
+>into CHIP?  Option -cd is fine, but puts all data hunks
+>into CHIP.
+
+There's no way to do it until version 6.50. In 6.50, you can
+say
+
+    section     name,data,chip
+
+sk
+
+
+Article 10838 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!cs.utexas.edu!convex!news.duke.edu!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: PROTOTYPING
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CpwJE2.9Lz@unx.sas.com>
+Date: Mon, 16 May 1994 15:37:13 GMT
+References: <2r2sbh$47n@dsm6.dsmnet.com> <2r5hfu$t61@jadzia.CSOS.ORST.EDU>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 51
+
+
+In article <2r5hfu$t61@jadzia.CSOS.ORST.EDU>, glade@CSOS.ORST.EDU (Glade Diviney) writes:
+|> #include <stdio.h>
+|> #include <exec/types.h>
+|> 
+|> void MyPrintfSub(char *format, ULONG args[])
+|> {
+|>    printf(format,args[1],args[2],args[3],
+|>           args[4],args[5],args[6],args[7],args[8]);
+|> }
+|> 
+|> // Passes a pointer to the array of args on to MyPrintfSub().
+|> void MyPrintf(char *fmt,...)
+|> {
+|> 	MyPrintfSub (fmt,(ULONG *)&fmt);
+|> }
+|> 
+|> 
+|> void main()
+|> {
+|> 	MyPrintf("Testing %d %d %d!\n",1,2,3);
+|> }
+
+Please do not use this technique.  It assumes you know how the
+compiler lays out parameters on the stack, which is NOT a valid
+assumption.  Use the ANSI <stdarg.h> includes instead.
+
+#include <stdarg.h>
+#include <stdio.h>
+
+void MyPrintf(char *fmt, ...)
+{
+   va_list arglist;
+   va_start(arglist, fmt);
+   vfprintf(stdout, fmt, arglist);
+   va_end(arglist);
+}
+
+void main(void)
+{
+   MyPrintf("Testing %d %d %d!\n",1,2,3);
+}
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article: 33908 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!walker
+From: walker@twix.unx.sas.com (Doug Walker)
+Subject: Re: Allocating Mem & Loading
+Originator: walker@twix.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CrC6F6.KM3@unx.sas.com>
+Date: Mon, 13 Jun 1994 12:52:17 GMT
+References:  <2tdfm9$pvd@dsm6.dsmnet.com>
+Nntp-Posting-Host: twix.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 79
+
+
+In article <2tdfm9$pvd@dsm6.dsmnet.com>, mikebockert@dsm1.dsmnet.com writes:
+|> I would like to allocate memory for an array of a structure.  The number of the
+|> array will be deterimined by my data file, so it is not the same everytime. 
+|> Well the question is how can I load the entire file into this array without
+|> having a loop reading in one set of the array at a time.  I want to do one read
+|> statement to load the entire file into the array of strutures.. 
+|>  
+|> Example:
+|>  
+|> long bytes,value;
+|>  
+|> bytes = FileSize(file);
+|> value = bytes / sizeof struct(A);
+|>  
+|> - then allocate the memory for however many array's we need (Value) and then
+|>   I want to do a single read command to load the entire file into that array
+|>  
+|> Does anyone know how I could do this?  thanks
+
+This is somewhat SAS/C dependent, but it might work with the new
+commercial DICE as well (I think it has the __aligned keyword):
+
+   #include <proto/dos.h>
+   #include <stdio.h>
+
+   int FileSize(char *filename)
+   {
+      __aligned struct FileInfoBlock fib;
+      BPTR fh;
+      int size = -1;
+   
+      if(fh = Lock(filename, SHARED_LOCK))
+      {
+         if(Examine(fh, &fib) == DOSTRUE)
+         {
+            size = fib.fib_Size;
+         }
+         UnLock(fh);
+      }
+      return size;
+   }
+
+The following version should work with any C compiler:
+
+   #include <clib/dos_protos.h>
+   #include <stdio.h>
+   
+   int FileSize(char *filename)
+   {
+      struct FileInfoBlock *fib;
+      BPTR fh;
+      int size = -1;
+      
+      fib = malloc(sizeof(struct FileInfoBlock));
+      if(fib == NULL) return size;
+      
+      if(fh = Lock(filename, SHARED_LOCK))
+      {
+         if(Examine, fh, fib) == DOSTRUE)
+         {
+            size = fib->fib_Size;
+         }
+         UnLock(fh);
+      }
+      return size;
+   }
+
+Your single read command is an fread().  Just allocate a buffer the
+size you need (using malloc()) and then fread() into the buffer.
+
+-- 
+  *****                    / walker@unx.sas.com
+ *|_o_o|\\     Doug Walker<  BIX, Portal: djwalker
+ *|. o.| ||                \ CompuServe: 71165,2274
+  | o  |//     
+  ====== 
+Any opinions expressed are mine, not those of SAS Institute, Inc.
+
+
+Article: 34130 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!pipex!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: Resident Programs
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CrI35y.A83@unx.sas.com>
+Date: Thu, 16 Jun 1994 17:27:34 GMT
+References: <2tg1tv$e5n@dsm6.dsmnet.com> <4oJYu*lZ1@yaps.dinoco.de>,<CrHt0C.43E@unx.sas.com> <2tpqsc$iba@dsm6.dsmnet.com>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 27
+
+
+In article <2tpqsc$iba@dsm6.dsmnet.com>, mikebockert@dsm1.dsmnet.com writes:
+>Ok thanks for the info on the resident code.. I have heard that the ctime() as
+>well as the gmtime(), which I am using to convert number of seconds from 1970
+>to readable time, is not compatible with a resident program since it uses a
+>static varaible or something.. if that is true I would have to replace it I
+>suppose.. is that true?
+
+Nope.  Just link with cres.o, and you can use any routine from our
+libraries.
+
+cres.o makes a complete new copy of *all* globals & statics each time
+the program is invoked, so there's no problem.
+
+As stated in my previous message, the only thing you'ld need to worry
+about is if you have an interrupt routine, a callback Hook, or one of
+the other, newer, more esoteric ways to get yourself into trouble... :-)
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+
+Article: 34131 of comp.sys.amiga.programmer
+Newsgroups: comp.sys.amiga.programmer
+Path: news.chalmers.se!sunic!EU.net!howland.reston.ans.net!gatech!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Subject: Re: Opening Libraries Correctly???
+Originator: jamie@cdevil.unx.sas.com
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Message-ID: <CrI43C.CvD@unx.sas.com>
+Date: Thu, 16 Jun 1994 17:47:35 GMT
+References:  <ROBEOY.94Jun16170006@serdlc16.essex.ac.uk>
+Nntp-Posting-Host: cdevil.unx.sas.com
+Organization: SAS Institute Inc.
+Lines: 78
+
+
+In article <ROBEOY.94Jun16170006@serdlc16.essex.ac.uk>, robeoy@essex.ac.uk (Oliver Roberts) writes:
+>For example, it seems that you can declare the library base in 2 ways:
+>
+>eg
+>    struct Library       *IntuitionBase;
+>    struct IntuitionBase *IntuitionBase;
+>
+>Does it matter which way you declare the above?
+>
+>I have recently had to change all my library bases in my program to
+>struct Library because when using the -mRR and -mi options in DICE
+>it comes up with an error saying that the same variable has been
+>delclared twice in the same block!
+>
+>I just don't understand why there are two ways of declaring bases.
+>If you declare all bases (including ReqtoolsBase) as struct Library
+>will this cause problems?
+
+(I am posting this, as well as sending EMail, in case someone else
+may be interested in the answer.)
+
+Basically, all shared libraries on the Amiga *must* have a 'struct
+Library' at the beginning.  You can find this structure described in
+<exec/libraries.h>.
+
+Many libraries, however, also define there own extra "base" variables
+(in addition to the ones in the standard 'struct Library', such as the
+lib_Version field), and when they define this, they create a new
+structure type which has the 'struct Library' embedded at the beginning,
+followed by all the other data they want to define.  This is why you
+sometimes see, for instance, 'struct IntuitionBase'.
+
+If you declare IntuitinBase as
+
+        struct Library *IntuitionBase;
+
+you will only be able to access the standard 'struct Library' fields
+from the IntuitionBase structure.  Trying to access any of the other
+fields (such as IntuitionBase->ViewLord, IntuitionBase->ActiveWindow,
+etc., as shown in <intuition/intuitionbase.h>) will cause the compiler
+to give an "unknown structure member" error.
+
+If you declare it as
+
+        struct IntuitionBase *IntuitionBase;
+
+you can access *all* the IntuitionBase fields.
+
+Now to why:
+
+Most of the time, you don't *need* to access *any* of the fields in the
+IntuitionBase structure, so you could usually get away with declaring
+it as 'struct Library *'.  However, many compiler headers have 'extern'
+definitions (SAS/C does in all the <proto/xxx.h> files...) for the
+specific bases, as in
+
+        extern struct IntuitionBase *IntuitionBase;  <proto/intuition.h>
+        extern struct GfxBase *GfxBase;              <proto/graphics.h>
+        etc.
+
+so you get an error if you declare the actual variable in your file as
+'struct Library *', since what the compiler sees is
+
+        extern struct IntuitionBase *IntuitionBase;
+        struct Library *IntuitionBase;
+
+which obviously don't match.
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+Remember, "Euphemisms are for the differently brained."
+
+

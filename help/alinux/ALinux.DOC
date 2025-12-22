@@ -1,0 +1,927 @@
+
+                     Linux/68k for the Commodore Amiga
+
+
+                      The Complete Installation Guide
+
+                    Written by Odd-Jarle Kristoffersen
+
+
+History
+-------
+
+6th June 1995   First Release
+
+
+Introduction
+------------
+
+Welcome to the world of UN*X operating system. A powerfull OS that is
+widely used around the world for network purposes. Linux is a very
+space friendly UN*X OS that is available for a lot of different machine
+platform such as Atari, IBM PC's and Macintosh.
+
+The first releases of Linux was made for the IBM PC clones and as it
+came available to other machines the documentation didn't follow up for
+these as good as the PC documentation. This is the reason I decided to
+make a complete (well as close as possible) documentation to describe
+the basic setup and use of Linux for the Amiga.
+
+I am by no means a UN*X expert but I wanted to make it easier for the
+people new to Linux to install this system on their machines. Reading
+on is at your own risk. Please refer to the chapter about The Author.
+
+
+Index
+-----
+        History
+        Introduction
+        System Requirements
+        Getting the required Linux files
+                Where to get the Linux files
+        Testing Linux
+        Preparing files for harddrive installation
+        Preparing suitable harddrive partitions
+                AmigaDOS partition
+                Partitioning
+        Preparing fstab
+        Booting Linux for installating
+        Booting from installed harddrive
+        Failed to boot in Multi-User mode
+        Cleaning up the usr-partition
+        System overview
+                Example of Bourne Again Shell (bash) configuration files
+                The editor "vi"
+                The password file
+                Other files in /etc
+        Sources
+        Credits
+        Special thanks
+        The Author
+        Future plans
+
+
+System Requirements
+-------------------
+
+For Linux to work you will need a harddrive with at least a 22 MB
+partition. Note that you CANNOT use a AmigaDOS partition as UN*X uses
+it's own HFS (hierarcic filesystem). It's recommended that you have one
+partition for / (root) and another for /usr (additional files).
+
+The root-partition must be approx 3 MB and is the boot-partition. However
+I recommend that you leave some more space to edit and add files, and for
+logfiles. The /usr partition should be at least 19 MB, but you will need
+more if you want to install other programs such as X11 windows and editors.
+This is not much compared to NetBSD 1.0 which will require around 200MB
+for the complete installation, and around 80MB minimum.
+
+SCSI and IDE controllers are supported.
+
+My setup was on a separate 49MB SCSI drive partitioned into one 10 MB
+partition for root (/) and one 39 MB partition for additional files (/usr).
+This leaves room for installing additional software.
+
+Linux should work on all processors from the 68000 to 68040. I haven't been
+able to test this but will verify as I get to do so. My machine is an A3000
+25MHz 68030 based Amiga. I would recommend you have at least an 68030 to
+get usefull speed from the Linux OS.
+
+You will need at least 4MB of FAST memory and 1MB of CHIP memory in your
+Amiga. Again, it's strongly recommended that you have as much memory as
+possible to run Linux.
+
+Linux runs on default on a 640x400 interlaced screen, so a VGA or Multisync
+monitor would be recommended. Use of other screenmodes is currently unknown
+to me but I will do a own documentation on this when I've done research on
+it. It should possible to recompile the kernel to use other screens and
+add-on graphicboards.
+
+You will also need some free space on an AmigaDOS harddrive partition for
+the required Linux files to be unpacked onto. Temporary free space must be
+at least 25 MB. When Linux has been installed you will need under 1MB
+for the boot-files.
+
+
+Getting the required Linux files
+--------------------------------
+
+You will need some files to install Linux from. Specific for Amiga:
+
+        A bootstrap program             amiboot-1.9.gz
+        A RAMdisk image                 filesys.gz
+        A kernel                        vmlinux-0.9.3.gz        or newer
+        GZip for Amiga to unpack files
+
+GZip can be found on AmiNet. I've used version 1.23 (24.Jan 93).
+To unpack the GZip'ed files (*.gz) use the syntax:
+
+        gzip -d <filename>.gz
+
+GZip will unpack to the same directory and delete the *.gz file when done
+to save space.
+
+The bootstrap program loads the kernel file, and you have to make sure you
+get a Amigaspecific bootstrap program. Look under the "amiga-directory" of
+Linux on Linuxsites. You should always get the latest bootstrap program
+unless other is specified in the ANNOUNCE files. Version 1.9 works with
+version 0.93 of the kernel.
+
+The kernel should also be Amiga specific, and I'm using version 0.93. Newer
+version has been released (0.96 and 0.97) but I've not been able to boot
+with these yet.
+
+The RAMdisk image is a 1MB (1024k) Linux bootable RAMdisk image you will
+need to install Linux from. You will need to boot from this when installing
+Linux. It can usually be found under the "filesys-directory" on Linuxsites.
+This is not an Amiga specific file.
+
+Additional files you will need are:
+
+        A root-disk image               root.tar.gz     (~730 kB)
+        A usr-disk image                usr.tar.gz      (~5.7 MB)
+
+These are Linuxspecific binaries compressed with full paths and all
+directories needed to make a root- and usr-partition on your harddrive.
+
+
+Where to get the Linux files
+----------------------------
+
+Several Linuxsites on Internet offer these files. They are public domain,
+and there are mirrors of the mainsite that distribute them for you.
+
+The developersite for Linux is:
+
+        tsx-11.mit.edu
+
+And the directory where the 680x0 specific files can be found in is:
+
+        /pub/linux/680x0
+
+Here you will find several subdirectories with the required files.
+Archivenames mentioned above might vary. Please notes the ANNOUCE
+files found in this directory as they contain important new-release
+information as Linux is under constant development.
+
+A comprehensive list of sites and where to find these files will be made
+available.
+
+
+Testing Linux
+-------------
+
+If you just want to see how Linux performs from a mimimum RAMdisk boot you
+will not require the root.tar.gz and usr.tar.gz files. You will only need
+2 MB of free AmigaDOS space and NO harddrive partition.
+
+        Unpack the GZip'ed files
+
+                amiboot-1.9.gz          (or newer)
+                filesys.gz              (1024k image file!)
+                vmlinux-0.9.3.gz        (or newer)
+
+        in a AmigaDOS directory.
+
+        You should now have these files:
+
+                bootstrap               (amiga executable)
+                RAMdisk-image           (linux RAMdisk root)
+                vmlinux-0.9.3           (or newer versionnumber)
+
+        To test Linux by booting from the RAMdisk image:
+
+                bootstrap -k vmlinux-0.9.3 -r RAMdisk-image
+
+Linux will now take over the AmigaOS and a grey screen telling you that
+Linux is starting up should appear. After a few seconds when Linux has
+checked what hardware you are using and loaded the necessary files, a
+prompt should appear. Something like:
+
+        bash#
+
+And a flashing cursor. You can now try various UN*X commands like "ls"
+and "cd". You will not be able to perform any usefull UN*X activites
+but it will let you know that Linux DOES work on your Amiga. If running
+Linux from the RAMdisk works you can be sure it will work from a
+harddrive too. This can be usefull before getting all the Linux files
+needed for installation.
+
+To shutdown Unix and reboot your Amiga enter:
+
+        /sbin/shutdown -r now
+
+After a few seconds when Linux has updated all files it will automatically
+shutdown and reboot your Amiga. As UN*X uses it's own HFS it is VERY
+important when running from a harddrive that you use the "shutdown" command
+and preferably "sync" before too to make sure all data is saved. It is
+very easy to wreck the whole Linux OS if you don't follow this procedure.
+All data will then be lost (from the Linux partitions) and can NOT be
+restored.
+
+
+Preparing files for harddrive installation
+------------------------------------------
+
+Assuming you downloaded all the required files you are now ready to
+start installing Linux on your machine.
+
+Put all files into a directory and unzip the GZip'ed files:
+
+        gzip -d <filename>.gz
+
+You will need about 25MB of AmigaDOS space for the unziped archives.
+These should be:
+
+        filename                description                     approx size
+        -------------------------------------------------------------------
+        bootstrap               amiga executable                ~12 kB
+        RAMdisk-image           Linux filesys image             1 MB
+        vmlinux-0.9.3           or newer version for amiga      ~650-700 kB
+        root.tar                Linux / (root) image            ~2.7 MB
+        usr.tar                 Linux /usr (additiona) image    ~18 MB
+
+
+Preparing suitable harddrive partitions
+---------------------------------------
+
+You are now ready to make the required Linux harddrive partitions. Note that
+these steps must be followed CAREFULLY as one mistake might RUIN all or
+some of your AmigaDOS partitions. If you are not 100% sure how to do the
+following steps please consult help from a more experienced Amiga user or
+your Amiga reseller. Please read these steps carefully before you start.
+
+I would recommend that you put Linux on a own harddrive, but there is
+nothing wrong by having it on the same harddrive as your other AmigaDOS
+partitions. It's merely for safety when doing this for the first time.
+
+I also recommend that you use Commodores HDToolBox supplied with AmigaDOS
+2.0 or newer. Note that functions might vary slightly from those specified
+in this documentation. I am using HDToolBox v40.3, and steps will be
+described according to that versions functions. HDToolBox can be found
+in your "Tools" directory of your Workbench bootpartition or disk.
+
+If you own a GVP, WarpEngine or other SCSI/IDE-controller you will need to
+start HDToolBox from CLI with the commandline:
+
+        HDToolBox <device>
+
+Where device is:
+
+        scsi.device             Commodore internal SCSI (A3000)
+        gvpscsi.device          GVP internal/external SCSI/IDE controller
+
+or other supplied device that came with your SCSI/IDE controller. Please
+consult your SCSI/IDE controller manual for more information.
+
+You can also edit the info for HDToolBox to use it from Workbench.
+Click once on the HDToolBox icon and select Icon/Information (hotkey AMIGA-I)
+from the Workbench menu. Enter NEW item with the following line:
+
+        device=<device>
+
+as specificed above. HDToolBox uses Commodores scsi.device as default.
+The required device should be found in the DEVS: directory of your boot
+partition or disk.
+
+You should be able to use any supplied HD-partitioning software that came
+with your controller. But as it might NOT tell you all the information you
+need I recommend you use HDToolBox to be sure. Consult your manual.
+
+After starting up HDToolBox it will read all your connected SCSI/IDE drives
+and show a list of them in a window. Select the desired harddrive you want
+to install Linux on. Make a note of which drive you selected. First drive
+is listed first (DO NOT note down SCSI ID).
+
+If HDToolBox finds newly added drives or unknown drive types it will
+ask if you want to save the drive type to a lookup-table on your
+Workbench disk. Refer to the AmigaDOS manuals on more information !
+
+
+AmigaDOS partition
+------------------
+
+Later in the installation you will need to access the AmigaDOS volume
+that contains the archived Linux files (root.tar and usr.tar). Therefor
+you will need to find out what drive and partition these are located on.
+
+In HDToolBox:
+
+        - Select the harddrive that contains your AmigaDOS volumes
+
+        - Click on PARTITION DRIVE
+
+Find out which partition NUMBER (leftmost in graph = 1st partition, last
+is shown as rightmost partition in graph) you have put the archived files
+on and note down it's number and which drive number it is on. Drivenumber
+is deteremined by counting from the top and down in HDToolBox's listing
+of drives.
+
+For example you put the files in DH3:Linux/Archive. DH3: is refered
+to as the 2nd partition in the partitioning setup graph. Note that DH3
+not necessary has to refer to the 3rd partition because of the number.
+You have to check to find what drive has the name DH3 in HDToolBox's
+partitioning setup.
+
+
+Partitioning
+------------
+
+Before we can proceed we need to get some information about the desired
+harddrive you want to use. Note what drivetype and manufactor the desired
+drive has.
+
+        - Click on CHANGE DRIVE TYPE
+
+        - Select the correct drivetype from the list by clicking on it
+          and choose EDIT OLD.
+
+A list of the harddrive data will be shown. You will need tonote down how
+many BLOCKS PER CYLINDER this drive has as you will need it later.
+
+Perform this operation on all the drives you want to use for Linux. If
+you want both partitions on the same drive it will only be necessary to
+do it once. MAKE SURE YOU SELECTED THE CORRECT DRIVE. If no data is
+available on your drive select NEW instead of EDIT OLD and then
+READ DATA FROM DRIVE to obtain the correct values.
+
+DO NOT TRUST LEAFLETS that came with your drive. USE HDTOOLBOX !
+
+Exit by clicking CANCEL or OK. Refer to the AmigaDOS manuals.
+
+        - Click on PARTITION DRIVE
+
+Do NOT change ANY AMIGADOS partitions unless you are SURE you want to
+change them. Chaning the AmigaDos partitions will ERASE ALL DATA that
+was on that partition.
+
+Please refer to your AmigaDOS manuals for more specific information on
+how to use HDToolBox if in doubt!
+
+        - Click on ADVANCED OPTIONS to turn them ON
+
+Select the desired partition from the graphic view above the buttons.
+If you want to make a new partition click on NEW PARTITION and select
+a empty space to use.
+
+Adjust the size of the partition to the required amount using the arrow
+below the partition graph.
+
+        - At least 3MB for the root partition
+        - At least 19MB for the usr partition
+
+        - Click on the DEVICE NAME BOX marked "CHANGE_ME" and alter the
+          name of the partition. Avoid using existing names on other drives.
+          It is not important what this name is set to.
+
+        - Select BOOTABLE to NO (box not checked)
+
+        - Click on CHANGE FILE SYSTEM and select CUSTOM FILE SYSTEM
+
+        - Select AUTOMOUNT to NO (box not checked)
+
+        - Set FILE SYSTEM BLOCK SIZE to 512
+
+        - Enter new IDENTIFIER :
+
+                root:   0x42534452
+                usr:    0x42534453
+
+These are not important when using version 0.93 of the kernel.
+
+        - Select RESERVED BLOCK AT BEGINNING and END to 0
+
+        - Select USE CUSTOM BOOT CODE to NO (not checked box)
+
+NUMBER OF CUSTOM BOOT BLOCKS should be 0 too.
+
+Exit by clicking on OK to return to the partitioning setup.
+
+Make a note of TOTAL CYLINDERS for each partition. Also note WHICH
+partition on the drive it is. First partition is shown as the leftmost
+partition in the graph, and the last one is the most rightmost.
+
+For example if you made a new partition that is shown as the 4th
+partition from left in the graph and it contains 419 total cylinders
+note down:
+
+        root:   Drive 1, partition 4, 420 cylinders, 60 blocks per cyl.
+
+or
+
+        usr:    Drive 3, partition 1, 1600 cylinders, 49 blocks per cyl.
+
+You will need these figures later!
+
+Make another partition following the steps above until you have two
+partitions. One at least 3MB and the other at least 19 MB. Now exit the
+partitioning setup after making notes on which drive, what partition and
+how many cylinders each partition uses as described above.
+
+        - Click on OK
+
+        - Click SAVE CHANGES TO DRIVE
+
+        - Select CONTINUE if you are 100% SURE you want to save changes.
+
+        - Click on EXIT
+
+
+Preparing fstab
+---------------
+
+You are now ready to install Linux on your partitions. But first you need
+to extract one file from the "root.tar" archive and edit it's contents to
+suit your drive setup.
+
+        tar xf root.tar etc/fstab       (amigados)
+
+fstab (filesystem table) contains information on your connected harddrives
+by using the following syntax:
+
+        /dev/sdXY       /partition      filesystem      options
+
+where:
+
+        "X" is a letter for which drive ID
+                (a being first drive on controller,
+                b the second drive etc.)
+
+        "Y" is the number of the partition on that drive
+                (1 being first partition, 4 the 4th partition etc)
+
+        "partition" is the name of the partition in Linux
+                (for example / or /usr)
+
+        "filesystem" is what type of filesystem this partition has
+                (for example minix, ext2, proc, affs etc).
+
+        "options" can be bits to show if partition is read/writable etc.
+
+Each entry must be separated with at least one space and be on the same line.
+A # in from of a line means the line is commented out.
+
+Now you will need to use an editor to edit this file to fit your setup. This
+is where the information obtained during partitioning the drive is needed.
+
+If your root-partition was created on drive 1, as partition 4 this would be
+entered as:
+
+        /dev/sda4       /               minix   default
+
+And if your usr-partition was created on drive 3, as partition 1 it would be
+entered as:
+
+        /dev/sdc1       /usr            minux   default
+
+In other words the first partition on the lowest numbered drive on your
+controller is /dev/sda1.
+
+Edit the "fstab" file to your setup and comment out previous setups. Save it
+when you are done.
+
+
+Booting Linux for installating
+------------------------------
+
+Now you can start Linux using the RAMdisk-image to prepare your harddrive
+partitions and install the necessary files on them.
+
+        bootstrap -k vmlinux-0.9.3 -r RAMdisk-image
+
+                  ^^ ^^^^^^^^^^^^^ ^^ ^^^^^^^^^^^^^
+                     name of          name of ramdisk
+                     kernel to use    image file
+
+        -k option specifies kernel filename, default "vmlinux".
+        -r option specifies to use ramdisk-image as specified.
+
+When Linux has booted and the prompt has appeared on your screen you are
+ready to install the minix filesystem on your harddrive partitions.
+Before you commence you will need to calculate the size of each partition
+in 1kB blocks. AmigaDOS specifies them as 512 bytes.
+
+        size = blocks per cylinder * number of cylinders / 2
+
+Calculate using the above formula for both the root and usr partitions.
+Note down these figures and keep them with the rest in case you will
+need to change anything later or reformat any partition.
+
+Create a minix filesystem on both partitions using the following syntax:
+
+        /sbin/mkfs /dev/sdXY <size>
+
+X is the drive number and Y is the partition number on that drive. size is
+the calculated size above. For example to prepare root as in example above
+where root is on drive 1, partition 4 and has 420 cylinders with 60 blocks
+per cylinder:
+
+        size = 60 * 420 / 2 = 12600
+
+        /sbin/mkfs /dev/sda4 12600      (linux commandline)
+
+You have to be 100% sure before you perform this operation. Formatting the
+wrong drive and partition could destroy an AmigaDOS partition !
+
+For the usr partition in the example:
+
+        size = 49 * 1600 / 2 = 39200
+
+        /sbin/mkfs /dev/sdc1 39200      (linux commandline)
+
+You have now formatted the two partitions you need for installing Linux onto.
+Because of Linux's HFS filesystem you have to mount drives as directories
+under the root-directory. This is because the usr-partition is refered
+to as /usr. The fstab file tells Linux how to and where mount additional
+drives to your Linux system. This design makes it possible to mount AmigaDOS
+partitions as own directories in Linux. We will need to do so now to access
+the archives containing the required Linux root files.
+
+First we need to create a temporary directory where we will mount the correct
+AmigaDOS volume that contains the archived files.
+
+        mkdir /mnt2                             (linux commandline)
+        mount -t affs /dev/sdXY /mnt2           (linux commandline)
+
+where X is the drive number containing the AmigaDOS volume and Y is the
+number of the desired partition where the archived files reside.
+
+Now we need to mount the root partition. We will put it in the /mnt directory:
+
+        mount /dev/sdXY /mnt                    (linux commandline)
+
+where X is the drive number where your Linux root harddrive partition is, and
+Y is the number of that drives partition you created root on. This is the same
+as above where you formatted the Linux drives.
+
+Go to the Linux root directory and unpack the root-archive from your AmigaDOS
+partition:
+
+        cd /mnt                                 (linux commandline)
+        tar xvf /mnt2/path-to/root.tar          (linux commandline)
+
+For example if you put the "root.tar" archive in /Linux/Archive enter:
+
+        tar xvf /mnt2/Linux/Archive/root.tar    (linux commandline)
+
+Note that Linux is CASE SENSITIVE !
+
+To make sure everything is saved onto the disk:
+
+        sync                                    (linux commandline)
+
+Now we need to mount the usr-partition and unpack the usr.tar to it:
+
+        mount /dev/sdXY /mnt/usr                (linux commandline)
+
+where X is the drive number where your Linux usr harddrive partition is, and
+Y is the number of that drives partition you created usr on. This is the same
+as above where you formatted the Linux drives.
+
+        cd /mnt/usr                             (linux commandline)
+        tar xvf /mnt2/path-to/usr.tar           (linux commandline)
+        sync                                    (linux commandline)
+
+Now we need to put the new "fstab" in the correct directory:
+
+        cd /mnt/etc                             (linux commandline)
+        cp /mnt2/path-to/fstab .                (linux commandline)
+        sync                                    (linux commandline)
+
+We are now ready to reboot and use the harddrive partition, but first we need
+to unmount the mounted drives:
+
+        umount -a                               (linux commandline)
+        umount /mnt                             (linux commandline)
+        /sbin/shutdown -r now                   (linux commandline)
+
+Now you're Amiga will reboot AmigaDOS again. You might have to press
+CTRL-AMIGA-AMIGA manually if "shutdown" doesn't reboot after a few
+seconds.
+
+
+Booting from installed harddrive
+--------------------------------
+
+Assuming your Amiga reboots and you managed to install Linux correctly you
+can now try and boot Linux from the harddrive partition:
+
+        bootstrap -k vmlinux-0.9.3 root=/dev/sdXY
+
+where X is the drive number where your Linux root harddrive partition is, and
+Y is the number of that drives partition you created root on. This is the same
+as above where you formatted the Linux drives.
+
+If everything goes well you should be prompted with a login-prompt if
+Linux managed to boot in multi-user mode. Don't be alarmed if you do not
+get this prompt and instead a bash-prompt as when you booted with the
+ramdisk-image earlier. This only means that something in the configuration
+isn't correct.
+
+At the login-prompt you should be able to login as root without any password.
+If this is successfull accomplished you may skip the next chapter.
+
+
+Failed to boot in Multi-User mode
+---------------------------------
+
+If the login prompt doesn't show it means something in your current
+configuration is wrong. Most likely it is your "fstab" file. If you
+get the error "fchk.mkfs /dev/sdXY failed, wrong filesystem" or
+similar during Linux boot you need to edit the fstab file, or copy
+the new you made earlier from AmigaDOS. To copy the new file in:
+
+        mount -t affs /dev/sdXY /mnt2
+        cd /mnt2/path-to-fstab
+        cp fstab /etc
+
+Remember to use the correct drivenumber (X) and partition number (Y)
+for the correct AmigaDOS volume.
+
+If you wish to edit the "fstab" file you can do this in several ways.
+Currently the editor "ed" is only available after you booted. The
+documentation for "ed" is found on Internet by ftp to:
+
+        tsx-11.mit.edu   /pub/linux/packages/utils/util-linux.1.1.src.tar.gz
+
+To use "ed":
+
+        cd /etc
+        ed fstab
+
+If you don't feel confident to use "ed" you can use "cat". It can be usefull
+to first view the fstab file before editing it, to have a reference to
+the syntax of it:
+
+        cd /etc
+        more fstab
+        cat > fstab
+
+"cat" copies from the console to the file fstab. You will probably not be
+able to correct any typing errors if you make any. End with CTRL-D. Refer
+to earlier information on editing fstab to find out what to write in this
+file.
+
+
+Cleaning up the usr-partition
+-----------------------------
+
+The usr.tar archive supplied with Linux requires that you will have to
+move some files to their correct paths. In general this is done by moving
+an entire directory-tree one step up towards the root-directory. After
+your installation the contents of / would be:
+
+        /usr/usr
+        /usr/usr/bin
+        /usr/usr/lib
+        ...
+
+This is wrong, as the directory-tree should be:
+
+        /usr/bin
+        /usr/lib
+        ...
+
+To correct this you will have to move all the directories one directory up,
+EXCEPT for usr. Delete usr and mv the other files one directory up.
+MAKE SURE YOU ARE LOCATED in /usr/usr by using the "pwd" command. It prompts
+what directory you are in.
+
+        cd /usr/usr
+        command rm -rf usr
+        mv * ..
+
+Now "mv" won't move complete directories so these have to be moved one by
+one. There aren't that many. Use "ls -la" to list all files in current
+directory (works similiar to dir):
+
+        ls -la
+        mv bin ..
+        mv lib ..
+
+Continue to move files using "mv" until all the listed directories have
+been moved. Check by using "ls -la":
+
+        ls -la                  (should not list any dir's except . and ..)
+        cd /usr
+        command rm -rf usr      (delete the empty /usr/usr directory)
+
+Now Linux should be correctly installed and ready to be configured to
+suit your network setup. Check out all the files in /etc and edit them
+to suit your network. The editor "vi" should now be available, if not
+try and logout and relogin:
+
+        exit
+
+Now relogin using the login root and no password.
+
+
+System overview
+---------------
+
+Overview of directories:
+
+        /                       root directory
+        /bin                    binaries
+        /dev                    devices such as console, harddrives etc.
+        /etc                    setup files
+        /home                   directory for login users or link to it
+        /lib                    libraries for compiling and more
+        /mnt                    empty directory. can be deleted
+        /mnt2                   empty directory. can be deleted
+        /root                   login directory for root user
+        /sbin                   system binaries (only for root)
+        /usr                    harddrive partition 2 (userfiles)
+        /usr/bin                additional binaries
+        /usr/etc                additional setup (users/applications etc)
+        /usr/lib                additional libraries
+        /var                    various files (logs etc)
+
+Example of Bourne Again Shell (bash) configuration files
+--------------------------------------------------------
+
+Each user has it's own "home" directory. These are usually located in
+/home/loginname/. There are no rule for where you want the users home-
+directories but it's wise to collect them in one common place. I made
+a symbolic link called /home which points to /users. Here I make
+directories for each user of my system and edit the /etc/passwd file
+to suit this setup.
+
+By default Linux comes with bash. However you can compile csh, tcsh or
+any other shell as you like. I will here just describe some VERY basic
+functions of the bash configuration files.
+
+Files in users home-dir and /root:
+
+        .profile                executed first at login
+        .bashrc                 user-configurable bash sourcefile
+        .bash_history           log of last actions in bash
+        .bash_profile           executed first when bash is started
+
+Example .bashrc file:
+
+        #
+        # Userdefined aliases
+        #
+        # Run after .profile
+        #
+
+        alias dir='ls -la'
+        alias ren='mv'
+        alias rd='rm -rf'
+        alias del='rm'
+        alias ll='ls -l'
+        alias move='mv'
+        alias copy='cp'
+        alias md='mkdir'
+
+Bash commands:
+
+        EDITOR=editor           Set default editor (ie. vi)
+        TERM=termtype           Set default terminaltype (ie. vt100)
+        PATH=paths              Set default searchpath (ie. /bin:/sbin)
+        export VARIABLE         Let system know of change (ie. export TERM)
+        alias this='do that'    Make alias for "do that" (ie. dir='ls -la')
+
+It's recommended that you do further research on how to use the different
+shells that are available.
+
+
+The editor "vi"
+---------------
+
+vi is widely used in the UN*X communitity as it's available to most
+systems there is. Here is a quick breif userguide to vi. To find out
+more use "man vi".
+
+        Syntax:         vi filename
+
+        Commands:       :d      delete line
+
+                        :x      save and exit
+
+                        :quit!  abort edit and exit
+
+                        a       append mode, starting after current charcter
+
+                        i       enter insert mode, starting before current
+                                character on line.
+
+                        esc     enter command mode (to use :d etc)
+
+
+The password file
+-----------------
+
+Users passwords and an overview of the login accounts on the system are
+found in /etc/passwd. This file has the following syntax:
+
+        loginname:password:groupid:userid:Users Name:homedir:startup-shell
+
+Example:
+
+        root::0:0:System Maintainer:/root:/bin/bash
+
+When no password is specified there is no need to enter a password at login.
+You can use the command "passwd" in UN*X to change your current password.
+This password will of course be encrypted so no other users can view
+/etc/passwd and find out your login password.
+
+To add new users simply edit /etc/passwd and add a new line with the
+user information. DON'T FORGET to make a home-directory for this user !
+
+
+Other files in /etc
+-------------------
+
+This directory contains all the system configurations and all files should
+be made only writable by the root-user. Here's a quick overview of the
+files that can be found here:
+
+        bootptab        Information on how to start up remote machines
+        exports         Tells what NFS filesystems are available to others
+        fstab           File System Table (list of automounting drives)
+        gateways        List of available network gateways
+        group           List of available usergroups
+        host.conf
+        hosts           List of IP-to-address lookups
+        hosts.allow     Which hosts are allowed to login
+        hosts.deny      Which hosts are denied to login
+        hosts.equiv     Hosts trusted to do rsh logins
+        hosts.lpd       Hosts trusted to use local printer services
+        inet.conf       Services available from this server
+        inittab         Initiziation table for devices
+        issue           Login message (server information - see rc.local)
+        magic           Table of magicnumbers (filetypes)
+        NETCONF         System network configuration file
+        networks        List of address-to-IP lookups (if no nameserver)
+        profile         Global profile for login
+        protocols       List of protocols and functions
+        rc              Boot script, executes rc.local
+        rc.local        User-defined boot-script
+        rc.net          Network bootscript
+        resolv.conf     address-to-IP for gateway?
+        securetty       Which terminals are allowed root login??
+        services        Network services available
+        shells          List of shells and their binary-directories
+        syslog.conf     
+        termcap         List of how to handle different terminallogins
+
+
+Sources
+-------
+
+This document was made based on the following sources:
+
+        Linux PC documentation          tsx-11.mit.edu:/pub/linux
+        Amiga HowTo install textfile    tsx-11.mit.edu:/pub/linux/amiga
+        NetBSD beta installation        sun-lamp.cs.berkeley.edu
+        Linux diskimage file descriptions
+
+
+Credits
+-------
+
+        The people on the channel #Amiga on IRC (Internet Relay Chat)
+        The Commodore Amiga team for making the Amiga
+        The authors of Linux for the Amiga
+
+
+Special thanks to
+-----------------
+
+
+The Author
+----------
+
+The author will not take any responsibility for errors or fault in this
+documentation, or faults to your system(s) for using this information.
+However the author has done his best to ensure the correctness of the
+included information.
+
+Contributions to this documentation can be sent the author at the
+following addresses:
+
+        Email:          oddjk@samson.ingok.hitos.no
+
+        WWW/URL:        http://linux.ingok.hitos.no/~oddjk
+
+        Snail mail:     Odd-Jarle Kristoffersen
+                        Gammelgaardvegen 42
+                        N-9020 Tromsdalen
+                        Norway
+
+Please don't request any help from either addresses as I will not have
+time to follow up that. But you are free to report problems, updates or
+any other contribution. These will be used to make a FAQ helpguide.
+
+Feel free to report any distribution sites for Amiga Linux.
+
+
+Future plans
+------------
+
+        - How to get X11 windows to run on your Linux setup
+        - Supported hardware overview
+        - Complete FTP site list of Amiga Linux distributors
+        - Internet Online help for Linux

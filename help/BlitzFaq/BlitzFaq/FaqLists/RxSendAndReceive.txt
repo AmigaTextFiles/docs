@@ -1,0 +1,66 @@
+;Begin Arexx-Host
+;resident BlitzLibs:AmigaLibs.res
+WBStartup
+host.l=CreateMsgPort("HOST")
+If host=False Request "Host-Info","Unable to create port","OK":End
+FindScreen 0
+ShowScreen 0
+GTText 0,1,40,50,100,15,"",$16,""
+Window 0,200,300,200,150,$100e,"Arexx-Host V0.1",0,1,0
+AttachGTList 0,0
+WLocate 42,40:Print "Incoming message"
+Repeat
+VWait
+a.l=Event:ga.l=GadgetHit:rmsg.l=RexxEvent(host)
+ If IsRexxMsg(rmsg) Then Gosub handlerexx
+Until a=$200
+Free Window 0
+End
+.handlerexx
+comm$=GetRexxCommand(rmsg,1)
+GTSetAttrs 0,1,#GTTX_Text,comm$
+ReplyRexxMsg rmsg,0,0,"OK"
+Return
+;
+;
+;
+;Begin Arexx-Client
+;resident BlitzLibs:AmigaLibs.res
+WBStartup
+client.l=CreateMsgPort("CLIENT")
+If client=False Request "Client-Info","Cannot create port","OK":End
+FindScreen 0
+ShowScreen 0
+GTButton 0,1,40,10,50,15,"Mes 1",$16
+GTButton 0,2,100,10,50,15,"Mes 2",$16
+Window 0,500,300,200,50,$100e,"Arexx-Client V0.1",0,1,0
+AttachGTList 0,0
+Repeat
+VWait
+a.l=Event:ga.l=GadgetHit
+If a=$4
+EndIf
+If a=$40
+ Select ga
+  Case 1
+  cmd$="Message #1"
+  Gosub sendrexx
+  Case 2
+  cmd$="Message #2"
+  Gosub sendrexx
+ End Select
+EndIf
+Until a=$200
+End
+.sendrexx
+If FindPort_("HOST")
+ msg.l=CreateRexxMsg(client,"","HOST")
+ If msg=False Request "Client-Info","Cannot create msg.","OK":Return
+ SendRexxCommand msg,cmd$,#RXCOMM|#RXFF_STRING|#RXFF_RESULT
+ Wait:While GetMsg_(client) <> msg:Wend
+ ClearRexxMsg msg
+ DeleteRexxMsg msg
+ Return
+Else
+Request "Client-Info","Host environment not found","OK":Return
+EndIf

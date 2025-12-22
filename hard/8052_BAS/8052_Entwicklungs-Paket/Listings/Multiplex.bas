@@ -1,0 +1,44 @@
+1      REM ********************************************************
+2      REM *
+3      REM *   Programm Multiplex
+4      REM *   Die 8 Frequenzeingaenge werden
+5      REM *   durchgescannt und der gelesene
+6      REM *   Wert kann mit den Tasten 1-8
+7      REM *   ausgelesen werden.
+8      REM *
+9      REM ********************************************************
+10    XTAL=12000000
+15    X=31
+20    XBY(0C003H)=X
+30    TMOD=80
+40    TIMER1=0
+50    TIME=0 :  CLOCK 1 :  ONTIME 1,500 :  DO 
+100   ABFRAGE=GET
+110    IF ABFRAGE=0 GOTO 490
+120    IF ABFRAGE=49 THEN  PRINT E1
+130    IF ABFRAGE=50 THEN  PRINT E2
+140    IF ABFRAGE=51 THEN  PRINT E3
+150    IF ABFRAGE=52 THEN  PRINT E4
+160    IF ABFRAGE=53 THEN  PRINT E5
+170    IF ABFRAGE=54 THEN  PRINT E6
+180    IF ABFRAGE=55 THEN  PRINT E7
+190    IF ABFRAGE=56 THEN  PRINT E8
+490    WHILE TIME
+500    REM
+501   TEMP=TIMER1
+502    GOSUB 1000
+510   X=X+32
+512    IF X>255 THEN X=31
+515   XBY(0C003H)=X
+545   TIMER1=0
+550    ONTIME TIME+1,500 :  RETI 
+560    WHILE TIME
+1000   IF X=31 THEN E1=TEMP
+1010   IF X=159 THEN E2=TEMP
+1020   IF X=95 THEN E3=TEMP
+1030   IF X=223 THEN E4=TEMP
+1040   IF X=63 THEN E5=TEMP
+1050   IF X=191 THEN E6=TEMP
+1060   IF X=127 THEN E7=TEMP
+1070   IF X=255 THEN E8=TEMP
+1100   RETURN 

@@ -1,0 +1,354 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                20.Teil...
+
+Naja, das laeuft ja ganz nett vor sich hin...Haben wir fast schon eine
+Laufschrift gebaut. Was noch fehlt, ist schnell erzaehlt (Huch das Reimt
+sich) naemlich nur noch eine Routine die anstatt immer den Smile in den
+Puffer zu setzen, ein Tabelle mit Buchstaben ausliest und immer den
+Naechsten Buchstaben aus der Tabelle zieht, und in den Puffer Kopiert.
+
+Eine Endmarkierung fuer den Text muessen wir auch noch einbauen, aber das
+sollte nicht die Schwierigkeit sein.
+
+Eine Sache will ich aber noch erklaeren..Man kann den Blitter auch ueber
+den Copper steuern, da der Copper die Register des Blitters auch setzen
+kann. Allerdings muessen wir dem Copper das erlauben. Das tun wir indem wir
+das Register COPCON $DFF02E auf 1 setzen.
+Man ist dann aber bei weitem nicht so Variabel als wenn wir es vom
+Prozessor machen lassen. Ohne groesseren Aufwand koennen wir nur immer
+wiederkehrende Vorgaenge steuern. So ein Vorgang waere das Scrollen des
+Bildschirms, da es ja jeden Bildschirmaufbau geschieht. Wenn wir allerdings
+ein bisschen weiterdenken dann ist das nicht das wahre. Denn wenn die
+Laufschrift Komplexer wird, ich denke an verschiedene Geschwindigkeiten,
+oder einen Stop, dann muessten wir jedesmal die Copperliste wieder
+umschreiben. Und dieser Aufwand wuerde dann das Gesparte wieder aufheben.
+
+Also wer interresse daran hat, kann es ja mal ausprobieren aber es lohnt
+sich erst ab Komplexeren Aufgaben. Man kann sich zum Beispiel vorstellen
+das sich Copper und Blitter gegenseitg steuern. Das koennte Praktisch so
+aussehen das in der Copperliste die ganzen Blitteraufrufe eingegeben sind,
+und allerhand auf dem Bildschirm passiert. Der letzte Blitteraufruf der
+Copperliste muesste dann sein das der Blitter einfach eine neue Copperliste
+ueber die Alte schreibt...u.s.w...
+
+Viel ist denkbar..aber zurueck zu unseren Problemen..
+
+Jetzt kommt eine Sache die Klappen muss, da ihr sonst mit euren
+Laufschriften nicht viel Spass haben werdet..
+
+Jedem muesste klar sein das wir jetzt kurz vor der Laufschrift stehen, und
+desweiteren muesste auch klar sein das wir mindestens 26 Buchstaben
+brauchen um damit etwas zu schreiben. Wenn wir die aber wie beim ersten
+Blitterlisting im Source unterbringen, Gute Nacht !
+
+Das muss auch anders gehen, aber wie ?
+Ganz einfach, wir malen mit Dpaint den Kompletten Zeichensatz auf ein NTSC
+Bild, und holen uns die Daten dann da raus. Mit den Modulowerten koennen
+wir uns ja Rechteckige bereiche rausschneiden. Und in einer Tabelle
+verewigen wir die Adressen der Buchstaben, die wir dann bei bedarf als
+Quelle angeben und in den puffer setzen lassen.
+
+Ihr muesst nur halt ein 2 Farben NTSC Bild anschalten (Bei Dpaint) und dort
+macht ihr 26 rechtecke mit den maáen 16*16. Die setzt ihr dann bis zum rand
+nebeneinander, und dann fangt ihr eine Zeile tiefer an. Wichtig ist nur das
+ihr euch an die Maáe haltet, denn sonst koennte es ein wenig Bloed
+aussehen.
+Diese Plane koennen wir dann nach der Umwandlung (Konvertierung) einfach
+mit >Extern nach z.B $50000 laden, und uns die Buchstaben dort rausholen.
+
+Das Festlegen der Adressen ist auch sehr einfach. Der Erste liegt
+natuerlich bei $50000, der zweite dann bei $50002. Etwas schwierig wird es
+dann wenn wir in die naechste zeile gehen. Dort muesste der Buchstaben dann
+bei $50000 + 16*40 liegen, das ist $50280, und dann geht es wie gehabt
+weiter.
+
+Jetzt kommt noch wie wir erfahren an welcher stelle der Tabelle wir den
+Wert fuer den Buchstaben den wir darstellen wollen den nun finden ?
+
+Auch das ist kein Problem, wir nehmen einfach den ASCII wert des
+Buchstabens als Zeiger.
+
+Im Klartext. Gehen wir davon aus das die Laufschrift nur die 26 Buchstaben
+des Alphabets kennt. Davon hat das `A` den niedrigsten naemlich $41. Also
+muessten wir alle ankommenden ASCII-werte -$41 nehmen, dann haetten wir den
+Zeiger auf das Element der Tabelle das auf das Aussehen des Buchstabens
+zeigt. Mit der Methode koennten wir einfach alle Adressen der Definitionen
+in eine Tabelle setzen und das gewuenschte rausziehen, das ist doch schoen.
+
+Bei unserer Laufschrift machen wir es dann auch so. Nur das ihr vor dem
+Ersten Buchstaben noch ein ganz leeres Feld setzen muesst, da wir zumindest
+ein `Space` brauchen.
+
+Nachdem ihr jetzt wisst ist eurer Kreativitaet nichts mehr im Weg. Also
+malt was das Zeug haelt.
+
+Jetzt mal etwas zusammenfassend zum Kurs bis jetzt.
+
+So ein Kurs ist anfuersich ja eine Tolle sache. Wenn er gut geschrieben ist
+dann lernt man in kurzer Zeit sehr viel. Man beherscht dann eine Menge
+Sachen. Das einzige was man aber nicht hat, das ist erfahrung mit fehlern.
+So komisch sich das anhoert sind fehler eine Ganz wichtige sache. Denn man
+merkt sich Fehler relativ gut. Und wenn ich zum beispiel Heute eine
+komplette Laufschrift programmiere, und dort gibt es etwas was nicht tut
+wie es tun sollte, dann kann ich mich in 90% der Faelle an ein Aehnliches
+Ereigniss erinnern, und anhand dieser Erfahrung faellt es mir leichter den
+Fehler zu lokalisieren. Also das beste was man einem der mit Asembler
+anfaengt, wuenschen kann ist : Allzeit viele Fehler...
+Naja das ist Vielleicht ein bisschen uebertrieben, aber man kann es so sehen.
+Der Zweite nachteil ist, das man nicht denken lernt. Denn ich nehme euch ja
+alle denkarbeit ab. Es waere besser fuer euch wenn ich sagen wuerde, `Dann
+versucht mal eine Routine zu schreiben die das und das kann`. Aber wofuer
+mache ich dann einen Kurs, dann haette ich auch im Ersten teil schreiben
+koennen, `So Leute, dies ist ein introKurs ---- Schreibt ein intro`.
+
+Wiegesagt das nachdenken ueber die Sachen die man machen will, und wie man
+das Programmtechnisch realisieren koennte, ist es was ihr noch ueben
+muesst. Die Grundlagen fuer einen Intro Programmierer habt ihr schon, was
+ihr letztendlich daraus macht ist euch ueberlassen.
+
+Diese Worte gehoeren eigentlich an den Schluss des Kurses, aber ich denke
+das musste mal gesagt werden....!!!!
+
+So, zurueck zur Laufschrift...Hmmm, was gibt es denn da noch zu sagen.
+Nichts glaube ich..Vielleicht faellt mir beim malen oder beim programmieren
+der Laufschrift noch was ein...
+
+Execbase=       4
+Openlibrary=    -408
+Vhposr=         $dff006
+Forbid=         -30-102
+Permit=         -30-108
+Bltafwm=        $dff044
+Bltalwm=        $dff046
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltamod=        $dff064
+Bltdmod=        $dff066
+Bltapt=         $dff050
+Bltdpt=         $dff054
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltsize=        $dff058
+
+
+        Move.w  #$0020,dmacon
+        Move.w  #$4000,intena
+        Move.l  execbase,a6
+        Jsr     forbid(a6)
+
+        Move.l  #$40000,a0
+        Move.l  #$2800/4,d0
+clearloop:
+        Move.l  #0,(a0)+
+        Dbf     d0,clearloop
+
+        Bsr.l   Makecl
+
+Wait:
+        Cmpi.b  #$80,vhposr
+        Bne.s   Wait
+        Bsr.l   Scroll
+        Sub.w   #1,Lettercount
+        Bne.s   Weiter
+        Bsr.l   New_Char
+Weiter: Btst    #6,$bfe001
+        Bne     Wait
+
+        Move.l  Execbase,a6
+        Jsr     Permit(a6)
+        Lea     Gfxname(pc),a1
+        Jsr     Openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,dmacon
+        Move.w  #$c000,intena
+        Move.l  38(a6),$dff080
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $03f000,a0
+        Move.l  a0,$dff080
+
+        Move.l  #$00e00004,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$008e3081,(a0)+
+        Move.l  #$009030c1,(a0)+
+        Move.l  #$00920038,(a0)+
+        Move.l  #$009400d0,(a0)+
+        Move.l  #$01001200,(a0)+
+        Move.l  #$01080002,(a0)+
+        Move.l  #$01800000,(a0)+
+        Move.l  #$018200ff,(a0)+
+        Move.l  #$fffffffe,(a0)+
+        Rts
+
+Waitblit:
+        Btst    #6,dmaconr
+        Bne.s   Waitblit
+        Rts
+
+Set_lettEr:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,bltafwm
+        Move.w  #$ffff,bltalwm
+        Move.w  #%0000100111110000,bltcon0
+        Move.w  #38,bltamod
+        Move.w  #40,bltdmod
+        Move.l  d0,bltapt
+        Move.l  #$40028,bltdpt
+        Move.w  #16*64+1,bltsize
+        Move.w  #$10,lettercount
+        Rts
+Scroll:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,bltafwm
+        Move.w  #$ffff,bltalwm
+        Move.w  #%1111100111110000,bltcon0
+        Move.w  #0,bltamod
+        Move.w  #0,bltdmod
+        Move.l  #$40000,bltapt
+        Move.l  #$3fffe,bltdpt
+        Move.w  #16*64+21,bltsize
+        Rts
+
+New_char:
+        Clr.l   d0
+        Move.l  Textcounter,a0
+        Move.b  (a0)+,d0
+        Move.l  a0,Textcounter
+        Lea     Letterpostable,a0
+        Sub.w   #$20,d0
+        Muls    #4,d0
+        Add.l   d0,a0
+        Move.l  (a0),d0
+        Bsr.l   Set_Letter
+        Move.l  Textcounter,a0
+        Cmpi.b  #$-1,(a0)
+        Beq.s   Meu
+        Rts
+Neu:
+        Move.l  #Text,Textcounter
+        Rts
+
+Lettercount: dc.w 1
+Textcounter: dc.l text
+
+text: dc.b "JEFF KANDLE IS SPEAKING      ",$ff
+
+Letterpostable:
+dc.l $50000                             ; Space
+blk.l $20,0                             ; Platzhalter fuer die Differenz
+                                        ; Zwischen Ascii Space und A
+
+
+dc.l $50002,$50004,$50006,$50008,$5000a,$5000c,$5000e,$50010,$50012
+dc.l $50014,$50016,$50018,$5001a,$5001c,$5001e,$50020,$50022,$50024
+dc.l $50026,$50280,$50282,$50284,$50286,$50288,$5028a,$5028c
+
+Gfxname:        dc.b "graphics.library",0
+
+>Extern "Name des Fonts",$50000
+
+Wenn ihr den Zeichensatz woanders hinlegen wollt muesst ihr natuerlich auch
+die `Letterpostable` aendern.
+
+Wollen wir uns mal die Routine New_Char mal genauer Schritt fuer Schritt
+reinziehen.
+
+New_char:
+
+        Clr.l   d0
+
+D0, wird komplett geloescht, weil wir, wenn wir weiter an der laufschrift
+arbeiten, D0 bestimmt noch oefter brauchen werden, ind deshalb noch reste
+drinstehen koennten.
+
+        Move.l  Textcounter,a0
+
+Der Zeiger auf das Aktuelle Element im text wir nach A0 geholt.
+
+        Move.b  (a0)+,d0
+
+Das Aktuelle Zeichen wird nach D0 geMoved. Gleichzeitg wird durch die
+Postinkrementale Adressierung der Zeiger auf das naechste Element gesetzt.
+
+        Move.l  a0,Textcounter
+
+Der erhoehte Zeiger wird wieder zurueckgeschrieben..
+
+        Lea     Letterpostable,a0
+
+Zeiger auf die Letterpostable wird nach A0 geholt.
+
+        Sub.w   #$20,d0
+
+Von dem ASCII wert des Zeichens in D0 wird das kleinste moegliche zeichen
+abgezogen, damit wir in der tabelle beim Kleinsten Zeichen anfangen
+koennen.
+
+        Muls    #4,d0
+
+Da die Adressen der tabelle Langworte sind, wird der wert Mal 4 genommen.
+
+        Add.l   d0,a0
+
+Jetzt wird die Adresse des zeichens in der tabelle, zu der Grundadresse der
+tabelle dazuaddiert. in a0 steht jetzt der Zeiger auf den Zeiger der fuer
+den Buchstaben noetig ist.
+
+        Move.l  (a0),d0
+
+Jetzt wird die Adresse nach d0 geholt,
+
+        Bsr.l   Set_Letter
+
+und die Buchstabensetzroutine aufgerufen
+
+        Move.l  Textcounter,a0
+
+Erneut wird der Zeiger auf das Element im Text geholt..
+
+        Cmpi.b  #$-1,(a0)
+
+Und auf die Endmarkierung ueberprueft.
+
+        Beq.s   Neu
+
+Falls sie es ist, neuinitialisierung des Textcounters
+
+        Rts
+
+Falls nicht -> Rueckkehr in die Endlos schleife
+
+Neu:
+        Move.l  #Text,Textcounter
+
+In den Textcounter wird die Adresse des Textes geschrieben, beim Naechsten
+durchlauf faengt der text dann von Vorne an.
+
+        Rts
+
+Und zurueck !
+
+
+So, das war doch nicht so schwer oder. Es gibt natuerlich auch andere
+methoden eine Laufschrift zu machen, ich spach es schon an, aber wir haben
+den Blitter und benutzen ihn auch..
+
+Seht euch die Erklaerung zur New_Char Routine gut an. Ihr koennt lernen wie
+man eine Bestimmte sache programmmaessig auf die Beine stellt.
+Man muss bei solchen Sachen das gehirn ein bisschen unterfordern, und
+Schritt fuer Schritt denken, Halt wie ein Prozessor "Denkt", dann ist es
+relativ einfach sowas zu basteln.
+
+Wie waere es denn wenn ihr mal die Effekte die ihr jetzt koennt mit der
+Laufschrift kombiniert. Zum Beispiel den Wasser Effekt..Das saehe doch
+bestimmt stark aus.
+
+Achja, wer das mit dem Malen des Zeichensatzes nicht hinkriegt der
+schreibe mir einen kurzen Brief, und ich werde ihm meinen zukommen lassen.
+
+Ari Viderci
+
+                Jeff Kandle

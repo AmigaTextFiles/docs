@@ -1,0 +1,62 @@
+;----------------------------------------------------------------------------
+;----------------------------------------------------------------------------
+;This is an documentation about how to write patch code for special games
+;----------------------------------------------------------------------------
+;----------------------------------------------------------------------------
+
+   How to use these SGT files? Well,  its  very  simple.  MCControl  calls
+   these  file twice! The first time its for the init process and a second
+   time for the final update.
+
+   Note: The command will be reloaded, so saving data within the command
+   is useless.
+
+   Example:
+
+   Your save game stores the lives multiplied by 6:
+
+   Mode_Pre:  Divide the lives by 6 and write result into the PSX file.
+   Mode_Post: Multiply the value given by the gadgets by 6 and write the
+              result into the given PSX file.
+
+   If you need room for storage then feel free to use up  to  16384  Bytes
+   behind  the  given PSX file. (see Pitfall3D, where the offset 10000 and
+   up is used for data storage)
+
+;----------------------------------------------------------------------------
+ *General*
+
+        RSRESET
+SGTF_RTS                   rs.w 1 ;to avoid crash when user is starting module
+SGTF_Version               rs.w 1 ;Currently 0
+SGTF_ID                    rs.l 1 ;must be "SGTF"
+
+   In Assembler this looks like this:
+
+   RTS
+   dc.w 0
+   dc.l "SGTF"
+
+   Your routine is placed direct behind this header  using  the  following
+   arguments:
+
+   >a0.l Pointer on PSX File
+   >d0.l Mode
+
+   a0 points on the PSX file memory buffer. Its allowed to use up to 16384
+   bytes  after  the real PSX file.
+
+   Where mode (d0) specifies:
+
+   SGTF_Mode_Pre  = 0
+   SGTF_Mode_Post = 1
+
+   The SGTF_Mode_Pre mode is used before opening the window,  so  you  can
+   setup  the  gadget  values!  The  mode  SGTF_Mode_Post  is  used  after
+   processing the gadget commands and before the checksum command.
+
+
+
+
+
+

@@ -1,0 +1,1415 @@
+CD-ROM FAQ 3.5.1 (31.12.95)
+===========================
+
+Table of Contents:
+==================
+   0. Preface
+>  1. Technical info
+      1.1 Layers of a CD
+      1.2 Dataformat
+      1.3 Filing systems
+>     1.4 The future of the CD
+   2. The Interface
+      2.1 SCSI
+>     2.2 AT-Bus
+>     2.3 (E)IDE
+      2.4 PCMCIA adaptors
+>  3. Hardware:
+>     3.1 Single, double, triple, quad-speed and beyond
+>     3.2 List of CD-ROM drives
+>     3.3 CD-Changer
+>     3.4 CD-Recordable
+   4. Caddy or drawer
+   5. Problems
+      5.1.1 A3000 Western Digital 00-04 PROTO chip
+      5.1.2 A3000 V36 Bootroms, A209x FIRMWARE
+      5.1.3 External SCSI
+      5.2.1 A4000 internal drive bay
+      5.2.2 A4000 (E)IDE-Controller
+      5.3.1 Synchronous transfer
+>  6. CD-ROM filesystems
+>     6.1 Filesystems
+>     6.2 Utilities
+   7. Combinations of computer/controller/CD-ROM-drive
+   8. Audio
+      8.1 Amiga-audio and CD-AUDIO
+>     8.2 Digital audio
+   9. PhotoCD
+  10. Installation hints
+      10.1 SCSI
+      10.2 AT-Bus/IDE
+      10.3 Utilities
+  11. CDs for other plattforms
+      11.1 Magazines
+>     11.2 Special PC-CDs
+      11.3 PC emulations
+>     11.4 Macintosh emulations
+>     11.5 Data formats
+      11.6 MPEG, FULL Motion Video
+  12. CD32-games
+> 13. CD+G
+> 14. Misc
+>     14.1 CD-Write
+>     14.2 Access CDs in a BBS
+>  A. Glossar
+>  B. Legal Stuff
+   C. Extensions and corrections
+>  D. How to get it
+-----
+> := new since release 2.0
+
+
+0. Preface
+==========
+This FAQ differs a little from the normal FAQs with questions and
+answers. But before you read on, please consider answering the
+following questions:
+
+        · What amiga and what equipment do you own?
+        · How much money can you spend for a CD-ROM drive?
+        · What is it you expect from the drive?
+        · What future equipment will you buy?
+
+If you answer those questions you will see which chapter to read.
+If you compare prices, please note that you'll need a seperate housing
+for an external drive, that you'll need a driver and sometimes you
+don't have the right controller. Check the advertisements for the best
+>complete< offer, not for the cheapest drive. And be carefull: if you
+buy a drive at your local pc-dealer and the drive doesn't work with
+your amiga but does with a pc, no one will take it back and reward you
+the money. Buy at a specialist, an amiga dealer.
+
+There is no such thing as THE CD-ROM, accessing data on the little,
+shining disk is a complex together of several components.
+
+Chapter (1,11,12,13)   (3,4)       (2)
+
+        +----------+ +-------+ +-----------+
+        |  CD-ROM  |-| Drive |-| Interface |----+
+        +----------+ +-------+ +-----------+    |
+                                                |
+        +---------------------------------------+
+        |
+        |       +------------+ +--------+ +--------+ +----------+
+        +-------| Controller |-| Device |-| Driver |-| Software |
+                +------------+ +--------+ +--------+ +----------+
+
+Chapter             (5,7)                     (6)      (8,9,10)
+
+
+1. Technical info
+=================
+1.1 Layers of a CD
+------------------
+This 1.2mm thick polycarbon-disk is produced using a spray-print-
+technique and a negative matrix. A CVD process is used to apply the
+reflecting 100Å (0.1µm) aluminum layer. To protect this layer from
+scrating and altering by mistake 5-10µm of protective coat is applied.
+On top of this the disk description and labeling is done with
+conventional printing technique.
+
+
+          ###### #### ## ##   ### ####          Description, Label
+        --------------------------------        protective coat
+        ================================        reflecting aluminium layer
+        ································        information dots
+        ||||||||||||||||||||||||||||||||
+        ||||||||||||||||||||||||||||||||        polycarbon-carrier
+        ||||||||||||||||||||||||||||||||
+        ||||||||||||||||||||||||||||||||
+        ||||||||||||||||||||||||||||||||
+
+
+What does this mean:
+· The CD is scanned from the down-side not from the top like a
+  conventional music album (LP). Scratches, holes or other damage on
+  the polycarbon-carrier will probably prevent the laser from reading
+  the information. Some scratches can be eliminated using a special
+  polish-kit for CDs.
+
+· The information layer is only protected by the thin reflecting aluminium
+  and the protective coat. Deep scatches will destroy the information dots
+  immediatly.
+
+· Do not use any kinds of pens that are labeled "permanent" or "waterproof"
+  for custom labeling the disk. These pens may damage the coat layer and
+  then the reflecting layer.
+
+
+1.2 Data format
+---------------
+The data on a CD is stored on a track winding from the inside to the
+outside of the disk. This makes it possible to have disks with different
+dimensions as the 8cm single-CD, the normal CD and the 23cm LaserDisk for
+video. The holes in the surface are called "pit" and represent a "1" opposed
+to the "land" which reprsents the "0". Pits and land cover a great deal of
+the synchronisation and therefore the data can not be stored as in the
+digital memory of the computer, but is transformed (like MFM or RLL on
+harddisks) into a code know as 8-to-14-modulation or EFM. This means 8 bits
+are coded to 14 bits on the cd track.
+
+The first dataformat is caled a "short frame" and converts 24 bytes:
+
+Name:   Sync    control data    Data    Parity  Data    Parity
+-------------------------------------------------------------------
+Bit:    24      14              12×14   4×14    12×14   4×14
+
+The error correction is done by parity bits and is called CIRC (Cross-
+Interleaved-Reed-Solomon-Code). An audio CD player rreads 7350 of this
+short frames in a second which results in 1764000 bytes for two (stereo)
+channels with 44100Hz each. This is defined in the first book: "The Red
+Book". On a CD-ROM 98 of this short frames are grouped togehther as a "long
+frame" with 2352 bytes of data according to the first CD-ROM book: "The
+Yellow Book".
+
+Name:   Sync    Header                  Data
+                Sektor-Address  Mode
+------------------------------------------------
+Bytes:  12      3               1       2336
+
+The mode byte now defines how to interpred the following data:
+
+Mode-1:
+-------
+Name:   Data    EDC     free    ECC             ECC
+                                P-Parity        Q-Parity
+--------------------------------------------------------------
+Bytes:  2048    4       8       172             104
+
+Mode-2/Form-1:
+--------------
+Name:   Subheader       Data    EDC     ECC             ECC
+                                        P-Parity        Q-Parity
+----------------------------------------------------------------------
+Bytes:  8               2048    4       172             104
+
+Mode-2/Form-2:
+--------------
+Name:   Subheader       Data    EDC
+--------------------------------------------
+Bytes:  8               2324    4
+
+EDC = Error Detection Code
+ECC = Error Correction Code RSPC (Reed Solomon Product-like Code)
+
+Mode-2/Form-1 does not differ from Mode-1, but it is illegal to switch
+between modes on a track, so Mode-2/From-1 is defined to "emulate" Mode-1.
+This is because the new XA-standard holds important program data in error
+corrected M2/F1 (aka M!) frames, but the unimportant audio/video data is
+kept in the "longer" M2/F2 frames. This offers more space for the AV data
+without sacrifieing the security of program data.
+
+Each short frame hold 14 control bits called P to W. Since every
+long frame hold 98 P bits (and 98 Q bits, and 98 R bits ...) this bits are
+grouped together and they form the subchannels:
+· P - start of a track
+· Q - directory, timecodes, catalognumbers
+
+Subchannels R to W are currently free, but used on a CD+G for storing of
+graphical data or on a CD+MIDI for the MIDI data.
+
+On the data sheets of your CD-ROM you may find data transfer rates in
+Mode 1 and Mode 2. This is not a mode of your SCSI or IDE bus but is the
+above data mode. You will see e.g. 150kb/s for Mode 1 (or M2F1) and
+176kb/s for Mode 2 (M2F2). And since M2F1 holds this ~26kBytes of
+additional ECC data, these data rates are identical!
+
+
+1.3 Filesystem
+--------------
+The data format of the CD is equal for all CDs. But what really matters is
+the filing system, that keeps togehter the files and programs on a CD-ROM.
+
+There are proprietary formats such as the MacHPFs which is equal to the
+one used on Macintosh' harddisks. But the rest of the world uses the
+High-Sierra (named after the Hotel where the convetion of the developers
+took place) or its successor the ISO 9660 formats for storing the data. Be
+aware, that there is really no operating system, that internaly uses a
+ISO 9660 filing system. All OS therfor must use a driver to convert the
+ISO information on the files to native OS filing informations. ISO 9660
+is known to be a "least common" filing system and nearly all other
+operating systems store more info for there files than ISO can offer them.
+
+So the history of the CD filing system is as folows:
+
+High Sierra - (only MS-DOS kompatibel characters and file identifiers 8+3,
+               limited directory tree)
+ISO 9660 Level 1 - same as High Sierra with marginal changes.
+ISO 9660 Level 2 - filenames can hld 31 characters¹.
+
+Since al of the user/group and status bit information is gone under ISO,
+the RockRidge interchange protocoll RRIP standrad expands fully transparent
+to Level 1 the filing informations. A driver that is RRIP unaware will not
+see the additonal information, but a drivers which does see the RRIP, can
+display lots of more information on the files and go near the OS file
+system. This includes mixed case, gokal names, status bits, corrected
+directory tree etc.
+
+¹On early amiga specific CD-ROMs some developers have tried to
+rebuild the AmigaFS. These disks are no real ISO9660L2 disks and useless
+on other than Amiga systems. This applies for older CDTV titles.
+
+
+1.4 The future of the CD
+------------------------
+not yet :-(
+
+
+2. The interface
+================
+2.1 SCSI
+--------
+For anyone who already owns a SCSI-controller(A3000(T), A4000T) there
+is one choice: buy a SCSI CD-ROM drive. Connecting it is as simply as
+connecting a harddisk.
+
+And you will get a marvelous piece of hardware that can be conneted
+to any other known computersystem even if it's  not labelled "Int*l
+*ns*d*".
+
+If tranfer for digital audio data over the interface is a must for you,
+there  is no other choice. Only two brand new IDE-drives offer this
+feature, but there are no drivers available for the Amiga and those
+drives.
+
+
+2.2 AT-Bus
+----------
+Well, IDE-style CD-ROM drives, often called "AT-Bus"-drives seem to be
+much cheaper, but you have to pay extra for a special controller or
+interface/software for the build in controller (for the A600, A1200,
+A4000 internal IDE-controller).
+
+Why a special controller, they are IDE, aren't they?
+
+IDE or AT-Bus-style drive are not fully IDE as hard disks. There were
+three differnt connection standards for such drives named after the
+companies that invented them¹:
+
+        · Mitsumi
+        · Sony
+        · Panasonic
+
+For a PC every drive comes with a tiny special custom controler or it
+uses the connector on a soundcard (that's why the card come with four
+(4!) different CD-ROM drive connectors in these days!) None of these
+drives are able to directly run on an existing Amiga IDE-controller.
+
+Since the Mitsumi is the closed fit to real IDE-interface, there are
+two known adapters: the bsc tandem (for Mitsumi interface and IDE/ATAPI
+drives, but it also hosts up to 2 real IDE hard disks) and the
+CD-ROM-Kit, with adapts the internal Amiga IDE-interface (or the
+Access!-IDE-adaptor for A2000 by the same manufacturer) to Mitsumi-style
+connectors. I do not know any kind of hardware to use Sony- or Panasonic-
+style drives!
+
+But remember that you have to pay extra for the special controller, so
+a real SCSI or IDE/ATAPI may come cheaper than a combination of AT-Bus
+drive and controller.
+
+¹in the meantime all proprietery interfaces have been abandoned and
+were replaced with the EIDE/ATAPI interface.
+
+
+2.3 (E)IDE
+----------
+In the last month all mayor manufactures have shown new drives labeled
+EIDE (e.g. the new Mitsumi FX300/FX400). But... these drives finally are
+true IDE-Drives, and though they run best with EIDE-controllers they will
+submit to normal IDE-controllers. So you noticed it, their is a little
+shift in terms: IDE for CD-ROM drives is not IDE for hard disks but
+some proprietery standrad. EIDE for hard disks is not the same for
+CD-ROM drives, it's IDE with the new ATAPI definition (which of course
+is part of EIDE!) for other than hard disk media.
+
+You may smile and try to connect a EIDE-style CD-ROM drive to an existing
+IDE-controller... it will fail. Any controller for the Amiga is just
+for hard disks, not for CD-ROMs. This is mainly a software problem, since
+all interfaces and their drives are not awre of devices other than
+harddisks on the IDE bus.
+
+So you can connect a IDE/ATAPI drive directly to the A4000, but you'll
+need a patch of the internal "scsi.device" for that. Some special software
+devices that patch scsi.device or replace it totally. So you may not need
+a hardware-interface but a special kind of driver! Ask the manufacturer
+of your IDE adaptor for a new software that allows a IDE/ATAPI drive on
+the bus.
+
+If you have an A600/A1200/A4000 your choice should be the CD-ROM-Kit,
+so you don't have to sacrifice another valuable Zorro-slot for the
+controller. For owners of a A2000 with no SCSI-Controller the tandem
+seems the best choice... if you can't find a working IDE-solution for
+your controller.
+
+If you connect a CD-ROM to your intrenal IDE bus, you must take care of
+some things: The CD-ROM drive must be set to act as a SLAVE on the bus
+and interrupt generation may not be disabled. The harddrive must be set
+to act as a MASTER. If you have a drive with a combined setting for
+SINGLE or MASTER operation, leave it that way, if not, rejumper it
+from SINGLE to MASTER operation.
+
+ Computer        Device                  Vendor                  Type
+ ------------------------------------------------------------------------
+ A4000
+ Access          SpeedCD                 VOB                     commerz.
+ Tandem          ad_atapi.device         AlfaData/Oliver Kastl   commerz.
+ A600
+ A1200
+ A4000(T)        atapi.device            Oliver Kastl            PD
+ A4000           atapi.device            Georg Campana           PD
+
+VOB offers besides the old kit for the the use of 2 HDs and one
+Mitsumi-style CD-ROM a new kit caled Multi AT/IDE which allows the
+connection of 4 HDs and one ATAPI CD-ROM.
+
+Oliver Kastls atapi.device also supports upto 4 devices on the internal
+IDE with a special adaptor.
+
+
+
+2.4 PCMCIA adaptors
+-------------------
+For the A600/A1200 with PCMCIA-slots there are several offers for external
+drives with adaptors that uses this slot. If it's cheap enough for you, go
+get it. PCMCIA is one of the least used slots anyway, so a good choice for
+the CD-ROM drive. If you choose a triple or quad-speed drive it will be a
+real IDE/ATAPI drive on a real IDE controller. This often will allow the
+connection of some harddrives, too. All these controllers come with special
+software/drivers so you do not need to fear any incompatability.
+
+ Computer       Adaptor         CD-ROM-adaptor
+ ------------------------------------------------------------------------
+ A1000/A500     SCSI            SCSI
+                AT              ???
+ A2000          SCSI            SCSI
+                AT              SCSI incl. SCSI controller
+                                Tandem
+                                CD-ROM-Kit for Access!-controller
+ A3000(T)       SCSI            SCSI
+ A600/A1200     AT              CD-ROM-Kit, Multi AT/IDE
+                                PCMCIA (Overdrive-CD, tandem, Squirrel)
+ A4000          AT              CD-ROM-Kit, Multi AT/IDE
+                                Tandem
+                                Speed-Up System
+ A4000T         SCSI            SCSI
+
+ Controller     HDs     CD-ROM drives
+ --------------------------------------------------------------------
+ SCSI           yes     with SCSI
+ Tandem         yes     Mitsumi LU005S, FX001S/D, FX300(FX400
+ CD-ROM-Kit     yes     Mitsumi FX-, FQ-Series
+ Multi AT/IDE   yes     IDE/ATAPI CD-ROMs
+ Squirrel       yes     with SCSI
+ Overdrive-CD           Mitsumi(?)
+
+
+3. Hardware
+===========
+3.1 single, double, triple, quad-speed and beyond
+-------------------------------------------------
+Compact Disk Digital Audio (CDDA) is transmitted with 44100Hz on 2 channels
+using 16Bits each. So this comes down to 44100Hz * 2channels * 2Bytes and
+gives us a 172KB/sec transfer rate. On audio there can be some drop outs,
+but for digital information on CDs, a flipped bit is deadly. So some error
+correction codes (ECC) drop the rate for CDROM to 150KB/sec. That's what
+they call "single". "Double" than is 300KB/sec, "Triple" is 450KB/sec
+and "Quad" or "Quadro" is 600KB/sec. There are also drives that transmit a
+little bit more: 2.4times (Sony), 3.5times (Toshiba), 4.4 times (Sony) or
+even 6.7times (Toshiba).
+
+Double is a must. You won't get decent rates on playing animations or
+videos from a single speed drive. And there are no single speed drive
+anymore. So Double and triple were state-of-the-art in 1994, in 1995
+quad-speed and hex-speed were a good choice, oct-speed drives are in the
+making and will see the light in 1996. So look what you have to spend on
+the drive and get the best you can afford. More than oct-speed probaply
+wont happen, since technology moves on and  should offers us new double-
+layered, doubelsided CDs with more than 10 gigabytes in 1996. These disks
+will use a differnt style of laser and electronic and you won't be able
+to read those on todays drives anyway.
+
+You may also see in some program manuals the term "sustained transfer rate".
+If you require a STR of 300kb/s a double speed CD-ROM is not a real good
+choice. 300kb/s is the all time maximum transfer rate of such a drive and
+since there is a little overhead of your OS or driver you may never get
+300kb/s out of a double-speed CD-ROM. For this reason you should buy a triple
+or better drive. Some manufactures offer drives with 2.2, 3.4 or 4.4times
+speed. these drives are able to compensate for the OS/driver overhaed and
+give you the STR you need without buying a drive of a higher class.
+To read a CD-I (which in my opionion is not a theme on the Amiga) your
+drive must be able to spin as a double, but most of the drives only support
+single (for audio playback) and the maximum spin rate. So watch it if CD-I
+is a point for you.
+
+And consider another fact: For the Amiga the CD is merely a software
+archive. No company has released software that needs the CD-ROM drive
+for a large database or such. (not talking about games, remember!) So
+quad-speed will do the job for you.
+
+
+3.2 List of CD-ROM drives
+-------------------------
+ Vendor/Typ             Interf. Speed   Cache   Mech.   Mount   Audio   DA      MS  CDG PCD VCD CDI CDA
+                                        [KB]            h/v     [/mm]
+ -------------------------------------------------------------------------------------------------------
+ Mitsumi LU005          Mitsumi 1               Drawer  h               no      -
+         FX001S         Mitsumi 1               Drawer  h               no      -
+         FX001D         Mitsumi 2               Drawer  h               no      -
+         FX300          EIDE    3               Drawer  h               no      *
+         FX400          EIDE    4       128     Drawer  h       MPC     no      *           *
+ Toshiba XM4101B        SCSI-2  2       64      Drawer  h/v     LGGR    yes     *   *   *   *   *   *
+         XM3301B        SCSI    1               Caddy   h/v             yes     -   -   -   -   -   *
+         XM3401B        SCSI-2  2       256     Caddy   h/v             yes     *   *   *   *   *   *
+         XM5201B        SCSI-2  3.4     64      Drawer  h       GRL/2   yes     *   *   *   *   -   *
+         XM5301B²       SCSI-2  2/4     256     Drawer  h       GRL/2   yes     *   *   *   *   *   *
+         XM5302B²       EIDE    2/4     256     Drawer  (h/v)   GRL/2   yes     *   *   *   *   *   -
+         XM3501B        SCSI-2  4       256     Caddy   h/v     RGL     yes     *   *   *   *   *   *
+         XM3601B        SCSI-2  4.4     256     Drawer  h       RGL     yes     *   *   *   *   *   *
+         XM3701B        SCSI-2  7.4     256     Drawer  h/v     GRL     yes     *   *   *   *   -   *
+ NEC 2X                 SCSI    2               Drawer  h       LGR     yes
+     2Xc²               SCSI-2  2               7 Changer               yes
+     3X                 SCSI    3               Caddy   h/v     LGR     yes
+     3Xp                SCSI-2  3.3             Top     h/v             yes
+     4X²                SCSI-2  2/4             Caddy   h/v     RGGL    yes
+     CDR-273            EIDE    4                                       no
+     CDR-512            SCSI-2  6
+     6Xi                SCSI-2  6
+     CDR-727            EIDE    4                                       no
+ Apple CD-150           SCSI-1  1               Caddy   h/v
+       PowerCD          SCSI-1  1               Top     h/v
+       CD-300           SCSI-2  2               Caddy   h/v             yes
+       CD-300e PLUS²    SCSI-2  2               Caddy   h/v     RGGL    yes
+       CD-600           SCSI-2  4               Caddy   h/v
+ Sony CDU 561           SCSI-2  2               Caddy   h/v             yes
+      CDU-8002          SCSI    ?               ?                       yes
+      CDU-8003A         ?       ?               ?                       yes
+      CDU-55S²          SCSI-2  2/2.4           Drawer  h       RGGL    yes
+      CDU-77E           EIDE    4               Drawer  h               no
+      CDU-76S           SCSI-2  4       256     Drawer  (h/v)   RGGL    (yes)
+      CDU-76E           EIDE    4       128     Drawer  (h/v)   MPC     (yes)
+ Sanyo CDR 254S         SCSI-2  4               Drawer
+       CDR 254          EIDE    4               Drawer          no
+ IBM CDRM00101          SCSI-1  1               Caddy   h/v             yes
+ Panasonic CR-503B      SCSI-2  2               Drawer  h       GLGR    (yes)
+           CR-504B      SCSI-2  4       256     Drawer  h       -       no
+           CR-581B      EIDE    4       128     Drawer  (h/v)   MPC     yes
+           PD System    SCSI-2  4       256     Drawer  h       MPC     no
+ Hitachi CDR-6550²      SCSI-2  2               Drawer  h       GRL
+         CDR-6750²      SCSI-2  2               Caddy   h/v     GRL     yes
+         CDR-1950       SCSI    ?               ?                       yes
+ Pioneer DR-U104x       SCSI-2  4               Caddy   h/v             yes
+         DR-U124X       SCSI-2  4.4     128     Drawer  h       MPC     (yes)
+         DR-UA124X      EIDE    4                                       no
+         DRM602X        SCSI-2  2               6 Changer
+         DRM604X        SCSI-2  4               6 Changer
+         DRM624X        SCSI-2  4.4             6 Changer
+ Texel 3024/5024        SCSI    ?               ?                       yes
+ Nakamishi MBR-7²³      SCSI-2  2               7 Changer               yes
+ Chinon CDS-525S²       SCSI-2  2               Drawer  h       RGGL
+        CDS-535²        SCSI-2  2               Caddy   h/v     RGL
+        CDS-545i        EIDE    4       128     Drawer  h       MPC     no
+ Plextor PX 43 CS       SCSI-2  4               Caddy   h/v     RGGL
+         PX 63 XCS      SCSI-2  6       256     Caddy   h/v     MPC     (yes)
+         PX 43 CS+      SCSI-2  4.5             Caddy   h/v     MPC     (yes)
+         PX-4XCE        SCSI-2  4       256     Caddy   h/v
+ Teac CD 56E            EIDE    6       128     Drawer  h       MPC     yes
+      CD-55A            EIDE    4                                       no
+      CD-55E            EIDE    4                                       no
+ Wearness CDD-120       EIDE    2
+ Philips PCA42CR        EIDE    4       128     Drawer  h       MPC     no
+ GoldStar R520B         EIDE    2                                       no
+          R542B         EIDE    4                                       no
+          R320B         SCSI    2
+ Optics Stingray 8422   EIDE    8       256     Drawer  h       LGGR    no
+        Stingray 8322   EIDE    6       256     Drawer  h       LGGR    no
+ Lion Optics XC-600EI   EIDE    6       256     Drawer  h       LGGR    no
+             XC-400EI   EIDE    4       256     Drawer  h       LGGR    no
+ Vertos 400ETD          EIDE    4       128     Drawer  h       MPC     no
+
+-----
+¹all drives are able to spin single for audio playback
+²CD-I compatible, spins double
+³Needs a new WD00-08 SCSI controller chip if operated in an A3000
+*out of production
+
+
+3.3 CD-Changer
+--------------
+A CD changer acts just like a normal cd-rom drive. The only difference is
+the additional changing mechanism. As of this writing a know only one IDE
+3disk changer but i do not have any further information on it. So the
+following will apply to SCSI disk changers only!
+
+To access a disk tehre are two ways: first you can issue a special diskchange
+command via the scsi-bus, or - if the drive supports it - the disk are
+accessed via LUNs. AsimWare supports the mounting of all disks within a
+changer and you see all CDs as icons on your Workbench. If you open one,
+this disks becomes active.
+
+The special diskcahnge command is a rare used method, LUNs are the better
+choice, but a lot of Amiga SCSI-controllers support the LUNs rather badly
+or not at all. So, befor you choose a disk changer as your drive, be sure
+your SCSI controller supports LUNs. Commodore adapter of the Ax091 series
+do, also the Octagon, but the Fastlane Z3 does not.
+
+
+3.4 CD-Recordable
+-----------------
+A CD recorder first acts as a normal (quad-speed) CD-ROM drive. Only with
+special software it will write empty golden or green colored CDR disks.
+CD recorder currently come only with a SCSI interface and the onyl software,
+that supports writing a CD is AsimWares MasterISO. (Do not fall for the
+NGMaster PD software on several boards, thats a pirate copy of an older
+MasterISO!) A real demo of the new program is on aminet and you can first
+check, if the CD recorder you are about to buy is supported by the software.
+
+Also an issue is the hadrdiskspace you need for the writer. CDrs are not
+useable as a removeable! Considerartions of bandwidth and sustained data
+transfer rates often force you to generate an "image" of the CD you are
+going to burn. (The CD recorder is not abble to cache the incomming data
+long enough to deliever a continous data stream to the writing mechanism,
+but a CDR can not be written in little peaces, but a session must be written
+in one cycle. If the harddisk filesystem can not deliver the data as fast
+as needed, the recorder will terminate the session or the whole CD. Therefor
+you will also need at least a 68030/25 and a good SCSI controller in your
+Amiga!
+
+This file is build from the sources you enter, but to arrange a well done
+CD you must at least have a harddisk, that can be used as a pseudo CD. So
+in a worst case scenario you will need two time 700MB for arranging the CD
+and generating the write image. You can do with less space, but the written
+CDs are surely no product for mass market production.
+
+
+ Vendor/Type            Write-  Read-Speed
+ ----------------------------------------------
+ Plasmon CDR F4102      2       4
+         PD2000i        2       4
+ Yamaha CDR-100         2       4
+ JVC XRW2001            2       4
+ Philips CDD20000       2       4
+
+
+
+4. Caddy or drawer
+==================
+Caddies and drawers come from two different points of the market:
+A disk is very well protected in a caddy. and the mechanics of the
+drive is more complicated. Theses drives are mainly for the
+professional market; they have more expensive disks (US-$1000 or
+more) with valuable contents (adresses, books etc.) and they don't
+change these disk not very often. Sometimes only once a year or so.
+
+On the other hand, disks for the mass market come very cheap (US-$10
+or less) and with constantly changing contents, you probably have
+more than one disk that contains interesing data. At home you may
+flip through these disks very often in a short time. So the drawer
+gives you faster access to the disks but is less protective.
+
+So what to buy? If you have a expensive valuable disk the costs for
+the caddy (~US-$5) wont matter, neither will the higher price for the
+drive. But if you are a normal home user, you probably have those
+magazine disks and you're not willing to spend more than 30 bucks for
+a CD. If you have a caddy for each of them this could get expensive
+for you.
+
+"Hey, I can change the disk in the caddy, so I do need only 2 or 3
+caddies!" you might say. But you're going to sacrifice the higher
+protection (and cheaper caddies sacrifice the mechnics of your drive.
+It's just not built to insert, eject, insert, eject, insert, eject...
+in a high frequency!)
+
+Caddy:  good protection for valuable disks, every disk should have a
+        caddy, mechanism is not build for high changing frequency, can
+        operate in vertical position
+
+Drawer: medium protection for the mass market, easy access to the disk,
+        mechanism can withstand high changing frequency, can not
+        operate in a vertical position (except for the XM4101 or equal
+        drives!)
+
+
+5. Problems
+-----------
+5.1.1 A3000 Western Digital Proto Chip 00-04
+--------------------------------------------
+All Toshiba drives (3x01, 4101, 5x01) work with the PROTO SCSI
+controler chip in the A3000 or on the A2091 controller card.
+If you exspect problems you can exchange it with a 00-08 for about
+US-$40 or less. Look in the filesystem compatibility table for drives
+that work with Proto-controllers!
+
+The NEC 2xc/NAKAMISHI MBR-7 7disk changer needs a WD 00-08 or it will
+not work.
+
+
+5.1.2 A3000 V36 Bootroms, A209x FIRMWARE
+----------------------------------------
+You should further note that the V36 scsi.device (and the one in the
+A2091 firmware) has severe problems with no bootable devices such as
+empty SyQuest drives and empty CD-ROM drives. With CD drives it depends
+on the kind of CD inserted during boot how long the timeout will be.
+Once you have booted with V37 and higher you do not have these long
+time-outs since the new scsi.device recognises the wrong disk type
+and moves on.
+
+ CD                     timeout         time
+ ----------------------------------------------------
+ no CD inserted         very long       >30sec
+ CD-DA disk             long            ~20sec
+ XA+RRIP                medium          ~10sec
+ plain ISO9660          short           ~2-5sec
+
+
+After the controler has 'touched' the drive for the first time you can
+hit the eject-button, this will speed up things a little. But its
+annoying. But if you leave the drive empty at power-up the Amiga will
+take even longer to boot. The V36 scsi.device has a really long time-out,
+no disk or unbootable/unreadable disks are not detected very well. V37,
+V40 ROMs boot rather fast and once you have passed the cold boot, next
+time you reset it comes up very fast.
+
+There is a solution for this: mount all harddrives before the cd-rom
+drive (i.e. give the cd-rom the highest ID) and use the tool RDBFlags
+to tell the controller what harddrive is the last one. Beyond this ID
+the scsi.device will not search. But beware, the tool could do severe
+damage! Read the manual very carefully!
+
+NOTE:   The Toshiba 3401 needs the Sync-Bit in the BattMem cleared if
+        operated under AmigaOS3.1 or higher. The build-in scsi.device
+        pays for the first time attention to this flag and the drive
+        does not like it if synchronous transfer modes are initiated
+        by the controller. The amiga simply locks up during boot. The
+        Toshiba 4101 (and probably all following drives) do not have
+        this kind of problem.
+
+
+5.1.3 A3000 External SCSI
+-------------------------
+If you exsperience problems on external SCSI-devices on you A3000 check
+if the term-power diode is inserted correctly. Several revisions had
+wrongly placed diodes and so have problems with external devices.
+
+
+5.2.1 A4000 internal drive bay
+------------------------------
+On early A4000 Commodore used "thick" Power-Supplies. As a result the
+5.25" drive bay is a little to small for standard equipment such as
+CD-ROMs, 5.25" floppies and SyQuests. Most of the time the drive
+itselves fits but there is no space left for the power- and bus-
+connectors. Double-check you drive bay before you buy a device for the
+internal space in your A4000!
+
+
+5.2.2 A4000 (E)IDE Controller
+-----------------------------
+See first chapter 2.3!
+
+The internal scsi.device of the A600/A1200 and A4000 models do not
+recognice CD-ROMs. Use the mentioned extensions for this.
+
+
+5.3.1 Synchronous transfers
+---------------------------
+Some CD-ROM drives do not like (or do not support) synchronous transfers
+over the SCSI bus. And since some controllers only allow a global
+synchron/asynchron selection, this may prevent you from using a fast
+transfer mode for your harddisk (e.g. Quantum 730S). So please check
+all of your equipment (e.g. with ProbeSCSI) if it supports synchronous
+tranfers. Only if all support this, it is save to initiate it.
+
+
+6. CD-ROM filesystems
+=====================
+6.1 Filesystems
+---------------
+To access cd-roms you'll need a special drive that adapts the different
+layout of the cd-rom filesystem to the amiga filesystem conventions.
+(Just like CrossDOS does this for PC-disks). Your Driver needs to know
+the old High-Sierra and the current ISO9660 file systems with additional
+RockRidge Extensions. Reading the proprietary MacHFS is not that
+important for only-Amiga users. If you do not own an AGA-Amiga, support
+for CD³² is also not nesscassary.
+
+ Name           Type    HS      ISO     RRIP    MacHSF  CD³²    CDTV
+ -----------------------------------------------------------------------
+ AmiCDFS           (PD) x       x       x       x       -       -
+ AmiCDROM 1.15     (PD) -       x       I²      x       -       -
+ AmigaCD        (WB3.1) -       x       -       -       -       -
+ AsimWare 3.4     (Com) x       x       -       x       x       x
+ BabelCDROM       (Com) x       x       I/G³    -       -       -
+ CacheCDFS 2.7¹   (Com) -       x       I       x       x       -
+ Xetec CDx 2.x    (Com) x       x       -       x       -       x
+
+ Hardware w/ Driver     HS      ISO     RRIP    MacHSF  CD³²    CDTV
+ -----------------------------------------------------------------------
+ CD³²                   x       x       I       -       x       x
+ Overdrive-CD           x       x       x       x       x       -
+ tandem IDE/PCMCIA¹     -       x       I       x       x       -
+ VOB                    x       x       x       -       x       -
+ Squirrel               -       x       x       -       x       -
+
+-----
+ HS := reads High-Sierra Format
+ ISO := reads ISO 9660 compliant disks with FAT 8+3 naming scheme
+ RRIP := reads the extended architecture disks with long names
+        and unlimited directory structure and file attributes. (most
+        Amiga CDs come this way)
+ MacHFS := reads Apple Macintosh HPFS CDs
+ CD³² := comes with a CD³²-Emulator, s.b.
+ CDTV := comes with a CDTV-Emulator
+ ¹the bsc tandem comes with  a spezial version of CacheCDFS
+ ²I=ingokal := Mixed-Case is displayed but not used (like Amiga OFS/FFS)
+ ³G=gokal := Mixed-Case is displayed and used. The filename "test.c" is
+             not equal to "Test.c" or "TEST.C". This may cause problems
+             with amiga-based programs. Ingokal use therefore may cause
+             problems with Unix where gokal filesystems are used.
+
+
+Except for AmiCDROM, AmiCDFS which are PD and AmigaCD (which comes with
+the V40 packages) all drivers are commercial "pay-ware" and come packed
+with differnt up-to-date CDs. They have several utilities like Audio-CD-
+player, SCSI-Inquiry tools, PhotoCD reader etc.
+
+Beware the AmigaCD driver. it's rather old and buggy. The better choice
+is at all times AmiCDROM.
+
+The special adaptors for A1200 and A4000 IDE-drives come with a special
+driver that interfaces the matching device directly. You don't have to
+buy them seperately.
+
+
+6.2 Utilities
+-------------
+not yet :-(
+
+
+7. Combinationes of Computer/Controller/CD-ROM-Drives
+=====================================================
+This list is derived from the List "AmiCDROM works" by Frank Munkert and
+his AmiCDROM distribution found on Aminet.
+
+ Amiga          Controller      CD-ROM drive    Driver  Comment
+ ------------------------------------------------------------------------
+ 500            GVP A500-HD+    NEC3Xp(CDR-400) ACD1.11
+ 500            Trumpcard       NEC CDR-25      ACD1.7
+ 500 Blizzard   Supra 500XP     Apple CD300     ACD1.6
+ 500            GVP Series II   Toshiba 4101    ACD1.8
+ 500            cdtv.device     A570            ACD1.7
+*500 A2630      A2091           Toshiba 4101    AW2
+*500 A2603      A2091           Toshiba 5201    AW2
+
+ 1200 1230-II   SCSI-Kit        Toshiba 4101B   ACD1.15
+ 1200           SCSI+           Apple CD300     ACD 1.?
+
+ 2000 GForce040                 Texel DM3024K   ACD 1.15 not w/ Texel<1.11
+ 2000 GForce030                 Apple PowerCD   ACD1.8/9
+ 2000 GForce030                 MV CDR-H93MV    ACD 1.15
+ 2000           GVP S II V4.13  NEC CDR-55JD    ACD1.4
+ 2000           GVP Series II   Apple CD-300    ACD1.4
+ 2000           GVP Series I    Toshiba 3401    ACD1.8
+ 2000           GVP 030         Sony CDU-561    ACD1.7
+ 2000 GForce040                 Toshiba 3401    ACD1.15
+ 2000           Masoboshi MC    Toshiba 3401    ACD1.6
+ 2000           ICD Advant 2000 Apple CD150     ACD1.4
+ 2000           A2091           NEC CDR-37      ACD1.12
+ 2000           A2091           NEC CDR-55JD-1  ACD1.4
+ 2000           GVP S II v4.13  NEC CDR-55JD-1  ACD1.7
+ 2000           GVP Series II   Apple CD300     ACD1.9
+ 2000           A2091           Toshiba 3301    ACD1.6
+ 2000           A2091           Sony CDU-561    ACD1.7
+ 2000           Evolution 3.x   Toshiba 3401    ACD1.4
+*2000           DataFlyer       Toshiba 4101    AW2
+ 2000 GForce030                 Toshiba 4101    ACD1.13
+ 2000 GForce040 Oktagon 2008    Toshiba 4101    ACD1.15
+ 2000 A2630     A2091           Apple CD300     ACD1.4
+
+ 3000           internal        Toshiba 3301    ACD1.7
+ 3000           internal        Toshiba 3401    ACD1.9
+ 3000           internal        Chinon 435      ACD1.4
+ 3000           internal        NEC CDR 84-1    ACD1.4
+ 3000           internal (08)   NEC CDR-25      ACD1.15
+ 3000           internal (08)   Apple CD150     ACD1.7
+ 3000           internal        Apple CD300     ACD1.7
+ 3000 Merc'040  internal (08)   Apple CD300     ACD1.7
+ 3000           internal        Texel DM5028    ACD1.7
+ 3000           internal        NEC 3Xp         ACD1.7
+ 3000           internal        Pioneer DRM604X ACD1.9   nur teilweise
+*3000           internal        Toshiba 4101    AW2
+*3000           internal        Toshiba 5201    AW2
+*3000           internal (08)   NEC 3xi         AW2
+ 3000           A2091           Toshiba 21/32   ACD1.7
+ 3000           Emplant w SCSI  Apple CD 300    ACD1.7
+
+ 4000           GVP Series I    Toshiba 3401    ACD1.8
+ 4000           A2091           Toshiba 3401    ACD1.7
+ 4000           A2091           Toshiba 4101    ACD1.13
+ 4000           Fastlane Z3     Toshiba 3401    ACD1.2
+ 4000           Fastlane Z3     Apple CD300     ACD1.4/7
+ 4000           A4091           Apple CD300     ACD1.7
+ 4000 WE040/28                  Toshiba 3401    ?.?
+ 4000           Golem SCSI      Toshiba 3401    ACD1.7
+ 4000           A2091           NEC3Xp          ACD1.7
+ 4000           A4091           NEC3Xi          ACD1.14
+ 4000           VOB CD-ROM-Kit  Mitsumi FX001D  ACD1.14
+ 4000           Oktagon 2008    Sanyo CRD-4001  ACD1.14
+*4000/030       Oktagon 2008    Apple PowerCD   AW2
+*4000/030       Oktagon 2008    Toshiba 5201    ACD1.15  w/ recog.-probs
+ 4000/030       DataFlyer       Apple SC        ACD1.7
+*4000/040       A4091           Toshiba 4101    AW2
+*4000/040       A4091           Toshiba 5201    AW2
+ 4000/040       Oktagon 2008    Toshiba 3401    ACD1.9
+*4000/040       Oktagon 2008    Toshiba 4101    AW2
+ ????           Oktagon 2008    Teac CD-50
+                                Pioneer DRM600
+                                DRM602          ACD1.10
+
+ The following hardware setup is known not to work or to have
+ severe problems:
+ Amiga          Controller      CD-ROM-Drive    Driver   Comment
+ ------------------------------------------------------------------------
+ 2000           GVP Series I    Toshiba 3401    ACD1.6
+ 2000           GVP S II v4.13  NEC CDR-55JD-1  ACD1.8/9
+ 2000           GVP combo 68030 Toshiba 3401    ACD1.6
+ 2000 GForce030                 Toshiba 3401    ACD1.6
+ 2000           ICD Advant 2000 Apple CD150     ACD1.6
+ 2000           Vector Acc      Nec 3Xp         ACD1.7
+
+ 3000           EMPLANT         Texel DM5024    ACD1.6
+ 3000/040       internal        Texel CDROM     ACD1.4
+ 3000           internal        Apple CD300     ACD1.6  nur teilweise
+ 3000           internal (08)   Apple CD150     ACD1.8
+
+*4000           Masoboshi       Toshiba 4101    AW2     altes ROM
+
+ The follwowing harware setup works for some users, for other not.
+ Amiga          Controller      CD-ROM-Drive    Driver   Comment
+ ------------------------------------------------------------------------
+ 2000           Evolution3.x    Toshiba 3401    ACD1.6/7 maybe only in
+                                                         trackdisk-mode
+-----
+ ACD := AmiCDROM
+ AW2 := AsimWare V2
+ CDX := Xetec
+ CCD := CacheCDFS
+ BCD := BabelCDFS
+ COM := AmigaCDFS (OS3.1)
+ *   := I've used this setup myself or saw it working.
+
+
+8. Audio
+========
+All mentioned CD-ROM drives support some kind of Audio-CD-Player
+operation(3.5mm outlet on the front). Some even can be set to work
+only in this mode and they do not require a host computer for this.
+You just have to connect the audio outlets on the rear with your
+Stereo Set or extra Speakers.
+There is lots of software that emulates a CD-Player on your Amiga. Most
+commercial drivers have one, but the best are found in the PD area
+(YACDP 1.2, Jukebox 2.x; both are shareware).
+Some drives do not support curtain features. So first check the users
+guide and see what features are supported by your drive and by the
+software player. (e.g. NEC drives do not support all audio mixer
+features!)
+
+
+8.1 Amiga-Audio and CD-AUDIO
+----------------------------
+Only A4000(T) and the A3000T have internal pin connectors for the
+audio of the CD-ROM drive. Amiga-sounds and CD-ROM audio are mixed
+internally. The proportion of amiga/cd-rom tends to the amiga side, so
+sound f/x can be heard even if cd-sound is playing (for games,
+multimedia  etc.)
+
+All other amiga models have to mix the audio externally. Please do
+not just combine both left and right channels. This is not a very
+clever move. Both the amiga and the drive circuits can be damaged
+(and PAULAs are very hard to get in these times :-)
+
+On the serial port (on the A2000 on the internal port also) there is
+a pin called AUDIO-IN. Please do not use this pin! It's initially
+built for the sound of a modem(!) and just mono mixed to the left
+channel. Just like the AUDIO-OUT pin which is builr for the output
+of sound through a modem and comes only from the right channel.
+
+ So if you want to mix amiga-sound f/x with CD-ROM audio from your
+ drive, use the following schematic to build a little mixer. It
+ works for several  people right now, but nether me or the author
+ take any responsibility for damage to your hardware.
+
+
+                        R1,2 = Stereopoti 50kOhm linear
+                        _____
+        left    O------[_____]------O   left
+                          ^
+        Amiga      +------+             CD-ROM
+                   |    _____
+        right   O--|---[_____]------O   right
+                   |      ^
+                   |      |
+                   X¹     X²    R3,4 Stereopoti 50kOhm log.
+                   |      |     _____
+                   |      +----[_____]--+--O    GND
+                   |              ^     |
+                   |      +-------+     |
+                   |      |     _____   |
+                   +------|----[_____]--+
+                          |       ^
+                          |       |
+                          |       |
+                right     O¹      O²    left
+                        to amplifier
+
+        R1,2 := Balance amiga-sound and CD-ROM-Audio
+        R3,4 := Volume (not really nescessary! The signals
+                O¹, O² for the amplifier can come from
+                X¹, X² also!)
+
+ GND is just connected between the devices. This may also solve
+ some peoples (including myself) grounding and resonance problems.
+ If the volume drops to much you can reduce the 50kOhm a little
+ (stay above 20kOhm).
+
+
+8.2 Digital Audio?
+------------------
+See chapter 3.2 for a list of CD-ROMs that support CDDAviaSCSI
+or CDDAviaIDE.
+
+The following programs enable you to read CDDA over the SCSI bus.
+At this writing there is no program known to me that can do the
+trick for the few IDE drives.
+
+
+ Program        FileSystem      Drive
+ -----------------------------------------------------------------
+ JukeBox 2.x    (optional)      all drives
+ YACDP 1.2                      Toshiba, Sony/APPLE
+ SCSIUtil                       Toshiba, Sony/APPLE
+ CDDA                           Toshiba, Sony/APPLE
+                AsimWare 3.4    SCSI-2, Toshiba, Sony/APPLE
+
+
+9. PhotoCD
+==========
+PhotoCDs are just normal multisession/XA CD-ROMs. The pictures are
+stored in an special format that includes several resolutions.
+Real, processed PhotoCDs are golden and have more than one session.
+At your dealer you can get lots of pre-processed PhotoCDs, these
+are single-session normal CDs and often include a viewer for
+DOS/Windows sometimes for Mac and/or CD-I players.
+To view those pictures on your Amiga you'll need a special program
+and if you want a little comfort you will have to pay for it.
+Also since the pictures are TrueColor 24Bit pictures you should
+have a graphics board or at least an AGA-Amiga and in every case
+lot of ram.
+
+
+ Program        ca. price       max. resolution
+ -----------------------------------------------------------
+ PhotoworX      ca. 198DM       Base*16
+ PhotoworX pro  ca. 299DM       Base*64
+ FolioworX      ca. 128DM       for PortfolioCD(TIFF)
+ ADpro loader   ca. 198DM       Base*16
+ Photogenics    ca. 55£         Base
+ ImageFX        ca. ?           Base*16
+ ADpro/Asimware PD              Base
+ ppm2...        PD              Base*16
+
+
+10. Installation hints
+======================
+10.1 SCSI
+---------
+Most of the people have difficulties connecting a simple SCSI drive to
+their amigas. Often because it's so simple and nearly all CD-ROM drive
+manufacturers do not supply a manual, but rather limited description of
+jumpers and ports on the housing.
+
+But there is nothing mysterious: simply connect the power and the
+scsi-cable to the device. Prior to that you should find a free ID on
+you scsi bus (CD-ROMs normally take ID 2 or 3). If your drive is the
+last one on the bus, do not remove the terminator resistor packs, but
+remove them from the former last drive. if you mount it somewehre in-
+between remove them. Only one device may be terminated on the bus at
+a time. All these guidelines should be found also in your SCSI-
+controllers manual.
+
+To physicaly mount your device you need a 5.25" drive bay in your Amiga.
+Currently only the A2000, the A3000T and the A4000(T) do have such
+bays. All other models need a external housing for the drive. Please
+note that all CD drives with drawers can only be mounted in a horizontal
+position else the disk will fall out of the carrier. Drives with a caddy
+may be operated horizontally and vertically.
+
+The drive is not visible in hard disk tools like the HDToolbox. It's "not
+a disk type 5" which means a fixed medium type device. To check if
+your drive is there use some kind of scsi inquiry tool, scsi mounter
+or similar. (Note: The Toshiba 3401 does not like synchronous transfers
+initiated by the host. Clear the appropriate flags!) To access it, install
+the device driver kit you have chosen. This will mount the CD-ROM drive for
+you and AmigaOS will recognise it as a read-only-device.
+
+After the physical mounting the driver will do the logical mount to the
+operating system. All you do is start the installing routine and enter
+scsi-device ("scsi.device", "gvpscsi.device" etc.) and the CD-ROM drive's
+ID (default 2) on the bus. Leave the rest to the defaults of your software.
+All known filing systems install a handler in L: and a CD0: icon in
+DEVS:DOSDrivers. It's common sense to name the CD-ROMs CD0:, CD1: etc.
+so stick to it. After you reboot you should see a CD0: icon on your
+workbench screen - of course you must insert some CD first.
+
+
+10.2 AT-Bus/IDE
+---------------
+Because you can not connect a standard IDE CD-ROM drive directly to the
+Amiga you'll need some kind of interface (VOB CD-ROM Kit e.a.). These
+kits come with detailed installation guidelines so all I can say is:
+be careful, read it twice and then try it. All additional tips and
+tricks are of course welcome, send them to me.
+
+For the software it is common to emulate a fake scsi.device with limited
+ID support. So your CD-ROM drive may have unit 2 fixed. But all Kits
+come with their own filing system...
+
+
+10.3 Utilities
+--------------
+All Utilities that are not related to the filing system itself or that
+are not installed during the setup of the filing system, again need the
+scsi-device ("scsi.device", "gvpscsi.device" etc.) and the ID of your drive.
+Only the new YACDP 1.2 features some kind of automatic search for the
+first CD-ROM on the first found scsi-compliant device (compared to an
+internal list). So look in the documentation where to setup device and
+unit settings.
+
+The audio-players support many features but not all drives do.
+So first check in the players documentation if your special drive as able
+to do all the things the player offers. (e.g. NEC drives do not offer all
+kinds of the audio mixer modes available in the "jukebox") CDDAviaSCSI is
+supported only for few drives, even if your drive can transfer CDDA, the
+player may not be able to read it since your drive uses a different access
+method. NEC is one of that drive type.
+
+
+11. CDs for other plattforms
+============================
+----------------------------
+11.1 Magazines
+--------------
+If you are looking at a CD published by a dedicated Amiga magazine, so-
+called cover-CDs, okay. But all other magazines piublish PC or MAC CDs
+with special software for retrieval. Of some use may be Disks with Fonts,
+Pictures, Clips etc. But take care that they are in a format, that
+your application understands or where you can get a converter for.
+
+
+11.2 special PC CDs
+-------------------
+Be carefull! Most of the CDs are published by DOS, Windows, OS\2
+or Macintosh magazines. They use propriatary formats for their
+data and the retrieval programs only run on a special OS. If you're
+looking for pictures, anims, clips you may get lucky, but all of the
+new multimedia CDs are not for you. Go, buy a PC :-(
+
+Sometimes you can get even in our days a simple HighSierra processed CD,
+this kind of filing system is not readable on several CDFS'.
+
+
+11.3 PC emulations
+------------------
+You may connect a CD-ROM to a bridgeboard in your amiga, but there
+is no software to access this drive from the amiga side, so the
+drive sticks to the bridgebaord only. (The same is it with a drive
+on the amiga!)
+
+I do not have any information about the PC Modul for the Emplant
+board, sorry.
+
+There is a new alternative for you: PC-Task 3. The program emulates
+a 80286 processor and so you can run at least Windows 3.1. But beware
+the "gigantic" requirements of PC-Task (lots of ram, GfxBoard for VGA,
+fast 68k processor etc.) It offers a special driver to access a
+CD-ROM connected to the amiga. Be aware that large anaimations, videos
+etc. will not work, they expect more from a PC than PC-Task can offer.
+But, you can access several databanks, multimedia applications and such
+things. But I know at least one applications that plays dirty tricks
+with the CD-driver and this does not work with PCTask. Also PCTask has
+severe problems with some SCSI-Controllers (Dataflyer, Masoboshi,
+Squirrel) and comes up only with a DOS error message "No HS or ISO
+format"
+
+
+11.4 Macintosh emulations
+-------------------------
+Emplant:
+Emplant supports SCSI(!) CD-ROMs trought its own controller, via Amiga
+SCSI controller and non-SCSI CD-ROMs via the empcd.device that then
+emulates a CD as removeable.
+
+
+ShapeShifter:
+ShapeShifter comes with buildin support for CD-ROM drives such as
+transforming evary SCSI drive into an Apple CD-300, which can be
+accessed via the Apple CD-ROM extensions/drivers. Thrid party toolkits
+such as FWBs work with every drive when the trasnformation is disabled.
+Also ATAI drives are supported via the empcd.device as removeables.
+
+
+
+11.5 Data formats
+-----------------
+ Format         Amiga-program
+ ---------------------------------------------------------
+ BMP, GIF,
+ JPG, PCX,
+ TIFF, SUN,
+ VOC, WAV       Datatype, ADpro, ImageFX, Scala MM400, Xv
+ FLI/FLC        MainActor, ADpro, ImageFX, ImageMaster, Scala MM400
+ AVI            MainActor, Xv
+ DL             MainActor, Xv
+ GL             ImageFX, Xv
+ PhotoCD        PhotoworX (pro), Asimware, ImageFX, PBM, Scala MM400
+ MPEG           special Hardware or real slow
+ VideoCD        special Hardware
+ EB¹            ShapeShifter (MacOS: PaperOut)
+
+ ¹Sony announced that they will discontinue the EB format and the
+ production of disks/readers for it!
+
+
+11.5 MPEG, FULL Motion Video
+---------------------------
+Theses VideoCDs can only be played by special cards like the FMV-module
+for the CD³² or a MPEG video card like PEGGY.
+On several PD-places you find software MPEG-players, but be warned,
+even 040 CPUs have difficulties showing them.
+
+
+12. CD32-Games
+==============
+If you're planning to use one of the many CD³² games disk on your A1200
+or A4000 please note that one or all of the following restrictions may
+even apply with the use of a "CD³²-Emulator" for you computer.
+·Only with AGA amigas A1200/A4000
+·Better chance if the games is also available for normal Amigas.
+ They use less special features of the CD³²
+·Some Games depend on the multi-button joypad. Honeybee sells it
+ seperatly. The original CD³² pad sometimes has difficulties on the
+ A1200
+·CD³² has build in chunky-to-planar conversion. There is a software
+ to do this, but this is only fast enough on 68040 machines.
+·Some early games don't like keyboards or more than 2MB of RAM.
+
+The different CD³² emulators do more or less a degration of your system
+and an emulation of C2P and the missing joypad. But the most advanced
+feature, the mixing of CD-audio and amiga-audio is only possible if
+your drive is some kind of SCSI-2 compatible (if ist the drive
+itself or the controlling device is does not matter). Drives missing
+this features (like NEC e.a.) do have difficulties producing the right
+sound F/X.
+
+The CD³² has a build in CDTV-emulation that executes most of the CDs
+mastered for this device. All known CD³² emulators for AGA Amigas do not
+have this feature and therefore are not able to execute CDTV-stuff. You
+probably have no chance on getting such old titles on the market.
+
+
+13. CD+G
+========
+Pop-Music Titel
+Number  Artist                  Titel                           Label
+-----------------------------------------------------------------------------
+81943   Alphaville              Breathtaking Blue               Atlantic
+82086   Laura Branigan                                          Atlantic
+26023   Ella Fitzgerald         Things ain't what they...       Sire
+25948   Flamin' Groovies        Groovies Greatest Grooves       Sire
+26111   Fleetwood Mac           Behind the Mask                 Warner Bros.
+2284    Emmylou Harris          Pieces of Sky                   Reprise
+2276    Jimi Hendrix            Smash Hits                      Reprise
+25691   Information Society                                     Tommy Boy
+26156   Chris Isaak             Silvertone                      Warner Bros.
+26163   Little Feat             Representing the Mambo          Warner Bros.
+3538    Little Feat             Hoy Hoy                         Warner Bros.
+26108   Gram Parsons            Grevious Angel                  Warner Bros.
+25968   Van Dyke Parks          Tokyo Rose                      Warner Bros.
+3630    Bonnie Rait             Green Light                     Warner Bros.
+25486   Bonnie Rait             Nine Lives                      Warner Bros.
+25829   Lou Reed                New York                        Sire
+26036                           Woody Guthrie Tribute           Warner Bros.
+
+
+CD+G Classic by Warner Bros.
+
+Number  Composer        Titel                   Artist
+--------------------------------------------------------------------------------------------
+15010   Bach            St. Mathew Passion      Concertgebouw Orchestra & Chorus, Amsterdam
+                                                Highlights - Nikolaus Harnoncourt
+15031   Beethoven       Diabelli Variations     Rudolf Buchbinder
+15011   Beethoven       String Quartet #14      Vermeer Quartet
+15008   Beethoven       Symphony No. 7          Berlin Philharmonic
+                                                Joseph Keilberth
+15009   Beethoven/Liszt Cyprien Katsaris
+                        Piano Symphony No. 9 (Piano)
+15015   Berlioz         Symphonie Fantastique   Wiener Symphoniker
+                                                Georges Pretre
+15004   Bruckner        Symphony No. 9          Frankfurt Radio Symphony Orchestra
+                                                Eliahu Inbal
+15014   Placido Domingo                         Orchestra of the German Opera, Berlin
+                                                Belcanto Domingo
+                                                Nello Santi
+15030   Handel          The Messiah             Concentus Muskus, Vienna
+                                                Highlights - Chamber Choir of Stockholm
+                                                Nikolaus Harnoncourt
+15001   Holst           The Planets             New York Philharmonic
+                                                Zubin Mehta
+15007   Mahler          Symphony No. 5          New York Philharmonic
+                                                Zubin Mehta
+15029   Mendelssohn     Symphony No. 2          Gewandhaus Orchestra, Leipzig
+                                                Kurt Masur
+15003   Mendelssohn     Symphony No. 3          Gewandhaus Orchestra, Leipzig
+                                                Kurt Masur
+15013   Mendelssohn     Symphony No. 4          Gewandhaus Orchestra, Leipzig
+                                                Kurt Masur
+15006   Mozart          The Abduction from the Seraglio
+                                                Mozart Ochestra and Choir of the Zurich Opera
+                                                Nikolaus Harnoncourt
+15012   Mozart          The Magic Flute         Mozart Ochestra and Choir of the Zurich Opera
+                                                Nikolaus Harnoncourt
+15028   Prokofiev       Peter and the Wolf      Sir John Gielgud
+                                                Academy of London
+                                                Richard Stamp
+15005   Purcell         Dido and Aeneas         Concentus Muskus, Vienna
+                                                Nikolaus Harnoncourt
+                                                Arnold Schonberg Chior
+
+
+14. Misc
+========
+14.1 CD-Write
+-------------
+There is a program called CD-Write. As the name may falsely suggest,
+the program can not write to a CD, this is physically impossible.
+But the disk is mounted through a special filesystem enhancer that
+redirects write attemts to a buffer on your harddisks.
+
+If you read from the CD the file(s) in the buffer are first searched,
+and then the real CD. So through the eyes of this new device it looks
+like you can suddenly write to your CD-ROM drive.
+
+Be carefull, in extreme conditions the buffer can grow to a full
+700MB in size!
+
+
+14.2 Accessing CDs in a BBS
+---------------------------
+Due to the special nature of the CDs as read-only media, it is often
+not possible to access one from a BBS. If you open a directory for
+public use, normally the BBS persists of writing several service files
+to that location. This opviously does not work for a CD. Only CD-Write
+can be at help for an unwilling BBS program. But every modern BBS has
+an option to access a CD, even better if the CD is "BBS-Ready" and
+allready carries FILES.BBS files.
+
+
+A. Glossar
+==========
+AT-Bus,
+IDE-connector := This often complies to the proprietary connectors
+        from three different drive manufactures: Mitsumi, Sony and
+        Panasonic. These connectors are not real IDE connectors and
+        all the drives requier a special controller either on a
+        seperate card or on a sound-card. Only the Mitsumi-style
+        connector is supported on amigas.
+        Note that these connector have nothing to do with the harddisk
+        interface of the same name!
+EIDE := EIDE or better ATAPI describes the change from the propriertary
+        connectors to real IDE-style conectors. Since the ATAPI command
+        set is a feature of EIDE anyway they are often refered to as
+        EIDE drives, but they're not.
+        So there is a little shift in naming conventions:
+
+                Type    harddisk        CD-ROM drive
+                ------------------------------------------------
+                IDE     IDE             Mitsumi, Sony, Panasonic
+                EIDE    EIDE            IDE(ATAPI)
+
+High-Sierra := first draft of a standard with FAT 8+3 naming and
+        limited directory-struture.
+ISO-9660 := High-Sierra draft with minimal changes.
+XA := the XA-standard has new sector formats including audio- and
+        data-sectors to interleave. In a normal CD-ROM mode it saves
+        2048 bytes (form-1) and 2336 bytes (form-2) of data. The
+        XA (Extended Architecture) format saves in a differing method
+        in form-1 2048 bytes, in form-2 2324 bytes of data.
+RRIP := »Rock Ridge Interchange Protocol«, fully downward compatible to
+        ISO 9660. It offers support for the extended features of other
+        files-systems then DOS (long filenames, more flags, deeper
+        directory-structure, object-links)
+MultiSession := PhotoCDs are not written in a single shot, but in
+        several sessions. Each of this sessions has a "lead-in" (that
+        includes the directory), the data and a "lead-out". The next
+        sessions contains the directory of all prevous sessions plus
+        the current session, then the data and the "lead out". If your
+        drive can not read multi-session CDs it stops searching after
+        the first "lead-out", so you can read the first, but not the
+        following sessions and their data. This applies only to the
+        "golden" Write-Once CDs, commercial PhotoCDs are just normal,
+        single-sessions CDs. (NOTE: the handling for the multi-sessions
+        is different. Only two drive melt the sessions internally to
+        one, big session (Texel/Plextor x024 and x028). Toshiba offers
+        a special command to access the last session (and its
+        directory), others leave it to the driver to combine the
+        sessions for the file-system.)
+EB := Electronic Book format. Developped by Sony and propagated for
+      8cm "single" CDs that carry normal lexica, thesauri and speel
+      checker databases upto real books like Goethe. The CD was
+      written in normal XA-format, but the book-files can only be read
+      in a special sony-build EB reader or through special Software
+      (e.g. PaperOut for Macintosh). The format was discontiued and
+      abandonned in summer 1995.
+
+
+B. Legal Stuff:
+---------------
+The stuff in this FAQ is based simply on my own knowledge. Firms and
+product names are used freely, but are the property of their owners.
+I live in germany and therefore have little knowledge about the other
+markets. So if I'm missing something please drop me a note!
+
+    KLAATU@NEWSWIRE.GUN.DE
+    Joachim E. Deußen
+
+Commercial products can be found in your local amiga store or by
+mail-order. Look in your favorite magazine for availability and
+current pricing. PD stuff can be found on FreshFish or the Aminet.
+
+Feel free to publish this FAQ on any electronic medium, on disk, CD or
+via BBS and the internet. If you quote, please leave a hint where to get
+the whole document.
+
+CDROM.FAQ - Copyright © 1994-96 by Joachim E. Deußen
+
+
+C. Extensions and corrections:
+------------------------------
+technical info: J.LILIENBORN@AMTRASH.comlink.de (Juergen Lilienborn)
+hints:          fjrei@kbsaar.saar.de (Franz-Josef Reichert)
+Audio-Mix:      Th.Stephan@KDS.ZER.SUB.ORG (Thomas Stephan)
+PhotoworX:      olsen@sourcery.han.de (Olaf "Olsen" Barthel)
+AmiCDROM:       ln_fmu@pki-nbg.philips.de (Frank Munkert)
+                (anyone with a valid EMAIL?)
+CD32-Games:     Nemesis@Insider.sub.de (R. Geiger)
+                KGB@Mountain.RHEIN-RUHR.de (K. Goertz)
+Driver:         rbabel@babylon.pfm-mainz.de (R. Babel)
+
+A special thanx for checking the first english translation goes to:
+                walaj@essex.ac.uk (Jonathan Waland)
+
+
+D. How to get it:
+-----------------
+
+Aminet: docs/help
+
+EMAIL:  KLAATU@NEWSWIRE.GUN.DE

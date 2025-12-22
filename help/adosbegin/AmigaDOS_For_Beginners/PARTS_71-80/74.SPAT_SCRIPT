@@ -1,0 +1,358 @@
+@DATABASE "ADB74"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 74 - The SPAT Script"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 74 - THE SPAT SCRIPT FILE@{UB}@{UU}
+@{JLEFT}
+
+@{B}Location@{UB}     - "S" Directory - All AmigaDOS version from 1.3 onwards
+
+@{B}Purpose@{UB}      - To allow pattern matching with wild cards to be used with
+               AmigaDOS or other commands that do not normally support
+               pattern matching.
+
+@{B}Availability@{UB} - AmigaDOS Versions 1.3 Onwards
+@{JCENTER}
+
+@{" General Comments     " LINK "General"}
+@{" The SPAT Script      " LINK "Script"}
+@{" How SPAT Works       " LINK "How"}
+@{" A Revised SPAT - CPM " LINK "Revised"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Part 74 - The SPAT Script - General comments"
+
+@{B}@{U}General Comments About SPAT@{UB}@{UU}
+
+"SPAT" is short for "Single argument command PATtern matching". It is
+for commands that take only one argument. Compare this to the @{"DPAT" LINK "ADB:Parts_71-80/75.DPat_Script/MAIN"} script
+(next article) which is for Double argument commands.
+
+A single argument command line is one such as:-
+
+  > LIST s:startup-sequence
+
+where "s:startup-sequence" is the only argument to the "LIST" command.
+
+A double argument command line would be one such as:-
+
+  > COPY s:startup-sequence df1:s/
+
+where the FROM (s:startup-sequence) and TO (df1:s/) items are both
+arguments.
+
+The SPAT script allows you to enter any command (either an AmigaDOS command
+or any other command) together with a path/filename+pattern to be matched
+and up to 4 options that can be used with the command.
+
+For example, let's say you had a number of scripts stored in the directory
+"Mydisk:Mydirectory" with the names:-
+
+   Myscript.Part1
+   Myscript.Part2
+   Myscript.Part3
+   Myscript.Part4
+   Myscript.Part5
+
+You wish to edit all these one after the other using the "C" directory
+editor "ED".
+
+Each is rather long so you use the "SIZE" option in ED to tell the system
+to use 75,000 bytes. The default ED text buffer is 40000 bytes (all
+versions).
+
+The way you would use SPAT would be:-
+
+  > SPAT ED Mydisk:Mydirectory/Myscript.P#? SIZE 75000
+
+ED would then be called 5 times in a row and allow you to edit each of
+the five files in turn. Each time, a buffer size of 75000 bytes would
+be set.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Script" "Part 74 - The SPAT Script"
+
+@{B}@{U}The SPAT Script@{UB}@{UU}
+
+This script has remained almost unaltered since @{B}v1.3@{UB} except for:-
+
+- from @{B}v2.0,@{UB} the inclusion of ".BRA" and ".KET" commands.
+
+- from @{B}v2.1,@{UB} the addition of the comment line holding the version number
+
+- from @{B}v3,@{UB} the addition of Line 13 (to Delete the "T:q{$$}" file).
+
+None of these affect the operation of the script. The example below is
+taken from @{B}v3.1.@{UB}
+
+(@{B}v1.2 and earlier@{UB} - This script will not work as you cannot refer to the
+current process number with @{"<$$>" LINK "ADB:parts_31-40/39.Execute_&_Dot/Referring"}.)
+
+ 1. .KEY com/a,pat/a,opt1,opt2,opt3,opt4
+ 2. .BRA {
+ 3. .KET }
+
+ 4. ; $VER: SPat 40.1 (9.2.93)
+ 5. ; Do wild cards for single arg commands
+
+ 6. FAILAT 21
+
+ 7. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" {opt1} {opt2}
+    {opt3} {opt4}"
+
+ 8. IF NOT FAIL
+ 9.   EXECUTE T:q{$$}
+10. ELSE
+11.   ECHO "{pat} not found"
+12. ENDIF
+
+13. DELETE >NIL: T:q{$$} QUIET
+
+14. FAILAT 10
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "How" "Part 74 - The SPAT Script - How SPAT Works"
+
+@{B}@{U}How SPAT Works@{UB}@{UU}
+
+Line 1:-
+
+  1. .KEY com/a,pat/a,opt1,opt2,opt3,opt4
+
+sets up the keywords for the SPAT script.
+
+In "com/a" the @{"/a" LINK "ADB:Parts_61-70/63.Format_&_Template/A"} indicates that a command MUST be used.
+
+In "pat/a" the @{B}/a@{UB} indicates that a pattern MUST be used. The pattern need
+not contain wild cards. It could contain the name of just one file without
+wild cards. However, this would be pointless as the script's main purpose
+is to give wild card support to commands that don't otherwise support
+them, such as "ED".
+
+The various "optx" keywords allow the use of none or up to four options
+for the command. You could add more with "opt5,opt6" etc.
+
+Line 6:-
+
+  6. FAILAT 21
+
+is there because, if the "LIST" command is used with a path/file name
+rather than with a directory name, and wild cards are NOT used, and it
+cannot find the file name, then it fails with return code 20. But this
+only happens if there are no wild cards in the name of the file to list.
+If there ARE wild cards, but NO match can be found, then the return code
+is left at zero. However, wild cards would normally be used with SPAT
+and, if so, then the return code is NEVER set and the script can NEVER
+reach Line 11.
+
+Line 6 needs to be there, however, in case no wild cards are used in the
+SPAT command line. See @{"Revised SPAT" LINK "Revised"}.
+
+ 7. LIST >T:q{$$} {pat} LFORMAT "{com} *"%s%s*" {opt1} {opt2}
+    {opt3} {opt4}"
+
+Line 7 is the guts of the script. It creates a file "qx" (where "x" is
+the process number) in "T:" by listing all files matching {pat} which
+is the specified pattern. LIST's @{"LFORMAT" LINK "ADB:Parts_11-20/13.List/LFormat"} option is used to create the
+necessary format of the "qx" file. "qx" will contain one line for each
+file matching the pattern. First up in each line will be the command {com}.
+In place of the *"%s%s*" will be the file path and file name in inverted
+commas. The *" causes an inverted comma to be inserted. The %s%s gives
+the path and file name only without any file size or dates. Following
+this will be any options entered at the end of the SPAT command line.
+E.g. the "SIZE 75000" of our example.
+
+Looking at our @{"example" LINK "General"24}, if we were entering the SPAT command in shell
+process number 2 and looked in "T:" we would find a file called "q2" with
+these contents:-
+
+  ED Mydisk:Mydirectory/Myscript.Part1 size 75000
+  ED Mydisk:Mydirectory/Myscript.Part2 size 75000
+  ED Mydisk:Mydirectory/Myscript.Part3 size 75000
+  ED Mydisk:Mydirectory/Myscript.Part4 size 75000
+  ED Mydisk:Mydirectory/Myscript.Part5 size 75000
+
+Line 8:-
+
+  8. IF NOT FAIL
+
+allows Line 9:-
+
+  9.   EXECUTE T:q{$$}
+
+to operate if the LIST command in Line 7 does NOT fail.
+
+Line 9 executes our temporary "qx" file. In our example, it would call "ED"
+for each of the five lines in "q2".
+
+As mentioned above, lines 10 and 11:-
+
+  10. ELSE
+  11.   ECHO "{pat} not found"
+
+are only effective if there are no wild cards entered for {pat} in the
+SPAT command line.
+
+Line 13:-
+
+  13. DELETE >NIL: T:q{$$} QUIET
+
+does the housekeeping by deleting the file in "T:" (it took them until
+AmigaDOS v3 to do their cleaning up!).
+
+Line 14:-
+
+  14. FAILAT 10
+
+resets the "FAILAT" (set to 21 in Line 6) back to the default value of 10.
+
+This seems a bit useless to me as the "FAILAT" applies only to the script
+in which it is used. The default value is always used for direct commands
+entered at a Shell prompt, and any new script automatically uses the default
+10 if "FAILAT" is not used.
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Revised" "Part 74 - The SPAT Script - Revised SPAT"
+
+@{B}@{U}A Revised SPAT - CPM (Command Pattern Match)@{UB}@{UU}
+
+The main problem with SPAT is that it does not give any message if there
+are no files matching the specified pattern if wild cards are used. It
+creates the file "T:qx" but nothing is put into it so, if you listed "T:qx",
+you would see "empty" in place of the file size
+
+So, how to tell the user that there are no matches to the pattern used?
+I have done it with the following script which is called "Example-74.1"
+on the disk. Rename it to "CPM" for "Command Pattern Match" if you like
+and put it in your "S" directory if you think you will use it.
+
+In this script I have replaced the meaningless "q{$$}" file name with
+"cpm1{$$}". I also use a new file "cpm2{$$}. This name means that any
+files in "T:" can be identified with this script.
+
+(@{B}v1.2 and earlier@{UB} - This script will @{B}not@{UB} work as you cannot refer to the
+current process number with @{"<$$>" LINK "ADB:parts_31-40/39.Execute_&_Dot/Referring"}.)
+
+. Example-74.1
+
+. $VER: cpm 01.01 (15 Dec 93)
+. This is FB's first revision to SPAT
+
+.KEY com/a,pat/a,opt1,opt2,opt3,opt4
+.BRA {
+.KET }
+
+FAILAT 21
+
+LIST >T:cpm1{$$} {pat} LFORMAT "{com} *"%s%s*" {opt1} {opt2} {opt3} {opt4}"
+IF FAIL
+   SKIP nofile
+ENDIF
+
+LIST >T:cpm2{$$} T:cpm1{$$}
+SEARCH >Nil: T:cpm2{$$} empty
+
+IF NOT WARN
+   SKIP nofile
+ENDIF
+
+EXECUTE T:cpm1{$$}
+SKIP end
+
+LAB nofile
+ECHO "Sorry - your entry {pat} was not found"
+
+LAB end
+DELETE >nil: T:cpm#?
+
+The first new thing is that, if the "LIST" command fails, we skip to a
+label "nofile".
+
+The next new thing is these lines:-
+
+ 1. LIST >T:cpm2{$$} T:cpm1{$$}
+ 2. SEARCH >nil: T:cpm2{$$} empty
+
+ 3. IF NOT WARN
+ 4.   SKIP nofile
+ 5. ENDIF
+
+@{B}Line 1@{UB} will "list" our file "T:cpm1{$$}" to another file "T:cpm2{$$}.
+If no files were found that matched the pattern used then this listing
+will contain the word "empty" instead of the number of bytes and the word
+"empty" will appear within the file "T:cpm1{$$}".
+
+@{B}Line 2@{UB} looks for the string "empty" in "T:cpm2{$$}". If it is NOT found
+then the "Search" command is unsuccessful, the condition flag is set to
+5 (WARN) and Line 4 is NOT executed. If "empty" IS found, then "Search"
+is successful, the condition flag is set to zero and Line 4 IS executed,
+the script skips to label "nofile".
+
+We have thus determined whether any files matched the pattern and given
+a warning message if they have not.
+
+The final line of my new script does the housekeeping by deleting the
+two files that it created.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

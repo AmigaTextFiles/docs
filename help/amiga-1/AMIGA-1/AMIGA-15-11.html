@@ -1,0 +1,181 @@
+        <html>
+        <head><base target="_self">
+<title>русский транзит - amiga#1: arexx, функции управления памятью</title>
+</head>
+<body link="#009999" vlink="#006666" alink="#000088" bgcolor="#ffffff" text="#000000">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta name="keywords" content="amiga,develope,ARexx,управление,память,allocmem,baddr,export,forbid,freemem,freespace,getspace,import,next,null,offset,permit,storage">
+
+<font face="Arial, Helvetica, sans-serif" size="4">
+<p align="left"><a name=A1511>Функции управления памятью</a></p></font>
+
+<blockquote><p align="justify">
+Вполне возможно, что эти функции вам не понадобятся, поскольку резидентный ARexx-процесс сам отслеживает необходимость резервирования и/или освобождения памяти и вызывает с этой целью различные системные функции по мере необходимости. Функции управления памятью покажутся знакомыми тем, кто программирует на С или ассемблере, поскольку их С-шные и ассемблерные имена и аргументы весьма схожи с ARexx-овскими. Тем не менее, использование явного управления памятью из ARexx-a представляет некоторый интерес для специальных случаев программирования, когда встроенных в язык высокоуровневых средств оказывается недостаточно для решения возникающих проблем.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Следует только заметить, что функции управления памятью - самые опасные из всех функций ARexx-a, поскольку они &quot;вклиниваются&quot; в работу резидентного ARexx-процесса, полагающего, что он и только он вправе предоставлять память отдельным ARexx-программам, работающим под его отеческой опекой.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Адреса, являющиеся аргументами или результатами работы функций управления памятью имеют тот же формат, что адреса в функциях, работающих со связными портами (<a href="AMIGA-15-10.html">см. выше</a>).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15111>
+<b>ALLOCMEM</b>()
+<blockquote>res = <b>ALLOCMEM</b>(&lt;длина&gt;,&lt;атрибуты&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция резервирует блок памяти требуемой &quot;длины&quot; с заданными &quot;атрибутами&quot;. В случае удачи возвращается начальный адрес блока, иначе - нулевое значение. Значение &quot;атрибутов&quot; совпадает с соответствующим значением, передаваемым функции библиотеки exec.library AllocMem().
+</p></blockquote>
+
+<blockquote><p align="justify">
+Каждый вызов ALLOCMEM() должен обязательно уравновешиваться соответствующим вызовом функции <a href="AMIGA-15-11.html#A15115">FREEMEM()</a> перед выходом из программы!
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15112>
+<b>BADDR</b>()
+<blockquote>res = <b>BADDR</b>(&lt;BCPL_адрес&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция преобразует BCPL-адрес в С-адрес, умножая аргумент на 4.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15113>
+<b>EXPORT</b>()
+<blockquote>res = <b>EXPORT</b>(&lt;адрес&gt;[,&lt;строка&gt;][,&lt;длина&gt;][,&lt;наполнитель&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция копирует область памяти из &quot;строки&quot; по &quot;адресу&quot;. Необходимая для копирования область памяти уже должна быть выделена при помощи функций <a href="AMIGA-15-11.html#A15111">ALLOCMEM()</a> или <a href="AMIGA-15-11.html#A15117">GETSPACE()</a>. Если копируемая &quot;строка&quot; короче, нежели заданная &quot;длина&quot;. то оставшаяся часть выделенной памяти заполняется значением &quot;наполнителя&quot; (по умолчанию - нулями).
+</p></blockquote>
+
+<blockquote><p align="justify">
+Функция EXPORT() возвращает число скопированных байт. Адрес начала новой свободной области памяти может быть получен путем суммирования возвращенного значения и текущего адреса с помощью функции <a href="AMIGA-15-11.html#A1511B">OFFSET()</a>.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15114>
+<b>FORBID</b>()
+<blockquote>res = <b>FORBID</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция запрещает переключение задач в системе до исполнения парной ей функции <a href="AMIGA-15-11.html#A1511C">PERMIT()</a>. Возвращается счетчик вложения функций FORBID() (если переключение задач было разрешено на момент исполнения FORBID(), возвращается -1). Поскольку программы ARexx-a сами по себе являются отдельными задачами, в случае выхода из них в FORBID-состоянии ничего страшного не произойдет и многозадачный режим работы системы будет автоматически восстановлен. Эта функция используется при работе с различными системными списками для того, чтобы предотвратить обращение к ним из другой, одновременно работающей в системе задачи, в то время как текущая ARexx-программа просмотривает и/или модификацирует эти списки. Такая ситуация может привести к каким угодно неприятным последствиям. Между прочим, при исполнении информационной функции <a href="AMIGA-15-6.html#A1564">SHOWLIST()</a> пара FORBID()-PERMIT() исполняется автоматически.
+</p></blockquote>
+
+<blockquote><p align="justify">
+В FORBID-состоянии ввод-вывод с использованием средств ОС производить нельзя, поскольку системе придется ожидать окончания ввода/вывода другими задачами/процессами и для этого выйти из FORBID-coстояния.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15115>
+<b>FREEMEM</b>()
+<blockquote>res = <b>FREEMEM</b>(&lt;адрес&gt;,&lt;длина&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция освобождает системную память, резервированную ранее с помощью вызова <a href="AMIGA-15-11.html#A15111">ALLOCMEM()</a>. Параметры &quot;адрес&quot; и &quot;длина&quot; должны быть теми же самыми, что и при вызове АLLОСМЕМ()!
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15116>
+<b>FREESPACE</b>()
+<blockquote>res = <b>FREESPACE</b>(&lt;адрес&gt;,&lt;длина&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция освобождает системную память, резервированную ранее с помощью вызова <a href="AMIGA-15-11.html#A15117">GETSPACE()</a>. Если параметры &quot;адрес&quot; и &quot;длина&quot; присутствуют, то они должны быть теми же самыми, что и при вызове GETSPACE()! При отсутствии параметров функция возвращает общий объем свободной памяти, находящейся в распоряжении ARexx-интерпретатора. При завершении программы вся память, резервированная с помощью GETSPACE(), будет освобождена и без явного исполнения FREESPACE().
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15117>
+<b>GETSPACE</b>()
+<blockquote>res = <b>GETSPACE</b>(&lt;длина&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция резервирует блок памяти требуемой &quot;длины&quot; из памяти, находящейся в распоряжении интерпретатора. При завершении программы вся память, резервированная по GETSPACE() будет автоматически освобождена. В случае удачи возвращается адрес начала резервированного блока, в ином - нулевой адрес.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15118>
+<b>IMPORT</b>()
+<blockquote>res = <b>IMPORT</b>(&lt;адрес&gt;[,&lt;длина&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает строку требуемой &quot;длины&quot;, начинающуюся с заданного &quot;адреса&quot;. Если &quot;длина&quot; не указана, то строка копируется вплоть до первого встретившегося в ней нулевого байта.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A15119>
+<b>NEXT</b>()
+<blockquote>res = <b>NEXT</b>(&lt;адрес&gt;[,&lt;смещение&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается новый адрес, равный сумме четырехбайтового значения, находящегося по &quot;адресу&quot;, плюс значение &quot;смещения&quot;. По сути, NEXT() является комбинацией функций <a href="AMIGA-15-11.html#A15118">IMPORT()</a> и <a href="AMIGA-15-11.html#A1511B">OFFSET()</a>; целью является получение нового адреса, являющегося содержимым некоторой списочной структуры (как правило struct Node). Например, мы знаем, что системные списки содержат сначала адрес следующего узла (node), а после него идет адрес предыдущего узла. Допустим, &quot;адрес&quot; указывает на текущий узел. Тогда получить адреса предыдущего и последующего узлов проще простого:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+PrevNode = NEXT(ThisNode, 4)
+NextNode = NEXT(ThisNode)
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+Таким образом мы можем легко просканировать некоторый системный список. Базовый адрес почти всех ресурсов системы может быть получен с помощью функции <a href="AMIGA-15-6.html#A1564">SHOWLIST()</a> с использованием четвертого аргумента &quot;адрес&quot;.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1511A>
+<b>NULL</b>()
+<blockquote>res = <b>NULL</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает нулевой адрес в формате '0000 0000'х.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1511B>
+<b>OFFSET</b>()
+<blockquote>res = <b>OFFSET</b>(&lt;адрес&gt;,&lt;смещение&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает новый адрес, являющийся суммой &quot;адреса&quot; и &quot;смещения&quot;, которое должно являться десятичным числом со знаком. Использовать эту санкцию удобно для расчета адреса некоторого поля в структуре данных без обращения к функциям <a href="AMIGA-15-4.html#A1543">C2D()</a> и <a href="AMIGA-15-4.html#A1545">D2C()</a>, кроме того гарантируется, что возвращаемое значение будет четырехбайтовым адресом.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1511C>
+<b>PERMIT</b>()
+<blockquote>res = <b>PERMIT</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция уменьшает на единицу счетчик вложения вызовов <a href="AMIGA-15-11.html#A15114">FORBID()</a> и возвращает текущее значение этого счетчика (напомним, что исходным значением счетчика является -1). Если после исполнения PERMIT() счетчик достигнет исходного значения, многозадачный режим работы системы, отключенный по FORBID(), будет включен снова.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Если ARexx-задача закончит работу в FORBID-состоянии, ничего страшного не произойдет, поскольку система в этом случае автоматически исполнит PERMIT().
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1511D>
+<b>STORAGE</b>()
+<blockquote>res = <b>STORAGE</b>([&lt;адрес&gt;[,&lt;строка&gt;][,&lt;длина&gt;][,&lt;заполнитель&gt;]])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Будучи использованной без аргументов, STORAGE() возвращает общий объем свободной памяти в системе. Если задан &quot;адрес&quot;, то &quot;строка&quot; заданной &quot;длины&quot; будет скопирована по &quot;адресу&quot;. Если строка короче заданной &quot;длины&quot;, то оставшаяся часть будет заполнена байтом-&quot;заполнителем&quot; (по умолчанию - нулями).
+</p></blockquote>
+
+<hr>
+
+</body></html>

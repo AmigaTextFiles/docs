@@ -1,0 +1,133 @@
+UPDATING AMITHLON CD WITH NEW KERNEL AND PATCHES
+------------------------------------------------
+
+Chris Perver - chris@prophecynews.co.uk
+
+Thanks to Bernie Meyer for all his hard work in developing Amithlon, JIT and 
+UAE. Amithlon is a fantastic program, and in the minds of many, should have 
+been the successor to our beloved Classic Amiga. Thanks also to Gary Colville 
+and Milan Milosavjevic for their work in compiling updated Linux kernels so we 
+can continue to use this great program on more modern hardware. And to 
+SnkBitten (http://amithlonblog.snkbitten.com) for providing excellent guides on 
+how to install it. I gleaned much of this information from his discussions on 
+the English Amiga Board.
+
+I have a modern PC now and have been using Linux for a few years now. I enjoyed 
+using Amithlon in the early 2000s. Unfortunately I only really 'discovered' it 
+a few years after legal difficulties arose that caused its development to 
+cease. Although I don't use it any more, I still dream about Amithlon and what 
+could have been. So I thought it might be interesting to look at it again, and 
+see if I could get it working on my more modern hardware. I haven't got there 
+yet, but I have managed to recreate the Amithlon CD with a more up to date 
+kernel, which may help me to resolve some problems.
+
+I thought I might share this knowledge with others who are interested in 
+Amithlon. This guide requires some knowledge of Linux. I used Xubuntu for this, 
+so commands may vary slightly if you are using a different distribution. 
+
+This is a guide to allow you to modify the hardfile that is contained on the 
+Amithlon boot CD. This will allow you to create a more up to date Amithlon 
+boot CD.
+
+1)  Copy the entire contents of Amithlon CD to a new directory somewhere on 
+    your Linux harddrive.
+
+2)  Download kernel 3.10 or kernel 4 and copy into the isolinux/ directory.
+
+3)  Modify isolinux/isolinux.cfg to use the updated kernel.
+
+    For kernel 3.10, change the first line to:
+   
+      default kern310 init=/linuxrc console_level=0 root=/dev/ram0 initrd=bigird.gz vga=769 ramdisk_size=33494 leavepages=22000 video=dovesa mem=512M crusoe
+
+    For kernel 4, change the first line to:
+
+      default kernel4 init=/linuxrc console_level=0 root=/dev/ram0 initrd=bigird.gz vga=769 ramdisk_size=33494 leavepages=22000 video=dovesa mem=512M crusoe
+
+    Note the ramdisk_size and the leavepages size have been increased to 
+    accomodate our larger hardfile.
+    If you are running Amithlon from VirtualBox, the "crusoe" option seems 
+    to be needed in order to start the emulation correctly.
+
+4)  Bigird.gz contains the initial ramdisk that Linux loads into memory which 
+    contains the emulator. This needs to be extended in order to hold a larger 
+    hardfile than the one supplied with Amithlon.
+    This file needs to be decompressed first before we can work on it. Open the 
+    shell, change the directory to your new amithlon directory and type the 
+    following.
+     
+      cd isolinux/
+      gzip -d bigird.gz
+
+    Now we need to extend the bigird file with empty space to make room for our 
+    new hardfile. This will add 22 megabytes of space to the file.
+
+      dd oflag=append conv=notrunc if=/dev/zero of=bigird bs=1MB count=22
+
+    And finally we need to expand the file structure on the bigird file to fill 
+    this new space.
+
+      e2fsck -f ./bigird
+      resize2fs ./bigird
+
+5)  Mount the bigird file as a filesystem on Linux, so we can modify its 
+    contents.
+
+    In the shell, type the following
+
+      mkdir /mnt/initrd
+
+    This will make a directory we can assign the filesystem to. Then mount the 
+    filesystem with...
+
+      sudo mount bigird /mnt/initrd
+   
+6)  Create a new hardfile in WinUAE.
+ 
+    In WinUAE, create a new hardfile that is 30mb in size, set the file system
+    to custom and the DOS TYPE to 5244534B.
+    You will need to open HD Toolbox in WinUAE, install the drive so Workbench
+    recognizes it, not forgetting to tick the "Make bootable" option, and
+    and then quick-format it.   
+
+    In the /mnt/initrd/ directory, find the file 
+    newdisk/uaefiles/diskfile_haage, and mount it as hardfile in WinUAE. This is 
+    the original Amithlon hardfile.
+   
+    Copy the entire contents of the original "amithlon_hd" drive into it. 
+    This is easiest done by opening a shall and typing the following...
+
+       copy amithlon_hd:#? your_new_drive_id: all    
+
+7)  Restart WinUAE, making sure you are booting from your new hardfile.
+    You will need to install various patches and drivers to get the new kernel 
+    to work. 
+
+    Download and install the Amithlon drivers and patches to your new hardfile.
+
+    It is probably best to refer to SnkBitten's guide as to what additional 
+    patches to install here. 
+    
+8)  Close out of WinUAE and copy your new hardfile to newdisk/uaefiles on 
+    /mnt/initrd/ making sure it overwrites the old one by keeping the same filename.
+
+9)  If you want to update the Amiga kickstart, this is located at 
+    newdisk/uaefiles/shape.rom.
+
+10) Unmount and compress the bigird file with gzip.
+ 
+      sudo umount /mnt/initrd/
+      gzip -9 bigird
+     
+11) Create your new Amithlon ISO.
+   
+    In the shell, change the directory back to the root of your new Amithlon 
+    dircetory.
+      
+      cd ..
+
+    Type the following, including the "." at the end...
+ 
+      sudo mkisofs -o ../AmiIso.iso -no-emul-boot -boot-load-size 4 -boot-info-table -b isolinux/isolinux.bin -c isolinux/boot.cat -iso-level 3 -J -joliet-long -rock -input-charset utf-8 -V "AmigaOS XL" .
+
+    This will create your new Amithlon ISO that you can burn to CD or USB stick.

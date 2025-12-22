@@ -1,0 +1,154 @@
+
+
+
+
+First things first --- where will your AmigaOS installation live?
+
+
+Let's assume from now on that you have an MBR partitioned disk to boot
+Amithlon from, which is called disk1...
+
+   *.  The easiest way is to have _another_ disk, disk2, which you will
+    partition under AmigaOS, using the Rigid Disk Block scheme. This 
+    can be a disk currently connected to a "real" Amiga, and it may
+    be a disk connected to any of your supported controllers (i.e.
+    it's perfectly alright for it to be a SCSI disk). If you go with
+    this option, you can move on to the next section.
+  
+   *.  If you want to (or have to) use just one disk, then you need to
+    create a "Virtual Disk" for AmigaOS. Such a virtual disk is a
+    partition on the MBR-partitioned drive that has a special type.
+    The space in that partition will be presented to AmigaOS as a whole
+    hard disk of its own, which you can then partition with the HDToolBox
+    under AmigaOS.
+    
+   *.  Theoretically, you could make AmigaOS use your FAT partition with the
+    builtin FAT support of Amithlon. I would strongly advise against doing
+    so, and in fact, in Amithlon 1.0.1, this option is unfortunately(?)
+    broken.... So I won't actually describe how to do it.
+
+
+
+Also, you need to ask yourself whether you want to just make Amithlon boot
+from the hard disk, but other than that, give the whole disk over to AmigaOS,
+or whether you actually want to use a different OS as well. In the first
+case, you will only need a very small (~10MB) boot partition, and can give
+the whole rest of the disk over to your virtual drive. In the case where you
+want to really use different OSs, you will need to work out how much space
+to dedicate to each.
+
+
+Partitions that can be used as Virtual Drives have the type $76 hex, or
+118 decimal. 
+
+
+[Re]partitioning your hard disk
+
+
+***WARNING*** If you repartition your drive, be absolutely sure you have
+backups of all important data! Even if a program claims it will repartition
+without data loss, do NOT trust it! Backups are cheap, your data is valuable!
+
+
+You can use any program you like to create and change partitions. However,
+at least most of the Microsoft FDISK programs cannot actually set the 
+partition type explicitly. 
+
+
+We recommend using the linux based boot floppy provided 
+here on www.amithlon.net,
+which in turn was created from 
+  
+     http://www.ibiblio.org/pub/Linux/system/recovery/ramf-111.exe
+ 
+
+
+
+This will let you boot into a usable system with a fully working linux
+fdisk from a single floppy. Just write it to a floppy, boot from it,
+follow the instructions until you get a command prompt, and then
+"fdisk /dev/hda" (replace "hda" with "hdb" if your boot hard drive is
+the primary IDE slave, with "hdc" if it is secondary master, "hdd" for
+secondary slave, and "sda" if it is the first SCSI hard disk).
+
+
+You will get a command prompt saying "Command (m for help):". At that prompt
+type 'p' to Print your current partitions. If the output is empty, great.
+If it isn't, oh well, use 'd' to delete the existing partitions one by one.
+You probably want to start with a clean slate.....
+
+
+Once you have an empty partition table, start adding partitions by entering
+'n' (for New). Where it asks whether you want primary or secondary, say
+'p' for primary (unless you need more than 4, at which point you probably
+know more about fdisk than I can put into this text, anyway). Make partition
+number 1 the boot partition (i.e. with the OS of your choice to boot from ---
+if you don't know, read section 4 first!). Start it at cylinder 1, and as
+the size give however much you want to spend on it (i.e. "+10M" if you want
+10 megabytes, or "+4096M" if you want 4 gigabytes).
+
+
+Next, add any further partitions you might need for your OS (e.g. in linux,
+you might want a swap partition, or a /usr/local partition, or...), always
+starting at the lowest possible cylinder, and always giving the size as
+before.
+
+
+Lastly, add what will become the virtual drive for Amithlon. Create a new
+partition with 'n', starting at the lowest possible cylinder. When fdisk
+asks for "Last cylinder", simply hit return (which will use the default, which
+is the highest possible cylinder).
+
+
+Next, you need to activate the first partition, so that it may be booted
+from. Enter 'a', and then give '1' as the partition number.
+
+
+Last but not least, you need to set the partition types. For each partition
+you defined, enter 't', then its number. You will then be asked for a hex code
+of the partition type. You can enter 'l' to list a whole bunch of known types.
+For partitions that are to hold Windows or DOS of some kind, you should
+probably use type "0c" or "0b" (depending on whether your BIOS supports LBA
+or not --- it probably does, so try "0c" first). For partitions that will
+hold linux, use the appropriate types (82 for swap, 83 for ext2fs).
+
+
+For the last partition, the one that is to hold the virtual drive, use type
+"76" (this will show up as "unknown", that's OK).
+
+
+Once you have all that, enter 'p' again and check that everything looks all
+right. If it does, use 'w' to write back the partition table to disk.
+
+
+You should now be able to boot Amithlon from CD and see the virtual drive
+in the HDToolBox, with a drive name starting with "VirtDsk" and a non-zero
+LUN. Hope it worked :)
+
+
+Next
+
+
+	
+	
+	Last Updated: Saturday 18 May 2002  10:35:25
+© Bernd Meyer 2001
+
+Design © Kymberly Fergusson
+
+
+
+    
+   
+
+
+
+
+
+
+
+
+
+
+
+

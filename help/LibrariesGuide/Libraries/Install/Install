@@ -1,0 +1,233 @@
+
+; == English strings =========================================================
+
+(set default-lang 4)
+
+(set #bad-kick "Installer needs Kickstart 2.04+")
+
+(set #install-msg
+  (cat
+    "\n\nWelcome to the installation utility.\n\n"
+    "This program lets you install the libraries guide by Daniel "
+    "Stenberg on your Amiga.\n\n"
+    "The reported text is © 1994  by Daniel Stenberg.\n"
+    "All rights reserved."
+  )
+)
+
+(set #welcome "Welcome to the installer utility.")
+
+(set #copy-libraries-guide "Copying the guide ...")
+
+(set #copy-libraries-help
+  (cat
+    "This guide will draw a complete step by step development of a"
+    "shared AmigaDOS library."
+    "You are requested for a path where the guide will be stored."
+  )
+)
+
+(set #copy-icons-query "Do you wish to copy the guide icon too?")
+
+(set #copy-icons-help
+  (cat
+    "You may install the guide with its own icon: this way you will"
+    "just need to double-click the icon to open the database."
+    "If you don't need the icon select `No'; otherwise click `Yes'."
+  )
+)
+
+(set #language-Yes "Yes")
+(set #language-No  "No")
+
+(set #copy-type-query "Which icon type you wish installed?")
+
+(set #copy-type-help
+  (cat
+    "You are required to choose between two types of icons:"
+    "`Standard AmigaDOS' is an  icon for a  standard Screen  such as"
+    "                    an Hires-NoLace."
+    "`MagicWB' is an icon for the MagicWorkbench."
+  )
+)
+
+(set #copy-MagicWB-icon "Copying the MagicWB icon")
+
+(set #copy-MagicWB-help
+  (cat
+    "You are required to choose between two types of icons:"
+    "`Standard AmigaDOS' is an  icon for a  standard Screen  such as"
+    "                    an Hires-NoLace."
+    "`MagicWB' is an icon for the MagicWorkbench."
+  )
+)
+
+(set #copy-AmigaDOS-icon "Copying the AmigaDOS icon")
+
+(set #copy-AmigaDOS-help
+  (cat
+    "You are required to choose between two types of icons:"
+    "`Standard AmigaDOS' is an  icon for a  standard Screen  such as"
+    "                    an Hires-NoLace."
+    "`MagicWB' is an icon for the MagicWorkbench."
+  )
+)
+
+; == Italian strings =========================================================
+
+(if (= @language "italiano")
+  (
+    (set default-lang 32)
+
+    (set #bad-kick "Il programma Installer necessita il Kickstart 2.04+")
+
+    (set #install-msg
+      (cat
+        "\n\nBenvenuti nel programma di installazione.\n\n"
+        "Questo programma vi permette di installare la `Guida alle "
+        "librerie' di Daniel Stenberg nel vostro Amiga.\n\n"
+        "Il testo della guida è © 1994 di Daniel Stenberg.\n"
+        "Tutti i diritti riservati."
+      )
+    )
+
+    (set #welcome "Benvenuti nel programma di installazione.")
+
+    (set #copy-libraries-guide "Copia del documento AmigaGuide ...")
+
+    (set #copy-libraries-help
+      (cat
+        "Questo documento è una completa guida passo passo alla realiz-"
+        "zazione di  librerie condivise di sistema (AmigaDOS Shared Li-"
+        "braries)."
+        "Si chiede di specificare dove memorizzare la guida."
+      )
+    )
+
+    (set #copy-icons-query "Si desidera copiare anche l'icona?")
+
+    (set #copy-icons-help
+      (cat
+        "La guida dispone  di una propria icona, che può, o meno essere"
+        "installata."
+        "Se viene installata la guida (`Si') si potrà accedere alla do-"
+        "cumentazione con un semplice click da Workbench."
+        "Se non si desidera l'icona selezionare `No'."
+      )
+    )
+
+    (set #language-Yes "Si")
+    (set #language-No  "No")
+
+    (set #copy-type-query "Che tipo di icona si desidera?")
+
+    (set #copy-type-help
+      (cat
+        "Ci sono due tipi di icone da installare:"
+        "`Standard AmigaDOS' è un'icona per un normalissimo Workbench ad"
+        "                    alta risoluzione non interlacciato."
+        "`MagicWB' è un'icona per il MagicWorkbench."
+      )
+    )
+
+    (set #copy-MagicWB-icon "Copia dell'icona per MagicWB ...")
+
+    (set #copy-MagicWB-help
+      (cat
+        "Ci sono due tipi di icone da installare:"
+        "`Standard AmigaDOS' è un'icona per un normalissimo Workbench ad"
+        "                    alta risoluzione non interlacciato."
+        "`MagicWB' è un'icona per il MagicWorkbench."
+      )
+    )
+
+    (set #copy-AmigaDOS-icon "Copia di un'icona standard ...")
+
+    (set #copy-AmigaDOS-help
+      (cat
+        "Ci sono due tipi di icone da installare:"
+        "`Standard AmigaDOS' è un'icona per un normalissimo Workbench ad"
+        "                    alta risoluzione non interlacciato."
+        "`MagicWB' è un'icona per il MagicWorkbench."
+      )
+    )
+
+  )
+)
+; ============================================================================
+
+
+; Check Kickstart version. Exit if not at least 2.0
+
+(if (< (/ (getversion) 65536) 37)
+  (abort #bad-kick)
+)
+
+(message #install-msg)
+
+(welcome)
+
+; Copy the guide
+
+(set destination
+  (askdir
+    (prompt #copy-libraries-guide)
+    (help   @copy-libraries-help)
+    (default "Work:")
+  )
+)
+
+(copyfiles
+  (prompt #copy-libraries-guide)
+  (help   @copy-libraries-help)
+  (source "/libraries")
+  (dest   destination)
+  (confirm "expert")
+)
+
+(complete 75)
+
+; Copy the icon
+
+(if (= @user-level 2)
+  (if (askbool
+        (prompt  #copy-icons-query)
+        (help    @copy-icons-help)
+        (choices #language-Yes #language-No)
+        (default 1)
+      )
+    (if (askbool
+          (prompt #copy-type-query)
+          (help   @copy-type-help)
+          (choices "MagicWB" "Standard AmigaDOS")
+          (default 0)
+        )
+      (copyfiles
+        (prompt #copy-MagicWB-icon)
+        (help   @copy-MagicWB-help)
+        (source "/Icons/MagicWB/libraries.info")
+        (dest   destination)
+        (confirm)
+        (infos)
+      )
+      (copyfiles
+        (prompt #copy-AmigaDOS-icon)
+        (help   @copy-AmigaDOS-help)
+        (source "/Icons/AmigaDOS/libraries.info")
+        (dest   destination)
+        (confirm)
+      )
+    )
+  )
+
+  (copyfiles
+    (prompt #copy-AmigaDOS-icon)
+    (help   @copy-AmigaDOS-help)
+    (source "/Icons/AmigaDOS/libraries.info")
+    (dest   destination)
+  )
+)
+
+(complete 100)
+
+; End of Installer script

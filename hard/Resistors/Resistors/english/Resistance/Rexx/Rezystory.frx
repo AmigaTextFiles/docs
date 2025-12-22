@@ -1,0 +1,122 @@
+/*
+** $VER: Rezystory.frx 1.0 (05.05.2k1) by peejay@poczta.fm
+*/
+
+Options Results
+
+GetField pasek1
+   pas1 = Result
+GetField pasek2
+   pas2 = Result
+GetField pasek3
+   pas3 = Result
+GetField mnoznik
+   mnoz = Result
+GetField tolerancja
+   tole = Result
+
+plik = "Resistance/0"
+   SetField w1 plik || pas1
+   SetField w2 plik || pas2
+   SetField m1 plik || pas1
+   SetField m2 plik || pas2
+   SetField m3 plik || pas3
+
+plik = "Resistance/"
+   if (mnoz ~= 8) & (mnoz ~= 9) then do
+      SetField w3 plik || "0" || mnoz
+      SetField m4 plik || "0" || mnoz
+      end
+   if mnoz = 8 then do
+      SetField w3 plik || "10"
+      SetField m4 plik || "10"
+      end
+   if mnoz = 9 then do
+      SetField w3 plik || "11"
+      SetField m4 plik || "11"
+      end
+
+plik = "Resistance/"
+   if tole = 0 then do
+      SetField w4 plik || "01"
+      SetField m5 plik || "01"
+      end
+   if tole = 1 then do
+      SetField w4 plik || "02"
+      SetField m5 plik || "02"
+      end
+   if tole = 2 then do
+      SetField w4 plik || "05"
+      SetField m5 plik || "05"
+      end
+   if tole = 3 then do
+      SetField w4 plik || "06"
+      SetField m5 plik || "06"
+      end
+   if tole = 4 then do
+      SetField w4 plik || "07"
+      SetField m5 plik || "07"
+      end
+   if tole = 5 then do
+      SetField w4 plik || "08"
+      SetField m5 plik || "08"
+      end
+   if tole = 6 then do
+      SetField w4 plik || "10"
+      SetField m5 plik || "10"
+      end
+   if tole = 7 then do
+      SetField w4 plik || "11"
+      SetField m5 plik || "11"
+      end
+
+if mnoz = 0 then do; mnoz = 1; suf = ""; call dalej1; end
+if mnoz = 1 then do; mnoz = 10; suf = ""; call dalej1; end
+if mnoz = 2 then do; mnoz = 100; suf = ""; call dalej1; end
+if mnoz = 3 then do; mnoz = 1; suf = "k"; call dalej1; end
+if mnoz = 4 then do; mnoz = 10; suf = "k"; call dalej1; end
+if mnoz = 5 then do; mnoz = 100; suf = "k"; call dalej1; end
+if mnoz = 6 then do; mnoz = 1; suf = "M"; call dalej1; end
+if mnoz = 7 then do; mnoz = 10; suf ="M"; call dalej1; end
+if mnoz = 8 then do; mnoz = 0.1; suf = ""; call dalej1; end
+if mnoz = 9 then do; mnoz = 0.01; suf = ""; end
+
+dalej1:
+if tole = 0 then do; tole = 1; call dalej2; end
+if tole = 1 then do; tole = 2; call dalej2; end
+if tole = 2 then do; tole = 0.5; call dalej2; end
+if tole = 3 then do; tole = 0.25; call dalej2; end
+if tole = 4 then do; tole = 0.1; call dalej2; end
+if tole = 5 then do; tole = 0.05; call dalej2; end
+if tole = 6 then do; tole = 5; call dalej2; end
+if tole = 7 then tole = 10
+
+/****** Rezystory wëglowe ******/
+dalej2:
+
+wegiel_r = pas1 || pas2
+wegiel_r = wegiel_r * mnoz
+wegiel_t = wegiel_r * (tole/100)
+wegiel_r = wegiel_r || suf
+wegiel_t = "±" || wegiel_t || suf
+
+/****** Rezystory metaliz ******/
+metali_r = pas1 || pas2 || pas3
+metali_r = metali_r * mnoz
+metali_t = metali_r * (tole/100)
+metali_r = metali_r || suf
+metali_t = "±" || metali_t || suf
+
+/******     Tolerancja    ******/
+toleranc = "±" || tole || "%"
+
+/****** Wklejamy wszystko ******/
+SetField r_4 wegiel_r
+SetField t_4 wegiel_t
+SetField r_5 metali_r
+SetField t_5 metali_t
+SetField toler1 toleranc
+SetField toler2 toleranc
+
+/******      Koniec       ******/
+exit

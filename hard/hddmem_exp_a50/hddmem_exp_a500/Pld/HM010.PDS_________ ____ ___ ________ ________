@@ -1,0 +1,2803 @@
+
+TITLE           A500 Memory and HDD Controller
+PATTERN         1
+REVISION        1.6
+AUTHOR          Vladimir Sobolev
+COMPANY         Vladimir Sobolev corp.
+DATE            02/11/98
+
+CHIP    Dream_Expander  nfx740_68
+
+; Inputs
+
+pin 53  cdac       ; SYNCHRONOUS CLOCK 7Mhz
+pin 19  cpuclk
+
+
+pin 2   a18
+pin 3   a17
+pin 4   a16
+
+
+pin 43   ior
+pin 44   iow
+pin 7   cs1
+pin 8   cs0
+pin 9   irq
+pin 11  cas3
+pin 12  cas2
+pin 13  cas1
+pin 14  cas0
+
+
+pin 15  a15
+pin 16  a14
+
+
+pin 56  ovr    open_drain  ; 22  b0 m0
+pin 23  int2   open_drain
+pin 24  ras1
+pin 25  ras0
+;pin 26  we
+pin 27  adr_sw
+pin 57  rom_oe   ; 57 b3 m1
+pin 29  reset
+pin 30  d14   open_drain
+pin 31  d15
+
+
+
+pin 36  a23
+pin 37  a22
+pin 38  a21
+
+
+pin 40  a13
+pin 41  a12
+pin 42  a3
+
+
+pin 49  a20
+pin 50  a19
+
+
+pin 60 sys_rst
+pin 61 dtack  open_drain   ; 61 b3 m5
+pin 62 rd_wr
+pin 63 as
+pin 64 uds
+pin 65 lds ; 65
+
+
+pin  58 regclk
+pin  22 casreg             ; 59  b3 m3
+
+node   rasreg    regfbk  ; 65 b3 m9
+
+node   rascpu    regfbk  ; 56 b3 m0
+node  28 cascpu    regfbk  ; 28 b0 m6
+
+node  6  da8000    regfbk  ; 6  b1 m8
+node  48 da9000_r  cmbfbk  ; 48 b2 m0
+node  29 da9000    regfbk  ; 29 b0 m7
+node  5  daa000    regfbk  ; 5  b1 m9
+
+node  45 f8_wr_en  regfbk  ; 45 b2 m3
+node  42 f8_mem_en regfbk  ; 42 b2 m6
+node  41 c0_mem_en regfbk  ; 41 b2 m7
+node  47 hdd_dis   regfbk  ; 47 b2 m1
+node  40 mem_dis   regfbk  ; 40 b2 m8
+node  39 id_dis    regfbk  ; 39 b2 m9
+node  46 con_dis   regfbk  ; 46 b2 m2
+
+
+node  9  da9sel    cmbfbk  ; 9  b1 m5
+node  10 d15_oe    cmbfbk  ; 10 b1 m4
+node  26 b8sel     cmbfbk  ; 26 b0 m4
+node   d15p      cmbfbk  ; 63 b3 m7
+
+node   idst2     regfbk  ; 64 b3 m8
+node   idst1     regfbk  ; 60 b3 m4
+node   idst0     regfbk  ; 58 b3 m2
+
+node   rst_x     regfbk
+
+;node  ovl
+
+
+STATE
+MOORE_MACHINE
+DEFAULT_BRANCH st0
+
+st0 = /idst2 * /idst1 * /idst0
+st1 = /idst2 * /idst1 * idst0
+st2 = /idst2 * idst1 * /idst0
+st3 = /idst2 * idst1 * idst0
+st4 = idst2 * /idst1 * /idst0
+st5 = idst2 * /idst1 * idst0
+st6 = idst2 * idst1 * /idst0
+st7 = idst2 * idst1 * idst0
+
+; state after reset
+st0 := a3 -> st0
+     + /a3 -> st1
+
+; state after first r/w $dexxxx with a3=0
+st1 := rd_wr -> st1
+     + /rd_wr -> st2
+
+; state after two write to $dexxxx               1
+st2 := rd_wr * /id_dis -> st3
+     + rd_wr * id_dis -> st6
+     + /rd_wr -> st2
+
+; state after first read $dexxxx with id_dis=0   1
+st3 := rd_wr -> st4
+     + /rd_wr -> st2
+
+; state after two read $dexxxx with id_dis=0     0
+st4 := rd_wr -> st5
+     + /rd_wr -> st2
+
+; state after three read $dexxxx with id_dis=0   1
+st5 := rd_wr -> st5
+     + /rd_wr -> st2
+
+; state after first read $dexxxx with id_dis=1
+st6 := rd_wr -> st7
+     + /rd_wr -> st2
+
+; state after two read $dexxxx with id_dis=1
+st7 := rd_wr -> st0
+     + /rd_wr -> st2
+
+
+
+
+EQUATIONS
+
+ idst[0:2].aclk = /(/as * a23 *a22 * /a21 * a20 * a19 * a18 * a17 * /a16)
+ idst[0:2].rstf = /reset
+ idst[0:2].trst = gnd
+
+ b8sel = /as * a23 * /a22 * a21 * a20 * a19 * /a18 * /a17 * /a16
+ b8sel.trst = gnd
+
+; open_drain pin
+ int2 = /da9000
+
+; ovl.d:= gnd
+; ovl.clkf = cdac
+; ovl.rstf = /reset
+
+ rst_x := /reset              ; ____|~<reset~~~~~~~~~~~~~|_<fxxxxx_call____
+       + reset * rst_x * as
+       + reset * rst_x * /a23
+       + reset * rst_x * /a22
+       + reset * rst_x * /a21
+       + reset * rst_x * /a20
+ rst_x.clkf = cdac
+ rst_x.rstf = gnd
+ rst_x.setf = gnd
+ rst_x.trst = gnd
+
+ rom_oe = /((/rst_x * /f8_mem_en * /as * rd_wr * a23 * a22 * a21 * a20 * a19)
+          + rst_x)
+ rom_oe.trst = vcc
+
+; open_drain pin
+ ovr = /(/as * /a23 * /a22 * a21                                ; 20-3f
+     + /as * /a23 * a22 * /a21                                  ; 40-5f
+     + /as * /a23 * a22 * a21                                   ; 60-7f
+     + /as * a23 * /a22 * /a21                                  ; 80-9f
+     + /as * a23 * a22 * /a21 * /a20                            ; c0-cf
+     + /as * a23 * a22 * /a21 * a20 * /a19                      ; d0-d7
+     + /as * a23 * /a22 * a21 * a20 * a19 * /a18 * /a17 * /a16  ; b8
+     + /as * a23 * a22 * /a21 * a20 * a19 * /a18 * a17 * /a16   ; da
+     + /as * a23 * a22 * /a21 * a20 * a19 * a18 * a17 * /a16    ; de
+     + /as * a23 * a22 * a21 * a20 * a19 * f8_mem_en)           ; f8-ff
+
+; open_drain pin
+ dtack = /(/as * /a23 * /a22 * a21                              ; 20-3f
+     + /as * /a23 * a22 * /a21                                  ; 40-5f
+     + /as * /a23 * a22 * a21                                   ; 60-7f
+     + /as * a23 * /a22 * /a21                                  ; 80-9f
+     + /as * a23 * a22 * /a21 * /a20                            ; c0-cf
+     + /as * a23 * a22 * /a21 * a20 * /a19                      ; d0-d7
+     + /as * a23 * /a22 * a21 * a20 * a19 * /a18 * /a17 * /a16  ; b8
+     + /as * a23 * a22 * /a21 * a20 * a19 * /a18 * a17 * /a16   ; da
+     + /as * a23 * a22 * /a21 * a20 * a19 * a18 * a17 * /a16    ; de
+     + /as * a23 * a22 * a21 * a20 * a19 * f8_mem_en)           ; f8-ff
+
+; this pin connect with external counter reset pin
+ casreg.d := regclk * as
+ casreg.clkf = /cdac
+ casreg.trst = vcc
+
+ rasreg.d := casreg
+ rasreg.clkf = cdac
+ rasreg.trst = gnd
+
+ rascpu.d := /mem_dis * /as * /a23 * /a22 * a21                        ; 20-3f
+       + /mem_dis * /as * /a23 * a22 * /a21                            ; 40-5f
+       + /mem_dis * /as * /a23 * a22 * a21                             ; 60-7f
+       + /mem_dis * /c0_mem_en * /as * a23 * /a22 * /a21 * /a20        ; 80-8f
+       + /mem_dis * /c0_mem_en * /as * a23 * /a22 * /a21 * a20 * /a19  ; 90-97
+       + /mem_dis * /f8_mem_en * /as * a23 * /a22 * /a21 * a20 * a19   ; 98-9f
+       + /mem_dis * c0_mem_en * /as * a23 * a22 * /a21 * /a20          ; c0-cf
+       + /mem_dis * c0_mem_en * /as * a23 * a22 * /a21 * a20 * /a19    ; d0-d7
+       + f8_mem_en * rd_wr * /as * a23 * a22 * a21 * a20 * a19              ; f8-ff
+       + f8_mem_en * /rd_wr * f8_wr_en * /as * a23 * a22 * a21 * a20 * a19  ; f8-ff
+ rascpu.clkf = /cdac
+ rascpu.rstf = as
+ rascpu.trst = gnd
+
+ cascpu.d := rascpu
+ cascpu.clkf = /cdac
+ cascpu.rstf = as
+ cascpu.trst = gnd
+
+ ras1 = /(rascpu * /a23 * a22 * a21                ; 60-7f
+        + rascpu * a23 * /a22 * /a21               ; 80-9f
+        + rascpu * a23 * a22 * /a21 * /a20         ; c0-cf
+        + rascpu * a23 * a22 * /a21 * a20 * /a19   ; d0-d7
+        + rascpu * a23 * a22 * a21 * a20 * a19     ; f8-ff
+        + rasreg)
+ ras1.trst = vcc
+
+ ras0 = /(rascpu * /a23 * /a22 * a21               ; 20-3f
+        + rascpu * /a23 * a22 * /a21               ; 40-5f
+        + rasreg)
+ ras0.trst = vcc
+
+ cas3 = /(cascpu * /uds * /a23 * a22 * /a21               ; 40-5f
+        + cascpu * /uds * a23 * /a22 * /a21               ; 80-9f
+        + cascpu * /uds * a23 * a22 * /a21 * /a20         ; c0-cf
+        + cascpu * /uds * a23 * a22 * /a21 * a20 * /a19   ; d0-d7
+        + cascpu * /uds * a23 * a22 * a21 * a20 * a19     ; f8-ff
+        + casreg)
+ cas3.trst = vcc
+
+ cas2 = /(cascpu * /lds * /a23 * a22 * /a21               ; 40-5f
+        + cascpu * /lds * a23 * /a22 * /a21               ; 80-9f
+        + cascpu * /lds * a23 * a22 * /a21 * /a20         ; c0-cf
+        + cascpu * /lds * a23 * a22 * /a21 * a20 * /a19   ; d0-d7
+        + cascpu * /lds * a23 * a22 * a21 * a20 * a19     ; f8-ff
+        + casreg)
+ cas2.trst = vcc
+
+ cas1 = /(cascpu * /uds * /a23 * /a22 * a21        ; 20-3f
+        + cascpu * /uds * /a23 * a22 * a21         ; 60-7f
+        + casreg)
+ cas1.trst = vcc
+
+ cas0 = /(cascpu * /lds * /a23 * /a22 * a21        ; 20-3f
+        + cascpu * /lds * /a23 * a22 * a21         ; 60-7f
+        + casreg)
+ cas0.trst = vcc
+
+ adr_sw.d := /rascpu
+ adr_sw.clkf = cdac
+ adr_sw.setf = as
+ adr_sw.trst = vcc
+
+; we = /(rascpu * /rd_wr)
+; we.trst = vcc
+
+
+ cs1.d := /(/hdd_dis * /as * a23 * a22 * /a21 * a20 * a19 * /a18 * a17 * /a16
+          * /a15 * /a14 * a12)
+ cs1.clkf = cdac
+ cs1.trst = vcc
+
+ cs0.d := /(/hdd_dis * /as * a23 * a22 * /a21 * a20 * a19 * /a18 * a17 * /a16
+          * /a15 * /a14 * /a12)
+ cs0.clkf = cdac
+ cs0.trst = vcc
+
+ ior = /((rd_wr * /cs1 * /uds)
+        + (rd_wr * /cs1 * /lds)
+        + (rd_wr * /cs0 * /uds)
+        + (rd_wr * /cs0 * /lds))
+ ior.trst = vcc
+
+ iow = /((/rd_wr * /cs1 * /uds)
+        + (/rd_wr * /cs1 * /lds)
+        + (/rd_wr * /cs0 * /uds)
+        + (/rd_wr * /cs0 * /lds))
+ iow.trst = vcc
+
+ d15_oe = ((/hdd_dis * /as * rd_wr * a23 * a22 * /a21 * a20
+          * a19 * /a18 * a17 * /a16 * a15 * /a14 * /a13)         ; da8-da9
+          + (/hdd_dis * /as * rd_wr * a23 * a22 * /a21 * a20
+          * a19 * /a18 * a17 * /a16 * a15 * /a14 * a13 * /a12)   ; daa
+          + (/con_dis * /as * rd_wr * a23 * a22 * /a21 * a20
+          * a19 * a18 * a17 * /a16)                              ; de
+          + (/con_dis * /as * rd_wr * a23 * /a22 * a21 * a20
+          * a19 * /a18 * /a17 * /a16))                           ; b8
+ d15_oe.trst = gnd
+
+ d15 = a18 * a17 * /idst2                                  ; de
+     + /a18 * a17 * /a13 * /a12 * /da8000 * irq            ; da
+     + /a18 * a17 * /a13 * /a12 * da8000                   ; da
+     + /a18 * a17 * /a13 * a12 * da9000                    ; da
+     + /a18 * a17 * a13 * /a12 * daa000                    ; da
+     + d15p
+ d15.trst = d15_oe
+
+ d15p = a18 * a17 * idst2 * /idst1 * idst0                 ; de
+     + /a18 * /a17 * /idst2 * /idst1 * /idst0 * f8_wr_en   ; b8
+     + /a18 * /a17 * /idst2 * /idst1 * idst0 * con_dis     ; b8
+     + /a18 * /a17 * /idst2 * idst1 * /idst0 * id_dis      ; b8
+     + /a18 * /a17 * /idst2 * idst1 * idst0 * hdd_dis      ; b8
+     + /a18 * /a17 * idst2 * /idst1 * /idst0 * mem_dis     ; b8
+     + /a18 * /a17 * idst2 * idst1 * /idst0 * c0_mem_en    ; b8
+     + /a18 * /a17 * idst2 * idst1 * idst0 * f8_mem_en     ; b8
+ d15p.trst = gnd
+
+ da9sel = /hdd_dis * /as * a23 * a22 * /a21 * a20
+     * a19 * /a18 * a17 * /a16
+     * a15 * /a14 * /a13 * a12                             ; da
+ da9sel.trst = gnd
+
+; open_drain pin
+ d14 = /(da9sel * rd_wr)
+
+ da8000.d := /a13 * /a12 * d15.io
+           + /a13 * a12 * da8000
+           + a13 * da8000
+ da8000.aclk = /(/hdd_dis * /as * /rd_wr * a23 * a22 * /a21 * a20
+          * a19 * /a18 * a17 * /a16 * a15 * /a14)
+ da8000.trst = gnd
+
+ da9000_r = (da9sel * /rd_wr * /uds * /d15.io) + /reset + hdd_dis
+ da9000_r.trst = gnd
+
+ da9000.d := /da8000
+ da9000.aclk = irq
+ da9000.rstf = da9000_r
+ da9000.trst = gnd
+
+ daa000.d := /a13 * daa000
+           + a13 * /a12 * d15.io
+           + a13 * a12 * daa000
+ daa000.aclk = /(/hdd_dis * /as * /rd_wr * a23 * a22 * /a21 * a20
+          * a19 * /a18 * a17 * /a16 * a15 * /a14)
+ daa000.trst = gnd
+
+
+
+; register f8_wr_en (st = 0)
+ f8_wr_en.d := /rd_wr * d14.io * /idst2 * /idst1 * /idst0 * /con_dis * d15.io
+             + rd_wr * f8_wr_en
+             + con_dis * f8_wr_en
+             + /d14.io * f8_wr_en
+             + idst2 * f8_wr_en
+             + idst1 * f8_wr_en
+             + idst0 * f8_wr_en
+ f8_wr_en.aclk = /b8sel
+ f8_wr_en.rstf = /sys_rst
+ f8_wr_en.trst = gnd
+
+
+; register f8_mem_en (st = 7)
+ f8_mem_en.d := /rd_wr * d14.io * idst2 * idst1 * idst0 * /con_dis * d15.io
+              + rd_wr * f8_mem_en
+              + con_dis * f8_mem_en
+              + /d14.io * f8_mem_en
+              + /idst2 * f8_mem_en
+              + /idst1 * f8_mem_en
+              + /idst0 * f8_mem_en
+ f8_mem_en.aclk = /b8sel
+ f8_mem_en.rstf = /sys_rst
+ f8_mem_en.trst = gnd
+
+
+; register c0_mem_en (st = 6)
+ c0_mem_en.d := /rd_wr * d14.io * idst2 * idst1 * /idst0 * /con_dis * d15.io
+              + rd_wr * c0_mem_en
+              + con_dis * c0_mem_en
+              + /d14.io * c0_mem_en
+              + /idst2 * c0_mem_en
+              + /idst1 * c0_mem_en
+              + idst0 * c0_mem_en
+ c0_mem_en.aclk = /b8sel
+ c0_mem_en.rstf = /sys_rst
+ c0_mem_en.trst = gnd
+
+
+; register hdd_dis (st = 3)
+ hdd_dis.d := /rd_wr * d14.io * /idst2 * idst1 * idst0 * /con_dis * d15.io
+              + rd_wr * hdd_dis
+              + con_dis * hdd_dis
+              + /d14.io * hdd_dis
+              + idst2 * hdd_dis
+              + /idst1 * hdd_dis
+              + /idst0 * hdd_dis
+ hdd_dis.aclk = /b8sel
+ hdd_dis.rstf = /sys_rst
+ hdd_dis.trst = gnd
+
+
+; register mem_dis (st = 4)
+ mem_dis.d := /rd_wr * d14.io * idst2 * /idst1 * /idst0 * /con_dis * d15.io
+              + rd_wr * mem_dis
+              + con_dis * mem_dis
+              + /d14.io * mem_dis
+              + /idst2 * mem_dis
+              + idst1 * mem_dis
+              + idst0 * mem_dis
+ mem_dis.aclk = /b8sel
+ mem_dis.rstf = /sys_rst
+ mem_dis.trst = gnd
+
+
+;  register id_dis (st = 2)
+ id_dis.d := /rd_wr * d14.io * /idst2 * idst1 * /idst0 * /con_dis * d15.io
+              + rd_wr * id_dis
+              + con_dis * id_dis
+              + /d14.io * id_dis
+              + idst2 * id_dis
+              + /idst1 * id_dis
+              + idst0 * id_dis
+ id_dis.aclk = /b8sel
+ id_dis.rstf = /sys_rst
+ id_dis.trst = gnd
+
+
+; register con_dis (st = 1)
+ con_dis.d := /rd_wr * d14.io * /idst2 * /idst1 * idst0 * /con_dis * d15.io
+              + rd_wr * con_dis
+              + con_dis * con_dis
+              + /d14.io * con_dis
+              + idst2 * con_dis
+              + idst1 * con_dis
+              + /idst0 * con_dis
+ con_dis.aclk = /b8sel
+ con_dis.rstf = /sys_rst
+ con_dis.trst = gnd
+
+
+
+
+SIMULATION
+
+; *********************************************************************
+
+ trace_on
+ sys_rst reset cpuclk cdac as uds lds rd_wr rst_x
+ idst2 idst1 idst0 b8sel d15p d15.fb d15.io d15_oe d14.fb d14.io
+ regclk casreg rasreg rascpu adr_sw cascpu
+ ras1 ras0 cas3 cas2 cas1 cas0
+ f8_wr_en con_dis id_dis hdd_dis mem_dis c0_mem_en f8_mem_en
+ ovr dtack rom_oe
+ ior iow cs0 cs1 irq int2 da9sel
+ da8000 da9000_r da9000 daa000
+ a23 a22 a21 a20 a19 a18 a17 a16
+ a15 a14 a13 a12 a3
+
+ setf as uds lds rd_wr reset sys_rst
+      /a23 /a22 /a21 /a20 /a19 /a18 /a17 /a16
+      /a15 /a14 /a13 /a12 /a3
+      /d14.io /d15.io /regclk /irq int2
+
+ prldf idst[0:2] /da8000 /da9000 daa000 /casreg /rasreg /rascpu /cascpu
+       /f8_wr_en /con_dis /id_dis /hdd_dis /mem_dis /c0_mem_en /f8_mem_en
+       /rst_x
+
+
+ setf /sys_rst /reset           ; activate reset
+ setf cpuclk
+ setf cdac
+ setf /cpuclk
+ setf /cdac
+ setf sys_rst reset
+
+
+; b8 write  d14.io=1  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set f8_wr_en to 1
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set f8_wr_en to 0
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; no result (a3=1)
+
+
+; f8 read
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; de write  a3=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; no result (a3=1)
+
+
+; de write  a3=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 /a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "001" state
+
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set con_dis to 0
+
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; no result (read)
+
+
+; de write  a3=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "010" state
+
+
+
+
+
+
+; b8 write  d14.io=1  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set id_dis to 1
+
+
+; read id_dis
+; b8 read
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set id_dis to 0
+
+
+; read id_dis
+; b8 read
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "011" state
+
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set hdd_dis to 0
+
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "100" state
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set mem_dis to 0
+
+
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "101" state
+
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; no result (read)
+
+; de write  a3=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "010" state
+
+
+
+
+
+; b8 write  d14.io=1  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set id_dis to 1
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "110" state
+
+
+
+
+; b8 write  d14.io=1  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set c0_mem_en to 1
+
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "111" state
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set f8_mem_en to 0
+
+
+
+
+; de read  a3=1
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "000" state
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ; /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set f8_wr_en to 0
+
+
+
+
+; de write  a3=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 /a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "001" state
+
+
+
+
+; de write  a3=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 a18 a17 /a16 a3
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: jump to idst "001" state
+
+
+
+
+; b8 write  d14.io=1  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; result: set id_dis to 0
+
+
+
+
+
+
+;--------------------------------------------------------------------
+; simulation memory part
+
+
+; write 20xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr /a23 /a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+
+; regeneration counter set last bit to 1
+ setf regclk
+
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 20xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr /a23 /a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf /regclk  ; from casreg (counter reset)=1 ~50ns after cdac ~~|__
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; write 20xxxx uds=0 lds=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr /a23 /a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds ;/lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 20xxxx uds=1 lds=0
+ setf cpuclk    ; 0 cycle
+ setf rd_wr /a23 /a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /lds ;/uds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 40xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr /a23 a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 40xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr /a23 a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 60xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr /a23 a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 60xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr /a23 a22 a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 80xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 80xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 88xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 /a21 /a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 88xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 /a21 /a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 90xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 /a21 a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 90xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 /a21 a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write 98xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 /a22 /a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read 98xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 /a22 /a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write c0xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read c0xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 /a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+
+; write c8xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 /a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read c8xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 /a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+
+; write d0xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read d0xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 /a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; read d8xxxx  (not ram) (for check)
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write f8xxxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+; read f8xxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 a21 a20 a19 /a18 /a17 /a16
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d14.io d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+;--------------------------------------------------------------------
+; ide part simulation
+
+
+; write da8xxx  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf d15.io
+ setf as uds lds
+ setf /cdac
+
+; write da8xxx  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf /d15.io
+ setf as uds lds
+ setf /cdac
+
+
+
+; set ide interrupt request
+ setf irq
+
+
+
+
+; write da9xxx  d15.io=1
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; write da9xxx  d15.io=0
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write daaxxx  d15.io=0  da9000->int2 disabled
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf /d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; write daaxxx  d15.io=1  da9000->int2 enabled
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+ setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; read da8xxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; read da9xxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 /a13 a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; read daaxxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 a15 /a14 a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write da2xxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 /a15 /a14 a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; read da2xxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 /a15 /a14 a13 /a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+
+; write da3xxx
+ setf cpuclk    ; 0 cycle
+ setf /rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 /a15 /a14 a13 a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as ;/uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+ setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+; read da3xxx
+ setf cpuclk    ; 0 cycle
+ setf rd_wr a23 a22 /a21 a20 a19 /a18 a17 /a16 /a15 /a14 a13 a12
+ setf cdac
+
+ setf /cpuclk   ; 1 cycle
+ setf /cdac
+
+ setf cpuclk    ; 2 cycle
+ setf /as /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 3 cycle
+; setf d15.io
+ setf /cdac
+
+ setf cpuclk    ; 4 cycle
+; setf /uds /lds
+ setf cdac
+
+ setf /cpuclk   ; 5 cycle
+ setf /cdac
+
+ setf cpuclk    ; 6 cycle
+ setf cdac
+
+ setf /cpuclk   ; 7 cycle
+ setf as uds lds
+ setf /cdac
+
+
+
+
+
+; reset ide interrupt request
+ setf /irq
+ setf cpuclk
+ setf cdac
+ setf /cpuclk
+ setf /cdac
+
+
+
+
+ trace_off
+
+
+

@@ -1,0 +1,191 @@
+        <html>
+        <head><base target="_self">
+<title>русский транзит - amiga#1: arexx, ввод/вывод</title>
+</head>
+<body link="#009999" vlink="#006666" alink="#000088" bgcolor="#ffffff" text="#000000">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta name="keywords" content="amiga,develope,ARexx,ввод,вывод,open,close,eof,lines,readch,readln,seek,writech,writeln">
+
+<font face="Arial, Helvetica, sans-serif" size="4">
+<p align="left"><a name=A157>Ввод/вывод</a></p></font>
+
+<blockquote><p align="justify">
+Функции ввода-вывода позволяют работать из ARexx-a с произвольными входными и выходными потоками (файлами, shell-окнами, принтером и т.д.).
+</p></blockquote>
+
+<blockquote><p align="justify">
+Основная функция этой группы - <a href="AMIGA-15-7.html#A1571">OPEN()</a>, присваивающая логическое имя (т.н. хэндлер) некоторому файлу. Именно это имя используется в функциях типа <a href="AMIGA-15-7.html#A1576">READLN()</a> или <a href="AMIGA-15-7.html#A1577">SEEK()</a>. Имя может быть как литеральной строкой, так и одиночным символом. Область его действия ограничивается текущей ARexx-программой.
+</p></blockquote>
+
+<blockquote><p align="justify">
+К базовыми функциями ввода относятся <a href="AMIGA-15-7.html#A1576">READLN()</a> (чтение строки вплоть до символа &quot;новая строка&quot; - 'Оа'х) и <a href="AMIGA-15-7.html#A1575">READCH()</a>, которая по умолчанию считывает единственный символ, хотя может быть настроена и для считывания группы символов.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Базовыми функциями вывода являются <a href="AMIGA-15-7.html#A1579">WRITELN()</a>, записывающая строку в выходной файл и добавляющая к ней символ &quot;конец строки&quot;, а также <a href="AMIGA-15-7.html#A1578">WRITECH()</a>, добавляющая один или несколько символов в выходной файл.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Функция <a href="AMIGA-15-7.html#A1573">EOF()</a> возвращает булевское значение TRUE, если файл исчерпан; функция <a href="AMIGA-15-7.html#A1577">SEEK()</a> устанавливает текущую позицию в файле.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1571>
+<b>OPEN</b>()
+<blockquote>res = <b>OPEN</b>(&lt;хэндлер&gt;,&lt;маршрут&gt;[,&lt;опция&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция открывает заданный &quot;маршрутом&quot; файл, присваивая ему логическое имя, соответствующее &quot;хэндлеру&quot;. Режим открытия определяется необязательным параметром - &quot;опцией&quot;, которая может принимать одно из следующих значений:
+</p></blockquote>
+
+<blockquote><blockquote><p align="justify">
+<b>R</b> (read) - открывает существующий файл для чтения. Если &quot;опция&quot; отсутствует, то считается, что файл открывается именно в этом режиме. Указатель позиции в файле устанавливается на его начало.<br>
+<b>A</b> (append) - открыть существующий файл в режиме записи; указатель позиции в файле устанавливается на его конец.<br>
+<b>W</b> (write) - создать новый файл или &quot;урезать&quot; существующий до нулевой длины; Указатель позиции в файле устанавливается на его начало.
+</p></blockquote></blockquote>
+
+<blockquote><p align="justify">
+В случае успешного открытия файла возвращается TRUE, в противном случае - FALSE. Неудача работы Ореn() может произойти в режимах 'R' и 'А', если &quot;маршрут&quot; указан неверно или на указанном файле висит замок, установленный другим процессом (в случае &quot;разделяемого замка&quot; (shared lock) можно открывать файл только в режиме 'R' или 'А'). В режиме записи 'W' существующий файл обрезается до нулевой длины безо всякого предупреждения!
+</p></blockquote>
+
+<blockquote><p align="justify">
+Режим открытия файла не влияет на другие функции ввода-вывода. Можно, например, производить чтение из файла открытого c опцией 'W' или 'А', а также записывать данные в файл, открытый с опцией 'R'; следует только всегда учитывать текущее положение указателя позиции файла - например, если он находится на конце файла, то прочитать можно только символ EOF.
+</p></blockquote>
+
+<blockquote><p align="justify">
+На файлы, открытые в режимах записи 'W', навешивается &quot;исключительный замок&quot; (exclusive lock), т.е. никакие другие процессы системы не будут иметь к ним доступ. На файлы, открытые по опции 'R' или 'А', навешивается &quot;разделяемый замок&quot; (shared lock); другие процессы в этом случае могут только читать открытый файл (и ваша ARexx-программа может открывать его многократно).
+</p></blockquote>
+
+<blockquote><p align="justify">
+Параметр &quot;хэндлер&quot; является логическим именем, которое мы присваиваем открытому файлу. Регистр букв в имени не игнорируется и поэтому хэндлер 'OUTPUT' не будет эквивалентен хэндлеру 'Output'. Однако, если вводить &quot;хэндлер&quot; без апострофов, ARexx автоматически будет преобразовывать полученную строку в заглавный регистр до ее использования (т.е. имя хэндлера превращается в переменную ARexx-a!). Разумеется, можно использовать в качестве имени хэндлера и какую-либо из уже имеющихся на момент открытия файла переменных.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Концепция &quot;файла&quot; в ОС Амиги простирается гораздо дальше, нежели файлы в их традиционном понимании. С точки зрения функций ввода-вывода, файлами являются консольные (shell) окна, принтер, параллельный и последовательный порты и т.д. Например, можно открыть &quot;принтер-файл&quot; на запись следующим образом:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+if OPEN(printer, 'PRT:', 'W') then
+   call writeln(printer, 'Печатаем из ARexx-a!')
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+Разумеется, попытки прочитать что-либо из принтера заранее обречены на провал. А вот чтение из консольных окон, как из файлов, не представляет никаких проблем и может быть альтернативой 
+использованию <a href="AMIGA-14.html#A14E">PARSE PULL</a>. Для открытия shell-окон используется системное устройство console.device с хэндлером con:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+if OPEN(win, 'con:40/40/256/60/Окно', W) then 
+   do
+     call writeln(win, 'Окошко открыто из ARexx-a!')
+     call delay 500
+     call close win
+   end
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+Если мы хотим получить список активных хэндлеров, достаточно исполнить функцию <a href="AMIGA-15-6.html#A1562">SHOW('F')</a>. Кроме файлов, явно открытых по ОPEN(), в полученном списке всегда будут присутствовать два дополнительных имени - STDIN и STDOUT, соответствующие стандартным потокам ввода-вывода. Эти файлы доступны в любой ARexx-программе без какого-либо явного использования ОPEN().
+</p></blockquote>
+
+<blockquote><p align="justify">
+Инструкции <a href="AMIGA-14.html#A14K">SAY</a> и <a href="AMIGA-14.html#A14E">PARSE PULL</a> находятся в близком родстве с функциями <a href="AMIGA-15-7.html#A1579">WRITELN()</a> и <a href="AMIGA-15-7.html#A1576">READLN()</a>, но работают со STDOUT и STDIN соответственно (<a href="AMIGA-14.html#A14E">PARSE EXTERNAL</a> работает с файлом STDERR, который открыт при наличии трассировочного консольного окна).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1572>
+<b>CLOSE</b>()
+<blockquote>res = <b>CLOSE</b>(&lt;хэндлер&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция закрывает файл, ассоциированный с &quot;хэндлером&quot;. В случае удачного закрытия возвращается TRUE, при неудачном закрытии - FALSE. В любом случае ARexx автоматически закрывает все открытые файлы при выходе из программы (даже в том случае, если выход произошел из-за какого-либо внешнего прерывания).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1573>
+<b>EOF</b>()
+<blockquote>res = <b>EOF</b>(&lt;хэндлер&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция проверяет, находится ли указатель текущей позиции на конце файла; если да, то возвращается TRUE, иначе - FALSE.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1574>
+<b>LINES</b>()
+<blockquote>res = <b>LINES</b>([{STDIN|STDOUT|STDERR}])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает число строк, находящихся в очереди на логическом устройстве, соответствующем указанному аргументу. Аргумент должен относится к интерактивному потоку. Если аргумент не указан, то возвращается число строк на стеке потока STDIN. Эта функция требует наличия в системе shell-хэндлера для ОС 2.0+, либо WShell.
+Пример:</p></blockquote>
+
+<blockquote><blockquote><pre>
+queue 'cd work:'
+say LINES()       ==>   1
+</pre></blockquote></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1575>
+<b>READCH</b>()
+<blockquote>res = <b>READCH</b>(&lt;хэндлер&gt;[,&lt;длина&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает строку из файла, ассоциированного с &quot;хэндлером&quot; и содержащую столько символов, сколько указано в параметре &quot;длина&quot; (по умолчанию - 1 символ). Максимальное значени &quot;длины&quot; - 65535. Разумеется, если конец файла будет достигнут ранее, нежели будет считано требуемое число символов, то полученная строка не достигнет требуемой длины.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1576>
+<b>READLN</b>()
+<blockquote>res = <b>READLN</b>(&lt;хэндлер&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает строку из файла, ассоциированного с &quot;хэндлером&quot; вплоть до символа &quot;перевод строки&quot; ('0а'x). Этот символ не будет включен в возвращаемую функцией строку. Полученная строка в любом случае не может иметь более 1000 символов. Если исходный файл не содержит &quot;переводов строк&quot;, то множественный вызов READLN() вернет все содержимое файла &quot;порциями&quot; по 1000 байт.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1577>
+<b>SEEK</b>()
+<blockquote>res = <b>SEEK</b>(&lt;хэндлер&gt;,&lt;смещение&gt;[,&lt;отсчет&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Передвигает указатель позиции в файле, ассоциированном с &quot;хэндлером&quot; на величину &quot;смещения&quot; от точки &quot;отсчета&quot;.
+</p></blockquote>
+
+<blockquote><p align="justify">
+&quot;Отсчет&quot; может принимать следующие значения: 'В' (Begin - начала), 'С' (Current - текущая позиция) и 'Е' (End - конец). Буквы, идентифицирующие &quot;отсчет&quot;, разумеется, латинские. Если &quot;отсчет&quot; не указан, то его значение принимается равным 'С'. Если &quot;отсчет&quot; ведется от конца файла (его значением является 'Е'), то &quot;смещение&quot; должно быть отрицательным.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает TRUE, если перемещение указателя на нужную позицию прошло успешно; FALSE возвращается в том случае, если в результате премещения указателя, тот окажется за пределами файла.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1578>
+<b>WRITECH</b>()
+<blockquote>res = <b>WRITECH</b>(&lt;хэндлер&gt;,&lt;строка&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция записывает &quot;строку&quot; в файл, ассоциированный с &quot;хэндлером&quot;. Возвращается число фактически записанных в файл символов. В 
+случае успеха это число равно длине &quot;строки&quot;.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1579>
+<b>WRITELN</b>()
+<blockquote>res = <b>WRITELN</b>(&lt;хэндлер&gt;,&lt;строка&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция записывает &quot;строку&quot; в файл, ассоциированный с &quot;хэндлером&quot;, автоматически добавляя символ &quot;перевод строки&quot; после записанной &quot;строки&quot;. Возвращается число фактически записанных в файл символов (дополнительный символ перевода строки при этом учитывается). В случае успешной работы функции это число превышает на единицу длину исходной &quot;строки&quot;.
+</p></blockquote>
+
+<hr>
+
+</body></html>

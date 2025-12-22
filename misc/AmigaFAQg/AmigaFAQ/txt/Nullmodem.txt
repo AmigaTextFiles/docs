@@ -1,0 +1,188 @@
+From de.comp.sys.amiga Wed Feb  5 20:15:30 1992
+Path: cs.tu-berlin.de!news.netmbx.de!unido!ira.uka.de!smurf.sub.org!incom!orfeo!hotb.sub.org!mania.hotb.sub.org!lkv
+From: lkv@mania.hotb.sub.org (Lutz Vieweg)
+Newsgroups: de.comp.sys.amiga
+Subject: Re: Nullmodemkabel
+Message-ID: <BsDwq*M01@mania.hotb.sub.org>
+Date: 4 Feb 92 14:49:57 GMT
+References: <1992Jan27.103311.15775@rhrk.uni-kl.de> <mk.02wh@mkrara.rara.sub.org>
+ <sticht.0383@edith.deg.sub.org> <1992Feb3.174343.4407@cs.tu-berlin.de>
+Organization: The Funny Farm
+Lines: 175
+
+In article <1992Feb3.174343.4407@cs.tu-berlin.de>, Andreas M. Kirchwitz writes:
+
+> >Nicht ganz! Besser ist folgende Variante (siehe Grundlagenartikel c't 12/86):
+
+ [figure deleted]
+
+> Aeh, also in der Amiga-Literatur (die ist jetzt allerdings gerade nicht
+
+ [usw.]
+
+
+Nachdem ich all diese Meinungen zum Thema Null-Modem Kabel gelesen hatte,
+war ich erstmal reichlich irritiert - also nahm ich ein dickes Buch
+aus dem Regal, das ein Kapitel aussschiesslich solchen Problemen widmet,
+und las nach.... hier ist's:
+
+
+Null-Modem-Kabel:
+-----------------
+
+Die Pins und ihre Bezeichnungen:
+
+Pin  Bezeichnung         Abk.
+-------------------------------
+ 1   Frame Ground        FG/GND
+ 2   Transmit Data       TD/TXD
+ 3   Receive Data        RD/RXD
+ 4   Request To Send     RTS
+ 5   Clear To Send       CTS
+ 6   Data Set Ready      DSR
+ 7   Signal Ground       SG/GND
+ 8   Carrier Detect      CD/DCD
+20   Data Terminal Ready DTR
+22   Ring Indicator      RI
+
+
+Version A
+---------
+
+Das "echte" NullModem Kabel, fuer zwei Terminals, die die volle DTE/DCE
+Konvention verwenden (sollte bei zwei Amiga eigentlich der Fall sein!):
+
+1 --ABSCHIRMUNG---------1  FG zur Abschirmung gegen Einstreuungen
+
+2 >-------\ /----------<2
+           X               RD und TD fuer die Daten
+3 <-------/ \---------->3
+
+4 >-------\ /----------<4
+           X               RTS und CTS fuer den Hardware-Handshake
+5 <-------/ \---------->5
+
+6 <--+              +-->6  DTR an CD und DSR sagt: "Hallo, bin Online!"
+8 <--+----\ /-------+-->8
+           X
+20>-------/ \----------<20
+
+22                      22 RI sollte bei nicht-Modems nie noetig sein
+
+7 ----------------------7  SG eben als Masse zu den Sigalen
+
+
+Version B
+---------
+
+Fuer zwei Rechner, bei denen das mit dem schoenen, schnellen RTS/CTS nicht
+klappt, die sich aber wenigstens "Anwesenheit" signalisieren wollen:
+
+
+1 --ABSCHRIMUNG---------1  FG zur Abschirmung gegen Einstreuungen
+
+2 >-------\ /----------<2
+           X               RD und TD fuer die Daten
+3 <-------/ \---------->3
+
+4                       4  RTS wird hier nicht gebraucht
+
+5 <--+              +-->5  solange das eine DTR ist, kann der andere
+6 <--+              +-->6  senden, wie er lustig ist, da ihm dann
+8 <--+----\ /-------+-->8  CD, DSR und CTS siganlisiert werden
+           X
+20>-------/ \----------<20
+
+22                      22 RI sollte nie noetig sein
+
+7 ----------------------7  SG eben als Masse zu den Sigalen
+
+
+Version C
+---------
+
+Wenn A nicht funktioniert, weil zwar beide ein CTS erwarten, aber
+dennoch nicht in der Lage sind, CTS und RTS vernuenftig auszutauschen,
+muss man dieses Signal eben "loopen", und kann es dem Gegenueber dann
+als CD "verkaufen". Dabei ist es dann natuerlich Essig mit der
+sicheren, schnellen Start-/Stop-Automatik durch RTS/CTS.
+
+
+
+1 --ABSCHRIMUNG---------1  FG zur Abschirmung gegen Einstreuungen
+
+2 >-------\ /----------<2
+           X               RD und TD fuer die Daten
+3 <-------/ \---------->3
+
+4 >--+              +--<4  RTS und CTS sind lokal verbunden, die
+5 <--+----\ /-------+-->5  Sendebereitschaft des einen wird dem
+           X               anderen via CD mitgeteilt - was natuerlich
+8 <--+----/ \-------+-->8  nicht das allertollste ist.
+
+20>-------\ /----------<20 Wie bei A sagen sich die beiden mit Hilfe
+           X               von DTR und DSR, das sie "OnLine" sind
+6 <-------/ \---------->6
+
+22                      22 RI kann hier auch noch mit 6 lokal verbunden
+                           werden, wenn es ganz uebel kommt.
+
+7 ----------------------7  SG eben als Masse zu den Sigalen
+
+
+Version D
+---------
+
+Und jetzt die "Billig-Heimer" Variante, fuer die Leute, denen mehr als
+3 Draehte zu teuer sind, und deren Rechner dennoch auf allen moeglichen
+Signalen bestehen, die ihnen das Vorhanden- und Fertigsein des anderen
+signalisieren:
+
+
+
+1                       1  Wozu Abschirmen? :-) (SG und FG sind ohnehin
+                                                 haeufig identisch)
+
+2 >-------\ /----------<2
+           X               RD und TD fuer die Daten, muss leider sein
+3 <-------/ \---------->3
+
+4 >--+              +--<4  RTS und CTS sind lokal verbunden, der
+5 <--+              +-->5  Betrug soll perfekt sein...
+
+6 <--+              +-->6  Wenn das Data Terminal Ready ist, haelt
+8 <--+              +-->8  es auch das Data Set fuer Ready und den
+20>--+              +--<20 Carrier fuer Detected.
+
+22                      22 Sollte nie noetig sein
+
+7 ----------------------7  SG eben als Masse zu den Sigalen, geht nicht ohne
+
+
+
+Tja, ich glaube, das war jetzt erschoepfend, und jeder kann sich selbst
+aussuchen, welche Variante fuer ihn die richtige ist.
+
+Ich jedenfalls werde es auf jeden Fall mit Variante A versuchen, denn...
+
+> (wenn man sowieso schon so ein Teil loetet, kann man's auch
+>  gleich richtig machen :-)
+
+:-)
+
+So, nun aber noch meine Fragen:
+
+Was kann DNet, wo und wie bekommt man es (wuerde sowas meinen beiden auch
+gerne antun :-)  ?
+
+> (laeuft sogar mit der stoerrischen bsc-MFC2 mit Software von 1990 :-)
+
+... und was ist das nunwieder?
+
+> ParNet laeuft auch noch nebenbei, aber darueber kann man wohl nicht so
+> gut Multi-User-Games spielen :-)
+
+... fuer Pop* reicht sogar die Variante D ohne lokale Loops.
+
+cu, Lutz Vieweg
+

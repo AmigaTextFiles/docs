@@ -1,0 +1,193 @@
+
+	Some Text about adding INTERNAL df2: and df3: to a A1200 Tower
+	or whatever.....
+
+;--------
+
+Legal and whatsoever things:
+
+THIS INFORMATION IS FOR EXPERIENCED HARDWARE HACKERS ONLY. IF YOU DON'T KNOW
+WHAT YOU'RE DOING, STOP IMMEDIATELY. I'D HATE TO SEE/HEAR YOU DESTROYING YOUR
+AMIGA BY FAILING TO CONNECT THIS HACK TO IT. I WON'T ACCEPT ANY
+RESPONSIBILITY OF HARD/SOFTWARE DAMAGE CAUSED BY THIS INFORMATION. IT'S YOUR
+OWN RISK. I CAN'T GUARANTEE ALL DETAILS IN THIS INFORMATION TO BE CORRECT OR
+VALID IN ANOTHER AMIGA.
+
+WHAT COMES TO ME, THIS INFORMATION MAY BE DISTRIBUTED FREELY AS LONG AS
+NOTHING HAS BEEN CHANGED IN IT. ARCHIVING PERMITTED.
+
+;----------
+
+Hi, I'm Troy McLure. You may remember me from 'How to replace a wall socket
+without turning off the electricity' or 'How to get bumped by a car and
+survive it'.
+
+..eh... wrong topic. Sorry.
+
+I've built an A1200R, rack-mount cased computer. It has a 200W PoWaSuPpLy,
+two 3.5in hard disk sites (of which one populated), two 5.25in floppy
+sites (of which one populated by CD-ROM drive), two 3.5in floppy sites (of
+which ONLY ONE populated). Still, I can't connect more than one internal
+floppy drive. Of course I could use external drive, but that's kinda... rude.
+After all, I've got a case with enough floppy drive holes in its front panel!
+
+That's gonna stop right now! I built a piece of hardware to get more drives.
+
+The piece of hardware creates autoconfiguration signals to make Amiga recognise
+the drives after reset and memorize if each drive's motor is on or off.
+And, of course, get all drives supplied with PoWa and other signals, that
+are common to all drives.
+
+I'm not gonna bore you with any timing charts
+
+1 -----     ---     ---     ----
+       |   |   |   |   |   |
+0       ---     ---     ---
+
+or that $FFFFFFFF means no drive and $55555555 means a 3.5in drive and so on.
+TTL ICs have never become familiar to me. I just looked, what pin to connect
+to what pin and so on.... Raw 'schema' is in 'df2+3.pic', I got nothing better
+than that to build my hardware, except that I got an A500 schematics to look
+for details and make sure that connections at least made sense.
+I built it on a piece of 'vero' board (that... printed circuit board, that
+has a LOT of holes in it and just a teenie-weenie pieces of copper around
+them) and it worked fine when I tested it.
+
+Because this construction has many ways to fit it in your system, I'll just
+explain the principle. You may want to connect only one extra drive, so you'll
+build logic for only... say df3:.
+
+Usage of 7474 (dual D flip-flop) is quite funny in this hack. Only half of
+it is in use and there's two of them...
+
+We'll lead all floppy signals from motherboard to df0: as usually.
+Then we'll create _MOTOR2 and _MOTOR3 signals as well as _SEL2' and _SEL3'
+and inject them to the same cable that connects df0:. That requires a special
+(I mean a SPECIAL!) cable to be made. Otherways, however, we'd have to make
+a PCB that contains three 34-pin connectors, one for incoming signals,
+one for df2: and one for df3:. That would make usage of vero board rather
+impossible. Since I don't have equipment for making two-sided PCBs, I
+chose this way. All common signals continue from df0: to df2: and df3: and
+we'll just add those _selects and _motors.
+In our PCB's 34-pin connector  we'll connect _SEL2' to pin 10, _MOTOR2
+to pin 16, _SEL3' to pin 12 and _MOTOR3 to pin 14. After df2:'s connector
+we'll cut off _SEL2' and _MOTOR2 and re-route wire 12 (_SEL3') to pin 10 and
+wire 14 (_MOTOR3) to pin 16.
+
+Supplying PoWa to the extra drive(s) I'll leave to be your headache.
+
+Making internal drives to be df2: and df3: instead of df1: and df2: makes
+sense: Even if you have two extra internal drives, you can connect external
+that becomes df1:.
+If df2: of this hack is ON (JP(DF2) is connected) you MUSTN'T CONNECT MORE
+THAN ONE EXTERNAL DRIVE, because otherways there would be two df2:s of which
+NEITHER would work. In the worst case, Amiga's CIA, Paula or floppy drive(s)
+would get damaged. To prevent this problem, you could cut off signals _SEL2
+and _SEL3 from Amiga's external floppy connector. I didn't do it, I just
+have to remember not to connect too many drives....
+If JP(DF2) is OFF.... Go ahead.
+
+Jumper JP(DF2) selects, if df2: will be reported to be present or not.
+That's because if you build a board for both df2: and df3: and connect only
+df2:, you'd see an icon 'DF3:??????????????????????????????' or something like
+that in Workbench on next bootup.... and lose some valuable CHIP memory.
+Not to mention that horrible waste of time on bootup, when trackdisk.device
+tries to read bootblock from df3:... We're talking about 10 seconds here, man!
+
+What else? Oh, I think I should convince you that this hack is worth building,
+and that it works with me without problems.
+
+	Yes, it is and Yes, it does: Look at this:
+
+
+;------------------
+
+Launched NewShell, process 11
+11.Ram Disk:> diskchange df3:
+11.Ram Disk:> df2:1541 DRIVE 3 FILENAME ram:ContentsOfOneC64Disk
+1541 - Copyright © 1994 by Dan Babcock
+11.Ram Disk:> getfiles ContentsOfOneC64Disk
+getfiles - Copyright © 1994 by Dan Babcock
+Converting ContentsOfOneC64Disk
+    Disk name: DISK 6-SEP-90
+    IS THERE A DIFF  PRG
+    TIME CRYSTALS    PRG
+    ABSOLUTE DEMO    PRG
+    PBS DEMO 1       PRG
+    LOAD AID         PRG
+11.Ram Disk:> Jeeeee!!!!!!!!!!!!!
+Jeeeee!!!!!!!!!!!!!: ?Redo from start.
+11.Ram Disk:> ls df0:
+Directory "df0:" on Friday 23-Jun-95
+SCDPlayer11.lha            79643 ----rwed 19-May-89 12:04:43
+YetAnotherCdPlayerV1.1.lha   62578 ----rwed 08-May-94 05:40:43
+: *
+amicdrom.lha              187595 ----rwed 08-May-94 05:42:01
+amicdrom.lha.pi             1234 ----rwed 08-May-94 05:41:31
+AmiCDRomV1.8.lha          108587 ----rwed 12-May-94 21:54:21
+***Crash! Boom! Bang!
+5 files - 867 blocks used
+11.Ram Disk:> ls df1:
+Directory "df1:" on Friday 23-Jun-95
+move.lha                   15552 ----rwed 08-May-94 05:57:43
+TrackDiskPrefsV1.0.LHA     22379 ----rwed 26-Jul-94 01:56:01
+: Amiga Users' Fantasy 26-Jul-94 01:54:24
+UND64373.lha                9414 ----rwed 11-Jul-94 01:07:19
+: Extracts/list files in .d64 diskimages
+***Crash! Boom! Bang!
+3 files - 97 blocks used
+11.Ram Disk:> ls df2:
+Directory "df2:" on Friday 23-Jun-95
+libs.info                   1249 ----rwed 23-Mar-95 14:27:26
+1541                       17924 ----rwed 17-Jun-94 21:49:56
+1541.c                     14214 ----rwed 17-Jun-94 21:49:12
+1541.doc                    6281 ----rwed 17-Jun-94 14:13:54
+getfiles                    9416 ----rwed 17-Jun-94 00:17:48
+getfiles.c                  7410 ----rwed 17-Jun-94 00:17:10
+***Crash! Boom! Bang!
+6 files - 113 blocks used
+11.Ram Disk:> ls df3:
+No information for "df3:": not a valid DOS disk
+11.Ram Disk:> 
+
+;----------
+
+... so, all four drives were working. Df1: was external. Those strange error
+messages stand for YourFault © Lee Kindness, Scotland. So, I used a 5.25in
+drive to read an C64 floppy.
+
+Only PC makes it possible... NOT! HEHEHEHEHEHE!!!!!!
+
+;-----------
+
+Possible problems dept.:
+
+I've read that floppy connector's signals should be
+terminated like SCSI bus. I have the cable of about one meter long without
+trouble. If you get occasional read/write errors, terminating could be the
+reason. At least in SCSI bus, terminating problems make ALL devices connected
+to the bus not to work at all or work only whenever phase of the Moon is
+right...
+
+If one or several disk drive's indicator LED lights all the time and the
+drive(s) don't work, some drive has its connector in the wrong way.
+
+Connection of floppy power connector you can find out peeking one of your
+drives.
+
+If your coffee is too hot, you can pour some cold milk in it or let the coffee
+cool down in the cup.
+
+;----------------
+
+Eh... I haven't mentioned my name, nationality nor address.
+
+		Arto Niskanen
+		Valtatie 8A8
+		90500 OULU
+..and that's in FINLAND
+	
+E-Mail:		archy@maybe.some.day.in.september!!!!!!!!!!
+
+
+

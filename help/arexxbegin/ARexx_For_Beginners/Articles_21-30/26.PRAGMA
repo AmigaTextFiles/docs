@@ -1,0 +1,675 @@
+@DATABASE "ARB26"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 26 - The PRAGMA() Function"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 26 - THE PRAGMA() FUNCTION
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" The Current Directory     " LINK "CD"}
+@{" PRAGMA() General Comments " LINK "General"}
+@{"   The DIRECTORY Keyword   " LINK "Directory"}
+@{"   The PRIORITY  Keyword   " LINK "Priority"}
+@{"   The ID        Keyword   " LINK "ID"}
+@{"   The STACK     Keyword   " LINK "Stack"}
+@{"   The WINDOWPTR Keyword   " LINK "WindowPtr"}
+@{"   The *         Keyword   " LINK "*"}
+@{"   WARNING for Pragma()    " LINK "Warning"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "CD" "Article 26 - The PRAGMA() Function -  The Current Directory"
+
+@{B}@{U}@{JCENTER}CURRENT DIRECTORY RECOGNISED BY AN AREXX PROGRAM@{UB}@{UU}
+@{JLEFT}
+Before moving on to the PRAGMA('D') function we should have quick word
+about directories.
+
+If the current directory is @{B}not@{UB} changed from within an ARexx program (which
+can be done with @{"PRAGMA('D',Name)" LINK "Directory"} then the current directory used by the
+ARexx program will determined as follows:-
+
+- When launched from Shell/CLI - the current directory of the CLI process
+  from which it was launched.
+
+- When launched from an icon (as discussed in @{"Article 3" LINK "ARB:Articles_01-10/03.Command_Utilities/Icon"} - the directory
+  holding the icon.
+
+- When launched from a menu item of another program - the current
+  directory being recognised by that program. (At least that is how it is
+  with the programs that I use - it may be different in some programs
+  that I do not use!)
+
+When the ARexx program ends, the CLI process from which it was launched
+will retain its own current directory even if the ARexx program changed
+to another directory.
+
+The current directory recognised by the ARexx program will be used for
+file names that do @{B}not@{UB} have a @{"path" LINK "ARB:Misc/Glossary/Path"} specified for them. Thus, if the file
+to be referenced is @{B}not@{UB} in the current directory, then the full path name
+will need to be given.
+
+The current directory recognised by the ARexx program  will also be used
+for AmigaDOS commands that are sent to AmigaDOS when the current host
+is "COMMAND". Thus, if the AmigaDOS command is to reference a file @{B}not@{UB}
+in the current directory then the full path to the file must be
+given.
+
+Having to use full path names can be awkward at times and so we need a
+means of changing the current directory recognised by the ARexx program.
+This can be done with the @{"PRAGMA('D',Name)" LINK "Directory"} function.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 26 - The PRAGMA() Function - General Comments"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - GENERAL DISCUSSION@{UB}@{UU}
+@{JLEFT}
+The @{B}PRAGMA()@{UB} function (along with the @{"OPTIONS" LINK "ARB:Articles_21-30/25.Options/General"} instruction discussed in
+the previous article) can be used to help you control the environment
+in which you are working.
+
+This function has the following syntax:-
+
+  PRAGMA(option[,value])
+
+There are quite a few option keywords most of which the ARexx beginner
+should completely ignore until they are sure of what they are doing. I
+will cover the first two fairly fully but give only a brief mention to
+the other four as the beginner, or even the more advanced user of ARexx,
+is very unlikely to ever use them. So skip over all but the first two
+if you like.
+
+  @{" Directory " LINK "Directory"} - To specify a new current directory
+                 or to determine the existing current directory.
+
+  @{" Priority  " LINK "Priority"} - to set the task priority.
+
+  @{" ID        " LINK "ID"} - returns an 8 byte hexadecimal string task identifier.
+
+  @{" Stack     " LINK "Stack"} - changes the task stack size.
+
+  @{" WindowPtr " LINK "WindowPtr"} - to control display or suppression of AmigaDOS
+                 requestor windows.
+
+  @{" *         " LINK "*"} - to define the current console as the specified logical
+                 name.
+
+@{B}Be careful if you are trying out the above options.@{UB} I have found that
+some, if used incorrectly, might bring on a GURU!. Read the @{"Warning" LINK "Warning"}.
+
+As with other functions, PRAGMA's options can be used in full or with
+the first letter only. The keyword should be included in quotes. For
+example:-
+
+  PRAGMA('D')   or   PRAGMA('Directory')
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Directory" "Article 26 - The PRAGMA() Function - The DIRECTORY Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE DIRECTORY KEYWORD@{UB}@{UU}
+@{JLEFT}
+The main keyword that the beginner will find of use is DIRECTORY. However,
+before going further I would suggest that you @{"click here" LINK "CD"} to read about
+the @{B}Current Directory@{UB} recognised by ARexx programs.
+
+The full syntax for this one is:-
+
+@{B}PRAGMA('DIRECTORY',[Name])@{UB}
+
+This means that it can be used in one of these ways:-
+
+  PRAGMA('D')
+
+  PRAGMA('D',DirectoryName)
+
+When DIRECTORY is used without a directory name it tells you which directory
+the ARexx program is using as its current directory. For example:-
+
+  SAY PRAGMA('D')
+  --> Workbench2.1
+
+To change the directory you use a directory name after the "D". For
+example:-
+
+  CALL PRAGMA('D','Ram:')
+  SAY PRAGMA('D')
+  --> Ram:
+
+This is illustrated in the following example program:-
+
+  /* Example26-1 */
+
+  SAY 'Current Directory is:' PRAGMA('D')
+
+  OPTIONS PROMPT 'Enter new directory name: '
+  PULL DirName
+
+  IF EXISTS(DirName) = 0 THEN DO
+     SAY 'Directory you entered: ' DirName ' does not exist.'
+     EXIT
+  END
+
+  CALL PRAGMA('D',DirName)
+  SAY 'Current Directory is:' PRAGMA('D')
+
+This displays the current directory, asks for a new one which is stored
+in the symbol "DirName" then changes the current directory to that requested
+and again displays the name of the current directory.
+
+If the directory you enter does not exist then you will be told so. We
+will cover @{"EXISTS()" LINK "ARB:Articles_21-30/28.File_Handling/EXISTS()"} in Article 28.
+
+The following example will change the current directory so that an AmigaDOS
+command can be used without giving a path name:-
+
+  /* Example 26-2 */
+
+  CALL PRAGMA('D','S:')
+  SAY 'c'x'The contents of your "S" directory are:'||'a'x
+  ADDRESS 'COMMAND' 'Dir'
+  CALL PRAGMA('D','Ram:')
+  SAY 'a'x'The contents of your "Ram:" disk are:'||'a'x
+  ADDRESS 'COMMAND' 'Dir'
+
+This changes the current directory before each "Dir" command is sent to
+AmigaDOS so that the directory does not have to be specified with the
+"Dir" command.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+@ENDNODE
+
+@NODE "Priority" "Article 26 - The PRAGMA() Function - The PRIORITY Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE PRIORITY KEYWORD@{UB}@{UU}
+@{JLEFT}
+The full syntax for this one is:-
+
+@{B}PRAGMA('PRIORITY',Value)@{UB}
+
+This means that it can, @{B}in theory@{UB}, be used in one of these ways:-
+
+  PRAGMA('P')
+
+  PRAGMA('P',Value)
+
+@{B}In theory@{UB}, the use of the first returns the current priority value:-
+
+  SAY PRAGMA('P')
+  --> 0
+
+I say @{B}in theory@{UB} because the use of the options keyword @{B}without@{UB} the following
+value can cause @{"problems" LINK "Warning"}.
+
+I would suggest that you always use:-
+
+  PRAGMA('P',Value)
+
+For example:-
+
+  CALL PRAGMA('P',-5)
+
+@{B}Value@{UB} must be an integer number between -128 and 127.
+
+See below for more examples.
+
+The PRIORITY keyword allows you to change the task priority of the ARexx
+program.
+
+In a multitasking computer such as the Amiga, there are many programs
+running at once. The Central Processing Unit (CPU) has to divide its
+attention between all the programs that are in operation.
+
+Each program has a "PRIORITY" assigned to it so that the CPU can tell
+which tasks are the more important and need more attention and which are
+relatively unimportant and do not need so much time.
+
+High priority tasks, such as those controlling the input devices, have
+priorities in the order of 20 while those controlling the disk drives
+have priorities in the order of 10.
+
+If a program had a priority greater than the input devices then you could
+find it @{B}very difficult@{UB} to get the keyboard or mouse to respond to your
+demands!
+
+Normal programs usually have a priority of 0. After dealing with anything
+that the higher priority tasks need to have done the CPU divides its time
+equally between all these programs of 0 priority
+
+If you wish to have a task run in the background without needing to have
+any (human) attention paid to it and without the need for much speed then
+you can give it a lower priority, e.g. -5, so that it will not slow done
+other programs. We had an example of this in @{"Example21-3" LINK "ARB:Articles_21-30/Example21-3.rexx/MAIN"}. This program
+runs for quite a long time checking random numbers so I set it to a lower
+priority than normal so that it could run in the background while I went
+on with other things.
+
+If you wish a task to take priority over all other programs (but not the
+essential task such as drive control and input devices) then you could
+give it a priority of, say, 1, 2 or 3. However, it is @{B}inadvisable@{UB} to use
+priorities of @{B}4 or more!@{UB}
+
+So, if you @{B}really@{UB} need to change a program's priority, then use:-
+
+  CALL PRAGMA('P',Value)
+
+For example:-
+
+  CALL PRAGMA('P',-5)
+
+The function returns a value equal to the previous priority of the program.
+For example:-
+
+  SAY PRAGMA('P',-5) --> 0
+
+This can be used to change the priority for an important part of the program
+where higher CPU attention is required then change it back to what it
+was later on. For example:-
+
+  CALL PRAGMA('P',5)
+  OldPriority = Result
+  ... important programming needing high priority
+  CALL PRAGMA('P',OldPriority)
+  ... back to normal priority
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "ID" "Article 26 - The PRAGMA() Function - The ID Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE ID KEYWORD@{UB}@{UU}
+@{JLEFT}
+
+The syntax for this one is:-
+
+@{B}PRAGMA('ID')@{UB}
+
+This keyword is used without any extra arguments:-
+
+  CALL PRAGMA('ID')
+
+It returns an 8 character hexadecimal number. For example:-
+
+  SAY PRAGMA('ID')
+  --> 003BD690
+
+This number is "the address of the task block" or the starting point in
+memory of the program.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Stack" "Article 26 - The PRAGMA() Function - The STACK Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE STACK KEYWORD@{UB}@{UU}
+@{JLEFT}
+
+The syntax for this one is:-
+
+@{B}PRAGMA('STACK',Value)@{UB}
+
+This means that it can, @{B}in theory@{UB}, be used in one of these ways:-
+
+  PRAGMA('S')
+
+  PRAGMA('S',Value)
+
+@{B}In theory@{UB}, the use of the first returns the current priority
+value:-
+
+  SAY PRAGMA('S')
+  --> 4096
+
+I say @{B}in theory@{UB} because the use of the options keyword @{B}without@{UB} the following
+value can cause @{"problems" LINK "Warning"}.
+
+I would suggest that you always use:-
+
+  PRAGMA('S',Value)
+
+@{B}Value@{UB} must be an positive integer number.
+
+This option can be used to change the stack value of the process. It returns
+the previous stack value.
+
+For example:-
+
+  SAY PRAGMA('S',7000)
+  --> 4000
+
+The new stack size is now 7000 and the indication is that the old stack
+size was 4000.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "WindowPtr" "Article 26 - The PRAGMA() Function - The WINDOWPTR Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE WINDOWPTR KEYWORD@{UB}@{UU}
+@{JLEFT}
+The syntax for this one is:-
+
+@{B}PRAGMA('WindowPtr',['Null'|'Workbench'])@{UB}
+
+This one can be used to suppress the AmigaDOS requestors. For example,
+if you reference drive df0: without a disk in it you normally get the
+requester:-
+                          _________________
+                         |                 |
+                         | No disk present |
+                         | in device df0:  |
+                         |                 |
+                         | Retry    Cancel |
+                         |_________________|
+If you use:-
+
+  CALL PRAGMA('W','Null')
+
+then these types of requesters will not appear.
+
+The requesters can be reactivated with:-
+
+  CALL PRAGMA('W','Workbench')
+
+This can be illustrated with this program:-
+
+  /* Example 26-3 */
+
+  SAY 'First call for directory of Garbage_Disk:'
+  CALL PRAGMA('D','Garbage_Disk:')
+  CALL PressReturn
+
+  SAY 'Second call for directory of Garbage_Disk:'
+  CALL PRAGMA('W','N')
+  CALL PRAGMA('D','Garbage_Disk:')
+  CALL PressReturn
+
+  SAY 'Third call for directory of Garbage_Disk:'
+  CALL PRAGMA('W','W')
+  CALL PRAGMA('D','Garbage_Disk:')
+  CALL PressReturn
+
+  EXIT
+
+  PressReturn:
+    SAY 'a'x'Press RETURN to continue.'||'a'x
+    PULL Anything
+  RETURN
+
+This program will attempt to get the directory of a non existing disk
+(unless you really @{B}do@{UB} have a disk called "Garbage_Disk"??).
+
+On the first call a system requester window will pop up. Just click in
+its "Cancel" gadget then respond to the "Press RETURN ..." prompt.
+
+On the second call, there will be no requestor window, just the "Press
+RETURN ..." prompt. The requester has be suppressed by the:-
+
+  CALL PRAGMA('W','N')
+
+The third call gives the same response as the first call as the requesters
+have been turned back on with:-
+
+  CALL PRAGMA('W','N')
+
+@{B}WARNING@{UB} - If you @{B}do@{UB} suppress the requesters, then make sure that you
+reenable them as soon as possible with:-
+
+  CALL PRAGMA('W','W')
+
+If you do not, you may fall into the same trap that I did which is
+illustrated by the following example program:-
+
+  /* Example26-4 */
+
+  CALL PRAGMA('W','N')
+
+  /* programming requiring suppression of requesters */
+
+  SAY 'c'x'For the purpose of this demonstration'
+  SAY 'Please make sure that there is a write protected blank disk in df0:'
+  SAY 'Press RETURN when ready'
+  PULL Anything
+
+  CALL OPEN('IntFile','df0:MyTestFile','W')
+  CALL WRITELN('IntFile','This is a line of garbage')
+  CALL CLOSE('IntFile')
+
+If you try out this program with a write protected disk in df0: then you
+will get this error message:-
+
+  +++ Error 18 in line 13: Invalid argument to function
+
+The first line suppresses the requesters. I will not bore you with the
+programming I included after it as it is irrelevant to the problem that
+arose later on.
+
+Line 13 is the line:-
+
+  CALL WRITELN('IntFile','This is a line of garbage')
+
+It took me quite a while to track down the error as I could find nothing
+at all wrong with this line! Nothing invalid about it at all!
+
+Eventually, by using @{"TRACE()" LINK "ARB:Articles_41-50/47.Error_Tracing-2/Trace()"}. I was able to find that the previous line:-
+
+  CALL OPEN('IntFile','df0:MyTestFile','W')
+
+was returning a value of:-
+
+- 0 (zero) indicating that the file had not been opened
+
+instead of:-
+
+-  1 to indicate it had been opened.
+
+This caused the WRITELN() line to give its error message as it was trying
+to write to a non existent file.
+
+If I had been extra cautious in writing the program I would have had this
+in it:-
+
+  IF OPEN('IntFile','df0:MyTestFile','W') = 0 THEN DO
+      .....
+  END
+  ELSE DO
+      .....
+  END
+
+The solution I used was to include the line:-
+
+  CALL PRAGMA('W','W')
+
+as soon as I no longer needed to suppress the requesters as illustrated
+by the following program which is identical to Example26-4 except for
+the extra line:-
+
+  /* Example26-5 */
+
+  CALL PRAGMA('W','N')
+
+  /* programming requiring suppression of requesters */
+
+  CALL PRAGMA('W','W')
+
+  SAY 'c'x'For the purpose of this demonstration'
+  SAY 'Please make sure that there is a write protected blank disk in df0:'
+  SAY 'Press RETURN when ready'
+  PULL Anything
+
+  CALL OPEN('IntFile','df0:MyTestFile','W')
+  CALL WRITELN('IntFile','This is a line of garbage')
+  CALL CLOSE('IntFile')
+
+Now the program will stop at the "CALL OPEN()" line with a requester
+advising that the disk is write protected and giving you a chance to write
+enable it before trying to open the disk file.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "*" "Article 26 - The PRAGMA() Function - The * Keyword"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - THE * KEYWORD@{UB}@{UU}
+@{JLEFT}
+@{B}Note@{UB} - If you like, skip this section altogether or just go straight to
+the @{"Summary" LINK "*"75} below. It is bit obscure for the beginner.
+
+The manuals state that the syntax for this one is:-
+
+@{B}PRAGMA('*',['Name'])@{UB}
+
+meaning that it can be used in these ways:-
+
+  PRAGMA('*','Name')
+  PRAGMA('*')
+
+The "*" symbol is used to refer to the current @{"console" LINK "ARB:Misc/Glossary/Console"} window.
+
+However, I have seen some texts/programs that use it this way:-
+
+  PRAGMA('Name','*')
+
+which is the reverse of the official manuals.
+
+The manuals say that this allows the user to define the logical name "Name"
+as the current console window thus allowing two @{"Streams" LINK "ARB:Misc/Glossary/Streams"} in the one window.
+For example:-
+
+  CALL CLOSE('STDOUT')         /* Close existing STDOUT */
+  CALL PRAGMA('*','STDOUT')    /* Open * as new STDOUT  */
+
+The 1st line closes the existing STDOUT which must be done before a new
+STDOUT can be opened.
+
+The 2nd line creates a new STDOUT defined as the current console window.
+
+When used without "Name", as in:-
+
+  CALL PRAGMA('*')
+
+then the official manuals say that "... the console handler is set to
+that of the client's process".
+
+Following is an example (not on disk as I can't get it to work properly)
+which I found in one unofficial text:-
+
+  /**/
+
+  CALL CLOSE('STDOUT')
+  CALL OPEN('STDOUT','CON:10/10/620/150/Window Title','W')
+
+  CALL CLOSE('STDIN')
+  CALL OPEN('STDIN','*','R')
+
+  SAY 'PLEASE TYPE IN SOME TEXT'
+  PARSE PULL Testentry
+  SAY 'You entered:-' TestEntry
+  SAY 'O.K. - I will close in 4 seconds'
+  DO WHILE TIME('E') < 4
+  END
+
+  CALL CLOSE('STDOUT')
+  CALL CLOSE('STDIN')
+  CALL PRAGMA('*')
+
+The text that came with the above example says that the use of the last
+line will return the two streams to the program's originating
+program.
+
+If you RX the above example from a Shell/CLI then it appears to work.
+The window opened acts as both STDIN and STDOUT.
+
+However, when called from any other program such as ED or AmigaGuide then
+I cannot get it to work.
+
+@{B}@{U}Summary For The "*" Option For PRAGMA()@{UB}@{UU}
+
+One unofficial text that I have read states that most modern shells do
+not need to use the "*" option for  PRAGMA().
+
+However, there still remains the problem of how to open a window with
+both STDIN and STDOUT streams from within a program such as ED and
+AmigaGuide/Multiview which do not automatically open windows for ARexx
+programs.
+
+I have covered this topic in @{"Article 51" LINK "ARB:Articles_51-60/51.ARexx_With_Other_Progs/Creating"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Warning" "Article 26 - The PRAGMA() Function - WARNING"
+
+@{B}@{U}@{JCENTER}THE PRAGMA() FUNCTION - WARNING@{UB}@{UU}
+@{JLEFT}
+When using PRAGMA() with the keyword options:-
+
+  PRIORITY
+  STACK
+
+It is best @{B}NOT@{UB} to use them in this form:-
+
+  PRAGMA('P')
+  PRAGMA('S')
+
+but to use them with a value, as in:-
+
+  PRAGMA('P',Value)
+  PRAGMA('S',Value)
+
+In theory, the usage @{B}without@{UB} the "Value" is supposed to return the current
+value of the setting. However, I have found that:-
+
+On my Amiga 500  I always get a GURU
+
+On my Amiga 1200 I often get an "Arithmetic Conversion Error"
+
+So, @{B}best not to use these without a "Value"!!@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

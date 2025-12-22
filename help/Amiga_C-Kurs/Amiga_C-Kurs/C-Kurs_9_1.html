@@ -1,0 +1,555 @@
+<html>
+<head>
+<title>Amiga C Kurs f&uuml;r Einsteiger</title>
+<META NAME="description" CONTENT="Amiga C Kurs f&uuml;r Einsteiger">
+<META NAME="keywords"    CONTENT="C, Amiga, Programmierung, Kurs, Einsteiger, StormC">
+<META NAME="author"      CONTENT="Norman Walter">
+
+<script language="JavaScript" src="JavaScript/C-Kurs_Kapitel.js" type="text/javascript">
+</script>
+
+</head>
+<body bgcolor="black" link="#DDDDDD" vlink="#BBBBBB">
+<center>
+<TABLE>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="140">
+<CENTER>
+<A HREF="index.html" NAME="Home"><IMG SRC="Home.png" ALT="Home" BORDER="0"></A><BR>
+<A HREF="download.html" NAME="Downloads"><IMG SRC="Download.png" ALT="Downloads" BORDER="0"></A><BR>
+<A HREF="Links.html" NAME="Links"><IMG SRC="Links.png" ALT="Links" BORDER="0"></A><BR>
+<a href="cgi-bin/GB_SHOW.cgi" method="POST"><img SRC="guestbook.png" BORDER=0 alt="Guestbook"></a>
+<p>
+<A HREF="http://www.norman-interactive.com/email_feedback.html">
+<IMG SRC="@.png" Border="0" Alt="e-mail"><BR><small>e-mail</small></A><BR>
+<p>
+
+<img src="C-Kurs/C-Kurs_sm.png" alt="Amiga C Kurs f&uuml;r Einsteiger" vspace="20"><BR>
+
+<NOSCRIPT>
+<font color="red">
+Diese Seite ben&ouml;tigt JavaScript.
+Entweder Ihr Browser unterst&uuml;tzt kein JavaScript, oder Sie haben es deaktiviert.
+</font>
+</NOSCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+
+  erzeuge_Kapitel(9);
+
+//-->
+</SCRIPT>
+
+<p>
+</CENTER>
+</TD>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="400" HEIGHT="600">
+<center>
+<p>
+<BR>
+<font color="white">
+
+<img src="C-Kurs/C-Kurs.png" alt="Amiga C Kurs f&uuml;r Einsteiger"><BR>
+</center>
+<p>
+<font color="gray"><H2>Verkettete Listen</H2></font><BR>
+<p>
+Bevor Sie sich weiter mit der Programmierung der AmigaOS API besch&auml;ftigen, sollten
+Sie sich zun&auml;chst einmal mit elementaren Datenstrukturen vertraut machen.
+Die AmigaOS API benutzt an vielen Stellen sogenannte <i>rekursive Strukturen</i>.
+Solche Datenstrukturen erm&ouml;glichen es uns Objekte im Speicher dynamisch zu behandeln,
+d.h. wie k&ouml;nnen zur Laufzeit (so lange Speicherplatz frei ist) beliebig viele Elemente
+in eine Datenstruktur einf&uuml;gen, l&ouml;schen und diese neu anordnen.
+Die hier besprochene Thematik mag f&uuml;r Anf&auml;nger vielleicht etwas schwierig sein,
+man sollte aber dennoch zumindest einmal davon geh&ouml;rt haben, bevor man mit Dingen
+wie z.B. GUI-Programmierung weitermacht. Andernfalls kann es passieren, da&szlig; man dort
+dann ziemlichen Murks fabriziert. Aber haben Sie keine Angst! Sie brauchen nicht
+alles sofort zu verstehen.
+<p>
+Bis jetzt haben wir Variablen und <a href="C-Kurs_3_3.html">Strukturen</a> recht statisch behandelt.
+Erinnern Sie sich noch an <a href="C-Kurs_4_2.html">Listing 4.2</a> aus Kapitel 4 dieses Kurses?
+Dort haben wir verschiedene Variablen zu einer Struktur zusammengefasst und anschlie&szlig;end einige
+Variablen diesen neuen Typs deklariert:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Strukturtyp&nbsp;Artikel&nbsp;mit&nbsp;3&nbsp;Komponenten<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Artikel<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>char</b></font>&nbsp;&nbsp;Bezeichnung[40];&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Artikels<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;&nbsp;&nbsp;Anzahl;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Lagerbestand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;Preis;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Preis&nbsp;in&nbsp;Euro<br></b></font>
+&nbsp;&nbsp;};<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Artikel&nbsp;a1,a2;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zwei&nbsp;Strukturen&nbsp;a1&nbsp;und&nbsp;a2&nbsp;vom&nbsp;Typ&nbsp;Artikel<br></b></font>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Das ist nat&uuml;rlich nicht besonders flexibel, denn die Zahl der m&ouml;glichen Objekte h&auml;ngt
+hier von der Anzahl der deklarierten Variablen vom Typ <TT>struct Artikel</TT> ab.
+Im obigen Beispiel h&auml;tten wir zur Laufzeit also nur Speicherplatz f&uuml;r zwei Strukturen
+vom Typ <TT>Artikel</TT>. Man k&ouml;nnte nat&uuml;rlich auch einige Tausend solcher Variablen deklarieren.
+Das h&auml;tte aber zum einen den Nachteil, da&szlig; ein Maximum an Eintr&auml;gen best&uuml;nde, zum anderen w&uuml;rden
+wir unter Umst&auml;nden Speicherplatz verschwenden, den wir garnicht ben&ouml;tigen. F&uuml;r eine Anwendung
+wie z.B. eine Lagerverwaltungssoftware w&auml;re soetwas nicht praktikabel.
+<p>
+Abhilfe schaffen hier die sogenannten <i>rekursiven Strukturen</i>, wie z.B. die
+<i>verkettete Liste</i>, die wir in dieser Lektion besprechen m&ouml;chten.
+<p>
+Das Grundelement einer verketteten Liste ist der Knoten (englische Bezeichnung: Node).
+Ein Knoten besteht hier aus einem Kopf (Head), der <i>irgendwelche</i> Daten enth&auml;lt,
+sowie einem Schwanz (Tail), der eine Zeigervariable enth&auml;lt, die auf einen weiteren
+Knoten gleichen Typs oder <TT>NULL</TT> zeigt.
+<p>
+<center>
+<img src="C-Kurs/Knoten.png" alt="Knoten">
+</center>
+<p>
+Die typische Definition eines Knotens in C k&ouml;nnte z.B. wie folgt aussehen:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;Wert;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ein&nbsp;Integer-Wert<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Nachfolger;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;den&nbsp;n&auml;chsten&nbsp;Knoten<br></b></font>
+};<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+ 
+An diesem Beispiel sehen wir auch schon, warum man hier von <i>rekursiven</i> Strukturen
+spricht: Die Struktur <TT>Knoten</TT> enth&auml;lt einen Zeiger auf eine Struktur gleichen Typs.
+<p>
+Zum Aufbau einer verketteten Liste brauchen wir zun&auml;chst einmal einen Zeiger, der auf das
+erste Element der Liste oder auf <TT>NULL</TT> zeigt, falls die Liste leer ist. Einen
+solchen Zeiger bezeichnet man auch als <i>Anker</i>. Passen Sie bitte beim Programmieren auf,
+da&szlig; Sie diesen Anker im Verlauf des Programms nie verlieren! Ist der Anker einmal weg, so
+haben Sie keine M&ouml;glichkeit mehr, auf die Elemente der entsprechenden Liste zuzugreifen.
+Die Liste bleibt aber dennoch im Speicher. Das Ergebnis sind dann die ber&uuml;chtigten
+<i>memory leaks</i> (=Speicherl&ouml;cher).
+<p>
+
+<center>
+<img src="C-Kurs/Anker.png" alt="Anker">
+</center>
+<p>
+
+In einem Programm w&uuml;rden wir also zun&auml;chst eine Zeigervariable vom Typ <TT>Knoten</TT>
+(wie oben definiert) deklarieren und diesen Zeiger auf <TT>NULL</TT> zeigen lassen.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Unser&nbsp;Anker<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Liste&nbsp;=&nbsp;NULL;<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Dieser Zeiger stellt nun unseren Anker dar.
+<p>
+Um nun neue Knoten in unsere Liste einf&uuml;gen zu k&ouml;nnen, m&uuml;ssen wir eine entsprechende
+Funktion schreiben:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#008822"><b>//&nbsp;Einfuegen&nbsp;h&auml;ngt&nbsp;einen&nbsp;neuen&nbsp;Knoten&nbsp;(vorne)&nbsp;an&nbsp;die&nbsp;Liste&nbsp;an.<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Einfuegen(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;w)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*p;<br>
+<br>
+&nbsp;&nbsp;p&nbsp;=&nbsp;AllocKnoten();&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Neuen&nbsp;Knoten&nbsp;erzeugen<br></b></font>
+&nbsp;&nbsp;p->Wert&nbsp;=&nbsp;w;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Wert&nbsp;zuweisen<br></b></font>
+&nbsp;&nbsp;p->Nachfolger&nbsp;=&nbsp;l;<br>
+<br>
+&nbsp;&nbsp;l=p;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;l;<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+ 
+In unserer Funktion <TT>Einfuegen</TT> stellt die Zeigervariable <TT>p</TT> nur einen Hilfszeiger
+dar. Dieser Zeiger wird beim Verlassen der Funktion wieder vergessen.
+<p>
+
+Zus&auml;tzlich ben&ouml;tigen wir noch eine Funktion, die den zur Speicherung des neuen Knotens
+notwendigen Speicher vom Betriebssystem beschafft:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#008822"><b>//&nbsp;AllocKnoten&nbsp;beschafft&nbsp;uns&nbsp;Speicher&nbsp;f&uuml;r&nbsp;den&nbsp;neuen&nbsp;Knoten<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*AllocKnoten(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*)&nbsp;<font color="#852608"><b>malloc</b></font>(<font color="#AA00FF"><b>sizeof</b></font>(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten));<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Die C-Funktion <TT>malloc</TT> liefert dabei einen Zeiger auf die entsprechende
+Speicherstelle. Zuerst m&uuml;ssen wir jedoch ermitteln, wieviel Speicher wir &uuml;berhaupt
+brauchen. Dies geschieht mit Hilfe des <a href="C-Kurs_1_12.html"><TT>sizeof</TT> Operators</a>.
+Mit <TT>sizeof(struct Knoten)</TT> ermitteln wir, wieviel Speicherplatz unser neuer Knoten
+belegen w&uuml;rde. Zus&auml;tzlich m&uuml;ssen wir hier noch eine <a href="C-Kurs_5_5.html">explizite Typumwandlung</a>
+vornehmen, damit der von unserer Funktion zur&uuml;ckgegebene Zeiger ein
+<a href="C-Kurs_4_2.html">Zeiger auf eine Struktur</a> vom Typ <TT>Knoten</TT> wird.
+
+<p>
+
+Um besser nachfolziehen zu k&ouml;nnen, was hier abl&auml;uft schauen wir uns
+folgende Schaubilder an:
+<p>
+
+<center>
+<img src="C-Kurs/Liste_Einfuegen_1.png" alt="Liste Einf&uuml;gen 1">
+</center>
+
+<p>
+
+Die Funktion <TT>AllocKnoten</TT> liefert uns einen Zeiger auf die Speicherstelle,
+in der der neue Knoten abgelegt ist.
+
+<p>
+
+<center>
+<img src="C-Kurs/Liste_Einfuegen_2.png" alt="Liste Einf&uuml;gen 2">
+</center>
+
+<p>
+
+Jetzt k&ouml;nnen wir in unseren neuen Knoten einen Wert eintragen, z.B. <TT>5</TT>.
+Dann setzen wir mit <TT>p->Nachfolger = l;</TT> den Nachfolgezeiger unseres neuen
+Knotens auf den Kopf des ersten Elements der Liste (hier <TT>NULL</TT>).
+<p>
+
+<center>
+<img src="C-Kurs/Liste_Einfuegen_3.png" alt="Liste Einf&uuml;gen 3">
+</center>
+
+<p>
+
+Zum Schlu&szlig; lassen wir mit <TT>l = p;</TT> unseren Anker auf den Kopf des neuen
+Knotens zeigen. Der Zeiger <TT>p</TT> wird beim Verlassen der Funktion wieder vergessen.
+
+<p>
+Das Entfernen eines Knotens aus der Liste funktioniert analog dazu (siehe List.c).
+Speicher, der mit <TT>malloc</TT> angefordert wurde, kann mit <TT>free</TT> wieder
+freigegeben werden.
+
+<p>
+
+Zus&auml;tzlich schreiben wir eine kleine Funktion, welche den kompletten Inhalt
+einer Liste mittels <TT>printf</TT> ausgibt:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#008822"><b>//&nbsp;ZeigeListe&nbsp;gibt&nbsp;die&nbsp;komplette&nbsp;Liste&nbsp;aus<br></b></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeigeListe(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(l&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"%d&nbsp;"</font>,l->Wert);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ZeigeListe(l->Nachfolger);<br>
+&nbsp;&nbsp;}<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Da wir auf einer <i>rekursiven</i> Struktur arbeiten, bietet sich hierzu eine
+<a href="C-Kurs_5_3.html">rekursive Funktion</a> an: Die Rekursion bricht genau dann ab,
+wenn der Nachfolger eines Knotens der Nullzeiger ist. Damit werden die Werte aller
+Knoten der Reihe nach ausgegeben. Bitte beachten Sie auch hier: <TT>NULL</TT> ist nicht
+das selbe wie der Integer-Wert <TT>0</TT>.
+
+<p>
+Die Definition unseres Knotens f&uuml;r die Speicherung einer Interger-Variablen, sowie
+die Funktionsprototypen schreiben wir in eine Header-Datei Namens <TT>List.h</TT>:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;List.h<br>
+&nbsp;*&nbsp;&nbsp;Funktionen&nbsp;zum&nbsp;Umgang&nbsp;mit&nbsp;Listen<br>
+&nbsp;*&nbsp;&nbsp;Definitionsmodul<br>
+&nbsp;*/<br></font>
+<br>
+#ifndef&nbsp;LIST_H<br>
+#define&nbsp;LIST_H<br>
+<br>
+<font color="#008822"><b>//&nbsp;Stellt&nbsp;sicher,&nbsp;da&szlig;&nbsp;stdlib.h&nbsp;eingebunden&nbsp;wird.<br></b></font>
+#ifndef&nbsp;_INCLUDE_STDLIB_H<br>
+#include&nbsp;&lt;stdlib.h&gt;<br>
+#endif<br>
+<br>
+<font color="#008822"><b>//&nbsp;Datentypen:<br></b></font>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;Wert;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ein&nbsp;Integer-Wert<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Nachfolger;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;den&nbsp;n&auml;chsten&nbsp;Knoten<br></b></font>
+};<br>
+<br>
+<font color="#008822"><b>//&nbsp;Funktionsprototypen:<br></b></font>
+<br>
+<font color="#008822"><b>//&nbsp;AllocKnoten&nbsp;beschafft&nbsp;uns&nbsp;Speicher&nbsp;f&uuml;r&nbsp;den&nbsp;neuen&nbsp;Knoten<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*AllocKnoten(<font color="#AA00FF"><b>void</b></font>);<br>
+<br>
+<font color="#008822"><b>//&nbsp;Einfuegen&nbsp;f&uuml;gt&nbsp;h&auml;ngt&nbsp;einen&nbsp;neuen&nbsp;Knoten&nbsp;(vorne)&nbsp;an&nbsp;die&nbsp;Liste&nbsp;an.<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Einfuegen(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;w);<br>
+<br>
+<font color="#008822"><b>//&nbsp;Entfernt&nbsp;erstes&nbsp;Element&nbsp;der&nbsp;Liste<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Entferne(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l);<br>
+<br>
+<font color="#008822"><b>//&nbsp;ZeigeListe&nbsp;gibt&nbsp;die&nbsp;komplette&nbsp;Liste&nbsp;aus<br></b></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeigeListe(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l);<br>
+<br>
+#endif<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Die Funktionen zur Bearbeitung von Listen kommen in eine Datei Namens <TT>List.c</TT>:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;List.c<br>
+&nbsp;*&nbsp;&nbsp;Funktionen&nbsp;zum&nbsp;Umgang&nbsp;mit&nbsp;Listen<br>
+&nbsp;*/<br></font>
+<br>
+<font color="#008822"><b>//&nbsp;Stellt&nbsp;sicher,&nbsp;da&szlig;&nbsp;List.h&nbsp;eingebunden&nbsp;wird.<br></b></font>
+#ifndef&nbsp;LIST_H<br>
+#include&nbsp;<font color="#EEDD05">"List.h"</font><br>
+#endif<br>
+<br>
+<font color="#008822"><b>//&nbsp;AllocKnoten&nbsp;beschafft&nbsp;uns&nbsp;Speicher&nbsp;f&uuml;r&nbsp;den&nbsp;neuen&nbsp;Knoten<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*AllocKnoten(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*)&nbsp;<font color="#852608"><b>malloc</b></font>(<font color="#AA00FF"><b>sizeof</b></font>(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten));<br>
+}<br>
+<br>
+<font color="#008822"><b>//&nbsp;Einfuegen&nbsp;h&auml;ngt&nbsp;einen&nbsp;neuen&nbsp;Knoten&nbsp;(vorne)&nbsp;an&nbsp;die&nbsp;Liste&nbsp;an.<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Einfuegen(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;w)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*p;<br>
+<br>
+&nbsp;&nbsp;p&nbsp;=&nbsp;AllocKnoten();&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Neuen&nbsp;Knoten&nbsp;erzeugen<br></b></font>
+&nbsp;&nbsp;p->Wert&nbsp;=&nbsp;w;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Wert&nbsp;zuweisen<br></b></font>
+&nbsp;&nbsp;p->Nachfolger&nbsp;=&nbsp;l;<br>
+<br>
+&nbsp;&nbsp;l=p;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;l;<br>
+}<br>
+<br>
+<font color="#008822"><b>//&nbsp;Entfernt&nbsp;erstes&nbsp;Element&nbsp;der&nbsp;Liste<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Entferne(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*p;<br>
+<br>
+&nbsp;&nbsp;p&nbsp;=&nbsp;l;<br>
+&nbsp;&nbsp;l&nbsp;=&nbsp;p->Nachfolger;<br>
+&nbsp;&nbsp;<font color="#852608"><b>free</b></font>(p);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;l;<br>
+}<br>
+<br>
+<font color="#008822"><b>//&nbsp;ZeigeListe&nbsp;gibt&nbsp;die&nbsp;komplette&nbsp;Liste&nbsp;aus<br></b></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeigeListe(<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*l)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(l&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"%d&nbsp;"</font>,l->Wert);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ZeigeListe(l->Nachfolger);<br>
+&nbsp;&nbsp;}<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Listing 9.1 benutzt die obigen Includes und demonstriert elementare Operationen
+auf verketteten Listen. Spielen Sie ruhig ein wenig damit herum!
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Listing&nbsp;9.1<br>
+&nbsp;*&nbsp;&nbsp;Liste.c<br>
+&nbsp;*&nbsp;&nbsp;Demonstriert&nbsp;die&nbsp;Verwendung&nbsp;von&nbsp;verketteten&nbsp;Listen<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;stdlib.h&gt;<br>
+#include&nbsp;&lt;stdio.h&gt;<br>
+<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+<br>
+<font color="#008822"><b>//&nbsp;Eigene&nbsp;Includes<br></b></font>
+#include&nbsp;<font color="#EEDD05">"List.h"</font><br>
+#include&nbsp;<font color="#EEDD05">"List.c"</font><br>
+<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ZeigeAuswahl(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"\n\n"</font>);<br>
+&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"[1]&nbsp;Element&nbsp;hinzuf&uuml;gen\n"</font>);<br>
+&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"[2]&nbsp;Element&nbsp;entfernen\n"</font>);<br>
+&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"[0]&nbsp;Programm&nbsp;beenden\n"</font>);<br>
+}<br>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;auswahl,&nbsp;zahl;<br>
+&nbsp;&nbsp;<font color="#45FF65">BOOL</font>&nbsp;Ende&nbsp;=&nbsp;FALSE;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;Knoten&nbsp;*Liste&nbsp;=&nbsp;NULL;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(Ende&nbsp;==&nbsp;FALSE)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Liste&nbsp;==&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Die&nbsp;Liste&nbsp;ist&nbsp;leer.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Inhalt&nbsp;der&nbsp;Liste:&nbsp;"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ZeigeListe(Liste);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ZeigeAuswahl();<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Auswahl:&nbsp;"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>scanf</b></font>(<font color="#EEDD05">"%d"</font>,&auswahl);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>&nbsp;(auswahl)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;0:&nbsp;&nbsp;Ende&nbsp;=&nbsp;TRUE;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Programmende\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;1:&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Bitte&nbsp;geben&nbsp;Sie&nbsp;eine&nbsp;Zahl&nbsp;ein:&nbsp;"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>scanf</b></font>(<font color="#EEDD05">"%d"</font>,&zahl);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Liste&nbsp;=&nbsp;Einfuegen(Liste,zahl);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;2:&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Liste&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Liste&nbsp;=&nbsp;Entferne(Liste);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler!&nbsp;Es&nbsp;gibt&nbsp;kein&nbsp;Element&nbsp;zum&nbsp;entfernen.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>default</b></font>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehlerhafte&nbsp;Eingabe.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;switch&nbsp;Verzweigung<br></b></font>
+&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;while&nbsp;Schleife<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Neben den hier gezeigten <i>einfach verketteten</i> Listen gibt es auchnoch doppelt
+verkettete Listen, Ringlisten usw. .
+<p>
+Das Ende einer Liste kann man, wie hier gezeigt, mit einem Zeiger auf <TT>NULL</TT> markieren.
+Es gibt aber auch noch andere M&ouml;glichkeiten, wie z.B. den Nachfolger des letzten Knotens
+auf sich selbst zeigen zu lassen (eine Schleife). F&uuml;r solche Listen braucht man aber auch
+andere Bearbeitungsfunktionen.
+
+<p>
+</font>
+</center>
+</TD>
+</TABLE>
+
+</body>
+</html>

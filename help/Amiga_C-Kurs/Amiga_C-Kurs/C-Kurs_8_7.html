@@ -1,0 +1,767 @@
+<html>
+<head>
+<title>Amiga C Kurs f&uuml;r Einsteiger</title>
+<META NAME="description" CONTENT="Amiga C Kurs f&uuml;r Einsteiger">
+<META NAME="keywords"    CONTENT="C, Amiga, Programmierung, Kurs, Einsteiger, StormC">
+<META NAME="author"      CONTENT="Norman Walter">
+
+<script language="JavaScript" src="JavaScript/C-Kurs_Kapitel.js" type="text/javascript">
+</script>
+
+</head>
+<body bgcolor="black" link="#DDDDDD" vlink="#BBBBBB">
+<center>
+<TABLE>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="140">
+<CENTER>
+<A HREF="index.html" NAME="Home"><IMG SRC="Home.png" ALT="Home" BORDER="0"></A><BR>
+<A HREF="download.html" NAME="Downloads"><IMG SRC="Download.png" ALT="Downloads" BORDER="0"></A><BR>
+<A HREF="Links.html" NAME="Links"><IMG SRC="Links.png" ALT="Links" BORDER="0"></A><BR>
+<a href="cgi-bin/GB_SHOW.cgi" method="POST"><img SRC="guestbook.png" BORDER=0 alt="Guestbook"></a>
+<p>
+<A HREF="http://www.norman-interactive.com/email_feedback.html">
+<IMG SRC="@.png" Border="0" Alt="e-mail"><BR><small>e-mail</small></A><BR>
+<p>
+
+<img src="C-Kurs/C-Kurs_sm.png" alt="Amiga C Kurs f&uuml;r Einsteiger" vspace="20"><BR>
+
+<NOSCRIPT>
+<font color="red">
+Diese Seite ben&ouml;tigt JavaScript.
+Entweder Ihr Browser unterst&uuml;tzt kein JavaScript, oder Sie haben es deaktiviert.
+</font>
+</NOSCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+
+  erzeuge_Kapitel(8);
+
+//-->
+</SCRIPT>
+
+<p>
+</CENTER>
+</TD>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="400" HEIGHT="600">
+<center>
+<p>
+<BR>
+<font color="white">
+
+<img src="C-Kurs/C-Kurs.png" alt="Amiga C Kurs f&uul,r Einsteiger"><BR>
+</center>
+<p>
+<font color="gray"><H2>Text ist auch Grafik</H2></font><BR>
+<p>
+Im Gegensatz zu vielen anderen Systemen gibt es auf dem Amiga keinen
+Textmodus. Alles, was man auf dem Bildschirm zu sehen bekommt, ist Grafik.
+So ist es auch nicht verwunderlich, da&szlig; die <TT>graphics.library</TT>
+eine Funktion zur Ausgabe von Text enth&auml;lt.
+Diese Funktion hei&szlig;t schlicht <TT>Text</TT>.
+<p>
+In welcher Schrift der Text ausgegeben wird, h&auml;ngt vom eingestellten Font
+ab. Im Kickstart Rom befinden sich zwei Schriften: Topaz 60 und Topaz 80.
+60 bzw. 80 ist hier nicht die H&ouml;he der Schrift, sondern es sind die Bezeichnungen
+der Schriften, die bei 60 bzw. 80 Zeichen pro Zeile eingesetzt werden.
+Weitere Schriften sind im Verzeichnis Fonts auf der Systempartition.
+Sie k&ouml;nnen sich einen &Uuml;berblick &uuml;ber die auf Ihrem System installierten
+Schriftarten verschaffen, indem Sie ein Shell Fenster &ouml;ffnen und folgende
+Zeile eingeben:
+<p>
+<TT>list FONTS:</TT><BR>
+<p>
+Eine gute M&ouml;glichkeit, die verschiedenen Schriften zu erkunden ist
+der Schriftarten-Voreinsteller. Dieser befindet sich im Verzeichnis
+<TT>Workbench:Prefs</TT>.
+<p>
+<center>
+<img src="C-Kurs/Fonts.png" alt="Schriftarten-Voreinsteller"><BR>
+</center>
+<p>
+Die verschiedenen Fonts liegen in festen Gr&ouml;&szlig;en vor.
+So liegen zum Beispiel im Verzeichnis <TT>FONTS:helvetica</TT>
+die Fonts mit den Namen 9, 11, 13, 15, 18 und 24 vor.
+<p>
+Die Rom Fonts kann man mit der Funktion <TT>OpenFont</TT> &ouml;ffnen,
+an die Fonts auf Disk kommt man mit Hilfe der Funktion <TT>OpenDiskFont</TT>
+aus der <TT>diskfont.library</TT> heran.
+Beide Funktionen erwarten einen <a href="C-Kurs_4_2.html">Zeiger auf eine Struktur</a> vom Typ <TT>TextAttr</TT>.
+Dieser <a href="C-Kurs_3_3.html">Strukturtyp</a> ist in der AmigaOS include Datei <TT>graphics/text.h</TT>
+definiert:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextAttr</font>&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;STRPTR&nbsp;&nbsp;ta_Name;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;name&nbsp;of&nbsp;the&nbsp;font&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;UWORD&nbsp;&nbsp;&nbsp;ta_YSize;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;height&nbsp;of&nbsp;the&nbsp;font&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;UBYTE&nbsp;&nbsp;&nbsp;ta_Style;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;intrinsic&nbsp;font&nbsp;style&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;UBYTE&nbsp;&nbsp;&nbsp;ta_Flags;&nbsp;&nbsp;&nbsp;<font color="#FFFFFF">/*&nbsp;font&nbsp;preferences&nbsp;and&nbsp;flags&nbsp;*/<br></font>
+};<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Ein solcher <a href="C-Kurs_3_3.html">Strukturtyp</a> enth&auml;lt die Attribute der angeforderten Schrift.
+Bevor man einen Font mittels <TT>OpenFont</TT> oder <TT>OpenDiskFont</TT> &ouml;ffnet,
+mu&szlig; man eine solche Struktur ausf&uuml;llen. In die Komponente <TT>ta_Name</TT>
+tr&auml;gt man den Namen des gew&uuml;nschten Fonts (z.B. helvetica) ein.
+<TT>ta_YSize</TT> ist die gew&uuml;nschte H&ouml;he der Schrift. Hier sollte man sich an
+die vorgegebenen Schriftgr&ouml;&szlig;en halten.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"helvetica.font"</font>;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;24;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_DISKFONT;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;Disk&nbsp;Font<br></b></font>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Hat man einen Font ge&ouml;ffnet, so kann man mit der Funktion <TT>SetFont</TT>
+ausdr&uuml;cken, da&szlig; man diese Schrift f&uuml;r die folgenden Textausgaben verwenden
+m&ouml;chte.
+<p>
+Die Verwendung der Funktion <TT>Text</TT> funktioniert &auml;hnlich wie bei den
+<a href="C-Kurs_8_2.html">Grafikprimitiven</a>. Mit <TT>Move</TT> bewegt man den (unsichtbaren)
+Grafikcursor auf die gew&uuml;nschte Position. Dann ruft man die Funktion <TT>Text</TT> auf.
+Der Text wird dann in der Farbe des zuvor mit <TT>SetAPen</TT> eingestellten Pens
+in den angegebenen RastPort gezeichnet.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetFont</font>(rp,&nbsp;textfont);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Font&nbsp;setzen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,1L);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schriftfarbe&nbsp;w&auml;hlen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,20,50);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Grafik&nbsp;Cursor&nbsp;bewegen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,<font color="#EEDD05">"Das&nbsp;ist&nbsp;Topaz&nbsp;60."</font>,17);&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Text&nbsp;ausgeben<br></b></font>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+<TT>rp</TT> ist hier ein <a href="C-Kurs_4_2.html">Zeiger</a> auf den RastPort,
+indem der Text erscheinen soll.
+Der letzte Parameter des Funktionsaufrufs von <TT>Text</TT> ist die
+L&auml;nge des Strings. Im Beispiel oben ist der String <TT>"Das ist Topaz 60."</TT>
+genau 17 Zeichen lang. Achtung: Auch Leerzeichen werden mitgez&auml;hlt!
+<p>
+Listing 8.7.1 zeigt die Verwendung von Rom und Disk Fonts:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Listing&nbsp;8.7.1<br>
+&nbsp;*&nbsp;&nbsp;Text&nbsp;und&nbsp;Fonts<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;stdio.h&gt;<br>
+<br>
+#include&nbsp;&lt;exec/exec.h&gt;<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+#include&nbsp;&lt;intuition/intuition.h&gt;<br>
+#include&nbsp;&lt;graphics/gfx.h&gt;<br>
+#include&nbsp;&lt;graphics/text.h&gt;<br>
+<br>
+#include&nbsp;&lt;proto/intuition.h&gt;<br>
+#include&nbsp;&lt;proto/dos.h&gt;<br>
+#include&nbsp;&lt;proto/exec.h&gt;<br>
+#include&nbsp;&lt;proto/graphics.h&gt;<br>
+#include&nbsp;&lt;proto/diskfont.h&gt;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Funktionsprototypen&nbsp;der&nbsp;diskfont.library<br></b></font>
+<br>
+<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstanten<br></b></font>
+#define&nbsp;WIDTH&nbsp;300&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite&nbsp;des&nbsp;Fensters<br></b></font>
+#define&nbsp;HEIGHT&nbsp;200&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fensters<br></b></font>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Window</font>&nbsp;*Fenster;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Window-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*<font color="#45FF65">IntuitionBase</font>;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;IntuitionBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*<font color="#45FF65">GfxBase</font>;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;GfxBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;RastPort&nbsp;Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*DiskfontBase;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;DiskfontBase<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*textfont;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;TextFont<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextAttr</font>&nbsp;ta;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;TextAttr-Struktur<br></b></font>
+<br>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Intuition&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"intuition.library"</font>,37L);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Graphics&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"graphics.library"</font>,0L);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;mittels&nbsp;Tags&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fenster&nbsp;=&nbsp;<font color="#FFFFAA">OpenWindowTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Left,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Top,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Width,&nbsp;WIDTH,&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Height,&nbsp;HEIGHT,&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Title,&nbsp;<font color="#EEDD05">"Text&nbsp;ist&nbsp;auch&nbsp;Grafik"</font>,&nbsp;<font color="#008822"><b>//&nbsp;Fenstertitel<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_CloseGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Close-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DragBar,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ziehleiste<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DepthGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Depth-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_IDCMP,&nbsp;IDCMP_CLOSEWINDOW,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Activate,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;aktivieren<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Disk&nbsp;Font&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DiskfontBase&nbsp;=&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"diskfont.library"</font>,37L);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rp&nbsp;=&nbsp;Fenster->RPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"topaz.font"</font>;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;TOPAZ_SIXTY;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_ROMFONT;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;ROM-Font<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Die&nbsp;Funktion&nbsp;OpenFont&nbsp;&ouml;ffnet&nbsp;ROM&nbsp;Fonts&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;textfont&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenFont</font>(&ta);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetFont</font>(rp,&nbsp;textfont);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Font&nbsp;setzen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,1L);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schriftfarbe&nbsp;w&auml;hlen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,20,50);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Grafik&nbsp;Cursor&nbsp;bewegen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,<font color="#EEDD05">"Das&nbsp;ist&nbsp;Topaz&nbsp;60."</font>,17);&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Text&nbsp;ausgeben<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;TOPAZ_EIGHTY;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Andere&nbsp;H&ouml;he&nbsp;w&auml;hlen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,20,70);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,<font color="#EEDD05">"Und&nbsp;das&nbsp;ist&nbsp;Topaz&nbsp;80."</font>,21);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseFont</font>(textfont);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Font&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler:&nbsp;Kann&nbsp;topaz.font&nbsp;nicht&nbsp;&ouml;ffnen.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"helvetica.font"</font>;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;24;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_DISKFONT;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;Disk&nbsp;Font<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Die&nbsp;Funktion&nbsp;OpenDiskFont&nbsp;&ouml;ffnet&nbsp;einen&nbsp;Font&nbsp;aus&nbsp;FONTS:&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;textfont&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenDiskFont</font>(&ta);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetFont</font>(rp,&nbsp;textfont);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,2L);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,20,110);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,<font color="#EEDD05">"Helvetica&nbsp;24"</font>,12);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseFont</font>(textfont);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler:&nbsp;Kann&nbsp;helvetica.font&nbsp;nicht&nbsp;&ouml;ffnen.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"courier.font"</font>;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;18;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_DISKFONT;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;Disk&nbsp;Font<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;textfont&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenDiskFont</font>(&ta);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetFont</font>(rp,&nbsp;textfont);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,20,140);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,<font color="#EEDD05">"Courier&nbsp;18"</font>,10);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseFont</font>(textfont);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler:&nbsp;Kann&nbsp;courier.font&nbsp;nicht&nbsp;&ouml;ffnen.\n"</font>);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Auf&nbsp;Close-Gadget&nbsp;warten<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Wait</font>(1L&nbsp;&lt;&lt;&nbsp;Fenster-&gt;UserPort-&gt;mp_SigBit);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseWindow</font>(Fenster);&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Libraries&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">GfxBase</font>);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">IntuitionBase</font>);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(DiskfontBase&nbsp;!=&nbsp;NULL)&nbsp;&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)DiskfontBase);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Unser kleines Beispielprogramm zeigt die beiden Rom Fonts <TT>Topaz 60</TT>
+und <TT>Topaz 80</TT>, sowie die Disk Fonts <TT>Helvetica 24</TT> und
+<TT>Courier 18</TT>.
+<p>
+<center>
+<img src="C-Kurs/Text.png" alt="Text"><BR>
+</center>
+
+<p>
+
+Als n&auml;chstes Beispiel wollen wir eine einfache Digitaluhr programmieren.
+
+<p>
+
+<center>
+<img src="C-Kurs/Digitaluhr.png" alt="Digitaluhr"><BR>
+</center>
+
+<p>
+
+Die aktuelle Zeit soll in gr&uuml;ner Schrift auf schwarzem Hintergrund angezeigt werden.
+Passende Pens f&uuml;r diese Farben ermitteln wir mit Hilfe der Funktion
+<a href="C-Kurs_8_5.html">ObtainBestPen</a>.
+In diesem Beispielprogramm nutzen wir erstmals die Funktion <TT>SetBPen</TT>.
+Diese dient zum Einstellen des Pens f&uuml;r den Hintergrund der Schrift.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,green_pen);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Pen&nbsp;f&uuml;r&nbsp;Vordergrund<br></b></font>
+&nbsp;&nbsp;<font color="#FFFFAA">SetBPen</font>(rp,black_pen);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Pen&nbsp;f&uuml;r&nbsp;Hintergrund<br></b></font>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Probieren Sie einmal selbst aus, was passiert, wenn man in Listing 8.7.2 <TT>SetBPen</TT> wegl&auml;&szlig;t, oder statt
+<TT>black_pen</TT> einen anderen <TT>LONG</TT> Wert, wie z.B. <TT>3L</TT> angibt!
+<p>
+
+Wenn wir mit Zeit arbeiten wollen, m&uuml;ssen wir die <a href="C-Kurs_6_1.html">Standard Definitionsdatei</a>
+<TT>time.h</TT> einbinden. In dieser Datei ist eine Struktur Namens <TT>tm</TT>
+wie folgt definiert:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>struct</b></font>&nbsp;tm&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;tm_sec,&nbsp;tm_min,&nbsp;tm_hour;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;tm_mday,&nbsp;tm_mon,&nbsp;tm_year;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;tm_wday,&nbsp;tm_yday;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;tm_idst;<br>
+};<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Diese Struktur enth&auml;lt die Komponenten <TT>tm_sec</TT> (Sekunden),
+<TT>tm_min</TT> (Minuten), <TT>tm_hour</TT> (Stunden) usw. .
+<p>
+
+Unsere Digitaluhr nutzt folgende Funktion, um die aktuelle Systemzeit
+an den Koordinaten <TT>x</TT>,<TT>y</TT> in einen RastPort <TT>rp</TT>
+zu schreiben:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;SchreibeZeit<br>
+&nbsp;*&nbsp;&nbsp;Schreibt&nbsp;die&nbsp;aktuelle&nbsp;Zeit&nbsp;an&nbsp;den&nbsp;Koordinaten&nbsp;x,y<br>
+&nbsp;*&nbsp;&nbsp;in&nbsp;den&nbsp;RastPort&nbsp;rp.<br>
+&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;SchreibeZeit(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,<font color="#AA00FF"><b>int</b></font>&nbsp;x,<font color="#AA00FF"><b>int</b></font>&nbsp;y)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;tm&nbsp;*tp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;tm&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;time_t&nbsp;t;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>char</b></font>&nbsp;Puffer[9];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Puffer&nbsp;f&uuml;r&nbsp;8&nbsp;Zeichen&nbsp;+&nbsp;NULL<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#852608"><b>time</b></font>(&t);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Aktuelle&nbsp;Systemzeit&nbsp;holen<br></b></font>
+&nbsp;&nbsp;tp&nbsp;=&nbsp;<font color="#852608"><b>localtime</b></font>(&t);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeitzonen&nbsp;ber&uuml;cksichtigen<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;&nbsp;Aktuelle&nbsp;Zeit&nbsp;in&nbsp;Textpuffer&nbsp;schreiben...<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;Die&nbsp;Platzhalter&nbsp;des&nbsp;Format-Strings&nbsp;haben&nbsp;folgende&nbsp;Bedeutung:<br>
+&nbsp;&nbsp;&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%H&nbsp;:&nbsp;Stunden<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%M&nbsp;:&nbsp;Minuten<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%S&nbsp;:&nbsp;Sekunden<br>
+&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#852608"><b>strftime</b></font>(Puffer,<font color="#AA00FF"><b>sizeof</b></font>(Puffer),<font color="#EEDD05">"%H:%M:%S"</font>,tp);<br>
+<br>
+&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,x,y);<br>
+&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,Puffer,<font color="#852608"><b>strlen</b></font>(Puffer));<br>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Da die Funktion <TT>Text</TT> keine Format-Strings wie etwa die Funktion
+<a href="C-Kurs_1_3.html"><TT>printf</TT></a> bietet, m&uuml;ssen wir einen kleinen Umweg gehen.
+Zun&auml;chst deklarieren wir ein Array vom Typ <TT>char</TT>, welches als
+Puffer f&uuml;r unseren Zeit-String dienen soll.
+Dieses Array mu&szlig; gro&szlig; genug sein, um den gew&uuml;nschten String aufzunehmen.
+Zus&auml;tzlich mu&szlig; es ein Zeichen mehr Platz bieten - f&uuml;r das
+<a href="C-Kurs_ASCII.html">ASCII</a> Zeichen NULL, welches das Ende eines Strings markiert.
+In diesen Puffer wird dann mit Hilfe der Funktion <TT>strftime</TT>
+aus <TT>time.h</TT> die Zeit in der von uns gew&uuml;nschten Formatierung
+geschrieben. Anschlie&szlig;end k&ouml;nnen wir diesen Puffer dann mittels
+<TT>Text</TT> ausgeben.
+<p>
+Mit Hilfe der Funktion <TT>TextLength</TT> k&ouml;nnen wir ermitteln, wieviel
+Pixel breit ein Textstring in der eingestellten Schriftart ist.
+Damit zentrieren wir den Text im Fenster: Die Breite der Zeichenfl&auml;che
+des Fensters abz&uuml;glich der Breite des Textes und davon die H&auml;lfte
+ergibt den Abstand, den der Text vom linken Fensterrand haben mu&szlig;.
+
+<p>
+Unsere Funktion <TT>SchreibeZeit</TT> wird von einem Ereignis angesto&szlig;en:
+Wir lauschen auf dem entsprechenden <a href="C-Kurs_7_4.html">Port</a>
+auf die <a href="C-Kurs_7_4.html">Nachricht</a> <TT>INTUITICKS</TT>.
+Dazu setzen wir f&uuml;r unser Fenster das entsprechende IDCMP-Flag.
+Intuition sendet dann etwa 50 mal pro Sekunde eine "Tick-Nachricht" &uuml;ber
+diesen <a href="C-Kurs_7_4.html">Port</a>. Ein Nachteil dieser Methode ist,
+da&szlig; unser Fenster nur dann aktualisiert wird, wenn es auch aktiviert ist.
+Als Alternative k&ouml;nnte man hier das <TT>timer.device</TT> benutzen.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Listing&nbsp;8.7.2<br>
+&nbsp;*&nbsp;&nbsp;Eine&nbsp;einfache&nbsp;Digitaluhr<br>
+&nbsp;*<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;stdio.h&gt;<br>
+#include&nbsp;&lt;<font color="#852608"><b>time</b></font>.h&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Include-Datei&nbsp;f&uuml;r&nbsp;Zeit<br></b></font>
+<br>
+#include&nbsp;&lt;exec/exec.h&gt;<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+#include&nbsp;&lt;intuition/intuition.h&gt;<br>
+#include&nbsp;&lt;graphics/gfx.h&gt;<br>
+#include&nbsp;&lt;graphics/text.h&gt;<br>
+<br>
+#include&nbsp;&lt;proto/intuition.h&gt;<br>
+#include&nbsp;&lt;proto/dos.h&gt;<br>
+#include&nbsp;&lt;proto/exec.h&gt;<br>
+#include&nbsp;&lt;proto/graphics.h&gt;<br>
+#include&nbsp;&lt;proto/diskfont.h&gt;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Funktionsprototypen&nbsp;der&nbsp;diskfont.library<br></b></font>
+<br>
+<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstanten<br></b></font>
+#define&nbsp;WIDTH&nbsp;130&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite&nbsp;des&nbsp;Fensters<br></b></font>
+#define&nbsp;HEIGHT&nbsp;70&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fensters<br></b></font>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Window</font>&nbsp;*Fenster;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Window-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*<font color="#45FF65">IntuitionBase</font>;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;IntuitionBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*<font color="#45FF65">GfxBase</font>;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;GfxBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;RastPort&nbsp;Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*DiskfontBase;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;DiskfontBase<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*textfont;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;TextFont<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextAttr</font>&nbsp;ta;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;TextAttr&nbsp;Struktur<br></b></font>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;Funktionsprototypen&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;SchreibeZeit(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,<font color="#AA00FF"><b>int</b></font>&nbsp;x,<font color="#AA00FF"><b>int</b></font>&nbsp;y);<br>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ShutDown(<font color="#AA00FF"><b>int</b></font>&nbsp;code,&nbsp;<font color="#45FF65">STRPTR</font>&nbsp;error);<br>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Variablen&nbsp;zur&nbsp;Message-Bearbeitung&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">MsgPort</font>&nbsp;*Port;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Message&nbsp;Port&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuiMessage</font>&nbsp;*Nachricht;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Intuition&nbsp;Message&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">ULONG</font>&nbsp;&nbsp;klasse;<br>
+&nbsp;&nbsp;USHORT&nbsp;code;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,y;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Textes&nbsp;vom&nbsp;Fensterrand<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#45FF65">LONG</font>&nbsp;black_pen,green_pen;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Variablen&nbsp;f&uuml;r&nbsp;Pens<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x0,y0,x1,y1;<br>
+<br>
+&nbsp;&nbsp;<font color="#45FF65">BOOL</font>&nbsp;Ende&nbsp;=&nbsp;FALSE;&nbsp;<font color="#008822"><b>//&nbsp;Boolsche&nbsp;Variable:&nbsp;Programmende?<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Intuition&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"intuition.library"</font>,37L);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;==&nbsp;NULL)&nbsp;ShutDown(10,<font color="#EEDD05">"Konnte&nbsp;intuition.library&nbsp;37&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Graphics&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"graphics.library"</font>,0L);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;==&nbsp;NULL)&nbsp;ShutDown(10,<font color="#EEDD05">"Konnte&nbsp;graphics.library&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Disk&nbsp;Font&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;DiskfontBase&nbsp;=&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"diskfont.library"</font>,37L);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(DiskfontBase&nbsp;==&nbsp;NULL)&nbsp;ShutDown(10,<font color="#EEDD05">"Konnte&nbsp;diskfont.library&nbsp;37&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;mittels&nbsp;Tags&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;Fenster&nbsp;=&nbsp;<font color="#FFFFAA">OpenWindowTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Left,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Top,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Width,&nbsp;WIDTH,&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Height,&nbsp;HEIGHT,&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Title,&nbsp;<font color="#EEDD05">"Digitaluhr"</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenstertitel<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_CloseGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Close-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DragBar,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ziehleiste<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DepthGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Depth-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_IDCMP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;IDCMP-Flags<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IDCMP_CLOSEWINDOW&nbsp;|&nbsp;IDCMP_INTUITICKS,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Activate,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;aktivieren<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;==&nbsp;NULL)&nbsp;ShutDown(10,<font color="#EEDD05">"Konnte&nbsp;Fenster&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+<br>
+&nbsp;&nbsp;rp&nbsp;=&nbsp;Fenster->RPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;TextAttr&nbsp;Struktur&nbsp;ausf&uuml;llen...&nbsp;*/<br></font>
+&nbsp;&nbsp;ta.ta_Name&nbsp;=&nbsp;<font color="#EEDD05">"helvetica.font"</font>;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Name&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;ta.ta_YSize&nbsp;=&nbsp;24;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fonts<br></b></font>
+&nbsp;&nbsp;ta.ta_Style&nbsp;=&nbsp;FS_NORMAL;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Normaler&nbsp;Textstil<br></b></font>
+&nbsp;&nbsp;ta.ta_Flags&nbsp;=&nbsp;FPF_DISKFONT;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;ist&nbsp;ein&nbsp;Disk&nbsp;Font<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Die&nbsp;Funktion&nbsp;OpenDiskFont&nbsp;&ouml;ffnet&nbsp;einen&nbsp;Font&nbsp;aus&nbsp;FONTS:&nbsp;*/<br></font>
+&nbsp;&nbsp;textfont&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">TextFont</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenDiskFont</font>(&ta);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont&nbsp;==&nbsp;NULL)&nbsp;ShutDown(10,<font color="#EEDD05">"Konnte&nbsp;helvetica.font&nbsp;24&nbsp;nicht&nbsp;&ouml;ffnen."</font>);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Pens&nbsp;ermitteln:&nbsp;Schwarz&nbsp;und&nbsp;Gr&uuml;n&nbsp;*/<br></font>
+&nbsp;&nbsp;black_pen&nbsp;=&nbsp;<font color="#FFFFAA">ObtainBestPen</font>(Fenster->WScreen-><font color="#45FF65">ViewPort</font>.<font color="#45FF65">ColorMap</font>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x00000000,0x00000000,0x00000000,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OBP_Precision,PRECISION_GUI,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;green_pen&nbsp;=&nbsp;<font color="#FFFFAA">ObtainBestPen</font>(Fenster->WScreen-><font color="#45FF65">ViewPort</font>.<font color="#45FF65">ColorMap</font>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x00000000,0xFFFFFFFF,0x00000000,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OBP_Precision,PRECISION_GUI,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;&nbsp;In&nbsp;diesem&nbsp;Beispiel&nbsp;benutzen&nbsp;wir&nbsp;KEIN&nbsp;GimmeZeroZero&nbsp;Fenster.<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;Deshalb&nbsp;ermitteln&nbsp;die&nbsp;Ma&szlig;e&nbsp;der&nbsp;Zeichenfl&auml;che&nbsp;des&nbsp;Fensters<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;selbst...<br>
+&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;x0&nbsp;=&nbsp;Fenster->BorderLeft;<br>
+&nbsp;&nbsp;y0&nbsp;=&nbsp;Fenster->BorderTop;<br>
+&nbsp;&nbsp;x1&nbsp;=&nbsp;Fenster->Width&nbsp;-&nbsp;Fenster->BorderRight-1;<br>
+&nbsp;&nbsp;y1&nbsp;=&nbsp;Fenster->Height&nbsp;-&nbsp;Fenster->BorderBottom-1;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Jetzt&nbsp;&uuml;bermalen&nbsp;wir&nbsp;die&nbsp;Zeichenfl&auml;che&nbsp;schwarz&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,black_pen);<br>
+&nbsp;&nbsp;<font color="#FFFFAA">RectFill</font>(rp,x0,y0,x1,y1);<br>
+<br>
+&nbsp;&nbsp;<font color="#FFFFAA">SetFont</font>(rp,textfont);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Schriftart&nbsp;w&auml;hlen<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;&nbsp;Der&nbsp;Text&nbsp;soll&nbsp;zentriert&nbsp;dargestellt&nbsp;werden.<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;Deshalb&nbsp;errechnen&nbsp;wir,&nbsp;welchen&nbsp;Abstand&nbsp;er&nbsp;Text<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;vom&nbsp;linken&nbsp;Fensterrand&nbsp;haben&nbsp;mu&szlig;.<br>
+&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;x&nbsp;=&nbsp;(x1-<font color="#FFFFAA">TextLength</font>(rp,<font color="#EEDD05">"00:00:00"</font>,8))/2;<br>
+&nbsp;&nbsp;y&nbsp;=&nbsp;y0+30;<br>
+<br>
+&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,green_pen);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Pen&nbsp;f&uuml;r&nbsp;Vordergrund<br></b></font>
+&nbsp;&nbsp;<font color="#FFFFAA">SetBPen</font>(rp,black_pen);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Pen&nbsp;f&uuml;r&nbsp;Hintergrund<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;Unser&nbsp;Port&nbsp;ist&nbsp;der&nbsp;UserPort&nbsp;unseres&nbsp;Fensters&nbsp;*/<br></font>
+&nbsp;&nbsp;Port&nbsp;=&nbsp;Fenster->UserPort;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;&nbsp;Schleife&nbsp;l&auml;uft&nbsp;so&nbsp;lange,&nbsp;bis&nbsp;das&nbsp;Programm<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;durch&nbsp;Anklicken&nbsp;des&nbsp;Close-Gadgets&nbsp;beedet&nbsp;wird.<br>
+&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>&nbsp;(!Ende)<br>
+&nbsp;&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Auf&nbsp;ankommende&nbsp;Nachricht&nbsp;warten&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">WaitPort</font>(Port);<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Schleife&nbsp;l&auml;uft&nbsp;bis&nbsp;alle&nbsp;Ereignisse<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;abgearbeitet&nbsp;sind.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>while</b></font>(Nachricht&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuiMessage</font>&nbsp;*)&nbsp;<font color="#FFFFAA">GetMsg</font>(Port))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;klasse&nbsp;=&nbsp;Nachricht->Class;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;code&nbsp;=&nbsp;&nbsp;Nachricht->Code;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Welches&nbsp;Ereignis&nbsp;ist&nbsp;eingetreten?&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>switch</b></font>(klasse)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Close&nbsp;Gadget&nbsp;wurde&nbsp;angeklickt&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;CLOSEWINDOW&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ende&nbsp;=&nbsp;TRUE;&nbsp;<font color="#008822"><b>//&nbsp;Programmende<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Die&nbsp;Uhr&nbsp;hat&nbsp;sich&nbsp;gemeldet&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>case</b></font>&nbsp;INTUITICKS&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SchreibeZeit(rp,x,y);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>break</b></font>;<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;<font color="#AA00FF"><b>switch</b></font>-Verzweigung<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;Wir&nbsp;sind&nbsp;mit&nbsp;der&nbsp;Bearbeitung&nbsp;fertig<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;und&nbsp;beantworten&nbsp;die&nbsp;Nachricht.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">ReplyMsg</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Message</font>&nbsp;*)Nachricht);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;inneren&nbsp;while-Schleife<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;Ende&nbsp;der&nbsp;&auml;u&szlig;eren&nbsp;while-Schleife<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Die&nbsp;Pens&nbsp;wieder&nbsp;freigeben<br></b></font>
+&nbsp;&nbsp;<font color="#FFFFAA">ReleasePen</font>(Fenster->WScreen-><font color="#45FF65">ViewPort</font>.<font color="#45FF65">ColorMap</font>,black_pen);<br>
+&nbsp;&nbsp;<font color="#FFFFAA">ReleasePen</font>(Fenster->WScreen-><font color="#45FF65">ViewPort</font>.<font color="#45FF65">ColorMap</font>,green_pen);<br>
+<br>
+&nbsp;&nbsp;ShutDown(0,NULL);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+<br>
+}<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;SchreibeZeit<br>
+&nbsp;*&nbsp;&nbsp;Schreibt&nbsp;die&nbsp;aktuelle&nbsp;Zeit&nbsp;an&nbsp;den&nbsp;Koordinaten&nbsp;x,y<br>
+&nbsp;*&nbsp;&nbsp;in&nbsp;den&nbsp;RastPort&nbsp;rp.<br>
+&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;SchreibeZeit(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp,<font color="#AA00FF"><b>int</b></font>&nbsp;x,<font color="#AA00FF"><b>int</b></font>&nbsp;y)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>struct</b></font>&nbsp;tm&nbsp;*tp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;tm&nbsp;Struktur<br></b></font>
+&nbsp;&nbsp;time_t&nbsp;t;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>char</b></font>&nbsp;Puffer[9];&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Puffer&nbsp;f&uuml;r&nbsp;8&nbsp;Zeichen&nbsp;+&nbsp;NULL<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#852608"><b>time</b></font>(&t);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Aktuelle&nbsp;Systemzeit&nbsp;holen<br></b></font>
+&nbsp;&nbsp;tp&nbsp;=&nbsp;<font color="#852608"><b>localtime</b></font>(&t);&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeitzonen&nbsp;ber&uuml;cksichtigen<br></b></font>
+<br>
+<font color="#FFFFFF">
+&nbsp;&nbsp;/*&nbsp;&nbsp;Aktuelle&nbsp;Zeit&nbsp;in&nbsp;Textpuffer&nbsp;schreiben...<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;Die&nbsp;Platzhalter&nbsp;des&nbsp;Format-Strings&nbsp;haben&nbsp;folgende&nbsp;Bedeutung:<br>
+&nbsp;&nbsp;&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%H&nbsp;:&nbsp;Stunden<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%M&nbsp;:&nbsp;Minuten<br>
+&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;%S&nbsp;:&nbsp;Sekunden<br>
+&nbsp;&nbsp;&nbsp;*/<br></font>
+&nbsp;&nbsp;<font color="#852608"><b>strftime</b></font>(Puffer,<font color="#AA00FF"><b>sizeof</b></font>(Puffer),<font color="#EEDD05">"%H:%M:%S"</font>,tp);<br>
+<br>
+&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,x,y);<br>
+&nbsp;&nbsp;<font color="#FFFFAA">Text</font>(rp,Puffer,8);<br>
+<br>
+}<br>
+<br>
+<br>
+<font color="#FFFFFF">
+/*&nbsp;Resourcen&nbsp;freigeben&nbsp;*/<br></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;ShutDown(<font color="#AA00FF"><b>int</b></font>&nbsp;code,&nbsp;<font color="#45FF65">STRPTR</font>&nbsp;error)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(textfont)&nbsp;<font color="#FFFFAA">CloseFont</font>(textfont);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(DiskfontBase&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)DiskfontBase);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseWindow</font>(Fenster);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">GfxBase</font>);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">IntuitionBase</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(error)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#852608"><b>printf</b></font>(<font color="#EEDD05">"Fehler:&nbsp;%s\n"</font>,&nbsp;error);<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<font color="#852608"><b>exit</b></font>(code);<br>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+
+</TD>
+</TABLE>
+
+</body>
+</html>

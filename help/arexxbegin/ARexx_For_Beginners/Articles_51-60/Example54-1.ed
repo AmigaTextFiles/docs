@@ -1,0 +1,47 @@
+/* Example54-1.ed */
+/* This program is taken from the AmigaDOS manuals for Workbench */
+/* Versions 2.04 and 2.1                                         */
+
+/* Transpose.Ed - An example program to transpose two characters */
+/* Given string '123', if cursor is on 3, this macro converts    */
+/* string into 213                                               */
+
+Host = ADDRESS()       /* find which ED session invoked this program  */
+ADDRESS VALUE Host     /* ... and talk to that session                */
+
+'rv /Curr/'            /* Ask ED to stor info in stem variable "Curr" */
+
+                       /* Obtain two pieces of information:-          */
+CurrPos = Curr.x       /* 1. Position of cursor on the line           */
+CurrLin = Curr.Current /* 2. Contents of the current line             */
+
+IF (CurrPos > 2) THEN  /* Work only on the current line               */
+  CurrPos = CurrPos - 1
+ELSE DO                /* Otherwise report error and exit             */
+  'sm /Cursor must be at position 2 or further to the right/'
+  EXIT 10
+  END
+
+DROP Curr.             /* "Curr" is no longer needed; dropping it     */
+                       /*  saves some some memory                     */
+
+'d'                    /* Tell ED to delete the current line          */
+
+CurrLin = SwapCh(CurrPos,CurrLin)         /* Swap the two characters  */
+'i/'||CurrLin||'/'                        /* Insert the modified line */
+
+DO i = 1 to CurrPos    /* Place cursor back to where it started       */
+  'cr'
+  END
+
+EXIT                   /* Program has finished                        */
+
+/* Function to swap two characters                                    */
+
+SwapCh:  PROCEDURE
+  PARSE ARG CPos,CLin
+  Ch1  = SUBSTR(CLin,CPos,1)       /* Get character                   */
+  CLin = DELSTR(CLin,CPos,1)       /* Delete it from the string       */
+  CLin = INSERT(Ch1,CLin,CPos-2,1) /* Insert to create transposition  */
+RETURN CLin                      /* Return modified string          */
+

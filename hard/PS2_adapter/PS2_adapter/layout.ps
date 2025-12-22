@@ -1,0 +1,1149 @@
+%!PS-Adobe-2.0
+%%Title: PADS Postscript Driver Header
+%%Creator: Andy Montalvo, 18 Lupine St., Lowell, MA  01851
+%%CreationDate: 06/08/90
+%%For: CAD Software, Littleton, MA
+%%EndComments
+%%BeginProcSet: Markers 1.0 0
+% marker attributes
+/MAttr_Width 1 def
+/MAttr_Size  0 def
+/MAttr_Type /M1 def
+% procedures
+/M1 { %def
+% draw marker 1: plus
+% Stack: - M1 -
+    -2 0 rmoveto
+    4 0 rlineto
+    -2 2 rmoveto
+    0 -4 rlineto
+} bind def
+/M2 { %def
+% draw marker 2: cross
+% Stack: - M2 -
+    -2 -2 rmoveto
+    4 4 rlineto
+    -4 0 rmoveto
+    4 -4 rlineto
+} bind def
+/M3 { %def
+% draw marker 3: square
+% Stack: - M3 -
+    0 2 rlineto
+    2 0 rlineto
+    0 -4 rlineto
+    -4 0 rlineto
+    0 4 rlineto
+    2 0 rlineto
+} bind def
+/M4 { %def
+% draw marker 4: diamond
+% Stack: - M4 -
+    0 2 rlineto
+    2 -2 rlineto
+    -2 -2 rlineto
+    -2 2 rlineto
+    2 2 rlineto
+} bind def
+/M5 { %def
+% draw marker 5: hourglass
+% Stack: - M5 -
+    2 2 rlineto
+    -4 0 rlineto
+    4 -4 rlineto
+    -4 0 rlineto
+    2 2 rlineto
+} bind def
+/M6 { %def
+% draw marker 6: bowtie
+% Stack: - M6 -
+    2 2 rlineto
+    0 -4 rlineto
+    -4 4 rlineto
+    0 -4 rlineto
+    2 2 rlineto
+} bind def
+/M7 { %def
+% draw marker 7: small plus (goes with char marker)
+% Stack: - M7 -
+    -1 0 rmoveto
+    2 0 rlineto
+    -1 1 rmoveto
+    0 -2 rlineto
+} bind def
+/Marker { %def
+% Command from driver: draw marker
+% STACK: x y Marker -
+    MAttr_Size 0 gt
+    {
+        gsave
+        moveto
+        MAttr_Size 4 div dup scale
+        MAttr_Type load exec
+        4 MAttr_Size div dup scale
+        MAttr_Width setlinewidth
+        stroke
+        grestore
+    } if
+} def
+%%EndProcSet: Markers 1.0 0
+%%BeginProcSet: Lib 1.0 0
+/sg { %def
+% Command from driver: set the gray scale 0 - 100
+% STACK: greylevel sg
+    100 div dup setgray /glev exch def
+} bind def
+/Circle { %def
+% draw a circle
+% STACK: x y radius Circle -
+    0 360 arc
+} bind def
+/RndAper { %def
+% select a round aperture
+% STACK: - RndAper -
+    1 setlinejoin
+    1 setlinecap
+} bind def
+/SqrAper { %def
+% select a square aperture
+% STACK: - SqrAper -
+    0 setlinejoin
+    2 setlinecap
+} bind def
+/Line { %def
+% draw a set of connected lines
+% STACK: x1 y1 [ x2 y2 ... xn yn ] Line -
+    3 1 roll
+    moveto
+    true
+    exch
+    % This pushes the x then the y then does lineto
+    { exch  { false } { lineto true } ifelse } forall
+    pop
+} bind def
+/Clipto { %def
+% set clipping rectangle from 0,0 to new values
+% STACK: x y Clipto -
+    0 0 moveto
+    dup 0 exch lineto
+    2 copy lineto
+    pop
+    0 lineto
+    closepath
+    clip
+    newpath
+} bind def
+/Clip4 { %def
+% set clipping rectangle from xmin,ymin to xmax,ymax
+% STACK: xmin ymin xmax ymax Clip4 -
+    4 copy pop pop moveto
+    4 copy pop exch lineto pop
+    2 copy lineto
+    exch pop exch pop lineto
+    closepath
+    clip
+    newpath
+} bind def
+%%EndProcSet: Lib 1.0 0
+%%BeginProcSet: Lines 1.0 0
+% line attributes %
+/LAttr_Width 1 def
+% line procedures
+/PLine { %def
+% Cammand from driver: draw a set of connected lines
+% STACK: x1 y1 [ x2 y2 ... xn yn ] PLine -
+    Line
+    LAttr_Width setlinewidth
+    stroke
+} bind def % PLine
+/Char { %def
+% Command from driver: draw a character at the current position
+% STACK: type x y stroke_array Char -
+%    stroke array -- [ stroke1 stroke2 ... stroken ]
+%    stroke -- connected staight lines
+%    type = 0 if text  1 if marker
+    gsave
+    4 1 roll
+    translate
+    0 eq { TAttr_Width } { MAttr_Width } ifelse setlinewidth
+    {
+        dup length 2 gt
+        {
+            dup dup 0 get exch 1 get % get starting point
+            3 -1 roll                % put x y before array
+            dup length 2 sub 2 exch getinterval % delete first items from array
+            Line
+            stroke
+        }
+        {
+            aload pop currentlinewidth 2 div Circle fill
+        } ifelse
+    } forall
+    grestore
+} bind def % Char
+/PArc { %def
+% Command from driver: draw an arc
+% STACK: x y radius startangle deltaangle Arc -
+	 10 div exch 10 div exch
+    2 copy pop add
+    arc
+    LAttr_Width setlinewidth
+    stroke
+} bind def
+/PCircle { %def
+% Command from driver: draw an circle
+% STACK: x y radius PCircle -
+    Circle
+    LAttr_Width setlinewidth
+    stroke
+} bind def
+%%EndProcSet: Lines 1.0 0
+%%BeginProcSet: Polygon 1.0 0
+% polygon attributes %
+/PAttr_ExtWidth 1 def
+/PAttr_IntWidth 1 def
+/PAttr_Grid 1 def
+% polygon procedures
+/LoopSet { %def
+% set up for loop condition
+% STACK: start end LoopSet low gridwidth high
+    2 copy lt { exch } if
+    % make grid line up to absolute coordinates
+    PAttr_Grid div truncate PAttr_Grid mul exch
+    PAttr_Grid exch
+} bind def
+/Hatch { %def
+% draw cross hatch pattern in current path
+% STACK: - Hatch -
+    pathbbox
+    /ury exch def
+    /urx exch def
+    /lly exch def
+    /llx exch def
+    clip
+    newpath
+    llx urx LoopSet
+    { % x loop
+        dup lly exch ury moveto lineto
+    } for
+    lly ury LoopSet
+    { % y loop
+        llx exch dup urx exch moveto lineto
+    } for
+    PAttr_IntWidth setlinewidth
+    stroke
+} bind def
+/PPoly { %def
+% Command from driver: draw a plygon
+% STACK: x1 y1 [ x2 y2 ... xn yn ] PLine -
+    Line
+    closepath
+    gsave
+    PAttr_IntWidth PAttr_Grid ge {fill} {Hatch} ifelse
+    grestore
+    PAttr_ExtWidth setlinewidth
+    stroke
+} bind def
+%%EndProcSet: Polygon 1.0 0
+%%BeginProcSet: Text 1.0 0
+% text attributes %
+/TAttr_Mirr 0 def
+/TAttr_Orient 0 def
+/TAttr_Width 1 def
+% text procedures
+/Text { %def
+% Command from driver: Draw text
+% STACK: x y width string Text -
+    gsave
+    4 2 roll
+    translate
+    TAttr_Mirr 0 gt
+    {
+        -1 1 scale
+    } if
+    TAttr_Orient rotate
+    0 0 moveto
+    dup length dup 1 gt
+    {
+        exch dup stringwidth pop
+        4 -1 roll
+        exch 2 copy
+        lt
+        {
+            div 1 scale show
+        }
+        {
+            sub
+            3 -1 roll 1 sub div
+            0 3 -1 roll ashow
+        }
+        ifelse
+    }
+    {
+        pop
+        show
+    } ifelse
+    grestore
+} bind def
+%%EndProcSet: Text 1.0 0
+%%BeginProcSet: FlashSymbols 1.0 0
+% flash symbol attributes %
+/FAttr_Type /PRndPad def
+/FAttr_Width  0 def
+/FAttr_Length 1 def
+/FAttr_Orient 0 def
+% flash symbol procedures
+/PRndPad { %def
+% Command from driver: draw an circular pad
+% STACK: - PCirclePad -
+    FAttr_Width dup scale
+    0 0 .5 Circle
+    fill
+} bind def
+/PSqrPad { %def
+% Draw an Square pad
+% STACK: - PRectPad -
+    FAttr_Width dup scale
+    .5 .5 moveto
+    -.5 .5 lineto
+    -.5 -.5 lineto
+    .5 -.5 lineto
+    closepath
+    fill
+} bind def
+/PRectPad { %def
+% Draw an rectangular pad
+% STACK: - PRectPad -
+    FAttr_Length FAttr_Width scale
+    .5 .5 moveto
+    -.5 .5 lineto
+    -.5 -.5 lineto
+    .5 -.5 lineto
+    closepath
+    fill
+} bind def
+/POvalPad { %def
+% Draw an oval pad
+% STACK: - POvalPad -
+    FAttr_Width setlinewidth
+    FAttr_Length FAttr_Width sub 2 div dup
+    neg 0 moveto
+    0 lineto
+    RndAper
+    stroke
+} bind def
+/Anl { %def
+    0 0 .5 Circle
+    fill
+    FAttr_Length FAttr_Width lt
+    { % inner circle
+        0 0
+        FAttr_Length 0 gt { FAttr_Length FAttr_Width div } { .5 } ifelse
+        2 div Circle
+        1 setgray
+        fill
+        glev setgray
+    } if
+} bind def
+/PAnlPad { %def
+% Draw an annular pad
+% STACK: - PAnlPad -
+    FAttr_Width dup scale
+    Anl
+} bind def
+/PRelPad { %def
+% Draw an thermal relief pad
+% STACK: - PRelPad -
+    PAnlPad
+    1 setgray
+    .17 setlinewidth
+    0 setlinecap   % the x
+    45 rotate
+    .5 0 moveto -.5 0 lineto
+    0 .5 moveto  0 -.5 lineto
+    stroke
+    glev setgray
+} bind def
+/Flash { %def
+% Command from driver: Flash a symbol
+% STACK: x y Flash -
+    FAttr_Width 0 gt
+    {
+        gsave
+        translate
+        FAttr_Orient rotate
+        FAttr_Type load exec
+        grestore
+    } if
+} def
+%%EndProcSet: FlashSymbols 1.0 0
+%%BeginProcSet: SetAttr 1.0 0
+/SetLine { %def
+% Set the width of the lines
+% STACK: linewidth SetLine -
+    /LAttr_Width exch def
+    RndAper
+} bind def
+/SetPoly { %def
+% Set attribute of polygon
+% STACK: external_width internal_grid_width grid_spacing SetPoly -
+    /PAttr_Grid exch def
+    /PAttr_IntWidth exch def
+    /PAttr_ExtWidth exch def
+    RndAper
+} bind def
+/SetFlash { %def
+% Set Attributed of flash pad
+% STACK: orientation_angle length width aperture_type SetFlash -
+    /FAttr_Type exch def
+    FAttr_Type /PSqrPad eq FAttr_Type /PRectPad eq or
+    { SqrAper } { RndAper } ifelse
+    /FAttr_Width exch def
+    /FAttr_Length exch def
+    /FAttr_Orient exch 10 div def
+} bind def
+/SetMkr { %def
+% Set attributes of markers
+% STACK: linewidth size type SetMkr -
+    /MAttr_Type exch def
+    /MAttr_Size exch def
+    /MAttr_Width exch def
+    RndAper
+} bind def
+/SetText1 { %def
+% Set attributes of text
+% STACK: fontname height orient mirror SetMkr -
+    /TAttr_Mirr exch def
+    /TAttr_Orient exch 10 div def
+    exch findfont exch scalefont setfont
+    RndAper
+} bind def
+/SetText2 { %def
+% Set attributes of text
+% STACK: linewidth height mirror orient SetMkr -
+    /TAttr_Width exch def
+    RndAper
+} bind def
+%%EndProcSet: SetAttr 1.0 0
+%%BeginProcSet: Initialize 1.0 0
+/Init { %def
+% Initialize the driver
+% STACK: Init -
+    72 1000 div dup scale % Scale to 1/1000 inch
+    250 250 translate     % make origin 1/4 inch from bottom left
+    1.5 setmiterlimit 1 RndAper                     % set line defaults
+    0 setgray                                       % set color default
+    /glev 0 def
+} def
+%%EndProcSet: Initialize 1.0 0
+%%EndProlog
+gsave
+Init
+8000 10500 Clipto
+-3525 -7520 translate
+0 rotate
+1 1 div dup scale
+75 sg
+50 sg
+25 sg
+0 sg
+0 0 60 /PRndPad SetFlash
+4650 7750 Flash
+4650 7850 Flash
+4650 7950 Flash
+4650 8050 Flash
+4650 8150 Flash
+4650 8250 Flash
+4650 8350 Flash
+4650 8450 Flash
+4650 8550 Flash
+4650 8650 Flash
+4650 8750 Flash
+4650 8850 Flash
+4650 8950 Flash
+4650 9050 Flash
+4650 9150 Flash
+4650 9250 Flash
+4650 9350 Flash
+4650 9450 Flash
+4650 9750 Flash
+4650 9850 Flash
+4650 9950 Flash
+4650 10050 Flash
+4650 10150 Flash
+4650 10250 Flash
+4650 10350 Flash
+4650 10450 Flash
+4650 10550 Flash
+4650 10650 Flash
+4650 10750 Flash
+4650 10850 Flash
+4650 10950 Flash
+4650 11050 Flash
+4650 11150 Flash
+4650 11250 Flash
+4650 11350 Flash
+4650 11450 Flash
+4750 7800 Flash
+4750 7900 Flash
+4750 8000 Flash
+4750 8100 Flash
+4750 8200 Flash
+4750 8300 Flash
+4750 8400 Flash
+4750 8500 Flash
+4750 8600 Flash
+4750 8700 Flash
+4750 8800 Flash
+4750 8900 Flash
+4750 9000 Flash
+4750 9100 Flash
+4750 9200 Flash
+4750 9300 Flash
+4750 9400 Flash
+4750 9500 Flash
+4750 9800 Flash
+4750 9900 Flash
+4750 10000 Flash
+4750 10100 Flash
+4750 10200 Flash
+4750 10300 Flash
+4750 10400 Flash
+4750 10500 Flash
+4750 10600 Flash
+4750 10700 Flash
+4750 10800 Flash
+4750 10900 Flash
+4750 11000 Flash
+4750 11100 Flash
+4750 11200 Flash
+4750 11300 Flash
+4750 11400 Flash
+4750 11500 Flash
+6050 10300 Flash
+6050 10200 Flash
+6150 10250 Flash
+6050 10100 Flash
+6050 10000 Flash
+6050 9900 Flash
+6050 9800 Flash
+6050 9700 Flash
+6050 9600 Flash
+6050 9500 Flash
+6050 9400 Flash
+6150 10150 Flash
+6150 10050 Flash
+6150 9950 Flash
+6150 9850 Flash
+6150 9750 Flash
+6150 9650 Flash
+6150 9550 Flash
+6150 9450 Flash
+6150 9350 Flash
+6050 8700 Flash
+6050 8600 Flash
+6150 8650 Flash
+6050 8500 Flash
+6050 8400 Flash
+6050 8300 Flash
+6050 8200 Flash
+6050 8100 Flash
+6050 8000 Flash
+6050 7900 Flash
+6050 7800 Flash
+6150 8550 Flash
+6150 8450 Flash
+6150 8350 Flash
+6150 8250 Flash
+6150 8150 Flash
+6150 8050 Flash
+6150 7950 Flash
+6150 7850 Flash
+6150 7750 Flash
+5250 10300 Flash
+5250 10200 Flash
+5350 10250 Flash
+5250 10100 Flash
+5250 10000 Flash
+5250 9900 Flash
+5250 9800 Flash
+5250 9700 Flash
+5250 9600 Flash
+5250 9500 Flash
+5250 9400 Flash
+5350 10150 Flash
+5350 10050 Flash
+5350 9950 Flash
+5350 9850 Flash
+5350 9750 Flash
+5350 9650 Flash
+5350 9550 Flash
+5350 9450 Flash
+5350 9350 Flash
+4450 10300 Flash
+4450 10200 Flash
+4550 10250 Flash
+4450 10100 Flash
+4450 10000 Flash
+4450 9900 Flash
+4450 9800 Flash
+4450 9700 Flash
+4450 9600 Flash
+4450 9500 Flash
+4450 9400 Flash
+4550 10150 Flash
+4550 10050 Flash
+4550 9950 Flash
+4550 9850 Flash
+4550 9750 Flash
+4550 9650 Flash
+4550 9550 Flash
+4550 9450 Flash
+4550 9350 Flash
+3650 10300 Flash
+3650 10200 Flash
+3750 10250 Flash
+3650 10100 Flash
+3650 10000 Flash
+3650 9900 Flash
+3650 9800 Flash
+3650 9700 Flash
+3650 9600 Flash
+3650 9500 Flash
+3650 9400 Flash
+3750 10150 Flash
+3750 10050 Flash
+3750 9950 Flash
+3750 9850 Flash
+3750 9750 Flash
+3750 9650 Flash
+3750 9550 Flash
+3750 9450 Flash
+3750 9350 Flash
+5250 8700 Flash
+5250 8600 Flash
+5350 8650 Flash
+5250 8500 Flash
+5250 8400 Flash
+5250 8300 Flash
+5250 8200 Flash
+5250 8100 Flash
+5250 8000 Flash
+5250 7900 Flash
+5250 7800 Flash
+5350 8550 Flash
+5350 8450 Flash
+5350 8350 Flash
+5350 8250 Flash
+5350 8150 Flash
+5350 8050 Flash
+5350 7950 Flash
+5350 7850 Flash
+5350 7750 Flash
+4450 8700 Flash
+4450 8600 Flash
+4550 8650 Flash
+4450 8500 Flash
+4450 8400 Flash
+4450 8300 Flash
+4450 8200 Flash
+4450 8100 Flash
+4450 8000 Flash
+4450 7900 Flash
+4450 7800 Flash
+4550 8550 Flash
+4550 8450 Flash
+4550 8350 Flash
+4550 8250 Flash
+4550 8150 Flash
+4550 8050 Flash
+4550 7950 Flash
+4550 7850 Flash
+4550 7750 Flash
+3650 8700 Flash
+3650 8600 Flash
+3750 8650 Flash
+3650 8500 Flash
+3650 8400 Flash
+3650 8300 Flash
+3650 8200 Flash
+3650 8100 Flash
+3650 8000 Flash
+3650 7900 Flash
+3650 7800 Flash
+3750 8550 Flash
+3750 8450 Flash
+3750 8350 Flash
+3750 8250 Flash
+3750 8150 Flash
+3750 8050 Flash
+3750 7950 Flash
+3750 7850 Flash
+3750 7750 Flash
+5050 7750 Flash
+5050 7850 Flash
+5050 7950 Flash
+5050 8050 Flash
+5050 8150 Flash
+5050 8250 Flash
+5050 8350 Flash
+5050 8450 Flash
+5050 8550 Flash
+5050 8650 Flash
+5050 8750 Flash
+5050 8850 Flash
+5050 8950 Flash
+5050 9050 Flash
+5050 9150 Flash
+5050 9250 Flash
+5050 9350 Flash
+5050 9450 Flash
+5050 9750 Flash
+5050 9850 Flash
+5050 9950 Flash
+5050 10050 Flash
+5050 10150 Flash
+5050 10250 Flash
+5050 10350 Flash
+5050 10450 Flash
+5050 10550 Flash
+5050 10650 Flash
+5050 10750 Flash
+5050 10850 Flash
+5050 10950 Flash
+5050 11050 Flash
+5050 11150 Flash
+5050 11250 Flash
+5050 11350 Flash
+5050 11450 Flash
+5150 7800 Flash
+5150 7900 Flash
+5150 8000 Flash
+5150 8100 Flash
+5150 8200 Flash
+5150 8300 Flash
+5150 8400 Flash
+5150 8500 Flash
+5150 8600 Flash
+5150 8700 Flash
+5150 8800 Flash
+5150 8900 Flash
+5150 9000 Flash
+5150 9100 Flash
+5150 9200 Flash
+5150 9300 Flash
+5150 9400 Flash
+5150 9500 Flash
+5150 9800 Flash
+5150 9900 Flash
+5150 10000 Flash
+5150 10100 Flash
+5150 10200 Flash
+5150 10300 Flash
+5150 10400 Flash
+5150 10500 Flash
+5150 10600 Flash
+5150 10700 Flash
+5150 10800 Flash
+5150 10900 Flash
+5150 11000 Flash
+5150 11100 Flash
+5150 11200 Flash
+5150 11300 Flash
+5150 11400 Flash
+5150 11500 Flash
+4200 10700 Flash
+4100 10700 Flash
+4000 10700 Flash
+4200 10350 Flash
+4100 10350 Flash
+4000 10350 Flash
+4300 10350 Flash
+4300 10700 Flash
+3850 9900 Flash
+5650 9900 Flash
+5850 9900 Flash
+3850 9800 Flash
+5650 9800 Flash
+5850 9800 Flash
+3950 9900 Flash
+3950 9800 Flash
+4050 9900 Flash
+4050 9800 Flash
+5800 10000 Flash
+5800 10100 Flash
+5700 10000 Flash
+5700 10100 Flash
+5600 10000 Flash
+5600 10100 Flash
+4500 8800 Flash
+4250 8800 Flash
+5875 10850 Flash
+6150 10850 Flash
+5750 9900 Flash
+5750 9800 Flash
+4900 10100 Flash
+4900 9800 Flash
+5475 9900 Flash
+4900 9150 Flash
+4900 8650 Flash
+10 SetText2
+0 4825 11600 [ [ -31 56 -27 62 -20 65 -11 65 -4 62 0 56 0 50 -2 43 -4 40 -9 37 -22 31 -27 28 -29 25 -31 18 -31 9 -27 3 -20 0 -11 0 -4 3 0 9 ] ] Char
+0 4773 11600 [ [ 0 65 0 0 ] ] Char
+0 4753 11600 [ [ 0 65 0 0 ] [ 0 65 -18 0 ] [ -36 65 -18 0 ] [ -36 65 -36 0 ] ] Char
+0 4697 11600 [ [ 0 65 0 0 ] [ 0 65 -18 0 ] [ -36 65 -18 0 ] [ -36 65 -36 0 ] ] Char
+0 4589 11600 [ [ 0 65 0 0 ] ] Char
+10 SetText2
+0 5225 11600 [ [ -31 56 -27 62 -20 65 -11 65 -4 62 0 56 0 50 -2 43 -4 40 -9 37 -22 31 -27 28 -29 25 -31 18 -31 9 -27 3 -20 0 -11 0 -4 3 0 9 ] ] Char
+0 5173 11600 [ [ 0 65 0 0 ] ] Char
+0 5153 11600 [ [ 0 65 0 0 ] [ 0 65 -18 0 ] [ -36 65 -18 0 ] [ -36 65 -36 0 ] ] Char
+0 5097 11600 [ [ 0 65 0 0 ] [ 0 65 -18 0 ] [ -36 65 -18 0 ] [ -36 65 -36 0 ] ] Char
+0 4989 11600 [ [ 0 65 0 0 ] ] Char
+0 4969 11600 [ [ 0 65 0 0 ] ] Char
+10 SetText2
+0 3700 7550 [ [ 0 53 -4 56 -11 65 -11 0 ] ] Char
+10 SetText2
+0 4525 7550 [ [ -2 50 -2 53 -4 59 -6 62 -11 65 -20 65 -25 62 -27 59 -29 53 -29 46 -27 40 -22 31 0 0 -31 0 ] ] Char
+10 SetText2
+0 3725 9175 [ [ -4 65 -29 65 -15 40 -22 40 -27 37 -29 34 -31 25 -31 18 -29 9 -25 3 -18 0 -11 0 -4 3 -2 6 0 12 ] ] Char
+10 SetText2
+0 4525 9175 [ [ -22 65 0 21 -34 21 ] [ -22 65 -22 0 ] ] Char
+10 SetText2
+0 5325 7550 [ [ -29 65 -6 65 -4 37 -6 40 -13 43 -20 43 -27 40 -31 34 -34 25 -31 18 -29 9 -25 3 -18 0 -11 0 -4 3 -2 6 0 12 ] ] Char
+10 SetText2
+0 5325 9175 [ [ -31 65 -9 0 ] [ 0 65 -31 65 ] ] Char
+10 SetText2
+0 6125 7550 [ [ -27 56 -25 62 -18 65 -13 65 -6 62 -2 53 0 37 0 21 -2 9 -6 3 -13 0 -15 0 -22 3 -27 9 -29 18 -29 21 -27 31 -22 37 -15 40 -13 40 -6 37 -2 31 0 21 ] ] Char
+10 SetText2
+0 6125 9175 [ [ -11 65 -4 62 -2 56 -2 50 -4 43 -9 40 -18 37 -25 34 -29 28 -31 21 -31 12 -29 6 -27 3 -20 0 -11 0 -4 3 -2 6 0 12 0 21 -2 28 -6 34 -13 37 -22 40 -27 43 -29 50 -29 56 -27 62 -20 65 -11 65 ] ] Char
+10 SetText2
+0 4150 9625 [ [ -78 -15 -71 -11 -62 -6 -50 -2 -34 0 -21 0 -6 -2 6 -6 15 -11 21 -15 ] ] Char
+0 4150 9589 [ [ -50 -34 -56 -31 -62 -27 -65 -22 -65 -13 -62 -9 -56 -4 -50 -2 -40 0 -25 0 -15 -2 -9 -4 -3 -9 0 -13 0 -22 -3 -27 -9 -31 -15 -34 ] ] Char
+0 4150 9535 [ [ -78 0 -71 -4 -62 -9 -50 -13 -34 -15 -21 -15 -6 -13 6 -9 15 -4 21 0 ] ] Char
+0 4150 9447 [ [ -65 -22 -15 -22 -6 -20 -3 -18 0 -13 0 -9 -3 -4 -6 -2 -15 0 -21 0 ] ] Char
+0 4150 9404 [ [ -6 -2 -3 0 0 -2 -3 -4 -6 -2 ] ] Char
+0 4150 9379 [ [ -65 0 0 0 ] [ -65 -31 -21 0 ] [ -37 -11 0 -31 ] ] Char
+0 4150 9327 [ [ -43 -11 -40 -6 -34 -2 -25 0 -18 0 -9 -2 -3 -6 0 -11 0 -18 -3 -22 -9 -27 -18 -29 -25 -29 -34 -27 -40 -22 -43 -18 -43 -11 ] ] Char
+0 4150 9277 [ [ -43 -11 -40 -6 -34 -2 -25 0 -18 0 -9 -2 -3 -6 0 -11 0 -18 -3 -22 -9 -27 -18 -29 -25 -29 -34 -27 -40 -22 -43 -18 -43 -11 ] ] Char
+0 4150 9227 [ [ -65 0 0 0 ] [ -34 0 -40 -4 -43 -9 -43 -15 -40 -20 -34 -25 -25 -27 -18 -27 -9 -25 -3 -20 0 -15 0 -9 -3 -4 -9 0 ] ] Char
+0 4150 9128 [ [ -78 -40 21 0 ] ] Char
+0 4150 9015 [ [ -65 0 0 0 ] [ -65 0 0 -18 ] [ -65 -36 0 -18 ] [ -65 -36 0 -36 ] ] Char
+0 4150 8959 [ [ -6 -2 -3 0 0 -2 -3 -4 -6 -2 ] ] Char
+0 4150 8934 [ [ -65 0 0 0 ] [ -65 0 -65 -20 -62 -27 -59 -29 -53 -31 -46 -31 -40 -29 -37 -27 -34 -20 -34 0 ] [ -34 -15 0 -31 ] ] Char
+0 4150 8882 [ [ -43 0 -12 0 -3 -2 0 -6 0 -13 -3 -18 -12 -25 ] [ -43 -25 0 -25 ] ] Char
+0 4150 8837 [ [ -43 0 21 0 ] [ -34 0 -40 -4 -43 -9 -43 -15 -40 -20 -34 -25 -25 -27 -18 -27 -9 -25 -3 -20 0 -15 0 -9 -3 -4 -9 0 ] ] Char
+0 4150 8790 [ [ -43 0 21 0 ] [ -34 0 -40 -4 -43 -9 -43 -15 -40 -20 -34 -25 -25 -27 -18 -27 -9 -25 -3 -20 0 -15 0 -9 -3 -4 -9 0 ] ] Char
+0 4150 8743 [ [ -43 0 0 0 ] [ -25 0 -34 -2 -40 -6 -43 -11 -43 -18 ] ] Char
+0 4150 8705 [ [ -25 0 -25 -27 -31 -27 -37 -25 -40 -22 -43 -18 -43 -11 -40 -6 -34 -2 -25 0 -18 0 -9 -2 -3 -6 0 -11 0 -18 -3 -22 -9 -27 ] ] Char
+0 4150 8658 [ [ -34 -27 -40 -22 -43 -18 -43 -11 -40 -6 -34 -2 -25 0 -18 0 -9 -2 -3 -6 0 -11 0 -18 -3 -22 -9 -27 ] ] Char
+0 4150 8611 [ [ -65 0 0 0 ] [ -31 0 -40 -6 -43 -11 -43 -18 -40 -22 -31 -25 0 -25 ] ] Char
+0 4150 8566 [ [ -65 -6 -12 -6 -3 -9 0 -13 0 -18 ] [ -43 0 -43 -15 ] ] Char
+0 4150 8476 [ [ -53 0 -56 -4 -65 -11 0 -11 ] ] Char
+0 4150 8445 [ [ -43 -29 -34 -27 -28 -22 -25 -15 -25 -13 -28 -6 -34 -2 -43 0 -46 0 -56 -2 -62 -6 -65 -13 -65 -15 -62 -22 -56 -27 -43 -29 -28 -29 -12 -27 -3 -22 0 -15 0 -11 -3 -4 -9 -2 ] ] Char
+0 4150 8395 [ [ -43 -29 -34 -27 -28 -22 -25 -15 -25 -13 -28 -6 -34 -2 -43 0 -46 0 -56 -2 -62 -6 -65 -13 -65 -15 -62 -22 -56 -27 -43 -29 -28 -29 -12 -27 -3 -22 0 -15 0 -11 -3 -4 -9 -2 ] ] Char
+0 4150 8345 [ [ -56 -27 -62 -25 -65 -18 -65 -13 -62 -6 -53 -2 -37 0 -21 0 -9 -2 -3 -6 0 -13 0 -15 -3 -22 -9 -27 -18 -29 -21 -29 -31 -27 -37 -22 -40 -15 -40 -13 -37 -6 -31 -2 -21 0 ] ] Char
+10 SetLine
+4750 8000 [ 5150 8000 ] PLine
+3650 8600 [ 3950 8600 ] PLine
+3950 8600 [ 3950 7950 ] PLine
+3950 7950 [ 4500 7950 ] PLine
+4500 7950 [ 4500 8000 ] PLine
+4500 8000 [ 4750 8000 ] PLine
+4750 8100 [ 5150 8100 ] PLine
+3750 8550 [ 3600 8550 ] PLine
+3600 8550 [ 3600 8650 ] PLine
+3600 8650 [ 3700 8650 ] PLine
+3700 8650 [ 3700 8700 ] PLine
+3700 8700 [ 4000 8700 ] PLine
+4000 8700 [ 4000 8050 ] PLine
+4000 8050 [ 4500 8050 ] PLine
+4500 8050 [ 4500 8100 ] PLine
+4500 8100 [ 4750 8100 ] PLine
+4750 7800 [ 5150 7800 ] PLine
+3750 8450 [ 3850 8450 ] PLine
+3850 8450 [ 3850 7750 ] PLine
+3850 7750 [ 4500 7750 ] PLine
+4500 7750 [ 4500 7800 ] PLine
+4500 7800 [ 4750 7800 ] PLine
+4750 7900 [ 5150 7900 ] PLine
+3650 8400 [ 3700 8400 ] PLine
+3700 8400 [ 3700 8500 ] PLine
+3700 8500 [ 3900 8500 ] PLine
+3900 8500 [ 3900 7850 ] PLine
+3900 7850 [ 4500 7850 ] PLine
+4500 7850 [ 4500 7900 ] PLine
+4500 7900 [ 4750 7900 ] PLine
+4750 8400 [ 5150 8400 ] PLine
+4650 8450 [ 5050 8450 ] PLine
+4750 8500 [ 5150 8500 ] PLine
+4750 8600 [ 5150 8600 ] PLine
+5150 8600 [ 5200 8600 ] PLine
+5200 8600 [ 5200 8650 ] PLine
+5200 8650 [ 5300 8650 ] PLine
+5300 8650 [ 5300 8700 ] PLine
+5300 8700 [ 5450 8700 ] PLine
+5450 8700 [ 5450 7850 ] PLine
+5450 7850 [ 5350 7850 ] PLine
+5150 8900 [ 4750 8900 ] PLine
+4750 8900 [ 4600 8900 ] PLine
+4600 8900 [ 4600 8950 ] PLine
+4600 8950 [ 4400 8950 ] PLine
+4400 8950 [ 4400 8600 ] PLine
+4400 8600 [ 4450 8600 ] PLine
+4750 9000 [ 5150 9000 ] PLine
+4550 8550 [ 4350 8550 ] PLine
+4350 8550 [ 4350 9000 ] PLine
+4350 9000 [ 4750 9000 ] PLine
+4750 8700 [ 5150 8700 ] PLine
+4550 8450 [ 4600 8450 ] PLine
+4600 8450 [ 4600 8700 ] PLine
+4600 8700 [ 4750 8700 ] PLine
+3650 10200 [ 3850 10200 ] PLine
+3850 10200 [ 3850 10550 ] PLine
+3850 10550 [ 4650 10550 ] PLine
+4650 10550 [ 5050 10550 ] PLine
+3750 10150 [ 3600 10150 ] PLine
+3600 10150 [ 3600 10250 ] PLine
+3600 10250 [ 3700 10250 ] PLine
+3700 10250 [ 3700 10300 ] PLine
+3700 10300 [ 3800 10300 ] PLine
+3800 10300 [ 3800 10650 ] PLine
+3800 10650 [ 4650 10650 ] PLine
+4650 10650 [ 5050 10650 ] PLine
+3750 10050 [ 3600 10050 ] PLine
+3600 10050 [ 3600 9850 ] PLine
+3600 9850 [ 3700 9850 ] PLine
+3700 9850 [ 3700 9900 ] PLine
+3700 9900 [ 3800 9900 ] PLine
+3800 9900 [ 3800 9950 ] PLine
+3800 9950 [ 3950 9950 ] PLine
+3950 9950 [ 3950 10450 ] PLine
+3950 10450 [ 4600 10450 ] PLine
+4600 10450 [ 4600 10350 ] PLine
+4600 10350 [ 4650 10350 ] PLine
+4650 10350 [ 5050 10350 ] PLine
+3650 10000 [ 3900 10000 ] PLine
+3900 10000 [ 3900 10500 ] PLine
+3900 10500 [ 4650 10500 ] PLine
+4650 10500 [ 4650 10450 ] PLine
+4650 10450 [ 5050 10450 ] PLine
+5050 11050 [ 4650 11050 ] PLine
+4650 11050 [ 4100 11050 ] PLine
+4100 11050 [ 4100 10700 ] PLine
+5050 10750 [ 4650 10750 ] PLine
+4650 10750 [ 4300 10750 ] PLine
+4300 10750 [ 4300 10700 ] PLine
+5050 10950 [ 4650 10950 ] PLine
+4650 10950 [ 4200 10950 ] PLine
+4200 10950 [ 4200 10700 ] PLine
+4650 8050 [ 5050 8050 ] PLine
+5050 8150 [ 5200 8150 ] PLine
+5200 8150 [ 5200 8550 ] PLine
+5200 8550 [ 5350 8550 ] PLine
+5050 8150 [ 4650 8150 ] PLine
+5050 7850 [ 5300 7850 ] PLine
+5300 7850 [ 5300 7900 ] PLine
+5300 7900 [ 5400 7900 ] PLine
+5400 7900 [ 5400 8450 ] PLine
+5400 8450 [ 5350 8450 ] PLine
+5050 7850 [ 4650 7850 ] PLine
+5250 8400 [ 5300 8400 ] PLine
+5300 8400 [ 5300 7950 ] PLine
+5300 7950 [ 5050 7950 ] PLine
+5050 7950 [ 4650 7950 ] PLine
+6050 8600 [ 5650 8600 ] PLine
+5650 8600 [ 5650 8950 ] PLine
+5650 8950 [ 5050 8950 ] PLine
+5050 8950 [ 4650 8950 ] PLine
+6150 8550 [ 6100 8600 ] PLine
+6100 8600 [ 6100 8650 ] PLine
+6100 8650 [ 5700 8650 ] PLine
+5700 8650 [ 5700 9050 ] PLine
+5700 9050 [ 5050 9050 ] PLine
+5050 9050 [ 4650 9050 ] PLine
+5050 8750 [ 5550 8750 ] PLine
+5550 8750 [ 5550 8350 ] PLine
+5550 8350 [ 6100 8350 ] PLine
+6100 8350 [ 6100 8400 ] PLine
+6100 8400 [ 6150 8450 ] PLine
+5050 8750 [ 4650 8750 ] PLine
+6050 8400 [ 6000 8400 ] PLine
+6000 8400 [ 6000 8550 ] PLine
+6000 8550 [ 5600 8550 ] PLine
+5600 8550 [ 5600 8850 ] PLine
+5600 8850 [ 5050 8850 ] PLine
+5050 8850 [ 4650 8850 ] PLine
+5150 10600 [ 4750 10600 ] PLine
+5250 10200 [ 5300 10200 ] PLine
+5300 10200 [ 5300 10600 ] PLine
+5300 10600 [ 5150 10600 ] PLine
+5150 10700 [ 4750 10700 ] PLine
+5350 10150 [ 5400 10150 ] PLine
+5400 10150 [ 5400 10700 ] PLine
+5400 10700 [ 5150 10700 ] PLine
+5150 10400 [ 4750 10400 ] PLine
+5350 10050 [ 5350 10100 ] PLine
+5350 10100 [ 5300 10100 ] PLine
+5300 10100 [ 5300 10150 ] PLine
+5300 10150 [ 5200 10150 ] PLine
+5200 10150 [ 5200 10400 ] PLine
+5200 10400 [ 5150 10400 ] PLine
+5150 11000 [ 4750 11000 ] PLine
+6050 10200 [ 6000 10200 ] PLine
+6000 10200 [ 6000 11000 ] PLine
+6000 11000 [ 5150 11000 ] PLine
+5150 11100 [ 4750 11100 ] PLine
+6150 10150 [ 6100 10200 ] PLine
+6100 10200 [ 6100 11100 ] PLine
+6100 11100 [ 5150 11100 ] PLine
+5150 10800 [ 4750 10800 ] PLine
+6150 10050 [ 6100 10000 ] PLine
+6100 10000 [ 6100 9950 ] PLine
+6100 9950 [ 5900 9950 ] PLine
+5900 9950 [ 5900 10800 ] PLine
+5900 10800 [ 5150 10800 ] PLine
+5150 10900 [ 4750 10900 ] PLine
+6050 10000 [ 5950 10000 ] PLine
+5950 10000 [ 5950 10900 ] PLine
+5950 10900 [ 5150 10900 ] PLine
+4750 9900 [ 5150 9900 ] PLine
+4650 10250 [ 5050 10250 ] PLine
+4750 9300 [ 5150 9300 ] PLine
+4550 9850 [ 4550 9800 ] PLine
+4550 9800 [ 4700 9800 ] PLine
+4700 9800 [ 4700 9300 ] PLine
+4700 9300 [ 4750 9300 ] PLine
+5150 9100 [ 4750 9100 ] PLine
+5250 9400 [ 5400 9400 ] PLine
+5400 9400 [ 5400 9100 ] PLine
+5400 9100 [ 5150 9100 ] PLine
+4650 9250 [ 5050 9250 ] PLine
+5050 9250 [ 5225 9250 ] PLine
+5225 9250 [ 5225 9350 ] PLine
+5225 9350 [ 5350 9350 ] PLine
+4650 9950 [ 5050 9950 ] PLine
+5150 10000 [ 4750 10000 ] PLine
+6150 10250 [ 6200 10250 ] PLine
+6200 10250 [ 6200 9900 ] PLine
+6200 9900 [ 6100 9900 ] PLine
+6100 9900 [ 6100 9850 ] PLine
+6100 9850 [ 5400 9850 ] PLine
+5400 9850 [ 5400 9800 ] PLine
+5400 9800 [ 5300 9800 ] PLine
+5300 9800 [ 5300 9750 ] PLine
+5300 9750 [ 5200 9750 ] PLine
+5200 9750 [ 5200 10000 ] PLine
+5200 10000 [ 5150 10000 ] PLine
+5050 9850 [ 4650 9850 ] PLine
+4650 9850 [ 4600 9850 ] PLine
+4600 9850 [ 4600 9900 ] PLine
+4600 9900 [ 4500 9900 ] PLine
+4500 9900 [ 4500 9850 ] PLine
+4500 9850 [ 4300 9850 ] PLine
+4300 9850 [ 4300 8500 ] PLine
+4300 8500 [ 4450 8500 ] PLine
+4750 8200 [ 5150 8200 ] PLine
+5150 9200 [ 4750 9200 ] PLine
+4750 9200 [ 4600 9200 ] PLine
+4600 9200 [ 4600 9600 ] PLine
+4600 9600 [ 4450 9600 ] PLine
+4550 10150 [ 4500 10150 ] PLine
+4500 10150 [ 4500 9950 ] PLine
+4500 9950 [ 4150 9950 ] PLine
+4150 9950 [ 4150 10250 ] PLine
+4150 10250 [ 4000 10250 ] PLine
+4000 10250 [ 4000 10350 ] PLine
+5050 11150 [ 4650 11150 ] PLine
+4650 11150 [ 4000 11150 ] PLine
+4000 11150 [ 4000 10700 ] PLine
+4450 10200 [ 4250 10200 ] PLine
+4250 10200 [ 4250 10400 ] PLine
+4250 10400 [ 4100 10400 ] PLine
+4100 10400 [ 4100 10350 ] PLine
+4450 10000 [ 4200 10000 ] PLine
+4200 10000 [ 4200 10350 ] PLine
+5050 7750 [ 4650 7750 ] PLine
+4650 7750 [ 4650 7675 ] PLine
+4650 7675 [ 3600 7675 ] PLine
+3600 7675 [ 3600 8500 ] PLine
+3600 8500 [ 3650 8500 ] PLine
+4650 8350 [ 5050 8350 ] PLine
+4550 8150 [ 4400 8150 ] PLine
+4400 8150 [ 4400 8350 ] PLine
+4400 8350 [ 4500 8350 ] PLine
+4500 8350 [ 4500 8400 ] PLine
+4500 8400 [ 4600 8400 ] PLine
+4600 8400 [ 4600 8350 ] PLine
+4600 8350 [ 4650 8350 ] PLine
+4650 10050 [ 5050 10050 ] PLine
+4550 10250 [ 4600 10250 ] PLine
+4600 10250 [ 4600 10050 ] PLine
+4600 10050 [ 4650 10050 ] PLine
+3850 9900 [ 3950 9900 ] PLine
+3950 9900 [ 4050 9900 ] PLine
+5800 10000 [ 5800 9900 ] PLine
+5800 9900 [ 5850 9900 ] PLine
+5150 8300 [ 4750 8300 ] PLine
+4750 8300 [ 4500 8300 ] PLine
+4500 8300 [ 4500 8200 ] PLine
+4500 8200 [ 4450 8200 ] PLine
+5050 10150 [ 5100 10150 ] PLine
+5100 10150 [ 5100 10050 ] PLine
+5100 10050 [ 5300 10050 ] PLine
+5300 10050 [ 5300 10000 ] PLine
+5300 10000 [ 5525 10000 ] PLine
+5525 10000 [ 5525 10100 ] PLine
+5600 10100 [ 5525 10100 ] PLine
+5800 10100 [ 5800 10150 ] PLine
+5800 10150 [ 5600 10150 ] PLine
+5600 10150 [ 5600 10100 ] PLine
+5650 9900 [ 5700 9900 ] PLine
+5700 9900 [ 5700 10000 ] PLine
+5700 10000 [ 5600 10000 ] PLine
+4750 11500 [ 5150 11500 ] PLine
+3650 10100 [ 3550 10100 ] PLine
+3550 10100 [ 3550 10450 ] PLine
+3550 10450 [ 3750 10450 ] PLine
+3750 10450 [ 3750 10750 ] PLine
+3750 10750 [ 3900 10750 ] PLine
+3900 10750 [ 3900 11200 ] PLine
+3900 11200 [ 4600 11200 ] PLine
+4600 11200 [ 4600 11500 ] PLine
+4600 11500 [ 4750 11500 ] PLine
+4450 8400 [ 4250 8400 ] PLine
+4250 8400 [ 4250 8800 ] PLine
+5150 8800 [ 4750 8800 ] PLine
+4750 8800 [ 4500 8800 ] PLine
+4450 9500 [ 4400 9500 ] PLine
+4400 9500 [ 4400 9100 ] PLine
+4400 9100 [ 4700 9100 ] PLine
+4700 9100 [ 4700 9150 ] PLine
+4700 9150 [ 4900 9150 ] PLine
+5875 10850 [ 5050 10850 ] PLine
+5050 10850 [ 4650 10850 ] PLine
+6050 9600 [ 6250 9600 ] PLine
+6250 9600 [ 6250 10850 ] PLine
+6250 10850 [ 6150 10850 ] PLine
+5700 10100 [ 5750 10100 ] PLine
+5750 10100 [ 5750 9900 ] PLine
+5150 9400 [ 5200 9400 ] PLine
+5200 9400 [ 5200 9450 ] PLine
+5200 9450 [ 5300 9450 ] PLine
+5300 9450 [ 5300 9500 ] PLine
+5300 9500 [ 5750 9500 ] PLine
+5750 9500 [ 5750 9800 ] PLine
+4900 10100 [ 4750 10100 ] PLine
+4750 9400 [ 4900 9400 ] PLine
+4900 9400 [ 4900 9800 ] PLine
+5250 10000 [ 5250 9950 ] PLine
+5250 9950 [ 5300 9950 ] PLine
+5300 9950 [ 5300 9900 ] PLine
+5300 9900 [ 5475 9900 ] PLine
+4750 10500 [ 5150 10500 ] PLine
+5050 8550 [ 4650 8550 ] PLine
+4650 8550 [ 4650 8600 ] PLine
+4650 8600 [ 4700 8600 ] PLine
+4700 8600 [ 4700 8650 ] PLine
+4700 8650 [ 4900 8650 ] PLine
+grestore
+showpage

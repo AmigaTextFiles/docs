@@ -1,0 +1,68 @@
+;making a new var for setting tags
+NEWTYPE.tags
+  a.l:b.l
+  c.l:d.l
+  e.l:f.l
+  g.l:h.l
+  i.l:j.l
+  k.l:l.l
+  m.l:n.l
+End NEWTYPE
+
+;define some constanten
+#TAG_USER      =1 LSL 31
+#SYS_Dummy     =#TAG_USER+32
+#SYS_Input     =#SYS_Dummy+1
+#SYS_Output    =#SYS_Dummy+2
+#SYS_Asynch    =#SYS_Dummy+3
+#NP_Dummy      =#TAG_USER+1000
+#NP_Error      =#NP_Dummy+8
+#NP_StackSize  =#NP_Dummy+11
+#TAG_DONE      =0
+
+;Define a output device in a string
+;This could be all kind of cli based devices ;examples :
+
+;no output
+;NIL:
+
+;a cli output
+;Con:0/0/640/256/REQUESTOR
+;Con:0/150/640/50/REQUESTOR/AUTO
+;Con:0/200/640/50/REQUESTOR/CLOSE
+;Con:0/100/640/100/REQUESTOR/BACKDROP
+;Con:0/150/300/50/REQUESTOR/NOBORDER
+;Con:0/100/300/100/REQUESTOR/NODRAG
+;Con:0/150/640/50/REQUESTOR/NOSIZE
+;Con:0/150/640/50/REQUESTOR/SCREEN SPOT
+;Con:0/150/640/50/REQUESTOR/SIMPLE
+;Con:0/150/640/50/REQUESTOR/SMART
+
+clisize$="Con:0/0/640/256/Stef_Shortlife/DRAG"
+
+output.l=Open_(&clisize$,1004)
+If output.l=0
+  ;could not open device so whe could end
+  End
+EndIf
+
+;com$=what are we going to do ?
+com$="Dir dh0:"+Chr$(10)
+
+;How many stack we are going to need ?
+#stack=20000
+
+;running (not assyn.=0) otherwise we can't close the device anymore
+
+tags.tags\a=#SYS_Asynch  ,0
+tags.tags\c=#SYS_Input   ,output.l
+tags.tags\e=#SYS_Output  ,0
+tags.tags\g=#NP_Error    ,output.l
+tags.tags\i=#NP_StackSize,#stack
+tags.tags\m=#TAG_DONE
+error.l=SystemTagList_(com$,&tags.tags)
+
+;if the cli is opened whe can close it
+If output.l<>0 Then dumb.b=Close_(output.l)
+
+End

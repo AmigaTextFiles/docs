@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<!-- AG2HTML: CONVERTER=AG2HTML/1.1 FORMAT=AMIGAGUIDE/39.2 FILE="V44_Changes.guide" NODE="AppIcons" TITLE="V44_Changes.guide/AppIcons" TOC="Workbench" NEXT="Replacing Workbench" PREV="Drop Zones" -->
+<head>
+<title>V44_Changes.guide/AppIcons</title>
+</head>
+<body text="#000000" bgcolor="#AAAAAA">
+<a href="../V44_Changes_guide/node0002.html"><img src="../images/toc.gif" alt="[Contents]" border=0></a>
+<img src="../images/index_d.gif" alt="[Index]">
+<img src="../images/help_d.gif" alt="[Help]">
+<img src="../images/retrace_d.gif" alt="[Retrace]">
+<a href="../V44_Changes_guide/node0005.html"><img src="../images/prev.gif" alt="[Browse &#060;]" border=0></a>
+<a href="../V44_Changes_guide/node0007.html"><img src="../images/next.gif" alt="[Browse &#062;]" border=0></a>
+<hr>
+<pre>
+<!-- AG2HTML: BODY=START -->
+
+New AppIcon functionality
+=========================
+
+Responding to menu commands
+---------------------------
+
+   As of Workbench V44, it is possible to invoke menu actions for
+<b>AppIcon</b>s just like they were normal icons. You have to tell Workbench
+which menu items your icon responds to using the tag item list you
+provide to <b>AddAppIconA()</b>. When one of the supported menu items is
+invoked, you will receive an <b>AppMessage</b> with the <b>am_Class</b> entry set to
+a value out of <b>AMCLASSICON_Open</b>..<b>AMCLASSICON_EmptyTrash</b>, corresponding
+to the menu item used.
+
+   The following <b>BOOL</b> tags are provided by <b>AddAppIconA()</b> to control
+which menu commands are supported by an <b>AppIcon</b>:
+
+<b>WBAPPICONA_SupportsOpen</b>
+
+<b>WBAPPICONA_SupportsCopy</b>
+
+<b>WBAPPICONA_SupportsRename</b>
+
+<b>WBAPPICONA_SupportsInformation</b>
+
+<b>WBAPPICONA_SupportsSnapshot</b>
+
+<b>WBAPPICONA_SupportsUnSnapshot</b>
+
+<b>WBAPPICONA_SupportsLeaveOut</b>
+
+<b>WBAPPICONA_SupportsPutAway</b>
+
+<b>WBAPPICONA_SupportsDelete</b>
+
+<b>WBAPPICONA_SupportsFormatDisk</b>
+
+<b>WBAPPICONA_SupportsEmptyTrash</b>
+Custom AppIcon rendering hook
+-----------------------------
+
+   The new tag <b>WBAPPICONA_RenderHook</b> takes a pointer to a <b>struct Hook</b>
+that will be invoked when rendering your AppIcon. With this hook and
+<b>WorkbenchControlA()</b> you can create dynamic or animated <b>AppIcon</b>s. Your
+hook will be called with the following parameters and has to return a
+result value:
+
+
+     result = hookFunc(hook, reserved, arm)
+       D0               A0     A2      A1
+
+     LONG hookFunc(struct Hook *hook, APTR reserved,
+                   struct AppIconRenderMsg *arm);
+
+     struct AppIconRenderMsg
+     {
+         struct RastPort *   arm_RastPort;
+         struct DiskObject * arm_Icon;
+         STRPTR              arm_Label;
+         struct TagItem *    arm_Tags;
+         WORD  arm_Left;
+         WORD  arm_Top;
+         WORD  arm_Width;
+         WORD  arm_Height;
+         ULONG  arm_State;
+     };
+
+The `reserved' parameter will be set to <b>NULL</b>. The render message
+contents are as follows:
+
+<b>arm_RastPort</b>
+     A pointer to the RastPort to render into.
+
+<b>arm_Icon</b>
+     A pointer to the Icon to be rendered.
+
+<b>arm_Label</b>
+     A pointer to the label text to be printed below the icon.
+
+<b>arm_Tags</b>
+     Further control tags which you should pass on to
+     <b>icon.library/DrawIconStateA()</b>, should you call this routine.
+
+<b>arm_Left</b>
+<b>arm_Top</b>
+     Rendering origin; note that these coordinates DO NOT take the
+     embossing border sizes into account.
+
+<b>arm_Width</b>
+<b>arm_Height</b>
+     Size of the Icon's image area; you should limit your drawing to
+     this area.
+
+<b>arm_State</b>
+     An icon drawing state, such as used by
+     <b>icon.library/DrawIconStateA()</b>.
+
+   Note that all the data in the render message is read-only.
+
+   If your hook code returns <b>TRUE</b>, the <b>AppIcon</b>'s regular image will be
+drawn. If your code returns <b>FALSE</b>, the regular image will not be drawn;
+this allows you to do all the icon's on-screen rendering with the
+exception of the icon image used when dragging the icon on the screen.
+
+AppIcon positioning
+-------------------
+
+   The new <b>WBAPPICONA_PropagatePosition</b> tag allows the AppIcon's
+position to be propagated back to the original <b>DiskObject</b> you passed to
+<b>AddAppIconA()</b>. By default, Workbench will make a copy of that
+<b>DiskObject</b>'s icon imagery, allowing the application to free the it.
+But if you specify <b>WBAPPICONA_PropagatePosition,TRUE</b>, Workbench will
+assume that you will not free the <b>DiskObject</b> and that the <b>AppIcon</b>'s
+current position should be stored in its <b>do_CurrentX/do_CurrentY</b>
+members.
+
+AppIcon selection
+-----------------
+
+   The new tag <b>WBAPPICONA_NotifySelectState</b> causes the application to
+be be notified whenever the AppIcon becomes selected or unselected.
+You will hear only state transitions, i.e. changes from selected to
+unselected state and the other way round. On a state transition you
+will receive <b>AppMessage</b>s with the <b>AppMessage-&#062;am_Class</b> member set to
+<b>AMCLASSICON_Selected</b> or <b>AMCLASSICON_Unselected</b>, respectively.
+<!-- AG2HTML: BODY=END -->
+</pre>
+</body>
+</html>

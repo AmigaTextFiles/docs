@@ -1,0 +1,223 @@
+Origin: GREMLiNS BBS ...in Australia! One hell of a BBS...! ;)
+****************************************************************************
+
+Creating a Monster - My last 2 years of coding animation formats.
+
+By Olly Koenders 14-08-97.
+
+
+Preface
+-------
+
+Why am I writing this?  Umm...  No real reason, but what the heck eh?
+
+
+In the Beginning
+----------------
+
+It started as a faint glimmer in my all so feeble mind, that after coding
+in assembler since about 1990, after a fruituitous but very sloooow several
+months learning the Amiga in AmigaBasic of all things, It dawned on me that
+I STILL hadn't done anything with pictures - let alone ever having actually
+got one to display on the screen!  Shit - I didn't know what bitplanes were
+or how an IFF picture was coded, never mind decoding it even!  I'd gotten
+nowhere in a second flat, and if I hadn't found some explanatory stuff in
+one of my old abacus manuals (in BASIC - Ughhh!), I'd still be drawing
+gadgets and stuff with DrawBorder() and PrintIText().
+
+I started pandering around with Intuition (you know, that big library
+tucked away in your ROM somewhere), and found a routine called DrawImage(),
+that I hoped would lead me on the right track.
+
+How right I was, but still so far to go.  After fumbling around through the
+"includes" and "structures" listed on my VERY old Assempro disk that I
+never used (assempro is a BASTARD to use!), I managed to summise some things
+about the structure I needed for DrawImage(), although many clues were still
+missing.  Endless hours (days more like it) of reading my old and tattered
+Abacus assembler manuals, coding, crashing, re-coding (and re-crashing), I
+finally had it.  I got an image onto the Workbench screen in its own window
+and was grinning from one ear to the other!
+
+What the image was exactly I can't remember, but I thought this was the
+start of a beautiful thing and stuck with it for some more days,
+experimenting and such forth.  I got an old routine I coded ages before to
+scroll some text and drew a picture (4 colours), added a protracker routine
+(that was pretty shithouse but still worked) and a song that I chucked
+together from a sampled radio tune.  I now had a small "intro" thingy with
+a static picture.
+
+All well and good.  But after a couple more days of thinking I thought I
+thunk that I could animate this bugger.  But once I got some more ideas
+that "intro" went by the wayside (to a friend with some proud and boasting
+text!) and I cobbled together some sort of animation by changing logical
+addresses and displaying these images sequentially.
+
+It was at this time I experienced problems with reliable timing between
+each frame, trying several things like a few WaitTOF() instructions (wait
+for top-of-frame) and that was the bees knees for some time.
+
+Eventually I had smallish 160 x 128 16 colour "animation" on its own screen
+fumbling around displaying a cross between a Ferrari F40 and something from
+Back to the Future, whooshing off the screen and looping until I thumped
+the mouse.  Damn I was proud!  12 frames/sec on a beefed 14 mhz A500 was
+moving pretty well for frames that size I thought.
+
+Then came the point where I realised that if I added more frames, the whole
+thing would get pretty big.  I had to devise a compression routine that
+could decompress these frames fast enough.  I came up with a simple but
+very effective byte-run algorithm and took it from there, although the
+playback speed suffered a bit (crawl!).
+
+More experimentation showed that if I didn't have to decompress an entire
+frame each time, then the bugger would run faster and use somewhat less
+room as well.  I furiously coded a routine that would compare a frame with
+the previous, mask out the identical ones with nulls and save the resulting
+data to a file.  The main problem was that when it came to a null byte that
+wasn't originally a null, it would cause spots and lines in the frame while
+animating.  I sort of solved this by making a program that would check for
+the minimum-used byte and then substitute that for the null, then
+re-instate the null on playback.  This reduced the spots somewhat - but was
+far from ideal.  "Ferrari" is my first animation coded this way and the
+problems can be clearly seen.
+
+The next problem was flickering of the image as it was drawn on the screen,
+as the blitter chip was too slow for larger images.  I solved that with a
+technique called "Double-Buffering", where you actually have 2 separate
+screens that you draw images on and while one is being viewed, the other is
+rather hastily drawn, then it's flicked to the front to be viewed and
+so-on (it took me absolutely AGES to find out what Double-Buffering
+meant!).  "CompSex" was done that way, as the images were getting too big to
+be displayed without flickering.  With smaller images I turned to waiting
+for the raster beam to reach a certain position (102 I think) before I did
+the DrawImage() thing.
+
+This worked well for some time, and I produced many animations this way,
+some small, some a bit bigger, but the more complex the picture or more
+changes from one picture to the next, the more data the picture had, and
+the less speed I was getting.  I also wanted to make full-screen animations,
+but blitting an entire 320 x 256 32 colour picture to a screen with a window
+was almost impossible, as I was only getting about 5 frames/sec that way.
+
+To go any further forward meant an entire re-code of ALL my
+compression/decompression and screen drawing routines.  I mulled it over
+and was so damn reluctant as it meant undoing all my hard work.  Days
+mulled into a couple of weeks, and finally I had a plan...
+
+Hard Time
+---------
+
+I had a goal - to make my anim format smaller than ANIM5 and hopefully
+faster, but that was to be some time away.  I experimented with routines to
+push a picture direct to the screen bitplanes and took it from there.  How
+many times did I end up with picture data all over the screen (and even
+screens that weren't related to the one I wanted!) without the picture
+looking like it should have.  Eventually, I had it and found that it was
+possible.
+
+Not knowing how the hell ANIM5 format was coded, or being able to find some
+documentation on this anywhere, I started coding a routine that would take a
+picture and slice it up into 8 x 8 pixel "chunks" for each bitplane, and
+saving those chunks into sequential bytes.  Once I had all the pictures
+coded I would then load up each one and compare it with the previous, and
+code special control bytes into it telling me what I did with this 8 x 8
+pixel chunk, either I byte-run compressed it as much as possible or it's
+just a direct dump to screen.  A code "$03" would tell me that I would have
+to dump all the next 8 bytes to the screen, whereas a code "$05" means that
+all the next 8 bytes are nulls and missing from the data, so I just dump 8
+null bytes to their respective places on the screen.
+
+All the "chunks" of picture data that were the same from the previous were
+tallied up as "skip" chunks and weren't saved to the resulting frame file,
+and the number of these chunks to skip on the screen followed a "$02" for a
+short skip (1 - 255 chunks) or a "$01" for long skip (256 - 65535 chunks).
+
+For a frame that doesn't change from the previous, a single null byte is
+used as a code saving heaps of space.
+
+The first frame was saved out in its entirety coded in 8 x 8 pixel chunks
+and straight byte-run compressed.  This frame then forms the starting
+picture where only the changes for the next frame are drawn on etc.
+
+Now that I didn't have to decompress an entire frame and blit the lot to
+the screen I had a foundation for heaps more speed, as I would only have to
+write the changes directly to the screen while they were being decoded.
+
+I also didn't have to employ any sort of Double-Buffering as the chunks are
+drawn on the screen faster than the raster beam can pass them, so chip
+memory is saved by only having one screen.  If I wrote all the chunks to the
+screen for an entire bitplane, and then again for the next bitplane, the
+anim would suffer from flickering when the frames got bigger.
+
+After lots more fooling around I finally had an entire routine that could
+push out an animation with frame sizes ranging from 8K to 15K on a chip
+only A500 with bare 68000 at around 6.5 frames sec in 32 colours.  Whoosh?
+
+Faster and Faster...
+--------------------
+
+This served me well for about the next year (!), and I learned tricks like
+re-mapping pictures to produce less frame data so that they playback faster,
+and enlarging frames on the fly so that an 80 x 64 x 32 colour frame would
+be seen as a 160 x 128 size frame with pixels at 2 x 2.
+
+These routines weren't too OS friendly as they were written and tested on a
+KS 1.3 A500, where each bitplane for a screen was allocated by the system
+in a sequential fashion, so I was writing to contiguous memory.  Something
+changed however with the introduction of the AGA chipset and this is no
+longer the case.  After loading a couple of programs that use chipmem, the
+bitplane addresses are no longer one after the other.  This is the main
+problem I wanted to fix but came across some other ideas at the same time.
+
+I got to the point where I needed something faster, as I FINALLY found some
+documentation on ANIM5 - not much help now, as it's done something
+different like coding in 8 x 256 chunks for a 256 high picture, and then
+all these chunks are done for one entire bitplane, then done for the next
+bitplane until everything's coded.  This is where Double-Buffering's
+needed as the flickering would be almost unbearable.  In some cases ANIM5 is
+a smaller format but not too often, as some DLTA tables are saved with the
+resulting frame and a picture same as previous has a header chunk with
+containing a couple of hundred bytes.
+
+I used to decode a frame with all the screen addresses for writing to
+calculated in realtime, and all this overhead was pretty damn slow, so I
+decided to use something called a "lookup table".  This contains previously
+calculated screen addresses for each chunk.  All the decoding routine has to
+do now is grab the address from the table, and decode a chunk directly to
+that address, rather than calculate the address on the fly before decoding.
+
+A 320 x 256 32 colour frame only needs 25600 bytes of table and this table
+is used for every frame, thereby saving memory too.
+
+This has resulted in a 100% speed increase and is a whole frame/sec faster
+than PPAnim with ANIM5.
+
+I also changed the enlarging routine to use a table for converting 16
+pixels to 32 and the speed increase speaks for itself.
+
+Summary
+-------
+
+Chip only A500 68000 with 320 x 256 32 colour 8 to 15K frames:
+
+
+Byterun decompress + DrawImage() frames/sec: Don't even ask!
+
+Chunk + calculation: 6.5 frames/sec.
+
+Chunk only (now): 12.5 frames/sec.
+
+
+Chip only A500 68000 with 80 x 64 32 colour frames (enlarging to 160 x 128):
+
+
+Byterun decompress + DrawImage() frames/sec: Didn't have one.
+
+Chunk + calculation: 16.5 frames/sec.
+
+Chunk only (now): 30.5 frames/sec.
+
+       __
+      ///
+ __  ///
+ \\\///
+  \XX/  Olly '97  8)

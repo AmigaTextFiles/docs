@@ -1,0 +1,434 @@
+@database "Arexx.guide"
+@width 80
+
+## $VER: Arexx.guide 1.20 (29.12.93)
+## Copyright (c) 1993 Jan Leuverink
+##
+## TeleText AmigaGuide documentation
+##
+
+##
+## Contents
+##
+@node main "TeleText Documentation"
+
+                  TeleText V1.20 (29.12.1993)
+                   
+                    © 1993 by Jan Leuverink
+
+                      Arexx Documentation
+
+
+                      
+    
+    
+                  @{"    Introduction      " link intro }
+                  @{"    Arexx Commands    " link commands}
+                      
+@endnode
+@node intro "Introduction"
+This guide contains all information about the Arexx interface of TeleText.
+Note that Arexx is only available to registered users. TeleText will not
+respond to Arexx commands when it didn't find a valid keyfile on startup.
+
+The Arexx port of TeleText is called "TeleText". Note the two capital T's !
+
+The rexx drawer contains some Arexx-examples.
+
+I'm not a regular Arexx user myself, so it's definitely possible that
+some commands do not have a logical interface (e.g. result etc.).
+
+Please send me hints/tips/ideas, so that I can make the Arexx port as
+complete and useful as possible. See TeleText.guide for information on
+how to reach me.
+
+
+Enjoy,
+
+ Jan.
+@endnode
+@node commands "TeleText Arexx commands"
+
+                   Available Arexx Commands
+
+  @{" quit          " link quit }               @{" get_cursub   " link get_cursub }
+  @{" version       " link version }               @{" get_curcat   " link get_curcat }
+  @{" tele_to_front " link telefront }               @{" get_curpage  " link get_curpage }
+  @{" tele_to_back  " link teleback }               @{" get_maxsub   " link get_maxsub }
+  @{" view_to_front " link viewfront }               @{" get_minsub   " link get_minsub }
+  @{" view_to_back  " link viewback }               @{" get_subvalid " link get_subvalid }
+  @{" view_on       " link viewon }               @{" reveal_on    " link reveal_on }
+  @{" view_off      " link viewoff }               @{" reveal_off   " link reveal_off }
+  @{" loadpage      " link loadpage }
+  @{" save_tt       " link savett }
+  @{" save_ascii    " link saveascii }
+  @{" save_iff      " link saveiff }
+  @{" save_ansi     " link saveansi }
+  @{" initialize    " link init }
+  @{" get_status    " link getstatus }
+  @{" set_catalog   " link setcat }
+  @{" set_subpage   " link setsub }     
+  @{" get_page      " link getpage }
+@endnode
+
+##
+## quit
+##
+@node quit "Quit"
+Syntax: quit
+
+Purpose: Quits the TeleText programm
+
+Results: none
+@endnode
+
+##
+##  version
+##
+@node version "Version"
+Syntax: version
+
+Purpose: get the version string from TeleText programm
+
+Results: version/copyright string
+@endnode
+##
+## Tele_to_front
+##
+@node telefront "Tele_To_Front"
+Syntax: tele_to_front
+
+Purpose: TeleText screen to front
+
+Results: none
+@endnode
+##
+## Tele_To_Back
+##
+@node teleback "Tele_To_Back"
+Syntax: tele_to_back
+
+Purpose: TeleText screen to back
+
+Results: none
+@endnode
+##
+## View_To_Front
+##
+@node viewfront "View_To_Front"
+Syntax: view_to_front
+
+Purpose: ViewScreen to front
+         command is ignored when ViewScreen is not open
+
+Results: none
+@endnode
+##
+## View_To_Back
+##
+@node viewback "View_To_Back"
+Syntax: view_to_back
+
+Purpose: ViewScreen to back
+         command is ignored when ViewScreen is not open
+
+Results: none
+@endnode
+##
+## View_On
+##
+@node viewon "View_On"
+Syntax: view_on
+
+Purpose: Opens ViewScreen, when a page is present in the current
+         catalog, this page will be shown on the ViewScreen.
+         ViewScreen is put in front.
+         This command is ignored when the ViewScreen is already open.
+
+Results: "0" if the screen was opened successfully (or was already open)
+         "1" if the screen could not be opened
+@endnode
+##
+## View_Off
+##
+@node viewoff "View_Off"
+Syntax: view_off
+
+Purpose: Closes the ViewScreen
+         This command is ignored when the ViewScreen was not open
+
+Results: none
+@endnode
+##
+## Get_Status
+##
+@node getstatus "Get_Status"
+Syntax: get_status
+
+Purpose: Get the current status of the video/teletext signal & I2C bus
+
+Results: return a number
+         bit 1 = 1   I2C ok        bit 1 = 0   I2C error
+         bit 2 = 1   Video ok      bit 2 = 0   Video poor
+         bit 3 = 1   TeleText ok   bit 3 = 0   TeleText poor
+         
+Arexx provides easy to use functions to do bit checking, see your Arexx
+manual for details.
+@endnode
+##
+## Set_Catalog
+##
+@node setcat "Set_Catalog"
+Syntax: set_catalog <number>
+
+Purpose: Sets the default catalog
+         If a page is present in that catalog, it will be displayed
+         Currently (V1.20) <number> must be between 1 and 4
+
+Results: returns the actually set catalog
+@endnode
+##
+## Set_SubPage
+##
+@node setsub "Set_SubPage"
+Syntax: set_subpage <number>
+
+Purpose: Sets the current subpage
+         If present in that catalog, it will be displayed
+         Currently (V1.20) <number> must be between 1 and 50
+
+Results: returns the actually displayed subpage,
+         or when the result is negative an errorcode
+         "-1" no valid page present in the default catalog   
+         "-2" no subpages for the page in the def. catalog
+         "-3" requested subpage is already displayed
+         "-4" subpage is not present/valid
+@endnode
+##
+## Get_Page
+##
+@node getpage "Get_Page"
+Syntax: get_page <number>
+
+Purpose: requests a page from the TeleText decoder.
+         <number> must be a decimal between 100 and 899
+         page is fetched in the default catalog
+
+Results: "0" no error
+         "1" invalid pagenumber
+         "2" timeout occurred
+         "3" user abort (pressed 'b' or clicked Stop)
+         "4" not enough memory
+         "5" parallel port was not allocated
+@endnode
+##
+## LoadPage
+##
+@node loadpage "LoadPage"
+Syntax: loadpage <filename>
+
+Purpose: loads a page from disk into the default catalog and displays it
+         <filename> may contain a full path
+         e.g. loadpage testing.tt
+              loadpage dh0:TeleText/Pages/mypage.tt
+
+Results: "0" no error
+         "1" file is not a TT file
+         "2" file does not exist
+         "3" could not allocate enough memory
+@endnode
+##
+## Save_TT
+##
+@node savett "Save_TT"
+Syntax: save_tt <filename>
+
+Purpose: save the default catalog to disk in TT-format
+         <filename> may contain a full path
+         e.g. save_tt testing.tt
+              save_tt dh0:TeleText/Pages/mypage.tt
+
+Results: "0" no errors
+         "1" no page present in current catalog
+         "2" write error occurred during save
+@endnode
+##
+## Save_ASCII
+##
+@node saveascii "Save_ASCII"
+Syntax: save_ascii <filename>
+
+Purpose: save the default catalog to disk in ASCII-format
+         <filename> may contain a full path
+         e.g. save_ascii testing.asc
+              save_ascii dh0:TeleText/Pages/mypage.asc
+         Note that the reveal codes option influences this function
+         (e.g. the page is save exactly as it is displayed)
+
+Results: "0" no errors
+         "1" no page present in current catalog
+         "2" write error occurred during save
+@endnode
+##
+## Save_IFF
+##
+@node saveiff "Save_IFF"
+Syntax: save_iff <filename>
+
+Purpose: save the current page of the default catalog to disk in IFF-format
+         <filename> may contain a full path
+         e.g. save_iff testing.iff
+              save_iff dh0:TeleText/Pages/mypage.iff
+         Note that the reveal codes option influences this function
+         (e.g. the page is save exactly as it is displayed)
+
+Results: "0" no errors
+         "1" no page present in current catalog or 
+             current subpage empty
+         "2" write error occurred during save
+@endnode
+##
+## Save_ANSI
+##
+@node saveansi "Save_ANSI"
+Syntax: save_ansi <filename>
+
+Purpose: save the current page of the default catalog to disk in 
+         ANSI-format
+         <filename> may contain a full path
+         e.g. save_ansi testing.ansi
+              save_ansi dh0:TeleText/Pages/mypage.ansi
+         Note that the reveal codes option influences this function
+         (e.g. the page is save exactly as it is displayed)
+
+Results: "0" no errors
+         "1" no page present in current catalog or 
+             current subpage empty
+         "2" write error occurred during save
+@endnode
+
+##
+## Initialize
+##
+@node init "Initialize"
+Syntax: initialize
+
+Purpose: Clears all catalogs
+
+Results: none
+@endnode
+
+##
+## get_cursub
+##
+@node get_cursub  "Get_CurSub"
+Syntax: get_cursub
+
+Purpose: gets the number of the current displayed subpage
+         (active catalog)
+
+Results: number larger than zero : number of the subpage
+         "-1" : no valid page in catalog
+         "-2" : no subpages in catalog 
+@endnode
+
+
+##
+## get_curcat
+##
+@node get_curcat "Get_CurCat"
+Syntax: get_curcat 
+
+Purpose: gets the number of the current active catalog
+
+Results: catalog number
+@endnode
+
+##
+## get_curpage
+##
+@node get_curpage "Get_CurPage"
+Syntax: get_curpage
+
+Purpose: gets the number of the currently displayed page 
+
+Results: number larger or equal 100 : pagenumber
+         "-1": no page present
+@endnode
+
+##
+## reveal_on
+##
+@node reveal_on "Reveal_On"
+Syntax: reveal_on
+
+Purpose: turns on reveal codes. This will reveal all hidden information
+         on the displayed page. It will remain on until turned off
+         by reveal_off. The screen will be redrawn.
+         This will also influence the save Ansi/Ascii/IFF funtions.
+
+Results: "0" : ok
+         "1" : page does not contain hidden info
+         "2" : no valid page in catalog
+         "3" : reveal is already on
+@endnode
+
+##
+## reveal_off
+##
+@node reveal_off "Reveal_Off"
+Syntax: reveal_off
+
+Purpose: turns off reveal codes. This will hide all hidden information
+         on the displayed page. It will remain off until turned on
+         by reveal_on. The screen will be redrawn.
+         This will also influence the save Ansi/Ascii/IFF funtions.
+
+Results: "0" : ok
+         "1" : page does not contain hidden info
+         "2" : no valid page in catalog
+         "3" : reveal is already off
+@endnode
+
+
+##
+## get_maxsub
+##
+@node get_maxsub "Get_MaxSub"
+Syntax: get_maxsub
+
+Purpose: gets the number of the last valid subpage 
+
+Results: number larger than 0: last subpage
+         "-1" : no valid page in catalog
+         "-2" : no subpages in catalog 
+@endnode
+
+##
+## get_minsub
+##
+@node get_minsub "Get_MinSub"
+Syntax: get_minsub
+
+Purpose: gets the number of the first valid subpage 
+
+Results: number larger than 0: first subpage
+         "-1" : no valid page in catalog
+         "-2" : no subpages in catalog 
+@endnode
+
+##
+## get_subvalid
+##
+@node get_subvalid "Get_SubValid"
+Syntax: get_subvalid <number>
+
+Purpose: checks if the given subpage is valid 
+         currently, number is in the range 0-50
+
+Results: the subnumber itself is return when it is valid
+         "-1" : no valid page in catalog
+         "-2" : no subpages in catalog 
+         "-3" : subpage is not valid
+         "-4" : number not within limits (0<number<50)
+@endnode

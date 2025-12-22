@@ -1,0 +1,63 @@
+NEWTYPE .Dat
+  Reg.l:  X.w:  Y.w:  cx.w:  cy.w
+  MinX.w: MinY.w: MaxX.w: MaxY.w
+End NEWTYPE
+Dim M.Dat(1)
+M.Dat(0)\Reg=$dff00a ;Hardware reg for port 1 (mouse)
+M.Dat(1)\Reg=$dff00c ;Hardware reg for port 2 (joy)
+M.Dat(0)\MaxX=319;  Set max x boundary to 319
+M.Dat(0)\MaxY=255;  Set max y boundary to 255
+M.Dat(1)\MaxX=319;  Set max x boundary to 319
+M.Dat(1)\MaxY=255;  Set max y boundary to 255
+
+Statement ReadMouse{Port}
+  SHARED M.Dat()
+
+  USEPATH M.Dat(Port)
+  ocx.w=\cx
+  ocy.w=\cy
+
+  ; This is where the reading from the hardware regs is done
+  \cx=Peek.b(\Reg+1)
+  \cy=Peek.b(\Reg)
+
+  ; Here the deltas are calculated
+  dx.w=\cx-ocx: dy.w=\cy-ocy
+
+  ; Wrap around counters
+  If(dx<-127)  dx+256
+  If(dx>127)   dx-256
+  If(dy<-127)  dy+256
+  If(dy>127)   dy-256
+
+  ;Update coords
+  \X+dx:  \Y+dy
+
+  ;Don't you go beyond your limits
+  If(\X>\MaxX)  \X=\MaxX
+  If(\X<\MinX)  \X=\MinX
+  If(\Y>\MaxY)  \Y=\MaxY
+  If(\Y<\MinY)  \Y=\MinY
+End Statement
+
+BLITZ
+Slice 0,44,2
+BitMap 0,320,256,2
+Cls 0
+Line 0,0,5,5,1
+GetaShape 0,0,0,6,6
+GetaSprite 0,0
+Cls 0
+Show 0
+
+
+BitMapOutput 0
+; This is the loop you'd need
+Repeat
+  ReadMouse{0}
+  ReadMouse{1}
+  ShowSprite 0,M.Dat(0)\X,M.Dat(0)\Y,0
+  ShowSprite 0,M.Dat(1)\X,M.Dat(1)\Y,2
+  VWait
+Until Joyb(0)
+End

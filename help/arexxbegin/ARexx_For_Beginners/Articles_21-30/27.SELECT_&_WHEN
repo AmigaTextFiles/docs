@@ -1,0 +1,292 @@
+@DATABASE "ARB27"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 27 - Select...When...Otherwise"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 27 - SELECT...WHEN...OTHERWISE
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" Using SELECT...WHEN OTHERWISE " LINK "Using"}
+@{" Blocks Of Coding After WHEN   " LINK "Blocks"}
+@{" Using SELECT...WHEN For MENUS " LINK "Menus"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Using" "Article 27 - Using Select...When...Otherwise"
+
+@{B}@{U}@{JCENTER}USING SELECT...WHEN...OTHERWISE@{UB}@{UU}
+@{JLEFT}
+The @{B}SELECT@{UB} instruction allows the ARexx program to carry out a task @{B}WHEN@{UB}
+a symbol has certain values. If the symbol has none of the specified values
+then the @{B}OTHERWISE@{UB} instruction can be carried out.
+
+The way it is used is as follows:-
+
+  SELECT
+    WHEN Item = value1 THEN .... action
+    WHEN Item = value2 THEN .... action
+    WHEN Item = value3 THEN .... action
+  OTHERWISE .................... action
+  END
+
+This sequence @{B}must@{UB}:-
+
+- start with SELECT
+- have at least one WHEN...THEN
+- end with END
+
+The @{B}Action@{UB} can be a single instruction following the THEN on the same
+line, or it can be a @{"block of coding" LINK "Blocks"}.
+
+The number of @{B}WHENs@{UB} depends on how many actions you require for various
+values of @{B}Item@{UB}.
+
+The @{"OTHERWISE" LINK "Using"79} is optional.
+
+The way it works is that the symbol "Item" is evaluated and, if it matches
+"value1", then the action after THEN on that line is carried out. After
+that action has finished, the program jumps straight to the line (if any)
+that follows the END. It does @{B}not@{UB} waste time checking the other WHEN values
+or the OTHERWISE. Thus if you just happen to have two or more "Values"
+identical then only the first one will be acted upon. (But you wouldn't
+be that silly, would you??)
+
+If it does @{B}not@{UB} match "Value1" then it goes on to the next line to see
+if it matches "Value2" and so on until all the WHEN lines have been
+exhausted.
+
+If the value of "Item" does @{B}not@{UB} match any of the values, then the action
+after the OTHERWISE is carried out.
+
+Once an action has been carried out, the program ignores any other WHEN
+or OTHERWISE lines that come after the the line that was executed and
+jumps straight to the line (if any) that follows the END.
+
+However, the other actions @{B}can@{UB} be carried out if another entry is made
+to the SELECT...WHEN sequence with another value of @{B}Item@{UB}. This can happen
+if the SELECT...WHEN is contained in a loop, as illustrated by the following
+examples, or in an internal function.
+
+In Example12-1 we showed odd and even numbers with this program:-
+
+  /* Example12-1 */
+
+  DO x = 1 to 10
+    IF x % 2 = x / 2 THEN SAY x 'is even'
+    ELSE say x 'is odd'
+  END
+
+The results achieved can be duplicated with the use of SELECT...WHEN as
+in:-
+
+  /* Example27-1.rexx */
+
+  DO x = 1 to 10
+     SELECT
+       WHEN x//2 = 0 THEN SAY x 'is even'
+       WHEN x//2 = 1 THEN SAY x 'is odd'
+     END
+  END
+
+This works on the basis that the "//" operator gives us the @{B}remainder@{UB}
+of division. Thus when the number is even x//2 results in 0 and when it
+is odd x//2 results in 1.
+
+@{B}The OTHERWISE@{UB} keyword is optional. If you are @{B}quite sure@{UB} that the symbol
+value will not be other than those specified in each of the WHEN clauses
+(as we were in Example27-1) then OTHERWISE is not necessary. For
+example:-
+
+  /* Example27-2.rexx */
+
+  DO x = 1 to 3
+     SELECT
+       WHEN x = 1 THEN SAY x '= 1'
+       WHEN x = 2 THEN SAY x '= 2'
+       WHEN x = 3 THEN SAY x '= 3'
+     END
+  END
+
+This will display:-
+
+  1 = 1
+  2 = 2
+  3 = 3
+
+If you change the DO instruction in this program to:-
+
+  DO x = 1 to 5
+
+as in Example27-3:-
+
+  /* Example27-3.rexx */
+
+  DO x = 1 to 5
+    SELECT
+      WHEN x = 1 THEN SAY x '= 1'
+      WHEN x = 2 THEN SAY x '= 2'
+      WHEN x = 3 THEN SAY x '= 3'
+    END
+  END
+
+then you would have this output:-
+
+  1 = 1
+  2 = 2
+  3 = 3
+  +++ Error 25 in line 8: Missing OTHERWISE
+  Command returned 10/25: Missing OTHERWISE
+
+ARexx has found a value for "x" that is @{B}not@{UB} covered by the WHEN clauses
+so it looks for an OTHERWISE which is not there. You fix this with something
+like:-
+
+  /* Example27-4.rexx */
+
+  DO x = 0 to 5
+     SELECT
+       WHEN x = 1 THEN SAY x '= 1'
+       WHEN x = 2 THEN SAY x '= 2'
+       WHEN x = 3 THEN SAY x '= 3'
+       OTHERWISE SAY x 'is not 1, 2 or 3'
+     END
+  END
+
+Now the OTHERWISE will operate for "X" values of 0, 4 and 5 and our display
+will be:-
+
+  0 is not 1, 2 or 3
+  1 = 1
+  2 = 2
+  3 = 3
+  4 is not 1, 2 or 3
+  5 is not 1, 2 or 3
+
+If there is nothing that you want the program to do at the OTHERWISE clause
+then simply use:-
+
+  OTHERWISE NOP
+
+The OTHERWISE @{B}must@{UB} be there if there is any chance of a value not covered
+by the various WHEN statements. The @{"NOP" LINK "ARB:Articles_11-20/12.Conditional_Statements/NOP"} does nothing except prevent the
+error messages that would otherwise occur.
+
+In fact, it would be a good idea to get into the habit of @{B}always@{UB} putting
+in an OTHERWISE even if it only has a NOP just in case there is some factor
+that you have not foreseen that will give an unexpected value!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Blocks" "Article 27 - Blocks of Code After Select...When...Otherwise"
+
+@{B}@{U}@{JCENTER}BLOCKS OF CODE AFTER SELECT...WHEN...OTHERWISE@{UB}@{UU}
+@{JLEFT}
+You could say that the WHEN...THEN statements and the OTHERWISE statement
+can take @{B}one only@{UB} instruction clause after the THEN. However, this one
+instruction can be a DO...END block of instruction clauses, as in:-
+
+  SELECT
+
+    WHEN Item = value1 THEN DO
+      .... lots of programming lines
+    END
+
+    WHEN Item = value2 THEN DO
+      .... lots of programming lines
+    END
+
+    WHEN Item = value3 THEN DO
+      .... lots of programming lines
+    END
+
+    OTHERWISE DO
+      .... lots of programming lines
+    END
+
+  END
+
+Or you could call an internal function after the WHEN...THEN or OTHERWISE
+as is illustrated in the following program illustrating @{"menus" LINK "Menus"}.
+
+An example of blocks of coding is given in Lines 33-37, Lines 38-41 and
+Lines 43-46 of @{"Example30-1" LINK "ARB:Articles_21-30/30.Example_Program/Check"14}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Menus" "Article 27 - Using Select...When...Otherwise For MENUS"
+
+@{B}@{U}@{JCENTER}USING SELECT...WHEN...OTHERWISE FOR MENUS@{UB}@{UU}
+@{JLEFT}
+The SELECT...WHEN method of programming could be used in menus. For
+example:-
+
+  /* Example27-5.rexx */
+
+  cls = 'c'x
+  cd = 'a'x
+
+  DO FOREVER
+
+    SAY cls'Select a menu item and press return'
+    SAY cd'1. Menu Item 1'
+    SAY '2. Menu Item 2'
+    SAY '3. Menu Item 3'
+    SAY cd'Q to quit'
+    PULL Menu
+    IF Menu = 'Q' THEN EXIT
+    SELECT
+       WHEN Menu = 1 THEN CALL Menu1
+       WHEN Menu = 2 THEN CALL Menu2
+       WHEN Menu = 3 THEN CALL Menu3
+       OTHERWISE DO
+          SAY cd'No Such Menu Item - Try Again!'
+          CALL PressAny
+          ITERATE
+       END
+    END
+  END
+  EXIT
+
+  Menu1:
+  SAY cls'I''M AT MENU ITEM 1'
+  CALL PressAny
+  RETURN
+
+  Menu2:
+  SAY cls'I''M AT MENU ITEM 2'
+  CALL PressAny
+  RETURN
+
+  Menu3:
+  SAY cls'I''M AT MENU ITEM 3'
+  CALL PressAny
+  RETURN
+
+  PressAny:
+  OPTIONS PROMPT cd'Press Any Key to Continue'
+  PULL trash
+  OPTIONS PROMPT
+  RETURN
+
+I can't see anything in this program that has not been explained before
+so you should be able to follow it.
+
+An example of a menu using SELECT...WHEN is given in @{"Example30-1" LINK "ARB:Articles_21-30/30.Example_Program/Menu"}
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

@@ -1,0 +1,75 @@
+WBStartup ; start from Workbench
+NoCli ; no default CLI
+;
+FindScreen 0 ; get current screen
+;
+; This is the NEWTYPE variable for the list used by the ListView gadget
+NEWTYPE .listview
+    pad.w ; This is a limitation of Blitz 2
+    string.s
+End NEWTYPE
+;
+Dim List TestList.listview(5)
+;This list is used by your listview gadget. ;
+; build list of items to test it with...
+;
+If AddItem(TestList()) Then TestList()\pad = 10,"First Item"
+If AddItem(TestList()) Then TestList()\pad = 11,"Second Item"
+If AddItem(TestList()) Then TestList()\pad = 10,"Third Item"
+If AddItem(TestList()) Then TestList()\pad = 11,"Fourth Item"
+If AddItem(TestList()) Then TestList()\pad = 9,"Last Item" ;
+; define the tracking variables for the listview SelectedItem = 0
+topitem = 0
+;GTTags #GTLV_ShowSelected,True ; show selected items
+GTListView 0,50,19,15,322,32,"Cursor Key Test",$4,TestList.listview(),SelectedItem,topitem
+GTButton 0,51,82,48,196,14,"_Quit",$10
+;
+; Define the window...
+AddIDCMP $024C077E ; set the IDCMP tags for window AddIDCMP $10
+Window 0,104,45,365,79,$201006,"Keyboard Shortcut Test",0,1 ;
+AttachGTList 0,0
+;
+;Main Event Handler
+Repeat
+    ev.l = WaitEvent ; wait for IDCMP event
+    k$ = Inkey$ ; store key press, if any.
+    If ev = $40 AND EventWindow = 0 ; gadget been hit
+         If GadgetHit = 50 ; Action for MyListview here
+         EndIf
+         If GadgetHit = 51 ; Action for quitgad here
+            Goto _quit
+         EndIf
+    EndIf
+    If ev = $400 ; This loop detects key presses
+        If k$ = "q"
+            ; insert code for gadget 'quitgad' here
+            Goto _quit
+        EndIf
+        If k$ = Chr$(28) ; crsr up
+            If SelectedItem > 0
+                If SelectedItem < 3 ; this for/next to check if list needss crolling
+                    topitem = 0
+                    GTSetAttrs 0,50,#GTLV_Top,topitem
+                EndIf
+                SelectedItem - 1 ; move 1 item up list
+                GTSetAttrs 0,50,#GTLV_Selected,SelectedItem
+            EndIf
+        EndIf
+        If k$ = Chr$(29) ; crsr down
+            If SelectedItem < 4 ; bounding for list
+                If SelectedItem > 1 ; this for/next to check if list needs scrolling
+                    topitem = 3
+                    GTSetAttrs 0,50,#GTLV_Top,topitem
+                EndIf
+                SelectedItem + 1 ; move 1 item down list
+                GTSetAttrs 0,50,#GTLV_Selected,SelectedItem
+            EndIf
+        EndIf
+    EndIf
+Forever ; wait until gadget hit
+;
+_quit ; this can be used to build custom exit
+Free Window 0
+Free GTList 0
+Free Screen 0
+End ; quit now!

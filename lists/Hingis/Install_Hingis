@@ -1,0 +1,352 @@
+; Instalation Script for "Hingis" database
+; $VER: 1.1 (18-Mar-2000)
+; Made by Witold Wysota
+
+(set #Wersja_bazy
+  (cat "1.05 final")
+)
+
+(set #mainfilepl (cat "Hingis'99.TCD"))
+(set #mainfilegb (cat "Hingis'99_GB.TCD"))
+(set #docpl (cat "Hingis.guide"))
+(set #docgb (cat "Hingis_E.guide"))
+(set #readme (cat "Hingis.readme"))
+(set #AFD (cat "AFD-COPYRIGHT"))
+
+(set #4kolory (cat "standardowe 4-kolorowe"))
+(set #MWB (cat "8-kolorowe MagicWB"))
+(set #Newicon (cat "jedne z wersji NewIcons"))
+(set #LABEL (cat "\"Wybierz ikonë, którâ mam zainstalowaê\""))
+(set #TITLE (cat "\"Wybór ikony\""))
+(set #welcome-msg
+  (cat "Witam w programie instalacyjnym dla bazy danych \"Hingis\"\n"
+       "w wersji " #Wersja_bazy ".\n")
+)
+
+(set #dest
+  (cat "Wybierz katalog, gdzie chcesz utworzyê nowy katalog\n"
+       "i zainstalowaê tam bazë \"Hingis\"\n"
+       "albo wybierz katalog, gdzie zainstalowana jest poprzednia wersja\n")
+)
+
+(set #jezyk-prompt
+  (cat "Wybierz w jakich wersjach mam zainstalowaê \"Hingis " #Wersja_bazy "\"")
+)
+
+(set #copyprompt (cat "Kopiujë pliki "))
+(set #pytajoczcionki (cat "Czy mam skopiowaê czcionki, potrzebne do uruchomienia bazy, do katalogu FONTS: ?"))
+(set #czcionki2 (cat "Moûe w takim razie skopiowaê je do katalogu z bazâ ?"))
+
+(set #rodzajikon (cat "Jakie czcionki mam zainstalowaê ?"))
+(set #msg4kol (cat "Zainstalujë czterokolorowe ikony do pliku gîównego,\n"
+                   "dokumentacji i pliku readme."))
+(set #msgMWB (cat "Zainstalujë oômiokolorowe ikony w palecie MagicWB\n"
+                  "do pliku gîównego, dokumentacji i pliku readme."))
+(set #msgNI (cat "Zainstalujë standardowe ikony NewIcon do dokumentacji\n"
+                 "i pliku readme oraz pozwolë na wybór ikony do zainstalowania\n"
+                 "w pliku gîównym."))
+
+(set #brakNI (cat "Pakiet NewIcon nie jest zainstalowany!!! Instalujë ikony MagicWB"))
+(set #wlasneNI (cat "Jakâ NewIcon chcesz zainstalowaê do pliku gîównego ? (Po wiëcej informacji wybierz POMOC)"))
+(set #POMOCNI (cat "Ûeby wybraê wîasnâ ikonë musisz mieê zainstalowany pakiet ClassAct.\n"
+                   "Do wyboru ikony uûywany jest program ShowNI z pakietu NewIcons (dostarczany wraz z tâ bazâ).\n"
+                   @askchoice-help))
+(set #NI1 (cat "wybiorë samemu z zestawu"))
+(set #NI2 (cat "skorzystam z sugerowanej przez autora ikony"))
+(set #NOICON (cat "Nie instalujë ikon"))
+
+; Procedury
+(procedure P_polski
+  (message "Instaluje polskâ wersjë")
+  (copyfiles
+    (prompt (cat #copyprompt "polskie"))
+    (help @copyfiles-help)
+    (source "")
+    (choices #mainfilepl #readme #docpl (cat #AFD ".pl"))
+    (dest #destination)
+    (files)
+    (safe)
+  )
+  (complete 20)
+)
+(procedure P_angielski
+  (message "Instalujë angielskâ wersjë")
+  (copyfiles
+    (prompt (cat #copyprompt "angielskie"))
+    (help @copyfiles-help)
+    (source "")
+    (choices #mainfilegb #readme #docgb #AFD)
+    (dest #destination)
+    (files)
+    (safe)
+  )
+  (complete 40)  
+)
+(procedure P_czcionki
+  (copyfiles
+    (prompt "Kopiujë czcionki...")
+    (help @copyfiles-help)
+    (source "fonts")
+    (choices "webbold" "xhelveticapl")
+    (dest "FONTS:")
+    (fonts)
+    (confirm)
+  )
+  (copyfiles
+    (prompt "Kopiujë czcionki skalowalne...")
+    (help @copyfiles-help)
+    (source "fonts")
+    (choices "CGTimes.type")
+    (dest "FONTS:_bullet_outlines")
+    (confirm)
+  )
+  (copyfiles
+    (prompt "Kopiujë opisy czcionek...")
+    (help @copyfiles-help)
+    (source "fonts")
+    (choices "CGTimes.font" "CGTimes.otag")
+    (dest "FONTS:")
+    (confirm)
+  ) 
+  (complete 60)
+)
+
+(procedure P_czcionki2
+  (if (> (askbool (prompt #czcionki2) (help @askbool-help) (default 0)) 0)
+    (copyfiles (prompt "Kopiujë czcionki...") (help @copyfiles-help)
+      (source "fonts")
+      (dest (tackon #destination "fonts"))
+      (all)
+    )
+    (complete 70)
+  )
+)
+
+(procedure P_4kol
+  (message #msg4kol)
+    
+)
+(procedure P_MWB
+  (message #msgMWB)
+  (if (> (exists (tackon #destination #mainfilepl) (noreq)) 0)
+          (copyfiles
+            (source "icons/MWB.info")
+            (dest #destination)
+            (newname (cat #mainfilepl ".info"))
+            (noposition)
+          )
+          (complete 88)
+        )
+  (copyfiles
+      (source "icons/readmeMWB.info")
+      (dest #destination)
+      (newname (cat #readme ".info"))
+      (noposition)
+    )
+    (if (> (exists (tackon #destination #docpl) (noreq)) 0)
+      (copyfiles
+        (source "icons/MWBguide.info")
+        (dest #destination)
+        (newname (cat #docpl ".info"))
+        (noposition)
+      )
+      (complete 92)
+    )
+    (if (> (exists (tackon #destination (cat AFD# ".pl")) (noreq)) 0)
+      (copyfiles
+        (source "icons/readmeMWB.info")
+        (dest #destination)
+        (newname (cat #AFD ".pl.info"))
+        (noposition)
+      )
+      (complete 93)
+    )
+    (if (> (exists (tackon #destination #docgb) (noreq)) 0)
+      (copyfiles
+        (source "icons/MWBguide.info")
+        (dest #destination)
+        (newname (cat #docgb ".info"))
+        (noposition)
+      )
+      (complete 94)
+    )   
+    (if (> (exists (tackon #destination #AFD) (noreq)) 0)
+      (copyfiles
+        (source "icons/readmeMWB.info")
+        (dest #destination)
+        (newname (cat #AFD ".info"))
+        (noposition)
+      )
+      (complete 95)
+    )
+)
+
+(procedure P_NI
+  (message #msgNI)
+  (if (< (exists "LIBS:Newicon.library" (noreq)) 1)
+    ((message #brakNI) (P_MWB))
+
+    (if (= (askchoice
+             (prompt #wlasneNI)
+             (help #POMOCNI)
+             (choices #NI1 #NI2)
+             (default 1)
+           ) 1 
+         )
+; def
+      (
+        (if (> (exists (tackon #destination #mainfilepl) (noreq)) 0)
+          (copyfiles
+            (source "icons/Newicon1.info")
+            (dest #destination)
+            (newname (cat #mainfilepl ".info"))
+            (noposition)
+          )
+          (complete 88)
+        )
+        
+        (if (> (exists (tackon #destination #mainfilegb) (noreq)) 0)
+          (copyfiles
+            (source "icons/newicon1.info")
+            (dest #destination)
+            (newname (cat #mainfilegb ".info"))
+            (noposition)
+          )
+          (complete 90)
+        )
+
+
+      )
+; own
+      (
+          (run (cat "run >NIL: c/ShowNI LABEL " #LABEL " TITLE " #TITLE " icons/Newicon1.info icons/Newicon2.info icons/Newicon3.info")
+            (safe)   
+          )
+          (set #Newiconname (cat "icons/Newicon" (askchoice
+            (prompt "Wybierz ikonë nr:")
+            (help @askchoice-help)
+            (choices "" "1" "2" "3")
+            (default 1)
+          ) ".info"))
+          
+                
+        (if (> (exists (tackon #destination #mainfilepl) (noreq)) 0)
+          (copyfiles
+            (source #Newiconname)
+            (dest #destination)
+            (newname (cat #mainfilepl ".info"))
+            (noposition)
+          )
+          (complete 88)
+        )
+        (if (> (exists (tackon #destination #mainfilegb) (noreq)) 0)
+          (copyfiles
+            (source #Newiconname)
+            (dest #destination)
+            (newname (cat #mainfilegb ".info"))
+            (noposition)
+          )
+          (complete 90)
+        )
+
+      )           
+    )
+  )
+  (copyfiles
+      (source "icons/readmeNI.info")
+      (dest #destination)
+      (newname (cat #readme ".info"))
+      (noposition)
+    )
+    (if (> (exists (tackon #destination #docpl) (noreq)) 0)
+      (copyfiles
+        (source "icons/NIguide.info")
+        (dest #destination)
+        (newname (cat #docpl ".info"))
+        (noposition)
+      )
+      (complete 92)
+    )
+    (if (> (exists (tackon #destination (cat AFD# ".pl")) (noreq)) 0)
+      (copyfiles
+        (source "icons/NIdoc.info")
+        (dest #destination)
+        (newname (cat #AFD ".pl.info"))
+        (noposition)
+      )
+      (complete 93)
+    )
+    (if (> (exists (tackon #destination #docgb) (noreq)) 0)
+      (copyfiles
+        (source "icons/NIguide.info")
+        (dest #destination)
+        (newname (cat #docgb ".info"))
+        (noposition)
+      )
+      (complete 94)
+    )   
+    (if (> (exists (tackon #destination #AFD) (noreq)) 0)
+      (copyfiles
+        (source "icons/NIdoc.info")
+        (dest #destination)
+        (newname (cat #AFD ".info"))
+        (noposition)
+      )
+      (complete 95)
+    )
+)
+
+; Instalacja
+
+(welcome #welcome-msg)
+(complete 0)
+
+(set #destdir 
+  (askdir
+    (prompt #dest)
+    (default "work:")
+    (help @askdir-help)
+  )
+)
+(set #destination
+  (if
+    (> (exists (tackon #destdir #readme) (noreq) ) 0)
+    (#destdir)
+    (tackon #destdir "Hingis")
+  )
+)
+(message (cat "Baza zostanie zainstalowana w katalogu " #destination))
+(set #jezyk
+  (askoptions
+    (prompt #jezyk-prompt)
+    (help @askoptions-help)
+    (choices "polskiej" "angielskiej")
+    (default 3)
+  )
+)
+(if
+  (BITAND #jezyk 1)
+  (P_polski)
+  (complete 20)
+)
+(if
+  (BITAND #jezyk 2)
+  (P_angielski)
+  (complete 40)
+)
+    
+(if (> (askbool (prompt #pytajoczcionki) (help @askbool-help) (default 1)) 0)
+  (P_czcionki)
+  (P_czcionki2)
+)
+(set #ikony
+  (askchoice
+    (prompt #rodzajikon)
+    (help @askchoice-help)
+    (choices "" #4kolory #MWB  #Newicon)
+ 
+  (default 3)
+  )
+) 
+(select #ikony (message #NOICON) (P_4kol) (P_MWB) (P_NI))
+(complete 90)

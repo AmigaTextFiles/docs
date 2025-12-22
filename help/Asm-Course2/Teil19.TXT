@@ -1,0 +1,324 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                19.Teil...
+
+Nun denn, jetzt kommen die vorbereitenden Sachen zur Laufschrift.
+Wir haetten das auch schon viel frueher machen koennen, mit dem Rol oder
+Asl befehl...Aber das ist echt Arbeit. Und mit dem Blitter ist es ein
+Klacks einen Text ueber den Screen zu scrollen.
+Kommen wir nun zu einer moeglichkeit die uns der Blitter bietet, und die
+wir fuer Laufschriften sehr gut gebrauchen koennen. Aber erstmal will ich
+es ohne erklaeren, dann erkennt ihr den Nutzen wirklich.
+
+18.Realisation einer Laufschrift mit Hilfe des Blitters
+
+Also wie sieht eine Laufschrift den theoretisch aus.
+
+...Ein Buchstabe wird auf den Bildschirm geschrieben. Er wird stetig nach
+Links verschoben, auf den Linken rand zu. Sobald neben ihm Platz fuer einen
+neuen ist, wird der naechste Buchstaben dargestellt. Das geht immer weiter
+so..Sobald einer der Buchstaben den linken rand erreicht hat, wird er immer
+mehr herrausgeschoben, bis er nicht mehr zu sehen ist. So einfach ist das.
+
+Damit die Buchstaben sich aber nicht ruckartig weiterbewegen, mueesen wir
+erstmal softscrolling mit dem Blitter verstehen und anwenden.
+Denn Hardscrolling hiess mit dem Blitter immer 16 Pixel weiter, weil er ja
+als kleinste Einheit, nur das Wort kennt. Und das waere ja ein bisschen
+viel, gell ?
+
+Zum Glueck haben die Erbauer des Blitter uns da etwas eingebaut was uns
+dabei hilft.
+
+Der Blitter ist in der Lage, die von Quelle A oder B kommenden Daten Pixel-
+weise zu verschieben, und verschoben zu schreiben. Man muss ihm den wert
+nur in eines der Kontrollworte BLTCON0 oder BLTCON1 zu schreiben. Dann wird
+der Wert beim lesen verschoben und dann in das Ziel geschrieben.
+
+Den Verschiebungswert fuer die Quelle A, schreiben wir in die obersten 4
+Bits des BLTCON0 registers. Den Verschiebungswert fuer die Quelle B,
+schreiben wir in die obersten 4 Bit des BLTCON1 registers.
+
+Man setzt die anzahl der Pixels die nach rechts geschoben werden soll in
+das register, mit dessen Quelle wir Arbeiten. Ich nehme bei einfachen
+sachen sowieso immer A, also bleiben wir dabei.
+
+Verschieben ist allerdings nicht das richtige Wort fuer die Sache. Es
+muesste eigentlich `Rotieren` heissen. Denn was rechts rausfaellt, wird
+links wieder reingesetzt.
+
+Es gibt allerdings noch andere Probleme. Wie gesagt, man gibt den Wert der
+Pixelverschiebung nach rechts an. Aber so eine Laufschrift laeuft aber
+immer von Rechts nach Links...Es sei den wir Schreiben in Arabisches intro,
+aber das wollen wir ja nicht, oder. Wie kriegen wir also ein Verschiebung
+nach links hin. Es ist nicht schwer, aber ihr muesst jetzt genau lesen.
+
+Eine verschiebung um einen Pixel nach links, ist moeglich wenn wir als
+verschiebungs wert 15 eingeben, und als  Ziel 1 Wort vorher Waehlen.
+
+Bildlich...
+
+
+   1 Wort           2 Wort         3 Wort
+I               I              I
+00000000000000001111111111111110000000000000000
+
+Wenn wir nun die ganzen Einsen, eins nach Links kopieren wollen, kopieren
+wir einfach alles in das Erste wort.
+
+
+   1 Wort           2 Wort         3 Wort
+I               I              I
+11111111111111110000000000000000000000000000000
+
+Und jetzt verschieben wir es einfach 15 Pixel nach rechts..
+
+   1 Wort           2 Wort         3 Wort
+I               I              I
+0000000000000001111111111111110000000000000000
+
+Das ist dasselbe als wenn wir es direkt eins nach links schieben, oder ?
+
+Wenn wir also einen Teil des Bildschirms Softscrollen wollen, muessen wir
+einfach das gesamte rechteck ein Wort frueher wieder hinschreiben und die
+Verschiebung auf 15 Pixel stellen.
+
+Allerdings muessen wir noch einen Sicherheits bereich erschaffen, in dem
+die sachen die Links rausfallen wieder reingeschoben werden koennen ohne
+das sie auf dem Bildschirm sichtbar werden. Dazu koennen wir wieder die
+Modulowerte der Bitplanes gebrauchen. Mit ihnen koennen wir uns diesen
+bereich schaffen. Normalerweise waehlt man die groesse eines Buchstaben als
+sicherheits abstand. Gehen wir mal von einen 16*16 Zeichensatz aus, das
+saehe dann ungefaehr so aus.
+
+I                                          I    I
+I  Normaler Sichtbarer                     I    I  Sicherheitsbereich
+I  Bildschirm                              I    I /
+I                                          I    I/
+I                                          I    /
+I                                          I   /I
+I                                          I  / I
+I                                          I    I
+I                                          I    I
+
+Bei dem erwaehnten 16 mal 16 Font, muessten wir also Modulowert 2, fuer
+zwei Bytes eingeben, dann haetten wir die Zone erstellt.
+Hier koennen dann die Truemmer von Links hereingeschoben werden. Sobald
+aber der Buchstabe den ich waehrend des Scrollens dort rausgeschoben habe,
+ich setzte die Buchstaben ebenfalls in diese Zone, damit sie in den
+Bildschirm hereingeschoben werden, muss ich allerdings direkt den neuen
+dort reinsetzen, da sonst der muell von eben zwischen den buchstaben
+landet, und das wollen wir ja nicht.
+
+Wie muss ich jetzt diese beiden bereiche verwalten ?
+Der gesamte rechteckige bereich ist samt Sicherheitszone 21*17 Worte gross.
+Eine Zeile muss ich oben auch als Sicherheitszone eingeben.
+
+Zuerst muessen wir uns mal um die routine Kuemmern die den ganzen bereich
+verschiebt. Wenn wir davon ausgehen das die Plane bei $40000 anfaengt saehe
+das dann so aus.
+
+        Move.w #$ffff,BLTAFWM           ; Masken setzen
+        Move.w #$ffff,BLTALWM
+        Move.w #$0000,BLTAMOD           ; Modulowerte noch nicht von
+                                        ; bedeutung
+        Move.w #$0000,BLTDMOD
+        Move.w #%1111100111110000,BLTCON0
+                                        ; Quelle und Ziel festlegen, und
+                                        ; Verschiebungswert fuer A angeben
+        Move.l #$40000,BLTAPT           ; Quelle Normal
+        Move.l #$3fffe,BLTDPT           ; Ziel 2 Bytes frueher
+        Move.w #21*64+17,BLTSIZE        ; Groesse und LOS!
+
+Ich schreibe die WaitBlitter routine und das RTS nicht mehr dabei. Es
+muesste jedem klar sein das das kommen muss wenn man die Routine selbst
+benutzt.
+
+So mit der Routine haetten wir alles um einen Pixel nach Links gesetzt.
+
+Sobald das aber 16 mal passiert ist, muss der Puffer wieder mit dem
+Naechsten zeichen gefuellt werden, damit wenn wir weiterschieben der neue
+Buchstabe reingeschoben werden kann.
+Das Aussehen des Buchstaben koennen wir im Source unterbringen, mit der
+DC.w anweisung geht das ziemlich einfach.
+
+Jetzt kommen auch die Modulo werte des Blitter auf die Buehne. Wenn ich das
+aussehen nun in den Puffer kopiere, kann die Quelle ohne Modulowert sein,
+weil die Daten ja alle hintereinander liegen. Aber in der Quelle kann ich
+sie nicht hintereinander schreiben, sonst wuerden wir sie ja auf den
+bildschirm setzen. Wir muessen also gucken wo die Linke obere Ecke der
+Sicherheitszone ist, als Breite die Breite des Puffers angeben, und als
+Modulo wert fuer das Ziel, die Breite des Sichtbaren bereiches angeben,
+damit wenn eine Zeile des neuen Buchstaben geschrieben ist, der anfang der
+Zeile, der ja sichtbar ist, uebersprungen wird, und erst weitergeschrieben
+wird wenn der Puffer wieder erreicht ist. Das saehe dann so aus...
+
+        Move.w #$ffff,BLTAFWM           ; Immer noch keine Maske
+        Move.w #$ffff,BLTALWM
+        Move.w #$0000,BLTAMOD           ; Modulo A ist null
+        Move.w #$0028,BLTDMOD           ; Modulo D ist 40 ($28)
+        Move.w #%0000100111110000,BLTCON0
+                                        ; Keine Verschiebung, A und D an
+        Move.l #Definiton im Source,BLTAPT
+        Move.l #$40028,BLTDPT           ; Linke obere Ecke des Puffers
+        Move.w #1*64+16,BLTSIZE         ; Groesse und los...
+
+Das waren die beiden Wichtigsten routinen die der Blitter bei der
+Programmierung einer Laufschrift ausfuehren muss.
+
+Das schwierige an einer laufschrift ist die verwaltung der Buchstaben
+definitionen, und das setzen der neue Buchstaben, die auswahl der
+richtigen Buchstaben anhand eines Ascii wertes und so weiter...
+
+Schreiben wir aber erstmal ein Prograemmchen das einen bestimmten bereich
+immer weiter nach links Scrollt, und wenn ein zeichen draussen ist, ein
+neues reinsetzt...
+
+Dort setze ich diese beiden routinen ein....Achtet aber mehr auf die art
+und weise wie ich auf den Zeitpunkt warte an dem ich den Puffer mit dem
+Neuen zeichen fuellen muss...
+
+Hier das Listing..
+
+Execbase=       4
+Openlibrary=    -408
+Vhposr=         $dff006
+Forbid=         -30-102
+Permit=         -30-108
+Bltafwm=        $dff044
+Bltalwm=        $dff046
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltamod=        $dff064
+Bltdmod=        $dff066
+Bltapt=         $dff050
+Bltdpt=         $dff054
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltsize=        $dff058
+
+
+        Move.w  #$0020,dmacon
+        Move.w  #$4000,intena
+        Move.l  execbase,a6
+        Jsr     forbid(a6)
+
+
+        Move.l  #$40000,a0
+        Move.l  #$2800/4,d0
+clearloop:
+        Move.l  #0,(a0)+
+        Dbf     d0,clearloop
+
+        Bsr.l   Set_letter
+        Bsr.l   Makecl
+
+Wait:
+        Cmpi.b  #$80,vhposr
+        Bne.s   Wait
+        Bsr.l   Scroll
+        Sub.w   #1,Lettercount
+        Bne.s   Weiter
+        Bsr.l   Set_letter
+Weiter: Btst    #6,$bfe001
+        Bne     Wait
+
+        Move.l  Execbase,a6
+        Jsr     Permit(a6)
+        Lea     Gfxname(pc),a1
+        Jsr     Openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,dmacon
+        Move.w  #$c000,intena
+        Move.l  38(a6),$dff080
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $05f000,a0
+        Move.l  a0,$dff080
+
+        Move.l  #$00e00004,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$008e3081,(a0)+
+        Move.l  #$009030c1,(a0)+
+        Move.l  #$00920038,(a0)+
+        Move.l  #$009400d0,(a0)+
+        Move.l  #$01001200,(a0)+
+        Move.l  #$01080002,(a0)+
+        Move.l  #$01800000,(a0)+
+        Move.l  #$018200ff,(a0)+
+        Move.l  #$fffffffe,(a0)+
+        Rts
+
+Waitblit:
+        Btst    #6,dmaconr
+        Bne.s   Waitblit
+        Rts
+
+Set_lettEr:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,bltafwm
+        Move.w  #$ffff,bltalwm
+        Move.w  #%0000100111110000,bltcon0
+        Move.w  #0,bltamod
+        Move.w  #40,bltdmod
+        Move.l  #Smiledefi,bltapt
+        Move.l  #$40028,bltdpt
+        Move.w  #15*64+1,bltsize
+        Move.w  #$10,lettercount
+        Rts
+Scroll:
+        Bsr.s   Waitblit
+        Move.w  #$ffff,bltafwm
+        Move.w  #$ffff,bltalwm
+        Move.w  #%1111100111110000,bltcon0
+        Move.w  #0,bltamod
+        Move.w  #0,bltdmod
+        Move.l  #$40000,bltapt
+        Move.l  #$3fffe,bltdpt
+        Move.w  #16*64+21,bltsize
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+
+even
+
+Lettercount: dc.w 0
+
+Smiledefi:
+
+dc.w %0000111111110000
+dc.w %0011000000001100
+dc.w %0100000000000010
+dc.w %0100000000000010
+dc.w %1001110000111001
+dc.w %1001010000101001
+dc.w %1001110110111001
+dc.w %1000000110000001
+dc.w %1000001111000001
+dc.w %1000000110000001
+dc.w %1001100000011001
+dc.w %0100011111100010
+dc.w %0100000000000010
+dc.w %0011000000001100
+dc.w %0000111111110000
+
+
+So, kurz mal zu der Routine die den Zeitpunkt fuer das Neu-Fuellen des
+Puffers bestimmt. Sie Arbeitet sehr einfach...Bevor ich in die
+Endlosschleife springe, setze ich das Zeichen schon einmal in den Puffer.
+Gleichzeitg mit diesem Aufruf wird das Wort Lettercount auf 16 gesetzt.
+Sobald ich mit der Endlosschleife die Zeile $80 erreicht habe, wird der
+Bereich einmal nach links geSoftscrollt. Dann wird der Zaehler in
+Lettercount eins runtergesetzt, war das ergebnis nicht null, sind die 16
+noch nicht abgezaehlt und er springt direkt zur mausabfrage, und von da
+wieder in die Endlosschleife. Sobald die 0 aber erreicht ist, verzweigt der
+bne befehl nicht und arbeitet weiter. Nach dem Bne befehl steht dann der
+Aufruf der PufferFuellroutine, sie setzt auch den Zaehler in lettercount
+wieder auf 16.
+
+Wie ihr seht, ist es alles sehr einfach...
+
+Viel Spass beim Expirientieren...
+
+                Jeff Kandle

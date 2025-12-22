@@ -1,0 +1,371 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 8.Teil...
+
+So, wenn ihr dieses Modul einbaut, muessen natuerlich einige Aenderung an
+dem hauptprogramm gemacht werden, alles moegliche was die Copperliste
+betrifft, ich werde das listing liefern. Allerdings werden wir vorher noch
+in gedanken mit der Routine arbeiten.
+Sie erstellt ja eine Copperliste, die halt aber nur Farbenspielerei macht.
+
+Wenn wir dazu jetzt noch ein Bild darstellen wollen muessen wir irgendwo
+die sachen fuer das Bild einfuegen.
+Da waere die Kopierroutine fuer die farben, und die ganzen sachen inder
+Copperliste.
+Da die Copperliste nicht mehr wie vorher schon fertig im Source liegt,
+sondern wir sie erstmal erzeugen muessen die Einstellungen fuer den Bild
+Modus auch so dort eingebaut werden.
+Wir muessen das Allerdings vor der erstellungs routine, direkt nachdem die
+Adresse fuer die Neue Copperliste festgelegt ist. Da die Werte ja jedem
+bekant sind brauche ich wohl keine Erklaerung abzugeben, oder ?
+Ich erklaere das am Beispiel einer Plane, weil mir Fuenf zuviel zu
+schreiben ist.
+Es saehe ungefaehr so aus...
+
+...
+...
+...
+        Lea $50000,a0
+        Move.l #$00e00006,(a0)+
+        Move.l #$00e20000,(a0)+
+        Move.l #$01001200,(a0)+
+
+Erst jetzt kommt die Erstellungsroutine...
+
+Nu, kommt das listing...und dann werde ich mal gucken ob ich wieder mal was
+neues einbauen kann...sonst wirds langweilig, gell ?
+
+start:
+execbase=       4
+openlibrary=    -408
+vhposr=         $dff006
+forbid=         -30-102
+permit=         -30-108
+dmacon=         $dff096
+intena=         $dff09a
+cop1lc=         $dff080
+
+        move.w  #$0020,dmacon
+        move.w  #$4000,intena
+        move.l  execbase,a6
+        jsr     forbid(a6)
+
+        lea     $5ffc0,a0
+        lea     $dff180,a1
+        move.w  #31,d0
+colorcopy:
+        move.w (a0)+,(a1)+
+        dbf d0,colorcopy
+
+        Bsr.s   makecopperliste
+
+wait:
+        btst    #6,$bfe001
+        bne     wait
+
+        move.l  execbase,a6
+        jsr     permit(a6)
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$c000,intena
+        move.l  38(a6),$dff080
+        moveq   #0,d0
+        rts
+
+gfxname:        dc.b "graphics.library",0
+even
+
+makecopperliste:
+        Lea $50000,a0
+                                ; Jetzt muessen die definitionen
+                                ; Fuer die Bildersachen eingesetzt
+                                ; werden
+        Move.l #$00e00006,(a0)+
+        Move.l #$00e20000,(a0)+
+        Move.l #$00e40006,(a0)+
+        Move.l #$00e62800,(a0)+
+        Move.l #$00e80006,(a0)+
+        Move.l #$00ea5000,(a0)+
+        Move.l #$00ec0006,(a0)+
+        Move.l #$00ee7800,(a0)+
+        Move.l #$00f00006,(a0)+
+        Move.l #$00f2a000,(a0)+
+        Move.l #$01005200,(a0)+
+        Move.l #$008e3081,(a0)+
+        Move.l #$009030c1,(a0)+
+        Move.l #$00920038,(a0)+
+        Move.l #$009400d0,(a0)+
+                                ; weiter mit der erstellungsroutine
+
+        Move.w #$-2,d0
+        Move.w #$0180,d1                ; Hier koennt ihr mal andere
+                                        ; werte eingeben. z.b $0182
+                                        ; Oder $0184...
+                                        ; Dann seht ihr wie sich teile
+                                        ; grafik verfaerben.
+        Move.w #$200f,d2
+        Move.w #$0000,d3
+        Move.w #$00e0,d4
+Copperloop:
+        Move.w d2,(a0)+
+        Move.w d0,(a0)+
+        Move.w d1,(a0)+
+        Move.w d3,(a0)+
+        Add.w #$0100,d2
+        Add.w #$0101,d3                 ; Mit den Add wert koennt ihr
+                                        ; ein bisschen spielen
+                                        ; da kommen manchmal schoene
+                                        ; effekte bei rum.
+        Dbf d4,copperloop
+        Move.l #$01800000,(a0)+
+        Move.l #$-2,(a0)+
+        Move.l #$50000,cop1lc
+        rts
+
+>extern "pic32.raw",$5ffc0
+
+So, ich habe beigeschrieben was man veraendern kann. Den Effekt mit den
+Anderen Registern sieht man am besten, wenn ihr euch ein Bild mit 32
+Vierecken malt, alle in verschiedenen Farben.
+
+Nun, jetzt wollen wir uns mal etwas zuwenden, das jeder Introschreiber oder
+Demomensch aus dem FF und in allen moeglichen Variationen Beherschen !MUSS!
+
+11.Horizontales und Vertikales Softscrolling.
+
+Was damit gemeint ist...Ganz Klar, am ende dieses grossen Kapitals steht
+eine Laufschrift (Horizontal) und ein Schwingendes Logo (vertikal)
+Mit der Vertikalen Laufschrift will ich noch was warten, da dies mit dem
+Blitter am allereinfachsten geht, und ohne eine Scheissarbeitet ist.
+
+Fangen wir erstmal mit dem Horizontalen Scrolling an...
+
+Wie koennte man das realisieren ?
+
+Hmmm, eigentlich keine Sache, wir setzen die Bitplane Pointers der planes
+einfach eine Zeile rauf oder runter. Das bild verhaelt sich allerdings
+umgekehrt. Setzen wir also den Pointer eine Zeile Tiefer, rutscht das Bild
+eins Hoeher, da ja mit der darstellung, etwas tiefer im Bild begonnen
+wird, geht das Bild Hoeher.
+
+Falls ihr das nicht versteht, mal ein kleine Erklaerung wie der Amiga das
+mit den Planes und den Pointern macht.
+
+...Wenn der Amiga am Anfang der Ersten Zeile ist nimmt er sich den Pointer
+fuer die Plane (ich rede wieder von einem Bild mit einer Plane), und
+stellt die Zeile dar. Wenn die Zeile dargstellt ist, schaut er wielang die
+Zeile jetzt war, und setzt den Pointer genau auf den Anfang der Naechsten
+Zeile. Wenn er jetzt mit der Naechsten zeile beginnt, kriegt er Automatisch
+den Pointer fuer die naechste Zeile im Bild und das ganze geht weiter.
+
+Wie lange jetzt die Zeile ist haengt von den Diw und Ddf werten ab, in
+unserem Fall sind es 40 bytes. Wir koennen uns allerdings bei diesen doch
+sehr internen vorgang einmischen..und das durch die Modulo register.
+Sie sagen dem Amiga, wieviel er die Pointer zusaetzlich zu der Zeilenlaenge
+weiter stellen soll. Im normal fall sind diese 0 so das nur die
+Zeilenlaenge gesetzt wird. Nehmen wir dort 40, wird immer eine Zeile
+Uebersrungen. Nehmen wir -40 wird immer diesselbe Zeile gezeigt. Nehmen wir
+-80 koennen wir, wenn wir den Bitplane pointer am anfang der Copperlisten
+auf das ende der plane stellen, das Bild sogar auf dem Kopf darstellen.
+
+Wofuer man diese Modulo register braucht werdet ihr sicherlich wissen
+wollen, den Spiegeln ist auf diese Art und weise sicherlich keine
+Ernsthafte anwendung.
+Nun, man kann damit Spielfelder benutzen die Groesser als das Playfield
+sind, ja die sogar groesser als der Bildschirm sind.
+Mal im Klar text....Das Ram, der Speicher besteht ja aus lauter stellen,
+wir fassen sie zu Bytes zusammen, das erleichtert das verstaendnis. Man
+stellt sich im Allgemeinen den Speicher so vor
+
+$40000
+$40001
+$40002
+$40003
+
+oder so...
+Das heisst man denkt er besteht aus einem Byte nachdem anderen. Das ist
+richtig so..allerdings koennen wir ihn auch rechteckig
+darstellen...Monitore Machen das, da sieht es so aus
+
+$40000 $40001 $40002 $40003
+$40004 $40005 $40006 $40007
+
+Im endeffekt ist das dasselbe, allerdings denken wir es uns anders.
+Bei den Bitplane wird auch ein solch rechteckige Speicher bereich
+unterstuetzt. Da liegen dann aber immer (wie in unserem beispiel) 40 bytes
+nebeneinander, und dann kommt erst die Neue Zeile. Eine neue Zeile ist es
+ja nicht den die Sachen liegen ja hintereinander, aber man stellt sich das
+halt so vor.
+Kommen wir nun zum Einsatz der Modulo register.
+Stellen wir uns mal vor wir haetten ein Malprogramm mit dem man bilder von
+800*800 malen koennte. Das bild waere im Speicher dann 100*800 Bytes, das
+heisst 80000 Bytes lang. Wenn wir jetzt einen Ausschnitt auf den Bildschirm
+bringen wollten, muessten wir ja Theoretisch nur die Bitplanepointer
+setzen.
+Aber schauen wir mal was er dann macht. Stellen wir uns vor wir haben das
+Bild bei $40000 mit dem >Extern kommando deponiert.
+Er zeigt die ertse Zeile, gut jetzt kommt er ans Ende...Aha 40 bytes,
+er stellt den Pointer eine zeile vor...denkt er...Denn die zeilen vom
+Ausschnitt stimmen ja nicht mit den wahren zeilenlaengen ueberein. Der
+richtige Zeilen anfang liegt ja noch 60 Bytes weiter...Also genau dafuer
+sind die Modulo werte...Da kann man jetzt genau diese 60 eintragen, und
+schon stimmt die Sache...
+
+Wir werden diese Uebergroáen bildschirme Allerdings erst benutzen wenn wir
+den Blitter beherrschen, da wir uns mangels eines Malprogramms was diese
+Grossen Bilder packt, die sachen selber zusammenschustern muessen.
+Aber fuer ein paar nette effekte werden die Moduloregister schon hinhalten.
+Ich denke dabei an einen Wasser effekt oder so aehnlich....
+
+Na wird der Mund langsam waessrig.....
+
+Aber wir wollen erstmal langsam anfangen indem wir ein Logo von unten nach
+oben ueber den Bildschirm fahren lassen, O.K ?
+
+Wie schon gesagt ist das sehr einfach, wir muessen einfach nur die Bitplane
+pointer einens Bildes in geregelten Zeitlichen abstaenden hochzaehlen.
+Das geht sehr einfach mit Add...is ja klar, ne ?
+Muessen wir das einfarbige Logo malen...ihr koennt natuerlich auch das
+erste Bild benutzen was ihr gemalt habt..
+
+Dann machen wir vor und hinter der Plane noch eine Plane platz. Damit wir
+das Bild wirklich von ganz unten in den Bildschirm reinkommen lassen
+koennen, um es ganz oben wieder rauszuschieben.
+
+Die sachen fuer die Abfragen ob schon ganz unten und so erklaere ich
+nachher.
+
+
+start:
+execbase=       4
+openlibrary=    -408
+vhposr=         $dff006
+forbid=         -30-102
+permit=         -30-108
+dmacon=         $dff096
+intena=         $dff09a
+cop1lc =        $dff080
+
+
+        move.w  #$0020,dmacon
+        move.w  #$4000,intena
+        move.l  execbase,a6
+        jsr     forbid(a6)
+
+        Lea $5fffc,a0
+        Lea $dff180,a1
+        Move.w #1,d0
+Colorloop:
+        Move.w (a0)+,(a1)+
+        dbf d0,colorloop
+        move.l  #copperliste,cop1lc
+
+                                        ; jetzt werden gleichzeitig
+                                        ; zwei planes geloescht und
+                                        ; unser Bild mittenreinkopiert
+
+        Lea $50000,a0                   ; loeschzeiger 1.Plane
+        Lea $60000,a1                   ; Quelle 2.plane
+        Lea $52800,a2                   ; Ziel 2.plane
+        Lea $55000,a3                   ; Loeschzeiger 3.plane
+        Move.w #$27ff,d0                ; Counter
+ClearCopyloop:
+        Clr.b (a0)+
+        move.b (a1)+,(a2)+
+        Clr.b (a3)+
+        dbf d0,Clearcopyloop
+
+wait:
+        cmpi.b #$80,vhposr
+        bne.s wait
+
+        Move.l #copperliste,a0
+        Add.w #$28,6(a0)
+
+        cmp.w #$5000,6(a0)
+        beq.s raus
+
+        btst    #6,$bfe001
+        bne.s   wait
+raus:
+        move.l  execbase,a6
+        jsr     permit(a6)
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$c000,intena
+        move.l  38(a6),$dff080
+        moveq   #0,d0
+        rts
+
+gfxname:        dc.b "graphics.library",0
+
+>Extern         "bild1.raw",$5fffc
+even
+
+copperliste:
+dc.w $00e0,$0005        ;Hi und Lo pointer der olaneadresse im ram
+dc.w $00e2,$0000
+dc.w $0100,$1200        ;Bplcon0 1 Plane, Lores
+dc.w $008e,$3081        ;Diwstrt
+dc.w $0090,$30c1        ;Diwstop
+dc.w $0092,$0038        ;Ddfstrt
+dc.w $0094,$00d0        ;Ddfstop
+
+
+coperlistenende:
+dc.l $-2
+
+
+So das waers..das programm kopiert die geladene Bitplane nach $52800,
+loescht davor und dahinter jeweils eine Plane, und setzt den Pointer auf
+die erste Leere plane...
+
+Dann kommt die Modifikation an der laufenden Copperliste (fuer euch ja kein
+Problem mehr, oder.
+
+Die Verzoegerungsschleife wartet erstmal bis zeile #$80, dann geht es
+weiter. Danach stellt sie den Pointer um eine zeile weiter. Dann
+ueberprueft sie ob $5000, aslo die Letzte Plane schon komplett auf dem
+Bildschirm ist. Dazu benutze ich einen Befehl `Beq` . Er stellt das genaue
+gegenstueck zum Bne befehl dar. Er verzweigt dann wenn das ergebnis null
+war. Er springt dann sofort raus. Dann wird noch mal die Maus abgefragt,
+ihr koennt also auch schon waehrend das Programm noch laeuft wieder zurueck
+zum Seka gelangen.
+
+Achja, ich sollte nochmal schnell erklaeren wie Bne, Beq und der Cmp-befehl
+zusammen passen.
+Prozessoren Vergleichen alles durch abziehen. Das heisst wenn ich die
+Speicher stelle $40000 mit #$5000 vergleichen soll, zieht der prozessor vom
+Wert in $40000 die #$5000 ab. Das ergebnis merkt er sich nicht, sondern er
+setzt nur die Flags, War es die Zahl ist das Z-Flag 0 war sie es nicht ist
+es 1.
+Da setze ich mit den befehle an. Es gibt zwei arten von Compareschleife
+
+Wahrschleife und Nichtwahrschleife
+
+Nichtwahrschleife..es ist die erste in unserem Programm...Sie heiát
+
+"Wenn Zeile #$80 noch nicht erreicht, dann weiter mit..."
+
+Wahrschleife
+
+"Wenn schon bei $5000 dann raus zum..."
+
+Alles Klor...
+
+Es gibt noch eine Ganze menge von diesen Abfragen wie z.b
+
+Groesser oder Gleich
+Kleiner oder Gleich
+Ergebnis im Negative Bereich
+Ergebnis im Positiven Bereich
+
+aber das ist ein Bisschen Viel fuer heute...Beim naechsten mal mehr
+
+maht ett Jot
+
+                Jeff Kandle

@@ -1,0 +1,4 @@
+VERSION = 37
+
+bump:
+   SetRev SHOWREV VER $(VERSION) NOANSI OBJ lcdwindow.library library_version

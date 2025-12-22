@@ -1,0 +1,216 @@
+@node Pipes
+@section Der Queue-Handler PIPE:
+@cindex PIPE:
+@cindex Queue-handler
+In AmigaOS 2.04 wurde ein neuer Handler eingeführt, der es erlaubt,
+Daten zwischen verschiedenen Programmen auszutauschen. Dieser
+Handler heißt @file{L:Queue-Handler}, ist aber besser als
+@file{PIPE:} bekannt.
+
+@file{PIPE:} implementiert eine echte, Unix-artige @code{Pipe},
+mit der man die Standardausgabe eines Programms als Standardeingabe
+eines anderen Programms verwenden kann. Es ist auch möglich, mehrere
+Programme über mehrere Pipes gleichzeitig zu verketten.
+Pipes brauchen weniger RAM für temporäre Dateien, und der
+Zugriff ist schneller.
+
+Allerdings unterscheidet sich @file{PIPE:} von Unix-Pipes in zwei
+wesentlichen Punkten:
+@enumerate
+@item Es handelt sich um ein Device; die Ein- und Ausgabe von Programmen
+muß also nicht unbedingt eine Datei sein, obwohl das meistens der
+Fall ist. Man kann auch @file{PIPE:} wie andere Devices verwenden,
+aber natürlich weder Directories lesen noch Seek-artige Zugriffe
+durchführen.
+@item Es gibt keine Flush-Operation. Wenn nicht alle Daten gelesen
+wurden, die in @file{PIPE:} geschrieben wurden, dann bleiben sie
+stehen, bis sie evtl. von einem anderen Programm gelesen werden.
+Man muß also Pipes immer leeren, bevor man sie schließt.
+@item Aus demselben Grund kann ein Programm blockiert werden,
+wenn es die interne Puffergröße überschreibt. Auch dies wird durch
+rechtzeitiges Leeren der Pipe vermieden.
+@end enumerate
+
+Der Handlername von PIPE: ist vollständig @file{PIPE:name/bufsize/bufnum},
+wobei @file{name} den verwendeten Pipekanal identifiziert und eindeutig
+sein sollte. Durch verschiedene Namen kann man also gleichzeitig mehrere
+Pipe-Kanäle öffnen. Die optionalen Argumente @code{bufsize} und
+@code{bufnum} geben die Größe und Anzahl der verwendeten Datenpuffer
+an. Meist schreibt man einfach @file{PIPE:name}, die Vorgabegröße
+ist dann 4096 Bytes und die Anzahl unbegrenzt.
+
+@menu
+* Shellpipe:: Verwendung von PIPE: in einer AmigaShell
+* Pipe-Kommando:: Das Pipe-Kommando
+* _pchar:: Das Pipe-Kommando in der AmigaShell
+* _mchar:: Die _mchar-Variable
+* Probleme:: Bekannte Probleme
+@end menu
+
+Osma Ahvenlampi (Osma.Ahvenlampi@@hut.fi)
+
+@node Shellpipe
+@subsection Verwendung von PIPE: in einer AmigaShell
+Zunächst muß @file{PIPE:} natürlich mit @code{Mount} angemeldet sein.
+Dies kann durch das Kommando
+@example
+    1> Mount PIPE:
+@end example
+@noindent
+in der Shell geschehen, ab AmigaOS 2.1 auch dadurch, daß man die Datei
+@file{PIPE} nach @file{DEVS:DosDrivers} schiebt.
+
+In einem AmigaShell-Fenster kann man dann folgende Kommandos
+eingeben:
+@example
+    1> Run List SYS: >PIPE:Listoutput
+    1> More <PIPE:Listoutput
+@end example
+@noindent
+@footnote{Dabei @samp{1>} der Prompt der AmigaShell, die eine Eingabe
+erwartet. Die Nummer kann natürlich variieren.}
+
+Diese beiden Kommandos erzeugen also zunächst eine Liste der Dateien
+in @file{SYS:} und geben diese dann mit Hilfe des More-Kommandos aus.
+Man könnte auch folgendes probieren:
+@example
+    1> Run List SYS: NOHEAD >PIPE:Listoutput
+    1> Run Sort PIPE:Listoutput PIPE:Sortedoutput
+    1> More <PIPE:Sortedoutput
+@end example
+@noindent
+Dies würde also die Liste vor der Ausgabe noch sortieren.
+
+Beachten Sie die Verwendung von @code{Run} außer für das jeweils
+letzte Programm, durch die alle Programme gleichzeitig ablaufen.
+Man kann auch die Programme gleichzeitig in verschiedenen Shells
+ablaufen lassen.
+
+Das Leeren der Pipe kann auch manuell geschehen, vorausgesetzt man
+kennt den Namen des verwendeten Kanals, indem man folgendes
+eingibt:
+@example
+    1> Type PIPE:name TO NIL:
+@end example
+
+
+@node Pipe-Kommando
+@subsection Das Pipe-Kommando
+@cindex Pipe (command)
+Im vorigen Beispiel ist die Verwendung von Pipes recht kompliziert,
+vor allem verglichen mit Unix-Pipes. Es gibt aber eine bessere
+Möglichkeit.
+
+Andy Finkel, der früher bei Commodore gearbeitet hat, hat auch ein
+Kommando @code{Pipe} geschrieben (was man nicht mit @file{PIPE:}
+verwechseln sollte!), das die Benutzung von Pipes stark vereinfacht.
+Unglücklicherweise wurde dieses Programm letzten Endes dann doch nicht
+in die offizielle Workbench aufgenommen, allerdings mit Billigung
+von Commodore veröffentlicht (Quellen: Fish-Disk 673, Aminet,
+@file{util/cli/finkelshelltools.lha}). Dieses Programm arbeitet auch
+unter OS3.1 noch problemlos.
+
+Die Verwendung des Pipe-Kommandos ist einfach. Man übergibt die
+auszuführenden Programme als Argumente an Pipe, getrennt durch das
+Zeichen @key{|}, z.B.
+@example
+    1> Pipe List SYS: | More
+        oder
+    1> Pipe List: SYS: NOHEAD | Sort IN: OUT: | More
+@end example
+@noindent
+Beachten Sie die Verwendung von @file{IN:} und @file{OUT:}, die
+nötig sind, weil das Sort-Kommando nicht von der Standardeingabe
+lesen und nicht auf die Standardausgabe schreiben kann. Diese
+Devices werden durch das Kommandos Pipe simuliert. Durch die
+Environment-Variable @var{_pchar} kann man auch ein anderes Zeichen
+anstelle von @key{|} verwenden.
+
+
+@node _pchar
+@subsection Das Pipe-Kommando in der AmigaShell
+@cindex _pchar
+Es gibt ein sehr nützliches, allerdings undokumentiertes Feature
+der AmigaShell: Diese kennt das Pipe-Kommando! Ist die lokale
+Variable @var{_pchar} gesetzt, dann kann man Pipes sogar ohne
+Eingabe des Pipe-Kommandos benutzen. Die Shell erkennt das
+durch @var{_pchar} vorgegebene Zeichen und ruft für Kommandozeilen,
+die es enthalten, automatisch Pipe auf.
+
+Am besten wird das folgende Kommando in @file{s:Shell-Startup}
+eingetragen:
+@example
+    1> Set _pchar "|"
+@end example
+@noindent
+@footnote{Die Anführungsstriche sind wesentlich! Wenn @var{_pchar}
+bereits gesetzt ist, wird sonst angenommen, es handele sich bereits
+um einen Aufruf von Pipe. Dies kann etwa dann geschehen, wenn aus
+einer Shell eine neue gestartet wird.}
+Man kann die vorigen Beispiele dann so ausführen:
+@example
+    1> List SYS: | More
+        oder
+    1> List SYS: NOHEAD | Sort IN: OUT: | More
+@end example
+
+Dies entspricht also völlig den Unix-Pipes.
+
+@node _mchar
+@subsection Die _mchar-Variable
+@cindex _mchar
+Die lokale Variable _mchar legt das Zeichen fest, das als Kommandotrenner
+dient. Setzt man also
+@example
+    1> Set _mchar ";"
+@end example
+dann kann man in der Shell die Befehle hintereinanderfügen, durch den
+Strichpunkt getrennt.
+
+
+@node Probleme
+@subsection Bekannte Probleme
+@table @strong
+@item F:
+Ich bekomme die Fehlermeldung
+@example
+    PIPE: Unknown command
+@end example
+@noindent
+wenn ich das Kommando @samp{List SYS: | More} ausführe, obwohl
+@file{PIPE:} mit @code{Mount} angemeldet ist. Was ist falsch?
+@item A:
+Die Shell sucht nach dem Kommando @code{Pipe} in der Fehlermeldung,
+nicht nach dem @file{PIPE:}-Device. Dieses Kommando ist also nicht
+im Suchpfad (meist in @file{C:}) installiert.
+
+@item F:
+Ein Requester meldet
+@example
+    Please insert volume PIPE: in any drive
+@end example
+@noindent
+wenn ich eines der Kommandos aus den Beispielen ausführen will.
+@item A:
+@file{PIPE:} ist nicht angemeldet. Dies kann mit @samp{Mount PIPE:}
+geschehen.
+
+@item F:
+Beim Verwenden von PIPE: gehen manchmal Zeichen verloren. Was ist los?
+@item A:
+Alle queue-handler bis einschließlich OS 3.1 haben Fehler,
+die eine wirklich sichere Datenübermittlung verhindern.
+Ein möglicher kompatibler Ersatz ist auf dem Aminet:
+@file{util/sys/HWGQueue.lha}.
+
+@item F:
+Wenn ich eines der Beispiele ausführe, dann eröffnet das
+@code{More}-Kommando ein Fenster, aber dort erscheint nichts/
+eine Fehlermeldung erscheint/ein Filerequester erscheint.
+@item A:
+Sie verwenden ein anderes More-Kommando als das aus der Workbench.
+Verwenden Sie einen anderen Namen oder installieren Sie ein More,
+das Pipes unterstützt, z.B. das More von Commodore, Less
+oder Most.
+@end table
+

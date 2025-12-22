@@ -1,0 +1,52 @@
+; *** make 'blitzlibs:amigalibs.res' resident ***
+;
+; get delay from user
+Print "Enter seconds to wait..."
+waittime.w = Edit(5)
+; create a message port for the timer.device to use..
+*TimerMP.MsgPort = CreateMsgPort_()
+If *TimerMP
+  ; if all went well....
+  *TimerIO.timerequest = CreateIORequest_ (*TimerMP,SizeOf .timerequest)
+  ; ...then create a time request
+  If *TimerIO
+    ; and hopefully....
+    err = OpenDevice_ ("timer.device",#UNIT_MICROHZ,*TimerIO,0)
+    ; ...finally open the timer device.
+    If err Then NPrint "Error opening timer.device" : End
+    ; Warn if failed!
+    *TimerIO\tr_node\io_Command = #TR_ADDREQUEST
+    ; add the request to the timer's list
+    *TimerIO\tr_time\tv_secs = waittime
+    ; set the delay
+    *TimerIO\tr_time\tv_micro = 0
+    ; we only want whole seconds
+    SendIO_ *TimerIO
+    ; send the request to the timer.device
+    NPrint "Now waiting for ",waittime," seconds..."
+    ; show user what's happening
+    WaitPort_ *TimerMP
+    ; wait for the timer to signal us...
+    Repeat
+      *TimerMsg.Message = GetMsg_(*TimerMP)
+      ; get the messages from msgport
+    Until *TimerMsg = 0
+    ; until there's none left. You must make sure you have ALL msg's
+    ; or the OS will lock up for sure.
+    NPrint waittime," second(s) elapsed ;)"
+    ; tell user that all went well
+    CloseDevice_ (*TimerIO)
+    ; close the timer.device
+    DeleteIORequest_ (*TimerIO)
+    ; delete the request
+    DeleteMsgPort_ (*TimerMP)
+    ; and close the msgport
+  Else
+    NPrint "Error creating IORequest"
+    ; warn if failed
+  EndIf
+Else
+  NPrint "Error creating message port"
+  ; warn if failed
+EndIf
+End

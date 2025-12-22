@@ -1,0 +1,225 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                22.Teil...
+
+Hei, Leuts...lange hats gedauert...jetzt bin ich wieder da. Hatte die Woche
+unheimlich viel zu tun, aber jetzt geht es weiter.
+
+Ich hab mir ueberlegt was man noch zum Thema Intro`s machen koennte.
+Bis jetzt haben wir grosse Routinen, tolle Effekte usw. kennengelernt.
+
+Ich muss jetzt aufpassen was ich sage, nicht das ihr denkt ich wuerde das
+machen, aber beschaeftigt habe ich mich natuerlich schon damit.
+
+`Stellt euch vor ihr habt ein Spiel gecrackt (Gott bewahre), und es belegt
+auf Diskette 98%. Dann bleiben fuer das Intro, das natuerlich noch drauf
+muss nicht mehr als 16 Kilobyte. Aber drauf muss es das ist doch Ehrensache.`
+
+Naja wie kriege ich da noch ein Intro drauf ?...
+
+Ganz einfach: Ich verrate euch sicher kein grosses geheimnis wenn ich euch
+sage das man den Bootblock auch mit eigenen Programmen vollstopfen kann.
+Deshalb werde ich hier sofort zeigen wie man es macht, ohne das ich es auf
+die geheimnisvolle Tour mancher Buecher beschreibe.
+Wie gesagt kann ich allesmoegliche in de Bootblock setzen.
+Es darf allerdings nicht groesser als 1 Kilobyte = 1024 Byte sein.
+Davon ab geht allerdings der Boot Header, der Die DOS Kennung, die
+Checksumme des Bootblocks, und die Adresse des Rootblocks enthaelt.
+
+Jetzt kann man sein Programm reinschreiben, und wenn man sich mit dem
+Trackdisk-Device auskennt, kann man den Rest von Ihm erledigen lassen.
+Falls aber nicht, muss man noch eine kleine Routine hinter unser Intro
+Pflanzen, die dann den Boot vorgang weiter fuehrt.
+
+Wenn wir davon ausgehen das wir nicht mit dem Trackdisk Device arbeiten,
+sondern die Diskette nach dem Intro ganz einfach weiterdurchlaufen lassen,
+so mit Startup-Sequence und dem Ganzen Zeug. Dann belegt die Kennung und
+das noetige Programm genau 54 ($36) Bytes. Bleiben uns also `970` Bytes
+fuer uns...Da kriegt man schon was mit hin... Also rein in den Bootblock.
+
+Erstmal muesst ihr aber ein Paar sachen ueber den Bootblock wissen.
+
+Das Programm was sich auf dem Bootblock befindet, wird vom Betriebssystem
+praktisch als kleines unterprogramm ausfuehrt, deshalb muessen wir bevor
+wir den Prozessor in Anspruch nehmen, alle Register retten. Wie wir das
+machen kennt ihr ja schon...kommt aber Spaeter.
+
+Das Betriebssystem geht nach einem Reset ein paar Tests durch und verzweigt
+dann in die Bootroutine. Diese holt sich dann den Bootblock in den
+Speicher, und prueft die die DOS-Markierung am Anfang. Ist die nicht
+vorhanden, so wird die Meldung `No DOS Disk` ausgegeben. Ist die aber in
+Ordnung, so prueft das Betriebssystem noch die Checksumme des Bootblocks.
+Die ist noetig damit klar ist das das programm auf dem bootblock auch O.K
+ist. Ist diese Checksumme nicht In Ordnung, dann stellt sich das
+Betriebssystem dumm und wartet weiter auf eine Diskette. Andernfalls wird
+das Programm, egal was es macht ausgefuehrt....Das ist der Punkt warum
+Viren oft in Bootbloecken liegen, sie werden dort sofort gestartet, sobald
+die DOS kennung und die Checksumme (Pruefsumme, auf Deutsch) In ordnung
+ist.
+
+Wenn man jetzt denkt das sich die Herren Programmierer eine besonders
+Heimtueckische Berechnung der Checksumme ausgedacht haben, weil man halt
+doch auch sehr viel unfug damit treiben kann, dann denkt man falsch.
+
+`Die Pruefsumme berechnet man wie folgt`
+
+Alle 256 Langwoerter die der Bootblock hat werden addiert, und was dann
+noch zur 0 fehlt, also 0 - (Summe der langwoerteraddition) ist die
+Pruefsumme.
+Beispiel: Haben wir alle Langwoerter addiert, ung kommen auf das Ergebnis
+
+        $3ef6547a
+
+Dann ziehen wir das nur von Null ab..
+
+        $00000000 - $3ef6547a = $c109ab86
+
+So einfach bekommt man die Checksumme. Kein Besonderer Schutz, wenn man
+ueberlegt was sich eben diese leute ausgedacht haben um an die Pruefsumme
+des Kickstarts zu kommen. Naja die Grundlagen habt ihr jetzt, dann will ich
+mal das Orginal Bootblock listing des Install-Befehls rausruecken..
+
+
+Kennung:   dc.b "DOS",0         ; Dos-kennung, endet mit 0
+Chksum:    dc.l $00000000       ; Platz fuer die Checksumme
+Rootblock: dc.l $00000370       ; Adresse des Rootblocks
+
+Bootprg:
+        Lea     Resname(PC),a1  ; Zeiger auf Dos.library
+        Jsr     -96(a6)         ; Resident Routine von Exec
+        Tst.l   d0              ; Auf Fehler testen
+        Beq.s   Error           ; Falls fehler Error Routine anspringen
+        Move.l  d0,a0           ; Falls nicht Adresse als Zeiger nach A0
+        Move.l  22(a0),a0       ; Langwort das an 22. Stelle steht nach A0
+        Moveq   #$00,d0         ; Kein fehler !
+Ende:
+        Rts                     ; Raus
+Error:
+        Move.l  #$ff,d0         ; Fehlercode nach d0
+        Bra.s   Ende            ; Raus
+
+Resname:   dc.b "dos.library",0
+
+Die .S bei dem Beq und dem Bra-Befehl habe ich dran gehaengt..ist dann
+etwas kuerzer !
+Achja noch ein paar sachen zum Dos und so. Wenn ein Programm ins CLI
+zurueckkehrt dann wird in D0 der Status mitgeschickt. 0 wenn alles in
+Ordnung ist, und etwas anderes wenn was falsch gelaufen ist. Bei unseren
+Programmen muessen wir das natuerlich von Hand machen. Hab ich auch immer,
+schaut euch die Listings mal an, dort steht vor dem RTS immer das
+Moveq #0,d0 welches dem CLI sagt `Kein Fehler`.
+
+Desweiteren hab ich ja schon Erzaehlt das die Exec-Library immer offen ist,
+und man nur noch den zeiger aus $00000004 lesen muss um damit zu arbeiten.
+Ihr werdet euch also wundern wie ich eine Routine von Exec benutzen kann,
+wenn ich das nicht Initialisiert habe. Das ist auch einfach. Der Grund warum
+ich die meisten register Retten muss war doch das in ihnen wichtige Daten
+und Adressen sind. Nun zwei davon sind sehr wichtig. In A6 steht der Zeiger
+auf Exec, und in A1 steht der zeiger auf das Trackdisk-Device. Was wir mit
+dem Trackdisk-Device anstellen koennen, kommt spaeter.
+
+Da das Prograemchen gut Erklaert ist, muesste man eigentlich keine
+Probleme haben es nachzuvollziehen. falls nicht ist es auch nicht so
+schlimm, denn das einzige was wir mit dieser Routine machen ist sie immer
+wieder ein unsere Bootblock Intro`s zu setzen....mehr nicht !
+
+So, jetzt wollen wir mal den Bootblock irgendeiner Disk von Hand
+`Installieren`. Naja, was heisst von Hand, wir bedienen uns eines
+programmes das man im allgemeinen Monitor nennt. Das das nicht das Ding ist
+auf das ihr oefters mal schaut ist klar. Ich benutzen den Amon, den Ihr im
+Tools oder Do-Ami Brett findet. ich setze euch die neuste Version rein.
+
+Als erstes muessen wir aber mal den Bootblock erzeugen.
+Dazu setzen wir vor das eigentliche Listing die Org/Load Kombination, und
+lassen uns das teil nach $40000 schreiben.
+
+Bevor wir das Ding assemblieren, muessen wir den Bereich den wir
+abspeichern noch Saeubern, damit wir keinen Muell im Bootblock haben. Das
+machen wir mit dem Fill kommando des Seka.
+Wir muessen 1 KiloByte loeschen, also von $40000 bis $40400.
+
+Dann assemblieren wir den Krempel, starten ihn aber nicht (haette auch
+nicht viel Sinn). Jetzt kommt das WI kommando, das den Speicherauszug in
+dem der Bootblock steht auf Diskette speichert..Wir nennen es mal einfach
+Bootblock (Sprich: BuhtBlock). Jetzt verlassen wir den Seka, und laden den
+Amon...Hier erstmal eine Befehlsuebersicht der wichtigsten kommandos mit
+kleinen Kommentaren..
+
+?                       Help Seite, alle Kommandos mit benoetigten
+                        Parametern und Syntax
+x                       Exit, Raus, Fin, Sense, Schluss...usw.
+dir                     Gibt die Aktuelle Directory aus
+cd Drive                Wechselt das Verzeichnis oder die Disk
+cls                     Loescht den Bildschirm
+r                       Zeigt alle register an
+a  Addr                 Schaltet einen Assembler an ab Adresse Addr
+d  Addr1 Addr2          Diassembliert den Bereich von Addr1 bis Addr2
+m  Addr1 Addr2          Zeigt den Bereich von Addr1 bis Addr2, Addr2 kann
+                        weggelassen werden
+:  Addr  Bytes          Zum veraendern von `Bytes` Bytes ab Adresse Addr
+f  Addr1 Addr2 Bytes    Fuellt den Speicher von Addr1 bis Addr2 mit Bytes
+[  Addr  Name           Laedt File nach Addr von Aktueller Disk
+]  Addr  Lenght Name    Schreibt File ab Addr auf Aktuelle Disk
+<  Addr  Drive  Block  Cnt      Laedt von Laufwerk Drive ab Block, soviel
+                                Blocks wie in Cnt angegeben
+>  Addr  Drive  Block  Cnt      Schreibt Blocks nach demselben Schema wie
+                                gelesen wird
+del name                Loescht Programm auf der Aktuellen Disk
+=  Addr                 Diskblock Checksumme
+#  Addr                 Bootblock Checksumme
+g  Addr                 Programm ab Addr ausfuehren
+c  Addr1 Addr2 Dest     Vergleicht den bereich Dest mit dem bereich Addr1
+                        bis Addr2
+t  Addr1 Addr2 Dest     Copiert bereich von Addr1 bis Addr2 nach Dest
+h  Addr1 Addr2 Bytes    Sucht von Addr1 bis Addr2 nach bytes
+n  num                  rechnet zahlen in die verschiedenen Systeme um.
+
+Also, da ihr jetzt die wichtigsten Befehle des Amon kennt koennen wir ja
+weiter machen.
+Ihr habt jetzt das Image des Bootblocks auf als normales File auf Diskette.
+Jetzt den Amon laden und mit cd drive, auf die Diskette gehen wo das Image
+drauf ist. Da der Bootblock noch ein normales File ist, muessen wir ihn
+auch normales File einladen. Das geschieht mit [ - und die Adresse wo wir
+es hinhaben wollen dahinter, wir sollten uns die merken, sie ist fuer das
+weitere arbeiten wichtig. Also gehen wir mal davon aus das wir das
+Bootblock Image nach $40000 geladen haben. Der Amon gibt aus von wo bis wo
+das Zeug liegt.
+Das was ich bis jetzt gemacht habe koennten wir aber auch mit dem Seka
+machen, ohne dabei ins Schwitzen zu geraten. Allerdings kommen jetzt die
+Sachen die den Amon so wertvoll fuer uns machen.
+
+Vielleicht ist euch die Funktion # Bootblock Checksumme schon aufgefallen.
+Ist atuerlich super das man das mit dem Amon machen kann. Besser ist
+allerdings noch das er sie auch gleichzeitig in die richtige Adresse
+schreibt. Bei dem Aufruf `# 40000` rechnet er die Checksumme aus und setzt
+sie an den dafuer reservierten Platz. Der Bootblock steht jetzt also
+lauffaehig im Speicher. Das problem ist jetzt nur noch wie wir ihn auf die
+Disk kriegen.
+
+Der Bootblock ist kein File, eigentlich sind es auch 2 Bloecke. Er wird
+einfach in Block 0 und 1 auf die Disk geschrieben. Das koennen wir mit dem
+Amon auch, naemlich mit > 40000 1 0 2. Wobei die werte klar sind
+
+40000   Adresse ab der die Daten im Speicher liegen
+1       Drive Df1:
+0       Bei Block null beginnen
+2       Insgesamt zwei Blocks schreiben
+
+Sobald ihr das gemacht habt, koennt ihr die Diskette aus dem Drive Df1:
+entnehmen und in Df0: schieben. Nach Reset muesste der Amiga normal Booten.
+Es muss keine Lauffaehige Diskette sein um zu sehen das es tut. Sobald die
+anseren Laufwerke anfangen zu initialisieren oder spaetestens wenn das
+Amiga-Dos fenster steht wisst ihr das es geklappt hat.
+
+Ihr koennt euch ja schonmal was fuer euer Bootintro ueberlegen. Die
+Programmierung des Bootblocks unterscheidet sich nur in zwei Punkten von der
+der normalen Intros.
+
+1. Alles sollte moeglichst kurz gehalten werden.
+2. Adressen im Programm sollten immer PC-Relativ ermittelt werden.
+
+Dazu aber im naechsten Teil mehr.
+
+Ciao
+
+                Jeff Kandle

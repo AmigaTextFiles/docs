@@ -1,0 +1,387 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1991
+
+                                32.Teil...
+
+Mahlzeit, Leuts...
+Wollen wir mal die in den letzten paar Teilen vorgekommenen
+Programmierkniffe anwenden, und eine in einem fruehere Kursteil vorgekommene
+Routine ansehen, und verstehen.
+Es handelt sich um eine Punkt Setz/Loesch-routine, die den Punkt anhand der
+X und Y Koordinate, und der Playfieldbase setzt.
+Ich habe die Routine damals einfach so reingesetzt, ohne ihr besonders viel
+beachtung zu schenken. Das hat sich aber jetzt etwas geaendert. Ich habe
+die letzten paar Tage an einem Dots(Punkte) Demo gearbeitet und da ist mir
+diese Routine wieder eingefallen die ich damals mal irgendwo abgetippt
+hatte.
+Frueher war sehr viel noetig um ein Bit zu setzen, ich meine frueher auf
+dem 64er. Naja, viel auch nicht, aber mit dem 68000 ist halt alles
+einfacher, und der Bset oder Bclr-befehl nimmt uns mehrere Logische
+Operationen ab.
+Also, ueberlegen wir uns mal was alles fuer das setzen eines Punktes mit
+uebergabe der X und Y Koordinate noetig ist.
+
+Als erstes kommt da erstmal die X-Koordinate. Wir muessen dort erstmal die
+Anzahl der Bytes errechnen die wir ueberbruecken koennen. Mit Words waere
+das natuerlich einfacher, aber der Bset/clr Befehl kann im normalen
+Speicher nur Bytemaessig setzen und loeschen, also rechnen wir das aus.
+Normalerweise, wuerde man jetzt den Divs oder Divu-Befehl benutzen, weil er
+halt einfach teilt. Die letzten Teile des Kurses haben aber genau davon
+abgeraten, weil er ja so langsam ist. Also, shiften wir das Wort in D0
+dreimal nach rechts, was ja /8 entspricht. So, jetzt haben wir ja die
+Anzahl der Bytes, vom Linken Rand des Ausgabe Fensters, die wir einfach zur
+Byteanzahl die sich aus
+Y-Koordinate * (Bytes pro Zeile) + Playfieldbase
+errechnet.
+Dann haben wir das genaue Byte in den die Aktion stattfinden soll.
+Aber, wie kommen wir an das zu setzende Bit in dem Byte.
+Wieder durch 8 Teilen ?. Solange 8 abziehen bis ein wert >8 rauskommt. Das
+dauert viel zu lange. Man benutzt einfach am anfang den Divu befehl, denn
+er teilt und gibt das ergebnis und den Rest aus. Der rest steht dann im
+oberen Wort des Ergebnisses. Da der Rest aber die anzahl der Bits vom
+linken Byterand angeben wuerde, und der Bset/Bclr Befehl aber die anzahl
+der Bytes von rechten Byterand braucht, muessen wir das ergebnis noch von
+-1 abziehen, und wir haben das zusetzende Bit ausgerechnet.
+Damit haben wir dann auch die Nummer des Bits errechnet. Zusammen mit der
+Playfield_Base und den zu addierenden Werte aus X und Y Koordinate koennen
+wir den Punkt setzen/loeschen.
+
+Die fertige Routine hat allerdings noch ein kleines Schmankerl, wie es nur
+von sehr wenigen Programmierern genutzt wird, naemlich selbstmodifikation
+des Programms. Was nichts anderes heisst als wie das sich das Programm
+selber umschreiben kann. Im Programm wird das so genutzt, das wenn es von
+Anfang an ab dem Label `Clear` gestartet wird, es nur den Bset Befehl am
+ende des Programmes in eine Bclr Befehl umwandelt, die berechnung bleibt
+dieselbe. Am Ende des Programms wir der Bclr-befehl dann wieder in Bset
+umgewandelt. Beim Aufruf ab `Set` wird einfach alles beim alten gelassen.
+
+Hier mal die Routine, aber Dokumentiert...
+
+Clear:  Move.b  #$B5,Label+1    ; Aendert Bset in Bclr
+Set:    Divu    #8,D0           ; Teilt durch 8, um Byteanzanzahl zu
+                                ; erhalten - Rest im oberen Word
+        Mulu    #40,D1          ; Y-Koordinate * Bytes pro zeile
+        Add.w   D0,D1           ; Bytes fuer X plus Y Bytes
+        Swap    D0              ; holt oberes Wort nach vorne,
+        Moveq   #-1,D2          ; um es von -1 in D2 abzuziehen
+        Sub.b   D0,D2
+Label:  Bset    D2,(A5,D1)      ; Zu setzendes Bit in D2 vermerkt, setzt
+                                ; Bit in Adresse die sich aus Playfieldbase
+                                ; in A5 und +(Bytes) in D1 zusammensetzt
+        Move.b  #$F5,Label+1    ; setzt eventl. veraenderung durch die
+                                ; selbstmodifikation zurueck
+        Rts
+
+Natuerlich sollte, wenn die Routine fuer einen Dots-Effekt benutzt wird,
+der Teil fuer die Selbstmodifaktion geloescht werden, da man den Bildschirm
+ja sowieso mit dem Blitter loescht. Desweiteren, sollte man die Mulu
+Funktion durch eine Tabelle ersetzen, aus der man die Werte die fuer eine
+bestimmt Y-Position uebernehmen kann, ersetzt werden. Den Divu befehl
+sollte man lassen, da das ersetzen durch schnellere Befehle nichts bringt,
+im gegentum, es ist die schnellste loesung die mir im moment einfaellt.
+
+Ich schaetze das es sehr viel schneller nicht mehr geht so etwas zu
+berechnen. Schneller kann man nur noch werden, wenn man den Gedanken mit
+der X und Y Koordinate fallen laesst, und fuer den Y Wert schon die
+Komplette Byteanzahl in der tabelle hat, und somit das ausrechnen durch
+Mulu, oder das auslesen der Tabelle von der ich sprach wegfaellt.
+
+Mit dieser Routine, wie sie dort steht schafft man ohne Double-Buffering
+(dazu Spaeter mehr) knapp 400 Punkte mit Bewegung und Loeschen durch den
+Blitter. Dabei sollte das Rotieren der Koordinaten und das loeschen des
+Bildschirmausschnitts im VBI gestartet werden. Die Punktsetz-Routine sollte
+dann sofort unter dem VBI beginnen, wobei man daran denken muss, das sich
+darstellung und bearbeitung nicht ueberschneiden, sonst bekomt man nicht so
+gute ergebnisse.
+Die 400 Punkte koennen natuerlich auch nicht auf dem ganzen Bildschirm
+verteilt sein, mit einem 64 * 64 Feld kann man auch schon ganz schoene
+Effekte erzielen. Alles was groesser wird geht auf kosten der Dots anzahl
+pro Zentimeter auf dem Bildschirm. Natuerlich sieht ein 64*64 Sinus mit 3
+Punkten pro Zentimeter besser aus als einen mit nur 1. Grosse Sinuskurven,
+sind mit 3 Dots/cm gar nicht realisierbar, jedenfalls nicht mit unseren
+mitteln, aber sind sehen auch bei 1Dot/cm, noch sehr gut aus.
+
+Also, macht euch ein kleine Sinustabelle, und lasst die Routine drueber
+laufen, und durch veraenderung einige Parameter im auslesen lassen sich
+schoene Effekte erzielen.
+
+Allerdings ist die Zeit die man fuer die Punkte braucht bei der selben
+anzahl Punkte immer dieselbe, so das man auch groessere Sinen ablaufen
+lassen kann. Tja, da gibt es aber ein Problem, naemlich die Zeit.
+Wenn ich einen 64*64 Sinus als Kreis auf den Bildschirm bringe, und durch
+Rotation der Tabelle einen Effekt zaubere, dann darf ich in dem Bereich wo
+die Punkte sind nichts machen. Ich darf den Blitter nicht loeschen lassen,
+ich darf die Punktesetzroutine nicht laufen lassen und das Rotieren der
+Tabelle geht auch nicht, da alles sichtbar waere, weil die veraenderungen
+ja sofort auf dem Bildschirm zu sehen waeren.
+Also kommen wir zum oben erwaehnten Doublebuffering.
+Die Technik ist folgende: Das erste Bild wird vor dem Start der
+Endlosroutine ausgerechnet. Es liegt z.B. bei $30000 Der Rasterstrahl baut
+dieses Bild auf. Gleichzeitig arbeitet der Prozessor und der Blitter an dem
+zweiten Bild, welches bei z.B $40000 liegt. Sobald der Amiga mit der
+darstellung des ersten Bildes fertig ist, setzt man die Bitplanepointer
+fuer den naechsten durchlauf auf die Plane bei $40000. Wenn diese
+dargestellt wir koennen wir die alte bei $30000 loeschen, und die neuen
+Punkte setzen. Dann geht wieder alles von vorne los. Somit haben wir den
+Kompletten Bildschirm zeit fuer den Aufbau des Bildschirm, und muessen
+nicht auf ueberschneidungen mit dem Rasterstrahl achten. Das laeuft ganz
+gut, solange man nicht den ganzen Bildschirm fuer Dots benutzt. Sobald das
+aber gemacht wird, muessen wir diese Technik noch eine Stufe weitertreiben.
+Treblebuffering - Waehrend Bild A angezeigt wird, instruiert der Prozessor
+den Blitter Bild B zu loeschen und baut Bild C, waehrend der Blitter
+arbeitet, auf.
+Ich schaetze ihr koennt das selber realisieren, und werde deshalb dazu kein
+Programm liefern. Allerdings ein kleine Dots Routine werde ich mal
+dabeipacken. An ihr koennt ihr dann schon mal sehen, wie ich die Routine
+eingebaut habe, und wie man Zeit spart. Ich habe die einzelen Aktionen
+farblich auf dem Bildschirm gekennzeichnet.
+
+Rot  -  Blitter loescht altes Bild
+Gruen-  Prozessor baut neues Bild auf
+Gelb -  Tabelle wird rotiert
+
+Baut mal die von mir angeprochenen verbesserungen ein, und versucht die
+Zeit auf ein Minimun zu reduzieren.
+
+Start:
+Execbase=       4
+Openlibrary=    -408
+Vhposr=         $dff006
+Forbid=         -30-102
+Permit=         -30-108
+Dmacon=         $dff096
+Intena=         $dff09a
+Dmaconr=        $dff002
+Bltdmod=        $dff066
+Bltafwm=        $dff044
+Bltcon0=        $dff040
+Bltcon1=        $dff042
+Bltdpt=         $dff054
+Bltapt=         $dff050
+Bltsize=        $dff058
+
+
+        Move.w  #$0020,dmacon
+        Move.w  #$4000,intena
+        Move.l  execbase,a6
+        Jsr     forbid(a6)
+        Bsr.l   makecl
+        Bsr.l   clearscreen
+        Bsr.l   kreis
+Wait:   Cmpi.b  #$72,$dff006
+        Bne.s   wait
+        Move.w  #$0400,$dff180
+        Bsr.l   blitclear
+        Move.w  #$0040,$dff180
+        Bsr.l   kreis
+        Move.w  #$0440,$dff180
+        Bsr.l   rotate
+        Move.w  #$0000,$dff180
+Maus:   Btst    #6,$bfe001
+        Bne     wait
+        Move.l  execbase,a6
+        Jsr     permit(a6)
+        Lea     gfxname(pc),a1
+        Jsr     openlibrary(a6)
+        Move.l  d0,a6
+        Move.w  #$83e0,dmacon
+        Move.w  #$c000,intena
+        Move.l  38(a6),$dff080
+        Moveq   #0,d0
+        Rts
+Makecl:
+        Lea     $07f000,a0
+        Move.l  a0,$dff080
+        Move.l  #$008e3081,(a0)+
+        Move.l  #$009030c1,(a0)+
+        Move.l  #$00920038,(a0)+
+        Move.l  #$009400d0,(a0)+
+        Move.l  #$01001200,(a0)+
+        Move.l  #$00e00003,(a0)+
+        Move.l  #$00e20000,(a0)+
+        Move.l  #$01080000,(a0)+
+        Move.l  #$01800000,(a0)+
+        Move.l  #$01820fb0,(a0)+
+        Move.l  #$fffffffe,(a0)+
+        Rts
+Set:
+        Divu    #8,d0
+        Mulu    #40,d1
+        Add.w   d0,d1
+        Swap    d0
+        Move.b  #-1,d2
+        Sub.b   d0,d2
+        Bset    d2,(a5,d1)
+        Rts
+Kreis:
+        Move.w  #238,d3
+        Lea     sinus,a0
+        Lea     sinus+120,a1
+        Lea     $3000e,a5
+        Move.w  (a0)+,d0
+        Addq    #6,a0
+        Move.w  (a1)+,d1
+        Addq    #4,a1
+        Bsr.s   set
+        Moveq   #0,d0
+        Moveq   #0,d1
+        Dbf     d3,loop
+        Rts
+Rotate:
+        Lea     Sinus,a0
+        Move.l  a0,a1
+        Add.l   #8,a1
+        Move.w  #476,d0
+        Move.l  (a0),a2
+        Move.l  4(a0),a3
+Roloop:
+        Move.l  (a1)+,(a0)+
+        Dbf     d0,roloop
+        Move.l  a2,(a0)
+        Move.l  a3,4(a0)
+        Rts
+Sinus:
+        Dc.w    $0020,$0020,$0021,$0022,$0023,$0023,$0024,$0025
+        Dc.w    $0026,$0027,$0027,$0028,$0029,$002A,$002A,$002B
+        Dc.w    $002C,$002C,$002D,$002E,$002F,$002F,$0030,$0031
+        Dc.w    $0031,$0032,$0033,$0033,$0034,$0034,$0035,$0036
+        Dc.w    $0036,$0037,$0037,$0038,$0038,$0039,$0039,$003A
+        Dc.w    $003A,$003B,$003B,$003B,$003C,$003C,$003C,$003D
+        Dc.w    $003D,$003D,$003E,$003E,$003E,$003E,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003F,$003F,$003F,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003E,$003E,$003E,$003E,$003D
+        Dc.w    $003D,$003D,$003C,$003C,$003C,$003B,$003B,$003A
+        Dc.w    $003A,$003A,$0039,$0039,$0038,$0038,$0037,$0037
+        Dc.w    $0036,$0035,$0035,$0034,$0034,$0033,$0032,$0032
+        Dc.w    $0031,$0030,$0030,$002F,$002E,$002E,$002D,$002C
+        Dc.w    $002C,$002B,$002A,$0029,$0029,$0028,$0027,$0026
+        Dc.w    $0026,$0025,$0024,$0023,$0022,$0022,$0021,$0020
+        Dc.w    $0020,$0020,$001F,$001E,$001D,$001C,$001C,$001B
+        Dc.w    $001A,$0019,$0019,$0018,$0017,$0016,$0016,$0015
+        Dc.w    $0014,$0013,$0013,$0012,$0011,$0011,$0010,$000F
+        Dc.w    $000F,$000E,$000D,$000D,$000C,$000B,$000B,$000A
+        Dc.w    $000A,$0009,$0009,$0008,$0008,$0007,$0007,$0006
+        Dc.w    $0006,$0005,$0005,$0005,$0004,$0004,$0003,$0003
+        Dc.w    $0003,$0003,$0002,$0002,$0002,$0002,$0001,$0001
+        Dc.w    $0001,$0001,$0001,$0001,$0001,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0002,$0002,$0002,$0002,$0002,$0003
+        Dc.w    $0003,$0003,$0004,$0004,$0004,$0005,$0005,$0006
+        Dc.w    $0006,$0007,$0007,$0007,$0008,$0008,$0009,$000A
+        Dc.w    $000A,$000B,$000B,$000C,$000C,$000D,$000E,$000E
+        Dc.w    $000F,$0010,$0010,$0011,$0012,$0012,$0013,$0014
+        Dc.w    $0015,$0015,$0016,$0017,$0018,$0018,$0019,$001A
+        Dc.w    $001B,$001B,$001C,$001D,$001E,$001F,$001F,$0020
+        Dc.w    $0020,$0021,$0021,$0022,$0023,$0024,$0025,$0025
+        Dc.w    $0026,$0027,$0028,$0028,$0029,$002A,$002B,$002B
+        Dc.w    $002C,$002D,$002E,$002E,$002F,$0030,$0030,$0031
+        Dc.w    $0032,$0032,$0033,$0034,$0034,$0035,$0035,$0036
+        Dc.w    $0036,$0037,$0038,$0038,$0039,$0039,$0039,$003A
+        Dc.w    $003A,$003B,$003B,$003C,$003C,$003C,$003D,$003D
+        Dc.w    $003D,$003E,$003E,$003E,$003E,$003E,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003F,$003F,$003F,$003F,$003F
+        Dc.w    $003F,$003F,$003E,$003E,$003E,$003E,$003D,$003D
+        Dc.w    $003D,$003D,$003C,$003C,$003B,$003B,$003B,$003A
+        Dc.w    $003A,$0039,$0039,$0038,$0038,$0037,$0037,$0036
+        Dc.w    $0036,$0035,$0035,$0034,$0033,$0033,$0032,$0031
+        Dc.w    $0031,$0030,$002F,$002F,$002E,$002D,$002D,$002C
+        Dc.w    $002B,$002A,$002A,$0029,$0028,$0027,$0027,$0026
+        Dc.w    $0025,$0024,$0024,$0023,$0022,$0021,$0020,$0020
+        Dc.w    $0020,$001F,$001E,$001E,$001D,$001C,$001B,$001A
+        Dc.w    $001A,$0019,$0018,$0017,$0017,$0016,$0015,$0014
+        Dc.w    $0014,$0013,$0012,$0012,$0011,$0010,$0010,$000F
+        Dc.w    $000E,$000E,$000D,$000C,$000C,$000B,$000B,$000A
+        Dc.w    $0009,$0009,$0008,$0008,$0007,$0007,$0006,$0006
+        Dc.w    $0006,$0005,$0005,$0004,$0004,$0004,$0003,$0003
+        Dc.w    $0003,$0002,$0002,$0002,$0002,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0001,$0001,$0001,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0002,$0002,$0002,$0002,$0003,$0003
+        Dc.w    $0003,$0004,$0004,$0004,$0005,$0005,$0005,$0006
+        Dc.w    $0006,$0007,$0007,$0008,$0008,$0009,$0009,$000A
+        Dc.w    $000A,$000B,$000C,$000C,$000D,$000D,$000E,$000F
+        Dc.w    $000F,$0010,$0011,$0011,$0012,$0013,$0014,$0014
+        Dc.w    $0015,$0016,$0016,$0017,$0018,$0019,$0019,$001A
+        Dc.w    $001B,$001C,$001D,$001D,$001E,$001F,$0020,$0020
+        Dc.w    $0020,$0020,$0021,$0022,$0023,$0023,$0024,$0025
+        Dc.w    $0026,$0027,$0027,$0028,$0029,$002A,$002A,$002B
+        Dc.w    $002C,$002C,$002D,$002E,$002F,$002F,$0030,$0031
+        Dc.w    $0031,$0032,$0033,$0033,$0034,$0034,$0035,$0036
+        Dc.w    $0036,$0037,$0037,$0038,$0038,$0039,$0039,$003A
+        Dc.w    $003A,$003B,$003B,$003B,$003C,$003C,$003C,$003D
+        Dc.w    $003D,$003D,$003E,$003E,$003E,$003E,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003F,$003F,$003F,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003E,$003E,$003E,$003E,$003D
+        Dc.w    $003D,$003D,$003C,$003C,$003C,$003B,$003B,$003A
+        Dc.w    $003A,$003A,$0039,$0039,$0038,$0038,$0037,$0037
+        Dc.w    $0036,$0035,$0035,$0034,$0034,$0033,$0032,$0032
+        Dc.w    $0031,$0030,$0030,$002F,$002E,$002E,$002D,$002C
+        Dc.w    $002C,$002B,$002A,$0029,$0029,$0028,$0027,$0026
+        Dc.w    $0026,$0025,$0024,$0023,$0022,$0022,$0021,$0020
+        Dc.w    $0020,$0020,$001F,$001E,$001D,$001C,$001C,$001B
+        Dc.w    $001A,$0019,$0019,$0018,$0017,$0016,$0016,$0015
+        Dc.w    $0014,$0013,$0013,$0012,$0011,$0011,$0010,$000F
+        Dc.w    $000F,$000E,$000D,$000D,$000C,$000B,$000B,$000A
+        Dc.w    $000A,$0009,$0009,$0008,$0008,$0007,$0007,$0006
+        Dc.w    $0006,$0005,$0005,$0005,$0004,$0004,$0003,$0003
+        Dc.w    $0003,$0003,$0002,$0002,$0002,$0002,$0001,$0001
+        Dc.w    $0001,$0001,$0001,$0001,$0001,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0002,$0002,$0002,$0002,$0002,$0003
+        Dc.w    $0003,$0003,$0004,$0004,$0004,$0005,$0005,$0006
+        Dc.w    $0006,$0007,$0007,$0007,$0008,$0008,$0009,$000A
+        Dc.w    $000A,$000B,$000B,$000C,$000C,$000D,$000E,$000E
+        Dc.w    $000F,$0010,$0010,$0011,$0012,$0012,$0013,$0014
+        Dc.w    $0015,$0015,$0016,$0017,$0018,$0018,$0019,$001A
+        Dc.w    $001B,$001B,$001C,$001D,$001E,$001F,$001F,$0020
+        Dc.w    $0020,$0021,$0021,$0022,$0023,$0024,$0025,$0025
+        Dc.w    $0026,$0027,$0028,$0028,$0029,$002A,$002B,$002B
+        Dc.w    $002C,$002D,$002E,$002E,$002F,$0030,$0030,$0031
+        Dc.w    $0032,$0032,$0033,$0034,$0034,$0035,$0035,$0036
+        Dc.w    $0036,$0037,$0038,$0038,$0039,$0039,$0039,$003A
+        Dc.w    $003A,$003B,$003B,$003C,$003C,$003C,$003D,$003D
+        Dc.w    $003D,$003E,$003E,$003E,$003E,$003E,$003F,$003F
+        Dc.w    $003F,$003F,$003F,$003F,$003F,$003F,$003F,$003F
+        Dc.w    $003F,$003F,$003E,$003E,$003E,$003E,$003D,$003D
+        Dc.w    $003D,$003D,$003C,$003C,$003B,$003B,$003B,$003A
+        Dc.w    $003A,$0039,$0039,$0038,$0038,$0037,$0037,$0036
+        Dc.w    $0036,$0035,$0035,$0034,$0033,$0033,$0032,$0031
+        Dc.w    $0031,$0030,$002F,$002F,$002E,$002D,$002D,$002C
+        Dc.w    $002B,$002A,$002A,$0029,$0028,$0027,$0027,$0026
+        Dc.w    $0025,$0024,$0024,$0023,$0022,$0021,$0020,$0020
+        Dc.w    $0020,$001F,$001E,$001E,$001D,$001C,$001B,$001A
+        Dc.w    $001A,$0019,$0018,$0017,$0017,$0016,$0015,$0014
+        Dc.w    $0014,$0013,$0012,$0012,$0011,$0010,$0010,$000F
+        Dc.w    $000E,$000E,$000D,$000C,$000C,$000B,$000B,$000A
+        Dc.w    $0009,$0009,$0008,$0008,$0007,$0007,$0006,$0006
+        Dc.w    $0006,$0005,$0005,$0004,$0004,$0004,$0003,$0003
+        Dc.w    $0003,$0002,$0002,$0002,$0002,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0001,$0001,$0001,$0001,$0001,$0001
+        Dc.w    $0001,$0001,$0002,$0002,$0002,$0002,$0003,$0003
+        Dc.w    $0003,$0004,$0004,$0004,$0005,$0005,$0005,$0006
+        Dc.w    $0006,$0007,$0007,$0008,$0008,$0009,$0009,$000A
+        Dc.w    $000A,$000B,$000C,$000C,$000D,$000D,$000E,$000F
+        Dc.w    $000F,$0010,$0011,$0011,$0012,$0013,$0014,$0014
+        Dc.w    $0015,$0016,$0016,$0017,$0018,$0019,$0019,$001A
+        Dc.w    $001B,$001C,$001D,$001D,$001E,$001F,$0020,$0020
+        Dc.w    $20,$20,$20,$20,$20,$20,$20,$20
+
+Clearscreen:
+        Move.w  #10239/2,d0
+        Lea $30000,a0
+Clloop:
+        Clr.w   (a0)+
+        Dbf     d0,clloop
+        Rts
+Blitclear:
+        Move.w  #%0000000100000000,bltcon0
+        Move.w  #32,bltdmod
+        Move.l  #$3000e,bltdpt
+        Move.w  #$40*64+4,bltsize
+Blwait:
+        Btst    #14,Dmaconr
+        Bne.s   blwait
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+
+So, das war mal wieder genug fuer Heute...Wieder viel zu viel Source drin,
+aber das ist halt etwas handfestes..
+
+                Jeff Kandle

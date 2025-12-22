@@ -1,0 +1,1387 @@
+** 12/14-bit PIC assembler v1.06
+** w95key.asm assembled Mon Jun 15 11:54:23 1998
+
+0001            ;KEY.ASM
+0002            ;   IBM keyboard to Amiga Converter
+0003            ;
+0004            ;
+0005            ;list p=16c84, f=inhx8m  ;Enter device name 
+0006            ;include "p16c84.inc"
+0007            
+0008            ; This code has been adapted to be compiled with PicAsm 1.06 by Timo Rossi
+0009            
+0010            device PIC16C84
+0011       3FFB config PWRT=on, OSC=RC, WDT=off
+0012            
+0013            include "pic16c84.h"
+0014            ;
+0015            ; pic16c84.h
+0016            ;
+0017            ; definitions for PIC16C84 registers
+0018            ;
+0019            
+0020                    if ~defined(__16C84) & ~defined(__16F84)
+0021 !                    error "this include file is for PIC16C84"
+0022 !                  endif
+0023            
+0024            ; Page 0 
+0025  00000000  IND0    equ	00h
+0026  00000001  TMR0	equ	01h
+0027  00000001  RTCC    equ	TMR0
+0028  00000002  PCL     equ	02h
+0029  00000003  STATUS  equ	03h
+0030  00000004  FSR     equ	04h     
+0031  00000005  PORTA   equ	05h
+0032  00000006  PORTB   equ	06h
+0033  00000008  EEDATA  equ	08h
+0034  00000009  EEADR   equ	09h
+0035  0000000A  PCLATH  equ	0ah 
+0036  0000000B  INTCON  equ	0bh
+0037            
+0038            ; Page 1
+0039            
+0040  00000001  OPTIO   equ	01h
+0041  00000005  TRISA   equ	05h
+0042  00000006  TRISB   equ	06h
+0043  00000008  EECON1  equ	08h
+0044  00000009  EECON2  equ	09h
+0045            
+0046            ;
+0047            ; STATUS bits
+0048            ;
+0049  00000007  IRP     equ	07h
+0050  00000006  RP1     equ	06h
+0051  00000005  RP0     equ	05h
+0052  00000004  TO      equ	04h
+0053  00000003  PD      equ	03h
+0054  00000002  Z       equ	02h
+0055  00000001  DC      equ	01h
+0056  00000000  C       equ	00h
+0057            
+0058            ;
+0059            ; INTCON bits
+0060            ;
+0061  00000007  GIE	equ	7
+0062  00000006  EEIE	equ	6
+0063  00000005  RTIE	equ	5
+0064  00000004  INTE	equ	4
+0065  00000003  RBIE	equ	3
+0066  00000002  RTIF	equ	2
+0067  00000001  INTF	equ	1
+0068  00000000  RBIF	equ	0
+0069            
+0070            ;
+0071            ; OPTION bits
+0072            ;
+0073  00000007  RBPU	equ	7
+0074  00000006  INTEDG	equ	6
+0075  00000005  RTS	equ	5
+0076  00000004  RTE	equ	4
+0077  00000003  PSA	equ	3
+0078  00000002  PS2	equ	2
+0079  00000001  PS1	equ	1
+0080  00000000  PS0	equ	0
+0081            
+0082            ;
+0083            ; EECON1 bits
+0084            ;
+0085  00000004  EEIF	equ	4
+0086  00000003  WRERR	equ	3
+0087  00000002  WREN	equ	2
+0088  00000001  EWR	equ	1
+0089  00000000  ERD	equ	0
+0090            
+0091            ;
+0092            ; 'direction' flags
+0093            ;
+0094  00000000  W	equ	0
+0095  00000001  F	equ	1
+0096            
+0097            
+0098            
+0099            
+0100            ;#DEFINE PAGE0   bcf     STATUS,RP0          
+0101            ;#DEFINE PAGE1   bsf     STATUS,RP0          
+0102            
+0103            PAGE0   macro
+0104                    bcf     STATUS,RP0
+0105                    endm
+0106            
+0107            PAGE1   macro
+0108                    bsf     STATUS,RP0
+0109                    endm
+0110            ;
+0111            ;------------------------------------------------------
+0112            ;Please define ScratchPadRam here:
+0113            ;If you are using PIC16C5X define "ScratchPadRam equ 0x10" 
+0114            ;else define "ScratchPadRam equ 0x20"
+0115            ;-------------------------------------------------------
+0116            ;
+0117  00000000  ScrollLock  equ     0x0
+0118  00000001  NumLock     equ     0x1
+0119  00000002  CapsLock    equ     0x2
+0120  00000001  Kclk        equ     0x1
+0121  00000000  Kdat        equ     0x0
+0122  00000004  Aclk        equ     0x4
+0123  00000003  Adat        equ     0x3
+0124  00000002  Arst        equ     0x2
+0125  00000000  Ctrlbit     equ     0x0
+0126  00000001  RAmigabit   equ     0x1
+0127  00000002  LAmigabit   equ     0x2
+0128  00000000  Keytype     equ     0x0
+0129  00000001  Resetype    equ     0x1
+0130            ;
+0131            ;
+0132  0000000C  ScratchPadRam   equ     0x0C
+0133            ;
+0134  0000000C  Capbit      equ     ScratchPadRam+0x0
+0135  0000000D  Capdown     equ     ScratchPadRam+0x1
+0136  0000000E  CtrlDown    equ     ScratchPadRam+0x2
+0137  0000000F  RESET       equ     ScratchPadRam+0x3
+0138  00000010  Lights      equ     ScratchPadRam+0x4
+0139  00000011  Count3      equ     ScratchPadRam+0x5
+0140  00000012  ATparity    equ     ScratchPadRam+0x6
+0141  00000013  Make        equ     ScratchPadRam+0x7
+0142  00000014  Charbad     equ     ScratchPadRam+0x8
+0143  00000015  Oldchar     equ     ScratchPadRam+0x9
+0144  00000016  Amigachar   equ     ScratchPadRam+0xA
+0145  00000017  Count1      equ     ScratchPadRam+0xB
+0146  00000018  Count2      equ     ScratchPadRam+0xC
+0147  00000019  ATchar      equ     ScratchPadRam+0xD
+0148  0000001A  tableoffset equ     ScratchPadRam+0xE
+0149  0000001B  AltConfig   equ     ScratchPadRam+0xF
+0150  0000001C  Savechar    equ     ScratchPadRam+0x10
+0151  0000001D  returnvalue equ     ScratchPadRam+0x11
+0152  0000001E  eeaddress   equ     ScratchPadRam+0x12
+0153  0000001F  eedata      equ     ScratchPadRam+0x13
+0154  00000020  win95       equ     ScratchPadRam+0x14
+0155  00000021  Savechar2   equ     ScratchPadRam+0x15
+0156            ;
+0157            ;        
+0158  0000              org     0x0
+0159  0000?2800         goto    start
+0160            
+0161  0001      ATtb1 
+0162  0001 0082         movwf       PCL                  
+0163  0002 344F         retlw       0x4F            ;F9
+0164  0003 3400         retlw       0x0               
+0165  0004 3457         retlw       0x57            ;F5
+0166  0005 345B         retlw       0x5B            ;F3
+0167  0006 345F         retlw       0x5F            ;F1
+0168  0007 345D         retlw       0x5D            ;F2
+0169  0008 3441         retlw       0x41            ;F12=help
+0170  0009 3400         retlw       0x0
+0171  000A 344D         retlw       0x4D            ;F10
+0172  000B 3451         retlw       0x51            ;F8
+0173  000C 3455         retlw       0x55            ;F6
+0174  000D 3459         retlw       0x59            ;F4
+0175  000E 347B         retlw       0x7B            ;TAB
+0176  000F 34FF         retlw       0xFF            ;~
+0177  0010 3400         retlw       0x0
+0178            
+0179  0011 3400         retlw       0x0
+0180  0012 3437         retlw       0x37            ;Left ALT
+0181  0013 343F         retlw       0x3F            ;Left SHIFT
+0182  0014 3400         retlw       0x0
+0183  0015?2800         goto    lctrl               ;Left Ctrl
+0184  0016 34DF         retlw       0xDF            ;Q
+0185  0017 34FD         retlw       0xFD            ;1
+0186  0018 3400         retlw       0x0
+0187  0019 3400         retlw       0x0
+0188  001A 3400         retlw       0x0
+0189  001B 349D         retlw       0x9D            ;Z
+0190  001C 34BD         retlw       0xBD            ;S
+0191  001D 34BF         retlw       0xBF            ;A
+0192  001E 34DD         retlw       0xDD            ;W
+0193  001F 34FB         retlw       0xFB            ;2
+0194  0020 3400         retlw       0x0
+0195            
+0196  0021 3400         retlw       0x0
+0197  0022 3499         retlw       0x99            ;C
+0198  0023 349B         retlw       0x9B            ;X
+0199  0024 34BB         retlw       0xBB            ;D
+0200  0025 34DB         retlw       0xDB            ;E
+0201  0026 34F7         retlw       0xF7            ;4
+0202  0027 34F9         retlw       0xF9            ;3
+0203  0028 3400         retlw       0x0
+0204  0029 3400         retlw       0x0
+0205  002A 347F         retlw       0x7F            ;SPACE
+0206  002B 3497         retlw       0x97            ;V
+0207  002C 34B9         retlw       0xB9            ;F
+0208  002D 34D7         retlw       0xD7            ;T
+0209  002E 34D9         retlw       0xD9            ;R
+0210  002F 34F5         retlw       0xF5            ;5
+0211  0030 3400         retlw       0x0
+0212            
+0213  0031 3400         retlw       0x0
+0214  0032 3493         retlw       0x93            ;N
+0215  0033 3495         retlw       0x95            ;B
+0216  0034 34B5         retlw       0xB5            ;H
+0217  0035 34B7         retlw       0xB7            ;G
+0218  0036 34D5         retlw       0xD5            ;Y
+0219  0037 34F3         retlw       0xF3            ;6
+0220  0038 3400         retlw       0x0
+0221  0039 3400         retlw       0x0
+0222  003A 3400         retlw       0x0
+0223  003B 3491         retlw       0x91            ;M
+0224  003C 34B3         retlw       0xB3            ;J
+0225  003D 34D3         retlw       0xD3            ;U
+0226  003E 34F1         retlw       0xF1            ;7
+0227  003F 34EF         retlw       0xEF            ;8
+0228  0040 3400         retlw       0x0
+0229            
+0230  0041 3400         retlw       0x0
+0231  0042 348F         retlw       0x8F            ;<
+0232  0043 34B1         retlw       0xB1            ;K
+0233  0044 34D1         retlw       0xD1            ;I
+0234  0045 34CF         retlw       0xCF            ;O
+0235  0046 34EB         retlw       0xEB            ;0
+0236  0047 34ED         retlw       0xED            ;9
+0237  0048 3400         retlw       0x0
+0238  0049 3400         retlw       0x0
+0239  004A 348D         retlw       0x8D            ;>
+0240  004B 348B         retlw       0x8B            ;/
+0241  004C 34AF         retlw       0xAF            ;L
+0242  004D 34AD         retlw       0xAD            ; ';'
+0243  004E 34CD         retlw       0xCD            ;P
+0244  004F 34E9         retlw       0xE9            ;-
+0245  0050 3400         retlw       0x0
+0246            
+0247  0051 3400         retlw       0x0
+0248  0052 3400         retlw       0x0
+0249  0053 34AB         retlw       0xAB            ;@
+0250  0054 3400         retlw       0x0
+0251  0055 34CB         retlw       0xCB            ;[
+0252  0056 34E7         retlw       0xE7            ;=
+0253  0057 3400         retlw       0x0
+0254  0058 3400         retlw       0x0
+0255  0059 343B         retlw       0x3B            ;CAPS LOCK?
+0256  005A 343D         retlw       0x3D            ;Right SHIFT
+0257  005B 3477         retlw       0x77            ;RETURN
+0258  005C 34C9         retlw       0xC9            ;]
+0259  005D 3400         retlw       0x0
+0260  005E 34A9         retlw       0xA9            ;#=right foreign key
+0261  005F 3400         retlw       0x0
+0262  0060 3400         retlw       0x0
+0263            
+0264  0061 3400         retlw       0x0
+0265  0062 349F         retlw       0x9F            ;\ (next to left shift on AT keyboard)
+0266  0063 3400         retlw       0x0
+0267  0064 3400         retlw       0x0
+0268  0065 3400         retlw       0x0
+0269  0066 3400         retlw       0x0
+0270  0067 347D         retlw       0x7D            ;Back SPACE
+0271  0068 3400         retlw       0x0
+0272  0069 3400         retlw       0x0
+0273  006A 34C5         retlw       0xC5            ;1 keypad
+0274  006B 3400         retlw       0x0
+0275  006C 34A5         retlw       0xA5            ;4 keypad
+0276  006D 3485         retlw       0x85            ;7 keypad
+0277  006E 3400         retlw       0x0
+0278  006F 3400         retlw       0x0
+0279  0070 3400         retlw       0x0
+0280            
+0281  0071 34E1         retlw       0xE1            ;0 keypad
+0282  0072 3487         retlw       0x87            ;dot keypad
+0283  0073 34C3         retlw       0xC3            ;2 keypad
+0284  0074 34A3         retlw       0xA3            ;5 keypad
+0285  0075 34A1         retlw       0xA1            ;6 keypad
+0286  0076 3483         retlw       0x83            ;8 keypad
+0287  0077 3475         retlw       0x75            ;ESCAPE!
+0288  0078 344B         retlw       0x4B            ;Number Lock=( keypad   
+0289  0079 34E5         retlw       0xE5            ;F11=\
+0290  007A 3443         retlw       0x43            ;+ keypad
+0291  007B 34C1         retlw       0xC1            ;3 keypad
+0292  007C 346B         retlw       0x6B            ;- keypad
+0293  007D 3445         retlw       0x45            ;* keypad
+0294  007E 3481         retlw       0x81            ;9 keypad
+0295  007F 3449         retlw       0x49            ;scroll Lock=) keypad 
+0296  0080 3400         retlw       0x0
+0297            
+0298  0081      ATtb2:
+0299  0081 3400         retlw       0x0
+0300  0082 3400         retlw       0x0
+0301  0083 3400         retlw       0x0
+0302  0084 3453         retlw       0x53            ;F7
+0303  0085?2800         goto    prtscreen           ;print screen=R Amiga P  
+0304  0086 3400         retlw       0x0
+0305  0087 3400         retlw       0x0
+0306  0088 3400         retlw       0x0
+0307  0089 3400         retlw       0x0
+0308  008A 3400         retlw       0x0
+0309  008B 3400         retlw       0x0
+0310  008C 3400         retlw       0x0
+0311  008D 3400         retlw       0x0
+0312  008E 3400         retlw       0x0
+0313  008F 3400         retlw       0x0
+0314  0090 3400         retlw       0x0
+0315            
+0316  0091 3400         retlw       0x0
+0317  0092 3435         retlw       0x35            ;Right ALT
+0318  0093 3400         retlw       0x0
+0319  0094 3400         retlw       0x0
+0320  0095?2800         goto    rctrl               ;Right CTL
+0321  0096 3400         retlw       0x0
+0322  0097 3400         retlw       0x0
+0323  0098 3400         retlw       0x0
+0324  0099 3400         retlw       0x0
+0325  009A 3400         retlw       0x0
+0326  009B 3400         retlw       0x0
+0327  009C 3400         retlw       0x0
+0328  009D 3400         retlw       0x0
+0329  009E 3400         retlw       0x0
+0330  009F 3400         retlw       0x0
+0331  00A0 3433         retlw       0x33            ;Left Win=Left Amiga
+0332            
+0333  00A1 3400         retlw       0x0
+0334  00A2 3400         retlw       0x0
+0335  00A3 3400         retlw       0x0
+0336  00A4 3400         retlw       0x0
+0337  00A5 3400         retlw       0x0
+0338  00A6 3400         retlw       0x0
+0339  00A7 3400         retlw       0x0
+0340  00A8 3431         retlw       0x31            ;Right Win=Right Amiga
+0341  00A9 3400         retlw       0x0
+0342  00AA 3400         retlw       0x0
+0343  00AB 3400         retlw       0x0
+0344  00AC 3400         retlw       0x0
+0345  00AD 3400         retlw       0x0
+0346  00AE 3400         retlw       0x0
+0347  00AF 3400         retlw       0x0
+0348  00B0?2800         goto    swapscreen          ;Menu Key=L-Amiga M
+0349                    
+0350  00B1 3400         retlw       0x0
+0351  00B2 3400         retlw       0x0
+0352  00B3 3400         retlw       0x0
+0353  00B4 3400         retlw       0x0
+0354  00B5 3400         retlw       0x0
+0355  00B6 3400         retlw       0x0
+0356  00B7 3400         retlw       0x0
+0357  00B8 3400         retlw       0x0
+0358  00B9 3400         retlw       0x0
+0359  00BA 3400         retlw       0x0
+0360  00BB 3400         retlw       0x0
+0361  00BC 3400         retlw       0x0
+0362  00BD 3400         retlw       0x0
+0363  00BE 3400         retlw       0x0
+0364  00BF 3400         retlw       0x0
+0365  00C0 3400         retlw       0x0
+0366            
+0367  00C1 3400         retlw       0x0
+0368  00C2 3400         retlw       0x0
+0369  00C3 3400         retlw       0x0
+0370  00C4 3400         retlw       0x0
+0371  00C5 3400         retlw       0x0
+0372  00C6 3400         retlw       0x0
+0373  00C7 3400         retlw       0x0
+0374  00C8 3400         retlw       0x0
+0375  00C9 3400         retlw       0x0
+0376  00CA 3400         retlw       0x0
+0377  00CB 3447         retlw       0x47            ;/ Keypad 0x8B is wrong!! 0x47 is right code
+0378  00CC 3400         retlw       0x0
+0379  00CD 3400         retlw       0x0
+0380  00CE 3400         retlw       0x0
+0381  00CF 3400         retlw       0x0
+0382  00D0 3400         retlw       0x0
+0383            
+0384  00D1 3400         retlw       0x0
+0385  00D2 3400         retlw       0x0
+0386  00D3 3400         retlw       0x0
+0387  00D4 3400         retlw       0x0
+0388  00D5 3400         retlw       0x0
+0389  00D6 3400         retlw       0x0
+0390  00D7 3400         retlw       0x0
+0391  00D8 3400         retlw       0x0
+0392  00D9 3400         retlw       0x0
+0393  00DA 3400         retlw       0x0
+0394  00DB 3479         retlw       0x79            ;Numeric Enter
+0395  00DC 3400         retlw       0x0
+0396  00DD 3400         retlw       0x0
+0397  00DE 3400         retlw       0x0
+0398  00DF 3400         retlw       0x0
+0399  00E0 3400         retlw       0x0
+0400            
+0401  00E1 3400         retlw       0x0
+0402  00E2 3400         retlw       0x0
+0403  00E3 3400         retlw       0x0
+0404  00E4 3400         retlw       0x0
+0405  00E5 3400         retlw       0x0
+0406  00E6 3400         retlw       0x0
+0407  00E7 3400         retlw       0x0
+0408  00E8 3400         retlw       0x0
+0409  00E9 3400         retlw       0x0
+0410  00EA?2800         goto    endkey              ;End=Shift right-cursor  
+0411  00EB 3400         retlw       0x0
+0412  00EC 3461         retlw       0x61            ;Cursor Left
+0413  00ED?2800         goto    home                ;Home=Shift left-cursor  
+0414  00EE 3400         retlw       0x0
+0415  00EF 3400         retlw       0x0
+0416  00F0 3463         retlw       0x63            ;MACRO key=control
+0417            
+0418  00F1?2800         goto    insert              ;Insert=Right Amiga 7
+0419  00F2 3473         retlw       0x73            ;Delete
+0420  00F3 3465         retlw       0x65            ;Cursor Down
+0421  00F4 3400         retlw       0x0
+0422  00F5 3463         retlw       0x63            ;Cursor Right
+0423  00F6 3467         retlw       0x67            ;Cursor Up
+0424  00F7 3400         retlw       0x0
+0425  00F8 3400         retlw       0x0
+0426  00F9 3400         retlw       0x0
+0427  00FA 3400         retlw       0x0
+0428  00FB?2800         goto    pagedown            ;Page Down=Shift down-cursor
+0429  00FC 3400         retlw       0x0
+0430  00FD?2800         goto    prtscreen           ;print screen=Right Amiga P
+0431  00FE?2800         goto    pageup              ;Page up=Shift up-cursor
+0432  00FF?2800         goto    break               ;Break=Ctrl-C
+0433            ;        retlw       0x0
+0434            
+0435            
+0436            
+0437            ; *** Left Control key ***
+0438  0100      lctrl
+0439  0100 1820         btfsc   win95,0x0
+0440  0101 3439         retlw   0x39                ; ctrl
+0441  0102 3433         retlw   0x33                ; left Amiga
+0442            
+0443            ; *** Right Control key ***
+0444  0103      rctrl
+0445  0103 1820         btfsc   win95,0x0
+0446  0104 3439         retlw   0x39                ; ctrl
+0447  0105 3431         retlw   0x31                ; right Amiga
+0448                    
+0449            
+0450            ; *** Menu = Left Amiga-M ***
+0451  0106      swapscreen
+0452  0106 3033         movlw   0x33                ; Left Amiga pressed
+0453  0107?2000         call    actualtransmit
+0454  0108 3091         movlw   0x91                ; M pressed & released
+0455  0109?2000         call    sendmessage
+0456  010A 3032         movlw   0x32                ; Left Amiga released
+0457  010B?2000         call    actualtransmit
+0458  010C 3400         retlw   0x0          
+0459            
+0460            
+0461            ; *** Prt Scrn Key = Right Amiga-P ***
+0462  010D      prtscreen
+0463  010D 3031         movlw   0x31                ; Right Amiga pressed
+0464  010E?2000         call    actualtransmit
+0465  010F 30CD         movlw   0xCD                ; P pressed & released
+0466  0110?2000         call    sendmessage
+0467  0111 3030         movlw   0x30                ; Right Amiga released
+0468  0112?2000         call    actualtransmit
+0469  0113 3400         retlw   0x0          
+0470            
+0471            
+0472            
+0473            ; *** End Key = Shift right-cursor ***
+0474  0114      endkey
+0475  0114 303D         movlw   0x3D                ; Right shift pressed
+0476  0115?2000         call    actualtransmit
+0477  0116 3063         movlw   0x63                ; right-cursor pressed & released
+0478  0117?2000         call    sendmessage
+0479  0118 303C         movlw   0x3C                ; Right shift released
+0480  0119?2000         call    actualtransmit
+0481  011A 3400         retlw   0x0          
+0482            
+0483            
+0484            
+0485            ; *** Home Key = Shift left-cursor ***
+0486  011B      home
+0487  011B 303D         movlw   0x3D                ; Right shift pressed
+0488  011C?2000         call    actualtransmit
+0489  011D 3061         movlw   0x61                ; left-cursor pressed & released
+0490  011E?2000         call    sendmessage
+0491  011F 303C         movlw   0x3C                ; Right shift released
+0492  0120?2000         call    actualtransmit
+0493  0121 3400         retlw   0x0          
+0494            
+0495            
+0496            
+0497            ; *** PageDown Key = Shift down-cursor ***
+0498  0122      pagedown
+0499  0122 303D         movlw   0x3D                ; Right shift pressed
+0500  0123?2000         call    actualtransmit
+0501  0124 3065         movlw   0x65                ; down-cursor pressed & released
+0502  0125?2000         call    sendmessage
+0503  0126 303C         movlw   0x3C                ; Right shift released
+0504  0127?2000         call    actualtransmit
+0505  0128 3400         retlw   0x0          
+0506            
+0507            
+0508            
+0509            ; *** Pageup Key = Shift up-cursor ***
+0510  0129      pageup
+0511  0129 303D         movlw   0x3D                ; Right shift pressed
+0512  012A?2000         call    actualtransmit
+0513  012B 3067         movlw   0x67                ; up-cursor pressed & released
+0514  012C?2000         call    sendmessage
+0515  012D 303C         movlw   0x3C                ; Right shift released
+0516  012E?2000         call    actualtransmit
+0517  012F 3400         retlw   0x0          
+0518            
+0519            
+0520            
+0521            ; *** Insert Key = Right Amiga 7 ***
+0522  0130      insert
+0523  0130 3031         movlw   0x31                ; Right Amiga pressed
+0524  0131?2000         call    actualtransmit
+0525  0132 30F1         movlw   0xF1                ; 7 pressed & released
+0526  0133?2000         call    sendmessage
+0527  0134 3030         movlw   0x30                ; Right Amiga released
+0528  0135?2000         call    actualtransmit
+0529  0136 3400         retlw   0x0          
+0530            
+0531            
+0532            
+0533            ; *** Break Key = Ctrl-C ***
+0534  0137      break
+0535  0137 3039         movlw   0x39                ; Ctrl pressed
+0536  0138?2000         call    actualtransmit
+0537  0139 3099         movlw   0x99                ; C pressed & released
+0538  013A?2000         call    sendmessage
+0539  013B 3038         movlw   0x38                ; Ctrl released
+0540  013C?2000         call    actualtransmit
+0541  013D 3400         retlw   0x0          
+0542            
+0543            
+0544            
+0545            ; *** Wait a long time ***
+0546  013E      longdelay
+0547  013E 0097         movwf   Count1
+0548  013F      dly
+0549  013F?2000         call    fixeddelay
+0550  0140 0B97         decfsz  Count1,F
+0551  0141 293F         goto    dly
+0552  0142 0008         return
+0553            ;
+0554            ; *** Wait a short while ***
+0555  0143      fixeddelay
+0556  0143 30FF         movlw   0xFF
+0557  0144      smalldelay
+0558  0144 0098         movwf   Count2
+0559  0145      delay
+0560  0145 0B98         decfsz  Count2,F
+0561  0146 2945         goto    delay
+0562  0147 0008         return
+0563            
+0564            
+0565            
+0566            
+0567            ; *** Send character to Amiga and wait for handshake ***
+0568  0148      amigatransmit
+0569  0148 0096         movwf   Amigachar
+0570  0149 0215         subwf   Oldchar,W
+0571  014A 1903         btfsc   STATUS,Z            ; skip if not equal
+0572  014B 0008         return                      ; ignore it
+0573                    
+0574  014C 3033         movlw   0x33                ; LAmiga pressed
+0575  014D 0216         subwf   Amigachar,W
+0576  014E 1903         btfsc   STATUS,Z            ; skip if not equal
+0577  014F 110F         bcf     RESET,LAmigabit
+0578  0150 3032         movlw   0x32                ; LAmiga released
+0579  0151 0216         subwf   Amigachar,W
+0580  0152 1903         btfsc   STATUS,Z            ; skip if not equal
+0581  0153 150F         bsf     RESET,LAmigabit
+0582                            
+0583  0154 3031         movlw   0x31                ; RAmiga pressed
+0584  0155 0216         subwf   Amigachar,W
+0585  0156 1903         btfsc   STATUS,Z            ; skip if not equal
+0586  0157 108F         bcf     RESET,RAmigabit
+0587  0158 3030         movlw   0x30                ; RAmiga released
+0588  0159 0216         subwf   Amigachar,W
+0589  015A 1903         btfsc   STATUS,Z            ; skip if not equal
+0590  015B 148F         bsf     RESET,RAmigabit
+0591                            
+0592  015C 303B         movlw   0x3B                ; jump if not Capslock down
+0593  015D 0216         subwf   Amigachar,W
+0594  015E 1D03         btfss   STATUS,Z            ; skip if equal
+0595  015F?2800         goto    transok2            ; ignore it
+0596  0160 100F         bcf     RESET,Ctrlbit
+0597  0161 0816         movf    Amigachar,W
+0598  0162 0095         movwf   Oldchar
+0599  0163 30FF         movlw   0xFF
+0600  0164 008D         movwf   Capdown             ; set flags for later
+0601  0165 0008         return
+0602  0166      transok2
+0603  0166 303A         movlw   0x3A                ; jump if not Capslock up
+0604  0167 0216         subwf   Amigachar,W
+0605  0168 1D03         btfss   STATUS,Z            ; skip if equal
+0606  0169?2800         goto    transok3            ; ignore it
+0607            
+0608  016A 140F         bsf     RESET,Ctrlbit
+0609  016B 303B         movlw   0x3B                ; see if Capslock was just down
+0610  016C 0215         subwf   Oldchar,W           ; 
+0611  016D 1D03         btfss   STATUS,Z            ; skip if equal
+0612  016E?2800         goto    transok4            ; use as Ctrl key
+0613  016F 018D         clrf    Capdown             ; clear flag
+0614  0170 098C         comf    Capbit,F            ; toggle down/upness of caplock
+0615  0171 303B         movlw   0x3B                ; send Capslock down
+0616  0172 1C0C         btfss   Capbit,0x0
+0617  0173 39FE         andlw   0xFE
+0618  0174?2000         call    actualtransmit
+0619            ; send lights to AT
+0620  0175 30ED         movlw   0xED                ; Next data is for lights
+0621  0176?2000         call    SendtoAT
+0622  0177 1510         bsf     Lights,CapsLock     ; Capslock on
+0623  0178 1C0C         btfss   Capbit,0x0
+0624  0179 1110         bcf     Lights,CapsLock     ; Capslock off
+0625  017A 0810         movf    Lights,W
+0626  017B?2000         call    SendtoAT
+0627  017C 0008         return
+0628  017D      transok4
+0629  017D 1820         btfsc   win95,0x0
+0630  017E 0008         return
+0631  017F 018E         clrf    CtrlDown
+0632  0180 018D         clrf    Capdown             ; Capslock has finished acting as ctrl
+0633  0181 3038         movlw   0x38                ; send Ctrl up
+0634  0182?2000         call    actualtransmit
+0635  0183 0008         return
+0636  0184      transok3
+0637  0184 0816         movf    Amigachar,W
+0638  0185 00A1         movwf   Savechar2
+0639  0186 0095         movwf   Oldchar
+0640  0187 088D         movf    Capdown,F           ; Capslock down?
+0641  0188 1903         btfsc   STATUS,Z            ; skip if non-zero i.e caps pressed
+0642  0189?2800         goto    nocontrol           ; ignore it
+0643  018A 1820         btfsc   win95,0x0
+0644  018B?2800         goto    nocontrol           ; ignore it
+0645  018C 088E         movf    CtrlDown,F
+0646  018D 1D03         btfss   STATUS,Z            ; skip if zero i.e caps pressed
+0647  018E?2800         goto    nocontrol           ; ignore it
+0648  018F 30FF         movlw   0xFF
+0649  0190 008E         movwf   CtrlDown            ; Caps lock is now Ctrl key
+0650  0191 3039         movlw   0x39                ; send Ctrl down
+0651  0192?2000         call    actualtransmit
+0652  0193 0821         movf    Savechar2,W
+0653  0194?2800         goto    actualtransmit
+0654  0195      nocontrol
+0655  0195 0816         movf    Amigachar,W
+0656  0196 39FE         andlw   0xFE
+0657  0197 3C44         sublw   0x44                ; * (Numkey) released
+0658  0198 1D03         btfss   STATUS,Z            ; skip if equal
+0659  0199 019B         clrf    AltConfig
+0660  019A 0A9B         incf    AltConfig,F
+0661            
+0662  019B 3028         movlw   0x28                ; 20 th time?
+0663  019C 021B         subwf   AltConfig,W
+0664  019D 1903         btfsc   STATUS,Z            ; skip if not equal
+0665  019E?2000         call    cnfgrt
+0666            
+0667            
+0668  019F 0816         movf    Amigachar,W
+0669            
+0670  01A0      actualtransmit
+0671  01A0 0096         movwf   Amigachar
+0672            
+0673  01A1 3005         movlw   5           ; do a 5x256 delay
+0674  01A2 213E         call    longdelay
+0675  01A3      actual2
+0676  01A3 3008         movlw   8
+0677  01A4 0097         movwf   Count1
+0678  01A5 0194         clrf    Charbad
+0679  01A6      j1
+0680  01A6 1B96         btfsc   Amigachar,0x7       ; IF bit7=1 THEN Adat=1
+0681  01A7 1585         bsf     PORTA,Adat
+0682  01A8 1F96         btfss   Amigachar,0x7       ; IF bit7=0 THEN Adat=0
+0683  01A9 1185         bcf     PORTA,Adat
+0684  01AA 3008         movlw   8
+0685  01AB 2144         call    smalldelay          ; Allow Adat logic to settle
+0686  01AC 1205         bcf     PORTA,Aclk          ; transmit
+0687  01AD 3008         movlw   8
+0688  01AE 2144         call    smalldelay          ; Allow Aclk logic to settle
+0689  01AF 1605         bsf     PORTA,Aclk          ; reset Aclk=1
+0690  01B0 300A         movlw   10
+0691  01B1 2144         call    smalldelay          ; Allow Aclk logic to settle
+0692  01B2 0D96         rlf     Amigachar,F
+0693  01B3 0B97         decfsz  Count1,F            ; Transmit next bit?
+0694  01B4 29A6         goto    j1
+0695            
+0696  01B5 300F         movlw   0xF
+0697  01B6 0097         movwf   Count1
+0698  01B7 30FF         movlw   0xFF
+0699  01B8 0097         movwf   Count1
+0700  01B9 0098         movwf   Count2
+0701            
+0702                    PAGE1          
+0703+ 01BA 1683         bsf     STATUS,RP0
+0704  01BB 1585         bsf     TRISA,Adat          ; Read acknowledge signal
+0705                    PAGE0          
+0706+ 01BC 1283         bcf     STATUS,RP0
+0707  01BD      ack
+0708  01BD 0397         decf    Count1,F
+0709  01BE 1903         btfsc   STATUS,Z
+0710  01BF 0398         decf    Count2,F
+0711  01C0 0818         movf    Count2,W            ; Count2=0?
+0712  01C1 1903         btfsc   STATUS,Z
+0713  01C2?2800         goto    syncup              ; no handshake
+0714  01C3 1985         btfsc   PORTA,Adat         ; wait for handshake from amiga
+0715  01C4 29BD         goto    ack
+0716  01C5      ready
+0717  01C5 1D85         btfss   PORTA,Adat          ; wait for handshake to finish
+0718  01C6 29C5         goto    ready
+0719            
+0720  01C7 1585         bsf     PORTA,Adat          ; reset Adat=1
+0721                    PAGE1          
+0722+ 01C8 1683         bsf     STATUS,RP0
+0723  01C9 1185         bcf     TRISA,Adat          ; Return to output mode
+0724                    PAGE0          
+0725+ 01CA 1283         bcf     STATUS,RP0
+0726  01CB 0008         return
+0727  01CC      syncup
+0728  01CC 1205         bcf     PORTA,Aclk          ; send another clock pulse
+0729  01CD 3008         movlw   8
+0730  01CE 2144         call    smalldelay          ; Allow Aclk logic to settle
+0731  01CF 1605         bsf     PORTA,Aclk          ; reset Aclk=1
+0732  01D0 30FF         movlw   0xFF
+0733  01D1 0097         movwf   Count1
+0734  01D2 0098         movwf   Count2
+0735  01D3 0391         decf    Count3,F
+0736  01D4 1903         btfsc   STATUS,Z
+0737  01D5 0008         return
+0738  01D6 29BD         goto    ack                 ; wait for acknowledge again
+0739            
+0740            
+0741            
+0742            ; *** Send character to AT keyboard and wait for handshake ***
+0743  01D7      SendtoAT
+0744  01D7 0094         movwf   Charbad
+0745  01D8      resend
+0746  01D8 0814         movf    Charbad,W
+0747  01D9 0099         movwf   ATchar
+0748  01DA 0192         clrf    ATparity
+0749  01DB 1486         bsf     PORTB,Kclk          ; Kclk=1 get keyboards attention
+0750  01DC 0000         nop
+0751  01DD 1006         bcf     PORTB,Kdat          ; Kdat=0 get keyboards attention
+0752                    PAGE1          
+0753+ 01DE 1683         bsf     STATUS,RP0
+0754  01DF 1086         bcf     TRISB,Kclk          ; Kclk is in output mode
+0755  01E0 0000         nop
+0756  01E1 1006         bcf     TRISB,Kdat          ; Kdat is in output mode
+0757                    PAGE0          
+0758+ 01E2 1283         bcf     STATUS,RP0
+0759  01E3 3008         movlw   8
+0760  01E4 0097         movwf   Count1
+0761                    PAGE1          
+0762+ 01E5 1683         bsf     STATUS,RP0
+0763  01E6 1486         bsf     TRISB,Kclk          ; Kclk is in input mode
+0764                    PAGE0          
+0765+ 01E7 1283         bcf     STATUS,RP0
+0766  01E8 1886 Send4   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0767  01E9 29E8         goto    Send4
+0768  01EA 1819         btfsc   ATchar,0x0          ; IF bit0=1 THEN Kdat=1
+0769  01EB 1406         bsf     PORTB,Kdat
+0770  01EC 1C19         btfss   ATchar,0x0          ; IF bit0=0 THEN Kdat=0
+0771  01ED 1006         bcf     PORTB,Kdat
+0772  01EE 0C99         rrf     ATchar,F            ; next bit
+0773  01EF 1803         btfsc   STATUS,C            ; test parity of bit shifted out
+0774  01F0 0A92         incf    ATparity,F
+0775  01F1 1C86 Send5   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0776  01F2 29F1         goto    Send5                
+0777  01F3 0B97         decfsz  Count1,F
+0778  01F4 29E8         goto    Send4
+0779  01F5 1886 Send6   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0780  01F6 29F5         goto    Send6
+0781  01F7 1812         btfsc   ATparity,0x0        ; IF bit0=odd THEN Kdat=0 (odd parity)
+0782  01F8 1006         bcf     PORTB,Kdat
+0783  01F9 1C12         btfss   ATparity,0x0        ; IF bit0=even THEN Kdat=1 (odd parity)
+0784  01FA 1406         bsf     PORTB,Kdat
+0785  01FB 1C86 Send7   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0786  01FC 29FB         goto    Send7
+0787  01FD 1886 Send77  btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0788  01FE 29FD         goto    Send77
+0789  01FF 1406         bsf     PORTB,Kdat          ; stop bit
+0790  0200 1C86 Send78  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0791  0201 2A00         goto    Send78
+0792                    PAGE1          
+0793+ 0202 1683         bsf     STATUS,RP0
+0794  0203 1406         bsf     TRISB,Kdat          ; reset Kdat back to input mode
+0795                    PAGE0          
+0796+ 0204 1283         bcf     STATUS,RP0
+0797  0205 1886 Send79  btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0798  0206 2A05         goto    Send79
+0799  0207 1C86 Send7a  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0800  0208 2A07         goto    Send7a
+0801  0209 3008         movlw   8
+0802  020A 2144         call    smalldelay          ; Allow Kclk logic to settle
+0803  020B 1086         bcf     PORTB,Kclk          ; Kclk=0 Send handshake
+0804                    PAGE1          
+0805+ 020C 1683         bsf     STATUS,RP0
+0806  020D 1086         bcf     TRISB,Kclk          ; Kclk is in output mode
+0807                    PAGE0          
+0808+ 020E 1283         bcf     STATUS,RP0
+0809  020F 3014         movlw   20
+0810  0210 2144         call    smalldelay          ; Allow keyboard chance 
+0811  0211?2000         call    ATgetkey
+0812  0212 30FA         movlw   0xFA                ; Was transmission ok
+0813  0213 0219         subwf   ATchar,W
+0814  0214 1D03         btfss   STATUS,Z            ; skip if good
+0815  0215 29D8         goto    resend
+0816  0216 0008         return
+0817                    
+0818            
+0819            
+0820            
+0821            ; *** Waits for keyboard to send code ***
+0822  0217      ATgetkey
+0823  0217 0199         clrf    ATchar
+0824  0218 1486         bsf     PORTB,Kclk          ; Kclk=1 Allow keyboard to talk
+0825                    PAGE1
+0826+ 0219 1683         bsf     STATUS,RP0
+0827  021A 1486         bsf     TRISB,Kclk          ; Kclk is in input mode
+0828                    PAGE0
+0829+ 021B 1283         bcf     STATUS,RP0
+0830  021C 1886 skip1st btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0831  021D 2A1C         goto    skip1st
+0832  021E 1C86 skippy  btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0833  021F 2A1E         goto    skippy
+0834  0220 3008         movlw   8
+0835  0221 0097         movwf   Count1
+0836  0222      ATwait0
+0837  0222 1886         btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0838  0223 2A22         goto    ATwait0
+0839  0224 0C99         rrf     ATchar,F
+0840  0225 1806         btfsc   PORTB,Kdat
+0841  0226 1799         bsf     ATchar,0x7
+0842  0227 1C06         btfss   PORTB,Kdat
+0843  0228 1399         bcf     ATchar,0x7
+0844  0229 1C86 ATwait1 btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0845  022A 2A29         goto    ATwait1
+0846  022B 0B97         decfsz  Count1,F
+0847  022C 2A22         goto    ATwait0             ; get all 8 bits of data
+0848  022D 1886 parity0 btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0849  022E 2A2D         goto    parity0
+0850  022F 1C86 parity1 btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0851  0230 2A2F         goto    parity1
+0852  0231 1886 stop0   btfsc   PORTB,Kclk          ; wait for keyboard to make Kclk=0
+0853  0232 2A31         goto    stop0
+0854  0233 1C86 stop1   btfss   PORTB,Kclk          ; wait for keyboard to make Kclk=1
+0855  0234 2A33         goto    stop1
+0856  0235 1086         bcf     PORTB,Kclk          ; Kclk=0 Send handshake
+0857                    PAGE1
+0858+ 0236 1683         bsf     STATUS,RP0
+0859  0237 1086         bcf     TRISB,Kclk          ; Kclk is in output mode
+0860                    PAGE0
+0861+ 0238 1283         bcf     STATUS,RP0
+0862  0239 3014         movlw   20
+0863  023A 2144         call    smalldelay          ; Allow keyboard chance to recieve
+0864  023B 0008         return
+0865            
+0866            
+0867            
+0868            
+0869            
+0870            ; *** Flash Light ***
+0871  023C      flash
+0872  023C 0090         movwf   Lights
+0873  023D 30ED                 movlw   0xED                ; Next data is for lights
+0874  023E 21D7         call    SendtoAT
+0875  023F 0810         movf    Lights,W            ; Flash lights
+0876  0240 21D7         call    SendtoAT
+0877  0241 3025         movlw   0x25
+0878  0242 213E         call    longdelay     
+0879  0243 30ED         movlw   0xED                ; Next data is for lights
+0880  0244 21D7         call    SendtoAT
+0881  0245 3000         movlw   0x0                 ; Clear Lights
+0882  0246 21D7         call    SendtoAT
+0883  0247 3025         movlw   0x25
+0884  0248 213E         call    longdelay     
+0885  0249 0008                 return
+0886            
+0887            
+0888            
+0889            ; *** Performs reset on Amiga ***
+0890  024A      reset
+0891  024A 3001         movlw   Resetype
+0892  024B?2000         call    readdata
+0893  024C 3C01         sublw   0x1                 
+0894  024D 1903         btfsc   STATUS,Z            ; skip if not equal
+0895  024E?2800         goto    kill                ; jump if fast reset
+0896  024F 300F         movlw   0x0F                ; Tell amiga we are going to reset it
+0897  0250 21A0         call    actualtransmit
+0898            
+0899  0251 3008                 movlw   0x8
+0900  0252 0091         movwf   Count3
+0901  0253 3001 strobe  movlw   0x1
+0902  0254 223C                 call    flash
+0903  0255 3002                 movlw   0x2
+0904  0256 223C             call        flash
+0905  0257 3004                 movlw   0x4
+0906  0258 223C             call        flash
+0907  0259 0B91         decfsz  Count3,F
+0908  025A 2A53         goto    strobe
+0909  025B      kill
+0910  025B 3070         movlw   0x70
+0911  025C 213E         call    longdelay     
+0912  025D 1106         bcf     PORTB,Arst          ; Arst=0 Send reset
+0913                    PAGE1
+0914+ 025E 1683         bsf     STATUS,RP0
+0915  025F 1106         bcf     TRISB,Arst          ; Arst is in output mode
+0916                    PAGE0
+0917+ 0260 1283         bcf     STATUS,RP0
+0918  0261 30FF         movlw   0xFF
+0919  0262 213E         call    longdelay           ; Wait for Amiga to reset
+0920  0263?2800         goto    start2
+0921            
+0922            
+0923            
+0924            
+0925  0264      start
+0926            
+0927            ; *** Allow time for HardDrive to spin upto speed ***
+0928  0264      SpinUp
+0929  0264 1106         bcf     PORTB,Arst          ; Arst=0 Send reset
+0930                    PAGE1
+0931+ 0265 1683         bsf     STATUS,RP0
+0932  0266 1106         bcf     TRISB,Arst          ; Arst is in output mode
+0933                    PAGE0
+0934+ 0267 1283         bcf     STATUS,RP0
+0935  0268 3030         movlw   0x30
+0936  0269 0091         movwf   Count3
+0937  026A      waitHD
+0938  026A 30FF         movlw   0xFF
+0939  026B 213E         call    longdelay           ; Wait for drive to wake up
+0940  026C 0B91         decfsz  Count3,F
+0941  026D 2A6A         goto    waitHD
+0942            
+0943  026E      start2
+0944            ; *** Setup ports ***
+0945  026E 1605         bsf     PORTA,Aclk          ; transmit
+0946  026F 0000         nop
+0947  0270 1585         bsf     PORTA,Adat
+0948                    PAGE1          
+0949+ 0271 1683         bsf     STATUS,RP0
+0950  0272 3007         movlw   0x7
+0951  0273 0085         movwf   TRISA
+0952  0274 30FF         movlw   0xFF
+0953  0275 0086         movwf   TRISB
+0954                    PAGE0          
+0955+ 0276 1283         bcf     STATUS,RP0
+0956            
+0957            
+0958            ; *** Clear out miscellaneous flags ***
+0959  0277 018D         clrf    Capdown
+0960  0278 018E         clrf    CtrlDown
+0961  0279 018C         clrf    Capbit
+0962  027A 0195         clrf    Oldchar
+0963  027B 019B         clrf    AltConfig
+0964  027C 3007         movlw   0x7
+0965  027D 008F         movwf   RESET
+0966            
+0967            ; *** See what sort of keyboard is attached ***
+0968  027E 01A0         clrf    win95
+0969  027F 3000         movlw   Keytype
+0970  0280?2000         call    readdata
+0971  0281 3C02         sublw   0x2                 
+0972  0282 1903         btfsc   STATUS,Z            ; skip if not equal
+0973  0283 09A0         comf    win95               ; win95=true or false
+0974            
+0975            ; *** Wait for AT keyboard to power up ***
+0976  0284      waitAT
+0977  0284 1C06         btfss   PORTB,Kdat         ; wait for AT keyboard
+0978  0285 2A84         goto    waitAT
+0979                    
+0980            ; *** Reset AT keyboard ***
+0981            ;        movlw   0xFF            ; Reset
+0982            ;        call    SendtoAT
+0983  0286 30F6         movlw   0xF6            ; Default
+0984  0287 21D7         call    SendtoAT
+0985  0288 3007                 movlw   0x7
+0986  0289 223C                 call    flash
+0987  028A 30ED         movlw   0xED            ; Next data is for lights
+0988  028B 21D7         call    SendtoAT
+0989  028C 3002         movlw   0x2
+0990  028D 0090         movwf   Lights
+0991  028E 21D7         call    SendtoAT
+0992  028F 30F4         movlw   0xF4            ; Clear buffer
+0993  0290 21D7         call    SendtoAT
+0994            
+0995            
+0996  0291      ATstyle
+0997  0291 088F         movf    RESET,F
+0998  0292 1903         btfsc   STATUS,Z
+0999  0293 2A4A         goto    reset
+1000  0294 2217         call    ATgetkey
+1001  0295 30E1         movlw   0xE1
+1002  0296 0219         subwf   ATchar,W
+1003  0297 1D03         btfss   STATUS,Z            ; skip if equal
+1004  0298?2800         goto    ATnE1        
+1005  0299 2217         call    ATgetkey            ; should be $14
+1006  029A 2217         call    ATgetkey            ; should be $77
+1007  029B 2217         call    ATgetkey            ; should be $E1
+1008  029C 2217         call    ATgetkey            ; should be $F0
+1009  029D 2217         call    ATgetkey            ; should be $14
+1010  029E 2217         call    ATgetkey            ; should be $F0
+1011  029F 2217         call    ATgetkey            ; should be $77
+1012  02A0 2A91         goto    ATstyle
+1013  02A1      ATnE1
+1014  02A1 019A         clrf    tableoffset
+1015  02A2 30E0         movlw   0xE0
+1016  02A3 0219         subwf   ATchar,W
+1017  02A4 1D03         btfss   STATUS,Z            ; skip if equal
+1018  02A5?2800         goto    ATnE0        
+1019  02A6 3080         movlw   0x80
+1020  02A7 009A         movwf   tableoffset
+1021  02A8 2217         call    ATgetkey
+1022  02A9 30F0         movlw   0xF0
+1023  02AA 0219         subwf   ATchar,W
+1024  02AB 1D03         btfss   STATUS,Z            ; skip if equal
+1025  02AC?2800         goto    ATnE0F0        
+1026  02AD 2217         call    ATgetkey
+1027  02AE 3012         movlw   0x12
+1028  02AF 0219         subwf   ATchar,W
+1029  02B0 1903         btfsc   STATUS,Z            ; skip if not equal
+1030  02B1 2A91         goto    ATstyle             ; E0F012 ignore it
+1031  02B2      ATnEF12
+1032  02B2 3059         movlw   0x59
+1033  02B3 0219         subwf   ATchar,W
+1034  02B4 1D03         btfss   STATUS,Z            ; skip if equal
+1035  02B5?2800         goto    ATup        
+1036  02B6 2A91         goto    ATstyle             ; E0F059 ignore it
+1037  02B7      ATnE0F0
+1038  02B7 3012         movlw   0x12
+1039  02B8 0219         subwf   ATchar,W
+1040  02B9 1903         btfsc   STATUS,Z            ; skip if not equal
+1041  02BA 2A91         goto    ATstyle             ; E012 ignore it
+1042  02BB      ATnE012
+1043  02BB 3059         movlw   0x59
+1044  02BC 0219         subwf   ATchar,W
+1045  02BD 1D03         btfss   STATUS,Z            ; skip if equal
+1046  02BE?2800         goto    ATdown        
+1047  02BF 2A91         goto    ATstyle             ; E059 ignore it
+1048  02C0      ATnE0
+1049  02C0 30F0         movlw   0xF0
+1050  02C1 0219         subwf   ATchar,W
+1051  02C2 1D03         btfss   STATUS,Z            ; skip if equal
+1052  02C3?2800         goto    ATdown        
+1053  02C4 2217         call    ATgetkey
+1054  02C5?2800         goto    ATup                ; F0= key released
+1055  02C6      ATdown        
+1056  02C6 0A19         incf    ATchar,W
+1057  02C7 071A         addwf   tableoffset,W
+1058  02C8 2001         call    ATtb1
+1059  02C9 3E00         addlw   0x0                 ; test W
+1060  02CA 1D03         btfss   STATUS,Z
+1061  02CB 2148         call    amigatransmit
+1062  02CC 2A91         goto    ATstyle
+1063  02CD      ATup        
+1064  02CD 0A19         incf    ATchar,W
+1065  02CE 071A         addwf   tableoffset,W
+1066  02CF 009A         movwf   tableoffset
+1067            
+1068  02D0 30B0         movlw   0xAF+1              ; menu key
+1069  02D1 021A         subwf   tableoffset,W
+1070  02D2 1903         btfsc   STATUS,Z            ; skip if not equal
+1071  02D3 2A91         goto    ATstyle             ; ignore it
+1072            
+1073  02D4 3085         movlw   0x84+1              ; PrtScrn
+1074  02D5 021A         subwf   tableoffset,W
+1075  02D6 1903         btfsc   STATUS,Z            ; skip if not equal
+1076  02D7 2A91         goto    ATstyle             ; ignore it
+1077            
+1078  02D8 30EA         movlw   0xE9+1              ; End
+1079  02D9 021A         subwf   tableoffset,W
+1080  02DA 1903         btfsc   STATUS,Z            ; skip if not equal
+1081  02DB 2A91         goto    ATstyle             ; ignore it
+1082            
+1083  02DC 30ED         movlw   0xEC+1              ; Home
+1084  02DD 021A         subwf   tableoffset,W
+1085  02DE 1903         btfsc   STATUS,Z            ; skip if not equal
+1086  02DF 2A91         goto    ATstyle             ; ignore it
+1087            
+1088  02E0 30F1         movlw   0xF0+1              ; Insert
+1089  02E1 021A         subwf   tableoffset,W
+1090  02E2 1903         btfsc   STATUS,Z            ; skip if not equal
+1091  02E3 2A91         goto    ATstyle             ; ignore it
+1092            
+1093  02E4 30FB         movlw   0xFA+1              ; PageDown
+1094  02E5 021A         subwf   tableoffset,W
+1095  02E6 1903         btfsc   STATUS,Z            ; skip if not equal
+1096  02E7 2A91         goto    ATstyle             ; ignore it
+1097            
+1098  02E8 30FD         movlw   0xFC+1              ; PrtScrn
+1099  02E9 021A         subwf   tableoffset,W
+1100  02EA 1903         btfsc   STATUS,Z            ; skip if not equal
+1101  02EB 2A91         goto    ATstyle             ; ignore it
+1102            
+1103  02EC 30FE         movlw   0xFD+1              ; PageUp
+1104  02ED 021A         subwf   tableoffset,W
+1105  02EE 1903         btfsc   STATUS,Z            ; skip if not equal
+1106  02EF 2A91         goto    ATstyle             ; ignore it
+1107            
+1108  02F0 30FF         movlw   0xFE+1              ; Break
+1109  02F1 021A         subwf   tableoffset,W
+1110  02F2 1903         btfsc   STATUS,Z            ; skip if not equal
+1111  02F3 2A91         goto    ATstyle             ; ignore it
+1112            
+1113  02F4 081A         movf    tableoffset,W
+1114  02F5 2001         call    ATtb1
+1115  02F6 39FE         andlw   0xFE                ; clear bit 0
+1116  02F7 2148         call    amigatransmit
+1117  02F8 2A91         goto    ATstyle
+1118                    
+1119            
+1120            ; *** Change configuration ***
+1121  02F9      cnfgrt
+1122  02F9 019E         clrf    eeaddress
+1123  02FA 303B         movlw   0x3B                ; CAPSLOCK ON
+1124  02FB 21A0         call    actualtransmit
+1125                    
+1126  02FC?2000         call    say_select          ; Select Type of
+1127  02FD?2000         call    say_key             ; key
+1128  02FE 3095         movlw   0x95                ; b
+1129  02FF?2000         call    sendmessage
+1130  0300 30CF         movlw   0xCF                ; o
+1131  0301?2000         call    sendmessage
+1132  0302 30BF         movlw   0xBF                ; a
+1133  0303?2000         call    sendmessage
+1134  0304 30D9         movlw   0xD9                ; r
+1135  0305?2000         call    sendmessage
+1136  0306 30BB         movlw   0xBB                ; d
+1137  0307?2000         call    sendmessage
+1138  0308?2000         call    say_option1         ; 1=
+1139  0309?2000         call    say_uk10            ; uk 10
+1140  030A 30FB         movlw   0xFB                ; 2
+1141  030B?2000         call    sendmessage
+1142  030C 307F         movlw   0x7F                ; space
+1143  030D?2000         call    sendmessage
+1144  030E?2000         call    say_key             ; key
+1145  030F?2000         call    say_option2         ; 2=
+1146  0310?2000         call    say_uk10            ; uk 10
+1147  0311 30F5         movlw   0xF5                ; 5
+1148  0312?2000         call    sendmessage
+1149  0313 307F         movlw   0x7F                ; space
+1150  0314?2000         call    sendmessage
+1151  0315?2000         call    say_key             ; key
+1152  0316 307F         movlw   0x7F                ; space
+1153  0317?2000         call    sendmessage
+1154  0318 30DD         movlw   0xDD                ; w
+1155  0319?2000         call    sendmessage
+1156  031A 30D1         movlw   0xD1                ; i
+1157  031B?2000         call    sendmessage
+1158  031C 3093         movlw   0x93                ; n
+1159  031D?2000         call    sendmessage
+1160  031E 30ED         movlw   0xED                ; 9
+1161  031F?2000         call    sendmessage
+1162  0320 30F5         movlw   0xF5                ; 5
+1163  0321?2000         call    sendmessage
+1164  0322 3077         movlw   0x77                ; return 
+1165  0323?2000         call    sendmessage
+1166  0324?2000         call    getselection
+1167  0325 009F         movwf   eedata
+1168  0326 081F         movf    eedata,W
+1169  0327 1903         btfsc   STATUS,Z            ; skip if not zero
+1170  0328 2AF9         goto    cnfgrt              ; bad choice, try again
+1171  0329?2000         call    writedata        
+1172  032A?2000         call    say_ok
+1173  032B 01A0         clrf    win95
+1174  032C 3000         movlw   Keytype
+1175  032D?2000         call    readdata
+1176  032E 3C02         sublw   0x2                 
+1177  032F 1903         btfsc   STATUS,Z            ; skip if not equal
+1178  0330 09A0         comf    win95               ; win95=true or false
+1179            
+1180  0331 0A9E         incf    eeaddress
+1181  0332      askreset
+1182  0332?2000         call    say_select          ; Select Type of
+1183  0333?2000         call    say_reset           ; reset
+1184  0334?2000         call    say_option1         ; 1=
+1185  0335 30B9         movlw   0xB9                ; f
+1186  0336?2000         call    sendmessage
+1187  0337 30BF         movlw   0xBF                ; a
+1188  0338?2000         call    sendmessage
+1189  0339 30BD         movlw   0xBD                ; s
+1190  033A?2000         call    sendmessage
+1191  033B 30D7         movlw   0xD7                ; t
+1192  033C?2000         call    sendmessage
+1193  033D 307F         movlw   0x7F                ; space
+1194  033E?2000         call    sendmessage
+1195  033F?2000         call    say_reset           ; reset
+1196  0340?2000         call    say_option2         ; 2=
+1197  0341 30BD         movlw   0xBD                ; s
+1198  0342?2000         call    sendmessage
+1199  0343 30AF         movlw   0xAF                ; l
+1200  0344?2000         call    sendmessage
+1201  0345 30CF         movlw   0xCF                ; o
+1202  0346?2000         call    sendmessage
+1203  0347 30DD         movlw   0xDD                ; w
+1204  0348?2000         call    sendmessage
+1205  0349 307F         movlw   0x7F                ; space
+1206  034A?2000         call    sendmessage
+1207  034B?2000         call    say_reset           ; reset
+1208  034C 3077         movlw   0x77                ; return 
+1209  034D?2000         call    sendmessage
+1210            
+1211  034E?2000         call    getselection
+1212  034F 009F         movwf   eedata
+1213  0350 081F         movf    eedata,W
+1214  0351 1903         btfsc   STATUS,Z            ; skip if not zero
+1215  0352 2B32         goto    askreset            ; bad choice, try again
+1216  0353?2000         call    writedata        
+1217  0354?2000         call    say_ok
+1218            
+1219  0355 019B         clrf    AltConfig
+1220  0356 307E         movlw   0x7E                ; space up
+1221  0357 088D         movf    Capdown,F           ; Capslock down?
+1222  0358 1903         btfsc   STATUS,Z            ; skip if non-zero i.e caps pressed
+1223  0359 303A         movlw   0x3A                ; Caps up
+1224  035A 0096         movwf   Amigachar
+1225  035B 0008         return
+1226                    
+1227  035C      say_select
+1228  035C 3077         movlw   0x77                ; return x2
+1229  035D?2000         call    sendmessage
+1230  035E?2000         call    sendmessage
+1231  035F 30BD         movlw   0xBD                ; s
+1232  0360?2000         call    sendmessage
+1233  0361 30DB         movlw   0xDB                ; e
+1234  0362?2000         call    sendmessage
+1235  0363 30AF         movlw   0xAF                ; l
+1236  0364?2000         call    sendmessage
+1237  0365 30DB         movlw   0xDB                ; e
+1238  0366?2000         call    sendmessage
+1239  0367 3099         movlw   0x99                ; c
+1240  0368?2000         call    sendmessage
+1241  0369 30D7         movlw   0xD7                ; t
+1242  036A?2000         call    sendmessage
+1243  036B 307F         movlw   0x7F                ; space
+1244  036C?2000         call    sendmessage
+1245  036D 30D7         movlw   0xD7                ; t
+1246  036E?2000         call    sendmessage
+1247  036F 30D5         movlw   0xD5                ; y
+1248  0370?2000         call    sendmessage
+1249  0371 30CD         movlw   0xCD                ; p
+1250  0372?2000         call    sendmessage
+1251  0373 30DB         movlw   0xDB                ; e
+1252  0374?2000         call    sendmessage
+1253  0375 307F         movlw   0x7F                ; space
+1254  0376?2000         call    sendmessage
+1255  0377 30CF         movlw   0xCF                ; o
+1256  0378?2000         call    sendmessage
+1257  0379 30B9         movlw   0xB9                ; f
+1258  037A?2000         call    sendmessage
+1259  037B 307F         movlw   0x7F                ; space
+1260  037C?2000         call    sendmessage
+1261  037D 0008         return
+1262            
+1263  037E      say_key
+1264  037E 30B1         movlw   0xB1                ; k
+1265  037F?2000         call    sendmessage
+1266  0380 30DB         movlw   0xDB                ; e
+1267  0381?2000         call    sendmessage
+1268  0382 30D5         movlw   0xD5                ; y
+1269  0383?2000         call    sendmessage
+1270  0384 0008         return
+1271            
+1272  0385      say_option1
+1273  0385 3077        movlw   0x77                ; return x2
+1274  0386?2000         call    sendmessage
+1275  0387?2000         call    sendmessage
+1276  0388 30FD         movlw   0xFD                ; 1
+1277  0389?2000         call    sendmessage
+1278  038A 30E7         movlw   0xE7                ; =
+1279  038B?2000         call    sendmessage
+1280  038C 307F         movlw   0x7F                ; space
+1281  038D?2000         call    sendmessage
+1282  038E 0008         return
+1283            
+1284  038F      say_option2
+1285  038F 3077         movlw   0x77                ; return 
+1286  0390?2000         call    sendmessage
+1287  0391 30FB         movlw   0xFB                ; 2
+1288  0392?2000         call    sendmessage
+1289  0393 30E7         movlw   0xE7                ; =
+1290  0394?2000         call    sendmessage
+1291  0395 307F         movlw   0x7F                ; space
+1292  0396?2000         call    sendmessage
+1293  0397 0008         return
+1294            
+1295  0398      say_uk10
+1296  0398 30D3         movlw   0xD3                ; u
+1297  0399?2000         call    sendmessage
+1298  039A 30B1         movlw   0xB1                ; k
+1299  039B?2000         call    sendmessage
+1300  039C 307F         movlw   0x7F                ; space
+1301  039D?2000         call    sendmessage
+1302  039E 30FD         movlw   0xFD                ; 1
+1303  039F?2000         call    sendmessage
+1304  03A0 30EB         movlw   0xEB                ; 0
+1305  03A1?2000         call    sendmessage
+1306  03A2 0008         return
+1307            
+1308  03A3      say_ok
+1309  03A3 30CF         movlw   0xCF                ; o
+1310  03A4?2000         call    sendmessage
+1311  03A5 30B1         movlw   0xB1                ; k
+1312  03A6?2000         call    sendmessage
+1313  03A7 3077         movlw   0x77                ; return
+1314  03A8?2000         call    sendmessage
+1315  03A9 0008         return
+1316            
+1317  03AA      say_reset
+1318  03AA 30D9         movlw   0xD9                ; r
+1319  03AB?2000         call    sendmessage
+1320  03AC 30DB         movlw   0xDB                ; e
+1321  03AD?2000         call    sendmessage
+1322  03AE 30BD         movlw   0xBD                ; s
+1323  03AF?2000         call    sendmessage
+1324  03B0 30DB         movlw   0xDB                ; e
+1325  03B1?2000         call    sendmessage
+1326  03B2 30D7         movlw   0xD7                ; t
+1327  03B3?2000         call    sendmessage
+1328  03B4 0008         return
+1329            
+1330            
+1331  03B5      sendmessage
+1332  03B5 009C         movwf   Savechar
+1333  03B6 21A0         call    actualtransmit
+1334  03B7 081C         movf    Savechar,W
+1335  03B8 39FE         andlw   0xFE
+1336  03B9 21A0         call    actualtransmit
+1337  03BA 081C         movf    Savechar,W
+1338  03BB 0008         return        
+1339            
+1340  03BC      getselection
+1341  03BC 2217         call    ATgetkey
+1342  03BD 2217         call    ATgetkey
+1343  03BE 2217         call    ATgetkey
+1344  03BF 3016         movlw   0x16                ; was key 1 pressed and released
+1345  03C0 0219         subwf   ATchar,W
+1346  03C1 1903         btfsc   STATUS,Z            ; skip if not equal
+1347  03C2 3401         retlw   0x1     
+1348  03C3 301E         movlw   0x1E                ; was key 2 pressed and released
+1349  03C4 0219         subwf   ATchar,W
+1350  03C5 1903         btfsc   STATUS,Z            ; skip if not equal
+1351  03C6 3402         retlw   0x2        
+1352  03C7 3400         retlw   0x0
+1353            
+1354  03C8      writedata
+1355  03C8 081E         movf    eeaddress,W
+1356  03C9 0089         movwf   EEADR
+1357  03CA 081F         movf    eedata,W
+1358  03CB 0088         movwf   EEDATA
+1359                    PAGE1
+1360+ 03CC 1683         bsf     STATUS,RP0
+1361  03CD 1508         bsf     EECON1,WREN         ; EEPROM write enable
+1362  03CE 3055         movlw   0x55
+1363  03CF 0089         movwf   EECON2
+1364  03D0 30AA         movlw   0xAA
+1365  03D1 0089         movwf   EECON2
+1366  03D2 1488         bsf     EECON1,EWR
+1367  03D3      wait_write
+1368  03D3 1E08         btfss   EECON1,EEIF         ; wait for write to finish
+1369  03D4 2BD3         goto    wait_write
+1370  03D5 0188         clrf    EECON1              ; EEPROM write disable & int accept
+1371                    PAGE0
+1372+ 03D6 1283         bcf     STATUS,RP0
+1373  03D7 0008         return
+1374            
+1375  03D8      readdata
+1376  03D8 0089         movwf   EEADR
+1377                    PAGE1
+1378+ 03D9 1683         bsf     STATUS,RP0
+1379  03DA 1408         bsf     EECON1,ERD           ; EEPROM read
+1380                    PAGE0
+1381+ 03DB 1283         bcf     STATUS,RP0
+1382  03DC 0808         movf    EEDATA,W
+1383  03DD 0008         return
+1384            

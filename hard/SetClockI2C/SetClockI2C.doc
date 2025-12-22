@@ -1,0 +1,352 @@
+          ___   ___         ___   ___   ___      ___ |   /
+   /   / /     /     /     /     /     /        /    |  /|  /
+  /   / /__   /__   /     /__   /___  /___     /___  | / | /
+ /   /     / /     /     /         /     /        /  |/  |/
+/___/  ___/ /___  /___  /___   ___/  ___/     ___/   |   |  .
+
+
+Useless
+-------
+
+What's Useless Sw ? Useless, that's all.
+Other useless projects: DiabloMonitor (Aminet).
+
+
+What's all about?
+-----------------
+
+SetClockI2C sets the sytem clock using data stored into one (or more :) of the
+following RTCs (Real Time Clocks)
+
+.Philips PCF8583
+.Dallas/Maxim DS1307/DS1629
+.Ricoh R2025
+
+which should be connected to an I2C bus of your Amiga. Actually using Wilhelm
+Noeker libraries.
+
+
+i2c
+---
+
+What? You didn't hear about i2c? It stands for Inter-IC and is a two-wire serial
+bus developed by Philips for TVs and Videorecorders. Lots of chips (I/O, ADC, DAC,
+TeleText, but particularly system managment, these days) can be connected with
+only 2 wires: Serial Data, Serial Clock (and ground, of course this makes three
+of them :-), so you can build even a complex circuit with very few conponents and
+almost zero risks of doing wrong. I once managed to do a non-working one, though.
+
+If you still can't think of a way to use it, please note that it is used on every
+"DDC" VGA board or monitor to transfer the description and maximum frequencies of
+the monitor to the system; SDRAMS also have some description fields accessible via
+some i2c port; the temperature and voltage monitor of your latest peecee is done
+via i2c, etc.
+
+On the Amiga side, you may build an i2c interface with a NAND chip and a couple
+of resistors.
+
+Wilhelm Noeker was so kind to write an hardware independent SW layer which makes
+C programming a real fun. In his code you may find also how to build easy devices
+to tie i2c to parallel/serial/floppy amiga ports.
+
+There exists also a zorro2 i2c board by Michael Boehmer, which comes with a Real
+Time Clock and a leakless (but non-rechargeable) battery. An expansion connector
+for future (current) USB, also. Very nice, I currently own two of them.
+
+For more information you may have a look at Michael Boehmer's ICY page
+http://www.e12.physik.tu-muenchen.de/~mboehmer/
+or Wilhelm Noeker i2c aminet archive:
+hard/hack/i2clib40.lha
+
+
+Requirements
+------------
+
+.An Amiga (more than one doesn't hurt)
+.utility.library V36 or greater (Kickstart 2.0)
+.an i2c interface supported by Wilhelm Noeker "i2clib40" archive (e.g. ICY)
+.on the i2c bus at least one of these:
+
+ Philips PCF8583
+ Dallas/Maxim DS1307/DS1629
+ Ricoh R2025
+
+(possibly battery backed up :)
+
+Philips chips might be ordered from any Philips TV assistance centre.
+Dallas chips are now more common than some time ago, and may be found
+on RS/distrelec catalogs.
+Ricoh chips instead are very difficult to obtain.
+
+How to compile:
+Have i2c library includes in your include directory and:
+.StormC3 - make a new project and add all sources;
+.VBCC    - create file "inline/i2c_protos.h" using fd2pragma on i2clib40's fd
+           as suggested in fd2pragma docs (aminet);
+         - commandline used to generate the included executables:
+           vc vlibm68k:minstart.o SetClockI2C.c Rtci2c.c -nostdlib -sc -sd -O2
+              -lamigas -DMIN_START=1
+           gives very small executables (~2500 bytes)
+.SAS/C
+.GCC     - use the makefiles included in "contribution" directory
+
+
+Usage
+-----
+
+Have i2c bus up and running (Wilhelm Noeker's SW incudes a test program).
+
+The usage is the same as system standard SetClock.
+AHelp v1.3 by Joe Cassara (aminet) says about it:
+
+        FORMAT:         SETCLOCK LOAD|SAVE|RESET
+        TEMPLATE:       LOAD/S,SAVE/S,RESET/S
+        PATH:           C:
+
+        Sets the system clock based on data stored in the battery
+        backed-up time hardware.
+
+        Setclock options:
+
+                LOAD    Loads the system time from the battery backed-up
+                        hardware
+
+                SAVE    Saves the system time to the battery backed-up
+                        hardware
+
+                RESET   Resets the system clock completely.
+                        * Used when a poorly written program turns the clock
+                          off or other errors are involved.
+
+
+NOTES:
+
+I)
+Please avoid doing a <SetClockI2C load> before doing a save or you may garble
+the system clock; anyway this applies also to system "SetClock".
+<SetClockI2C load> does not do any check on the current status
+(stopped/running) of the RTC!
+
+II)
+The original command (setclock 37.1 (10-Jan-1991) ) could not be emulated
+completely, due to the different kind of hardware resources used. It
+only used battclock.resource. SetClockI2C instead needs i2c.library, which
+in turn accesses a couple of env variables. For this reason, if you invoke
+SetCLockI2C before an env: assign/volume is present, i2c library uses its
+internal defaults, which may or may not be your choice.
+All the RTC chips supported store date in second/minute/hour/day/month/year
+format, so some V36 utility.library functions have been used to convert to
+standard Amiga time, rather than inventing the wheel another time building
+new ones. This could be needed if somebody uses an os previous than V36:
+if you really need this command on a pre-V36 system, please tell me.
+utility.library is normally in ROM, and V36 means Kickstart 2.0.
+
+III)
+Due to how 8583 handles years (only a 4 year count) it is needed to reserve a
+memory location for clock setting usage (location 0x10 of 8583 memory is for
+this reason reserved): the first time you <SetClockI2C save> this will be
+initialized as needed.
+By this way you only need to execute a <SetClockI2C load> at least once every
+4 years to have the system time saved on a 128 year range starting, as you know,
+from 1-jan-1978.
+
+IV)
+The system date limit, being an unsigned 32 bit integer, turned out to be:
+
+         0s =  sec 0 min 0 hour 0
+               mday 1 month 1 year 1978 wday 0 (=sunday)
+
+4294967295s =  sec 15 min 28 hour 6
+               mday 7 month 2 year 2114 wday 3
+
+
+Sources
+-------
+
+The archive includes one binary for every chip, which you may rename or not as
+you like.
+The dev directory contains the source:
+
+ SetClockI2C.c         -- main interface
+ rtci2c.h              -- low-level routines
+ rtci2c.c
+
+The sources, these shouldn't require modification.
+
+ clockpref.h           -- personal setup
+
+This file is provided to select which rtc to use and its address; instructions
+are included.
+
+
+Accuracy
+--------
+
+The supported chips are very different in terms of accuracy (= how much
+the clock time differs from "real" elapsed time)
+
+1. External crystal chips
+   These rtc require an external clock crystal @ 32.768 kHz, with load 
+   capacitance matched with rtc one. This way, the overall accuracy
+   depends primarily on the cystal one. On RS catalog the best one has
+   crystal tolerance:    +/- 15 ppm  (~8 min / year) @ 25°C
+   temperature accuracy: +/- 200 ppm (~1.7hr / year) (0-70°C ?) 
+   While the latter is normally not a problem (but 15-45°C range should
+   be kept into account even for indoor only applications) the former
+   should be accounted for as the first element in overall accuracy 
+   evaluation; the second element comes from rtc data:
+
+  .PCF8583
+  The data sheet only specifies 0.2ppm error @ Vcc = 1V, 25°C, Vcc +/- 100mV.
+  I have had very bad experiences with this rtc, at least with the installed
+  crystal: the whole is strongly dependent on operating voltage and couldn't 
+  be trimmed (with the aid of a 12-digits frequency counter) to something 
+  less than 1000 ppm (!) (=8.6 hr/year). If somebody experiences better 
+  results, please tell me: did I get a defect unit ?
+  Furthermore, the maximum timekeeping current can be as much as 10 uA, this 
+  means that a non-rechargeable 150 mAh battery will last 15000 hours, or 
+  ~1.7 years (@ 25°C, this has been tested by me :).
+
+  .DS1307/DS1629
+  These components'data sheets say nothing about internal oscillator 
+  tolerance and I did not test them. Anyway considerations on the crystal
+  accuracy still apply.
+  Maximum timekeeping currents:
+  DS1629 1.0uA @ 25°C --> 150 mAh battery should last ~17 years
+  DS1307 0.5uA @ 25°C --> 150 mAh battery should last ~34 years
+
+2. Internal crystal chips: currently I tested only Ricoh R2025 rtc, which
+  gives the following data:
+  crystal tolerance:                  +/- 5 ppm (~2 min / year)
+  accuracy over voltage range(@25°C): +/- 1 ppm (~30 sec / year) 2V - 5.5V
+  accuracy over temperature range:    +120/-10 ppm   20°C - 70°C
+  aging:                              +/- 5 ppm after 1 year
+  So the overall worst case @ 25°C is +/- 11 ppm (~6 min/year).
+  This rtc can be compensated within 3ppm tolerance, so the aging term may
+  be manually corrected.
+  Maximum timekeeping current is: 1.2 uA @ 25°C, so the 150 mAh battery 
+  should last ~14 years.
+
+3. If this accuracy is not enough, there exists also a temperature
+  compensated clock generator, the Dallas/Maxim DS32KHZ:
+  accuracy over voltage range:     +/- 2.5 ppm  3V - 5V @ 25°C
+  accuracy over temperature range: +/- 7.5 ppm  0°C - 70°C
+  aging:                           +/- 1 ppm after 1 year
+  Maximum timekeeping current should be added something like 2.2 uA.
+
+
+How much time passes between the action of reading from RTC and setting the
+system clock or vice-versa? The i2c.library reading/writing process adds some
+latency, inversely proportional to its speed. Here are the current limits
+using ICY:
+
+@1.5 kHz
+max latency ~ 0.1437 s
+
+@90 kHz
+max latency ~ 0.0024 s
+
+which were measured using E-clock as suggested in RKMs. I do not think it's
+needed to include any compensation for these low latencies.
+
+
+How SetClockI2C avoids false carries
+------------------------------------
+
+There is a problem reading any timer with more than 8 bits; let's look at an
+example:
+.the timer contains minutes and seconds, say :21:59
+.if we first read minutes (21), then eventually seconds (59? 00? 01?) we may
+read the actual time or be fooled into thinking it's for example :21:00.
+It is good practice to read the whole dclock+calendar data in one step, but
+the problem persists, so here's how the currently supported RTCs solved it:
+
+.DS1629/DS1307 store current timer in a separate set of registers "capture
+ latches" following an i2c START condition, so you may read a "photograph"
+ of the clock taken before last i2c START.
+.PCF8583 has a command which should be explicitly invoked to do this; you
+ also should remember to release the "capture latches" after reading, or
+ you will read the frozen value forever.
+.R2025 seems to work in a similar way to DS1629, but also requires master to
+ complete a read/write operation in less than 0.5 seconds (as you may notice
+ above, this should be no problem both at 1.5 kHz and 90 kHz). It restores
+ normal operation within 61 us after the STOP condition, so no access is
+ supported during this time.
+
+
+Bugs
+----
+
+At the moment I would be glad if someone may test the DS1307 version.
+
+
+Bibliography
+------------
+
+Pinchas Lapide, "Bibbia tradotta, Bibbia tradita"
+
+
+Thanks
+------
+
+To:
+.Michael Boehmer for the tiny ICY board and for testing DS1629 version;
+.Wilhelm Noeker for i2c SW layer which makes easy as a game using i2c on Amiga;
+.Haage&Partner for StormC 3, an excellent C environment.
+.Stefan Becker for the disclaimer text.
+.Gunther NikI for pointing out to me the use of AllocMem instead of malloc :)
+.Thomas Richter for his discussion on memory allocation in aminet/poolmem.lha
+
+
+Test configuration
+------------------
+
+Hardware:
+Amiga 4000 / CyberstormPPC 200 / Cybervision64 / A2091 / Prelude
+Amiga 2000
+ICY
+
+Software:
+AmigaOS 3.9 (utility.library 40.1)
+i2c.library 40.2
+
+
+Author
+------
+
+Stefano Ruviero
+s.ruviero@libero.it
+
+
+Future
+------
+
+Make a smaller executable: setclock is only 668 bytes long ...
+Support more RTCs.
+Compile with GCC.
+
+Ah, and if anybody is able to write "Useless SW" in a better way, I would
+appreciate if you could send it to me :)
+
+
+Copyright
+---------
+
+Freeware; please see the disclaimer.
+
+
+History
+-------
+
+V1.5 - 23 nov 1999 - Philips PCF 8583 only supported.
+
+V1.8 - 14 dec 1999 - Dallas DS 1629 supported.
+
+V2.0 - 28 oct 2003 - Ricoh R2025 added, rewritten using standard amiga functions
+
+V2.8 - 11 jan 2003 - ReadArgs() used. Very nice!
+                     First public release.
+
+V2.9 - 1 apr 2004  - Partial rewrite using standard Amiga AllocMem, no malloc
+                     nor stack allocation any more. Size decreased!
+

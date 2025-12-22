@@ -1,0 +1,1374 @@
+@database mails
+@node main
+                          3D World Mailing List Archive
+
+                                  October 2001
+
+             Compiled by Paul Qureshi (paul.qureshi@btinternet.com)
+
+For more information on the 3D World Mailing List please read the FAQ. It is available at various sites:
+
+Aminet: docs/misc/3DWorldFAQ.lha
+http://mc68k.btinternet.com/faq/
+The 3D World ML, monthly post
+
+@{"Z buffering.                                     " link 08681.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Z buffering.                                 " link 08683.001} Thomas Frieden <ThomasF@hyperion-entertainment.com>
+@{"Voodoo 4/5 support                               " link 08683.005} Jan-Erik Karlsson <trg@privat.utfors.se>
+@{"Re: Re: Z buffering.                             " link 08683.004} Oliver Dittrich <oliver.dittrich@tu-clausthal.de>
+@{"Re: Z buffering.                                 " link 08683.003} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Z buffering.                                 " link 08683.002} Oliver Dittrich <oliver.dittrich@tu-clausthal.de>
+@{"Re: Voodoo 4/5 support                           " link 08684.001} Thomas Frieden <ThomasF@hyperion-entertainment.com>
+@{"Re: Re: Voodoo 4/5 support                       " link 08684.006} Thomas Frieden <ThomasF@hyperion-entertainment.com>
+@{"Re: Re: Voodoo 4/5 support                       " link 08684.005} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"Re: Voodoo 4/5 support                           " link 08684.004} DET Nicolas <outcast@wanadoo.fr>
+@{"Re: Voodoo 4/5 support                           " link 08684.003} Jan-Erik Karlsson <trg@privat.utfors.se>
+@{"Re: Voodoo 4/5 support                           " link 08684.002} Alan Buxey <almb@mssl.ucl.ac.uk>
+@{"Re: Re: Voodoo 4/5 support                       " link 08685.004} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"Re: Re: Voodoo 4/5 support                       " link 08685.003} Alan Buxey <almb@mssl.ucl.ac.uk>
+@{"Re: Re: Voodoo 4/5 support                       " link 08685.002} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"Re: Voodoo 4/5 support                           " link 08685.001} Jan-Erik Karlsson <trg@privat.utfors.se>
+@{"Re: 3D Clipping (Was:Z buffering)                " link 08692.001} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"3D Clipping (Was:Z buffering)                    " link 08691.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Heretic2 crashes with ahi.device 5.17 (fwd)  " link 08692.002} DJNick <djnick@ptt.yu>
+@{"Rendering into texture and other stuff.          " link 08693.002} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Rendering into texture and other stuff.      " link 08693.001} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"Re: Rendering into texture and other stuff.      " link 08696.001} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"Re: Re: Rendering into texture and other stuff.  " link 08697.001} Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+@{"Re: info 3d                                      " link 08703.002} Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+@{"info 3d                                          " link 08703.001} Alessandro Braccini <alex_dran@libero.it>
+@{"Re: info 3d                                      " link 08706.001} Alessandro Braccini <alex_dran@libero.it>
+@endnode
+@node 08681.001
+Subject: Z buffering.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Mon, 08 Oct 2001 18:18:09 +0200
+
+Hello again,
+
+    I have some strange problems with zbuffering. I have compiled
+ a test effects to demonstrate this, and it's very visible there. If
+ someone is interested, I will send it to them provately (it's ~300kB. Sorry
+ but my engine is quite big). It looks like some portions of an object are
+ changing their position (intersection point is moving). If someone can
+verify
+ that these transformations are correct. They are used in main loop
+ where vertices are transformed into camera space.
+
+    // dx,dy - screen center
+    // czoom - camera zoom. This one is my own calculated value.
+
+    viewdist_recip=1.0/viewdist;     // viewdist is a far clipping plane
+    
+    // modify matrix to take aspect ratio into account
+    aspect=dx/dy;
+    matrix_Copy(mat,&mat_camera); // copy camera matrix <mat> into temp mat.
+    matrix_Standard(&mat_scale);   // reset scaling matrix
+
+    // calculate scaling matrix to get 90 degrees view cone and normalize Z
+coordinate
+   
+matrix_Scale(&mat_scale,(float)czoom/dx*viewdist_recip,(float)czoom/dy*viewdist_recip,1*viewdist_recip);
+    matrix_Multiply(mat,&mat_scale,&mat_camera);
+
+    // Transfroming all points with new camera matrix
+
+    swidth=dx*2;
+    sheight=dy*2;
+    swidthhalf=dx;
+    sheighthalf=dy;
+
+    xcenter=dx;
+    ycenter=dy;
+
+    [...]
+
+    //  ...and then after multiplying vertex by matrix....
+
+
+     iz=1.0/z;
+     screenx=swidthhalf+x*swidthhalf*iz;
+     screeny=sheighthalf-y*sheighthalf*iz;            
+
+    Is this correct? I think yes. But I'm trying everything to find this
+stupid
+ bug.
+
+
+Regards.
+-- 
+
+// Michal  "Kierownik" Wozniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+--------------------------------------------------
+Poczta nie pozwoli Ci zapomniec.
+Twoja nowa poczta. >> http://poczta.interia.pl/
+
+@endnode
+@node 08683.001
+Subject: Re: Z buffering.
+From: Thomas Frieden <ThomasF@hyperion-entertainment.com>
+Date: Tue, 09 Oct 2001 23:47:41 +0200
+
+Hi,
+
+Michal Wozniak wrote:
+
+>I have some strange problems with zbuffering. I have compiled
+> a test effects to demonstrate this, and it's very visible there. If
+> someone is interested, I will send it to them provately (it's ~300kB. Sorry
+> but my engine is quite big). It looks like some portions of an object are
+>
+
+Yes, please go ahead and send it to me, and I'll have a look.
+
+Regards,
+
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-entertainment.com
+ http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08683.005
+Subject: Voodoo 4/5 support
+From: Jan-Erik Karlsson <trg@privat.utfors.se>
+Date: Wed, 10 Oct 2001 22:43:16 +0100
+
+Hi
+
+just thought of something when reading some old news in vgr/cybergraphics
+there was mentioned that you (warp3d team) had looked at the glide source
+briefly for information
+about the voodoo 4/5... but doesn't XFree86 contain  3D hardware
+acceleration for voodoo 4/5
+with their (Xfree.org) DRI drivers (which I think is in the source
+distribution).
+
+With kind regards,
+Jan-Erik Karlsson
+-- 
+Email: trg@privat.utfors.se
+WWW: http://hem.fyristorg.com/TRG/
+UIN (ICQ): 54667153
+-- 
+"So this is where they make movies," Tom said studiously.
+
+@endnode
+@node 08683.004
+Subject: Re: Re: Z buffering.
+From: Oliver Dittrich <oliver.dittrich@tu-clausthal.de>
+Date: Wed, 10 Oct 2001 20:41:05 +0200
+
+
+
+Michal Wozniak schrieb:
+
+>     You see. This is not the problem in this case, because the
+>  place where 2 objects intersect isn't sawtooth shaped,
+>  but normal. It's just moving very strange.
+
+it doesn't has to be, but usally it does.. might be you should send me the .exe
+and i'll take a look..
+
+regards
+Olli
+
+@endnode
+@node 08683.003
+Subject: Re: Z buffering.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Wed, 10 Oct 2001 19:09:15 +0200
+
+On 10-Pa=BC-01 Oliver Dittrich wrote:
+
+
+> sounds like the usual zbuffer problem of many engines: problem is you h=
+ave
+
+    You see. This is not the problem in this case, because the
+ place where 2 objects intersect isn't sawtooth shaped,
+ but normal. It's just moving very strange.
+
+> regards
+> Olli
+
+Regards
+
+
+----------------------------------------------------------------------
+Miliony zdjec z ca=B3ego swiata. Wyszukiwarka multimediow.
+Nowe Centrum Wyszukiwania >> http://szukaj.interia.pl/
+
+@endnode
+@node 08683.002
+Subject: Re: Z buffering.
+From: Oliver Dittrich <oliver.dittrich@tu-clausthal.de>
+Date: Wed, 10 Oct 2001 03:24:30 +0200
+
+
+
+Michal Wozniak schrieb:
+
+> Hello again,
+>
+>     I have some strange problems with zbuffering. I have compiled
+>  a test effects to demonstrate this, and it's very visible there. If
+>  someone is interested, I will send it to them provately (it's ~300kB. Sorry
+>  but my engine is quite big). It looks like some portions of an object are
+>  changing their position (intersection point is moving).
+
+sounds like the usual zbuffer problem of many engines: problem is you have a 16 or 32 bit zbuffer in actual
+3dchips but you use floats(doubles) as z-coordinate in opengl so opengl has to convert any float(double)
+into a valid zbuffer-entry of 16/32 bit which first of all produces information loss by rounding problems..
+the fact that permedia and voodoo have just 16bit zbuffers (afaik) normaly results in heavy
+rounding-problems which do sawthooth like intersection line between 2 surfaces intersecting.. it could be a
+little help to check out how opengl computes the float data into the 16bit zbuffer values (has something to
+do with 1/z, but i don't remember.. or was it sigmoid func..??) and do a scale of your object space (object
+resolution) to a resolution which better 'fits' into the zbuffer.. normally z-values close to 1.0 should
+have the best resolution in zbuffer (the more you get to 0.0 or very great values the lower the
+z-bufferresolution)
+
+regards
+Olli
+
+@endnode
+@node 08684.001
+Subject: Re: Voodoo 4/5 support
+From: Thomas Frieden <ThomasF@hyperion-entertainment.com>
+Date: Wed, 10 Oct 2001 23:51:36 +0200
+
+Hi,
+
+Jan-Erik Karlsson wrote:
+
+>just thought of something when reading some old news in vgr/cybergraphics
+>there was mentioned that you (warp3d team) had looked at the glide source
+>briefly for information
+>about the voodoo 4/5... but doesn't XFree86 contain  3D hardware
+>acceleration for voodoo 4/5
+>with their (Xfree.org) DRI drivers (which I think is in the source
+>distribution).
+>
+
+AFAIK, the DRI drivers use glide, or at least they are based on glide. 
+No matter what, sifting through tons of badly documented code to write 
+an actual driver is a major pain in the backside...
+
+
+Regards,
+
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-entertainment.com
+ http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08684.006
+Subject: Re: Re: Voodoo 4/5 support
+From: Thomas Frieden <ThomasF@hyperion-entertainment.com>
+Date: Thu, 11 Oct 2001 22:08:56 +0200
+
+Hi,
+
+DET Nicolas wrote:
+
+>It's a really good idea !
+>
+I'm afraid it isn't. The reason is simple: You can ask someone about a 
+very specific problem, but not something like "How does the Voodoo 4 
+work ?".
+
+>But The XFree people might want the drivers to be open. Will Amiga people be
+>ok ?
+>
+
+We've talked to some of the Voodoo 3 authors some time ago, about a 
+hangup problem in the Voodoo 3 core. The chip actually has a hardware 
+bug that leads to a complete hangup of the chip, which can only be cured 
+by a chip reset (Warp3D does this automatically, it happens about once 
+in half an hour...). This is also one of the reasons why I'm so 
+sceptical about the Voodoo 4 support announced by Elbox: I can't 
+guarantee that the Voodoo 4 is reset correctly...
+
+Generally, the XFree people are very helpful, but as I said, they can't 
+answer questions about general workings of the chip...
+
+Don't give up hope, though, we'll investigate the possibilities we have 
+with the Voodoo 4, maybe we can find a solution...
+
+Regards,
+
+-- 
+ Thomas Frieden
+ Senior Developer, Hyperion Entertainment
+ ThomasF@hyperion-entertainment.com
+ http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08684.005
+Subject: Re: Re: Voodoo 4/5 support
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Thu, 11 Oct 2001 21:49:08 +0200
+
+DET Nicolas wrote:
+
+>H=E9, Warp3D driver author, what do you think about this (asking informa=
+tion
+>to XF) ?
+>
+I did that before with the Voodoo driver. Sometimes they can help you,=20
+but a lot of things you only get by signing an NDA, and then you must=20
+not tell anybody else.
+
+Regards,
+
+--=20
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08684.004
+Subject: Re: Voodoo 4/5 support
+From: DET Nicolas <outcast@wanadoo.fr>
+Date: Thu, 11 Oct 2001 17:49:33 +0100
+
+Hello Jan-Erik
+
+On 11-oct-01, you wrote:
+
+
+> yes I have, and the entire XFree isn't in one source file you know (and
+> the xfree86 code is alot better maintained than for instance YAM 2.x wh=
+ich
+> is a true horror story),you don't have to look through all source files
+> looking for voodoo or 3dfx and even if this is not the case who says th=
+at
+> you need to use their code as is, why not simply get in touch with the
+> xfree people and ask if they have any information that they can deliver
+> regarding the voodoo 4/5 chipset(s).
+>=20
+It's a really good idea !
+And this way, why only support Voodoo 4/5, it should be possible to suppo=
+rt
+MORE chip (ATI for example)
+
+But The XFree people might want the drivers to be open. Will Amiga people=
+ be
+ok ?
+
+H=E9, Warp3D driver author, what do you think about this (asking informat=
+ion
+to XF) ?
+
+Regards
+--=20
+DET Nicolas (ou simplement Nico)
+A4040 avec CyberVision64/3D
+@endnode
+@node 08684.003
+Subject: Re: Voodoo 4/5 support
+From: Jan-Erik Karlsson <trg@privat.utfors.se>
+Date: Thu, 11 Oct 2001 16:47:49 +0100
+
+Hello, Alan
+
+On 11-Oct-01, you wrote:
+
+AB > hi,
+AB >=20
+AB >> just thought of something when reading some old news in
+AB >> vgr/cybergraphics there was mentioned that you (warp3d team) had
+AB >> looked at the glide source briefly for information about the voodoo
+AB >> 4/5... but doesn't XFree86 contain 3D hardware acceleration for voo=
+doo
+AB >> 4/5 with their (Xfree.org) DRI drivers (which I think is in the sou=
+rce
+AB >> distribution).
+AB >=20
+AB > have you looked at XFree sources?? its a long long job, and noone ha=
+s
+AB > the months to spare to work out WHAT the code does and then implemen=
+t
+AB > it under AmigaOS drivers.... maybe someone DOES have the time? ;-)
+
+yes I have, and the entire XFree isn't in one source file you know (and t=
+he
+xfree86 code is alot better maintained than for instance YAM 2.x which is=
+ a
+true horror story),you don't have to look through all source files lookin=
+g
+for voodoo or 3dfx and even if this is not the case who says that you nee=
+d
+to use their code as is, why not simply get in touch with the xfree peopl=
+e
+and ask if they have any information that they can deliver regarding the
+voodoo 4/5 chipset(s).
+
+With kind regards,
+Jan-Erik Karlsson
+--=20
+Email: trg@privat.utfors.se
+WWW: http://hem.fyristorg.com/TRG/
+UIN (ICQ): 54667153
+--=20
+Real knowledge is to know the extent of one's ignorance. =80 Confucius
+
+@endnode
+@node 08684.002
+Subject: Re: Voodoo 4/5 support
+From: Alan Buxey <almb@mssl.ucl.ac.uk>
+Date: Thu, 11 Oct 2001 09:38:59 +0100 (BST)
+
+hi,
+
+> just thought of something when reading some old news in vgr/cybergraphics
+> there was mentioned that you (warp3d team) had looked at the glide source
+> briefly for information
+> about the voodoo 4/5... but doesn't XFree86 contain  3D hardware
+> acceleration for voodoo 4/5
+> with their (Xfree.org) DRI drivers (which I think is in the source
+> distribution).
+
+have you looked at XFree sources??  its a long long job, and noone has the
+months to spare to work out WHAT the code does and then implement it under
+AmigaOS drivers.... maybe someone DOES have the time? ;-)
+
+alan
+
+@endnode
+@node 08685.004
+Subject: Re: Re: Voodoo 4/5 support
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Fri, 12 Oct 2001 14:08:59 +0200
+
+Alan Buxey wrote:
+
+><sigh> If I had the finances I'd supply you with some....not that i even
+>want Voodoo4/5 support - Like you I believe there are better cards to
+>support out there (and forthcoming)...but just so you may have a chance to
+>sort these issues out (and get these whining people off your backs.
+>
+I'll probably get one soon. Can't make promises, though.
+
+>Perhaps you should reinterate that email/message that said 'If WE say its
+>not supported, then dont buy the card!'  :-)
+>
+We did that, on ann.lu for example. We received a lot of hostility 
+there, people claiming we shouldn't comment on that etc p.p.
+
+We still stand by it, though, that we support Avenger only at the 
+moment. If it does work on the Voodoo 4/5 all the better, but that's an 
+added bonus and not supported actively.
+
+Best regards,
+
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08685.003
+Subject: Re: Re: Voodoo 4/5 support
+From: Alan Buxey <almb@mssl.ucl.ac.uk>
+Date: Fri, 12 Oct 2001 12:53:56 +0100 (BST)
+
+hi,
+
+> The only thing that we might have a look at is proper VSA-100/Napalm
+> support, although this still requires that we get some Voodoo 4 from
+> somewhere.
+
+<sigh> If I had the finances I'd supply you with some....not that i even
+want Voodoo4/5 support - Like you I believe there are better cards to
+support out there (and forthcoming)...but just so you may have a chance to
+sort these issues out (and get these whining people off your backs.
+
+Perhaps you should reinterate that email/message that said 'If WE say its
+not supported, then dont buy the card!'  :-)
+
+alan
+
+@endnode
+@node 08685.002
+Subject: Re: Re: Voodoo 4/5 support
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Fri, 12 Oct 2001 11:55:07 +0200
+
+Jan-Erik Karlsson wrote:
+
+>was just over at the DRI status/FAQ page and if this page is current (well
+>relatively) it appears that they do have full documentation/understanding
+>of the VSA-100 and the only thing they haven't enabled in Xfree86 4.x is
+>the SLI for Voodoo5 5500 (which makes the voodoo5 5500 run like a Voodoo4)
+>but that they are interested to 
+>hear from people that would be interested in finishing this for them, so
+>that would be one way to get the documentation
+>
+So you think that we should do SLI for XFree to get the documentation 
+for an Amiga/Warp3D driver? Sorry, but even if I had the time for this 
+this would be completely out of question. You should ask yourself why 
+the SLI isn't in there...
+
+>I assume that applies to the Voodoo5 5500 and Voodoo6 cards, which are based
+>on more than one VSA100 chip, operating together in socalled SLI mode.
+>
+No, every Voodoo since CVG/Voodoo 2 can do SLI. Even the Avenger. You 
+can put two Voodoo 3 in one machine and connect them via a short cable. 
+However...
+
+>
+>What I don't understand: the DRI project HAS enough programming
+>specifications to develop a DRI driver which uses 1 VSA100 chip. Why is it
+>so much more difficult to develop a DRI driver which uses both VSA100 chips
+>on a Voodoo5 card, if both chips are the same and have the same programming
+>specs?
+>
+... SLI is, let's put it mildly, a lot of work to get working right.
+
+>The point is that I just can't stand seeing the Voodoo5 only being utilised
+>to about half of it's capabilities, while we're only missing a small piece
+>of the puzzle: enabling SLI mode itself. The VSA100 chip in itself is no
+>secret anymore to the DRI developers, right?
+>
+Listen, we don't support even a single VSA 100 chip. Never have, and may 
+never do at all. The whole affair started with Elbox' announcement, and 
+your request is one of the reason why I wish they had never started it.
+
+>I also read somewhere (vgr?) where someone had run a voodoo5 5500 but
+>apparently it was slower than the voodoo3 and one reason (well 2) is that
+>1) the SLI is unfunctional (obviously) and therefore only uses 1 VSA-100
+>chip in 3D 2) it has the anti-aliasing enabled by default which slows down
+>the voodoo5 5500 quite a lot and then you can add the workaround voodoo3
+>bug (stalling -hangup-) which might interfere with the VSA-100
+>
+This might be, although the stalling/hangup bug fix only kicks in when 
+the chip doesn't go idle anymore.
+
+>the fullscreen anti-aliasing slow-down is verified by a friend of mine which
+>owns both a voodoo5 5500 and a Voodoo3 3500 when anti-aliasing is enabled
+>the voodoo5 slows down alot (well noticably).
+>
+OK, let me clarify: We will never support SLI, out of the same reasons 
+that DRI doesn't support it, plus the lack of hardware, plus the fact 
+that there are much more interesting graphics card solutions out there. 
+The only thing that we might have a look at is proper VSA-100/Napalm 
+support, although this still requires that we get some Voodoo 4 from 
+somewhere.
+
+This all started with Elbox claiming full Voodoo 4/5 support, and I'm 
+afraid that we don't have the time or resources to make their claims true.
+
+Best regards,
+
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08685.001
+Subject: Re: Voodoo 4/5 support
+From: Jan-Erik Karlsson <trg@privat.utfors.se>
+Date: Fri, 12 Oct 2001 02:43:18 +0100
+
+Hello, Thomas
+
+On 11-Oct-01, you wrote:
+
+TF > Hi,
+TF > 
+TF > DET Nicolas wrote:
+TF > 
+TF >> It's a really good idea !
+TF >> 
+TF > I'm afraid it isn't. The reason is simple: You can ask someone about a 
+TF > very specific problem, but not something like "How does the Voodoo 4 
+TF > work ?".
+TF > 
+TF >> But The XFree people might want the drivers to be open. Will Amiga
+TF >> people be ok ?
+TF >> 
+TF > 
+TF > We've talked to some of the Voodoo 3 authors some time ago, about a
+TF > hangup problem in the Voodoo 3 core. The chip actually has a hardware
+TF > bug that leads to a complete hangup of the chip, which can only be
+TF > cured by a chip reset (Warp3D does this automatically, it happens about
+TF > once in half an hour...). This is also one of the reasons why I'm so
+TF > sceptical about the Voodoo 4 support announced by Elbox: I can't
+TF > guarantee that the Voodoo 4 is reset correctly...
+TF > 
+TF > Generally, the XFree people are very helpful, but as I said, they can't
+TF > answer questions about general workings of the chip...
+TF > 
+TF > Don't give up hope, though, we'll investigate the possibilities we have
+TF > with the Voodoo 4, maybe we can find a solution...
+
+was just over at the DRI status/FAQ page and if this page is current (well
+relatively) it appears that they do have full documentation/understanding
+of the VSA-100 and the only thing they haven't enabled in Xfree86 4.x is
+the SLI for Voodoo5 5500 (which makes the voodoo5 5500 run like a Voodoo4)
+but that they are interested to 
+hear from people that would be interested in finishing this for them, so
+that would be one way to get the documentation
+
+quote from dri.sourceforge.net the faq page
+...
+
+"SLI is not supported and most likely never will be."
+
+I assume that applies to the Voodoo5 5500 and Voodoo6 cards, which are based
+on more than one VSA100 chip, operating together in socalled SLI mode.
+
+What I don't understand: the DRI project HAS enough programming
+specifications to develop a DRI driver which uses 1 VSA100 chip. Why is it
+so much more difficult to develop a DRI driver which uses both VSA100 chips
+on a Voodoo5 card, if both chips are the same and have the same programming
+specs?
+
+The point is that I just can't stand seeing the Voodoo5 only being utilised
+to about half of it's capabilities, while we're only missing a small piece
+of the puzzle: enabling SLI mode itself. The VSA100 chip in itself is no
+secret anymore to the DRI developers, right?
+
+....
+
+For the person asking about 3dfx SLI support -- no, it is not hard to work
+on that, BUT we just don't have enough time. If anybody else is interested
+in doing it then please volunteer. Any help is greatly needed/appreciated.
+
+...
+
+I also read somewhere (vgr?) where someone had run a voodoo5 5500 but
+apparently it was slower than the voodoo3 and one reason (well 2) is that
+1) the SLI is unfunctional (obviously) and therefore only uses 1 VSA-100
+chip in 3D 2) it has the anti-aliasing enabled by default which slows down
+the voodoo5 5500 quite a lot and then you can add the workaround voodoo3
+bug (stalling -hangup-) which might interfere with the VSA-100
+
+the fullscreen anti-aliasing slow-down is verified by a friend of mine which
+owns both a voodoo5 5500 and a Voodoo3 3500 when anti-aliasing is enabled
+the voodoo5 slows down alot (well noticably).
+
+With kind regards,
+Jan-Erik Karlsson
+-- 
+Email: trg@privat.utfors.se
+WWW: http://hem.fyristorg.com/TRG/
+UIN (ICQ): 54667153
+-- 
+If you brag about the fact that you haven't read a book since high school.
+
+@endnode
+@node 08692.001
+Subject: Re: 3D Clipping (Was:Z buffering)
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Thu, 18 Oct 2001 21:15:49 +0200
+
+Michal Wozniak wrote:
+
+>During vertex transformation I get orthogonal view volume (90 degrees).
+> This means that if I want to check for example for right clipping plane
+> I check if x>z and so on for other planes. The same thing is done in engine
+>demo.
+>
+Yes, this is normal for a 3D clip.
+
+>Then I'm using faces codes to determine which clipping planes I have to
+>clip to.
+>
+>    Then I use the same equations to calculate <t> like in engine demo.
+>
+>    Then project the newly created vertices to the screen and draw.
+>
+>    As I said, visualy it's correct until faces are begining to intersect.
+>Then
+> things go wrong. So my question is: Is it correct? In minigl sources I seen
+> that this works quite similar, except there is W coord involved instead of
+>Z.
+> Is W=1.0/z? And why? 
+>
+That's not entirely impossible since the Engine demo doesn't have 
+intersecting polygons.
+
+What you are probably doing is use the wrong Z. There are basically 
+three possibilities:
+
+- You use a Z value that is not perspective projected
+- You use a Z value after a perspective projection
+- You use W
+
+The best thing is probably to use W if W is in the range [0..1], since W 
+will always be linear, while Z isn't if you didn't do a perspective 
+divide for Z. (You might look at WarpTest for that).
+
+Using W requires you to either write 1-w into Z, or use W directly and 
+reverse the compare function.
+
+Regards,
+
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08691.001
+Subject: 3D Clipping (Was:Z buffering)
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Thu, 18 Oct 2001 20:53:57 +0200
+
+hi,
+
+    it's me again. While investigating my zbuffer errors, i have found
+ out that my clipping code works "not too good". I mean geometry clipping
+ (screen coords) are correct but z values seems to be competely wrong,
+ because faces intersections tend to move as I said before. This is strange
+ because I thought that if geometry is ok (and it's after perspective
+transformation
+ in clipping code) than x,y and z coords should be ok too. 
+    So, this is how my clipping works:
+
+    During vertex transformation I get orthogonal view volume (90 degrees).
+ This means that if I want to check for example for right clipping plane
+ I check if x>z and so on for other planes. The same thing is done in engine
+demo.
+
+    Then I'm using faces codes to determine which clipping planes I have to
+clip to.
+
+    Then I use the same equations to calculate <t> like in engine demo.
+
+    Then project the newly created vertices to the screen and draw.
+
+    As I said, visualy it's correct until faces are begining to intersect.
+Then
+ things go wrong. So my question is: Is it correct? In minigl sources I seen
+ that this works quite similar, except there is W coord involved instead of
+Z.
+ Is W=1.0/z? And why? 
+
+Regards.
+-- 
+
+// Michal  "Kierownik" Wozniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+----------------------------------------------------------------------
+2 miliardy stron pod jednym adresem. A to dopiero poczatek...
+Nowe Centrum Wyszukiwania >> http://szukaj.interia.pl/
+
+@endnode
+@node 08692.002
+Subject: Re: Heretic2 crashes with ahi.device 5.17 (fwd)
+From: DJNick <djnick@ptt.yu>
+Date: Fri, 19 Oct 2001 04:15:46 +0100
+
+Hello Hans-Joerg
+
+On 15-Oct-01, Hans-Joerg Frieden wrote:
+> DJNick wrote:
+> 
+>> Hrm. The changes between 5.6 and 5.17 only affects the device API, not
+>> the low-level API I assumed Heretic used. Since I don't have the game,
+>> I can't really tell.
+>> 
+> Heretic II uses the low-level API.
+
+Finally I tried Heretic2 (started tutorial level) and everything worked normal with latest AHI update...
+
+Regards
+-- 
+<tsb>d.j.nick [d-tronic] / icq: 13794052
+<tsb>URLs: http://www.djnick.com & http://www.d-tronic.com
+<tsb>amiga1260T ppc 603e/166mhz; b-vision & 160mb ram; prelude1200; 17" DTK;
+<tsb>32xCDrom & CDRW; zip100; 56K US-Robotic; hplj4MPlus & mustek 600 CU
+@endnode
+@node 08693.002
+Subject: Rendering into texture and other stuff.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Sat, 20 Oct 2001 16:53:48 +0200
+
+hi again,
+
+    One:
+
+    I was wondering, if it would be possible to transfer destination
+ video memory are into texture in gfx card memory? In theory
+ this should be only bltbitmap or something. Only problem could
+ be when texture would have to be trashed to make space for another
+ one. But maybe some kind of texture locking could be possible?
+
+
+    Two:
+
+    In my engine I'm storing vertex colour as 3(rgb) + 1(a) floating poin=
+t
+ values. These values are then passed through W3D_ColorPointer to
+ W3D_DrawElements. But these 4 values take 16 bytes of memory, so
+ I thought that I could store them in UBYTE's. This is supported by
+ W3D but I was wondering which representation 3D chips are using
+ (fixed point of float?), so this could be done without conversion.
+
+Regards.
+--=20
+
+// Michal  "Kierownik" Wozniak
+// e-mail: wozniak_m@interia.pl
+// Graphics Programming
+
+
+--------------------------------------------------
+Oszczedzaj papier. Nie przestawaj notowac.
+Z zewn=B1trz poczta, w srodku takze notatnik.
+Twoja nowa poczta >> http://poczta.interia.pl/
+
+@endnode
+@node 08693.001
+Subject: Re: Rendering into texture and other stuff.
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Sat, 20 Oct 2001 18:02:23 +0200
+
+Michal Wozniak wrote:
+
+>hi again,
+>
+>    One:
+>
+>    I was wondering, if it would be possible to transfer destination
+> video memory are into texture in gfx card memory? In theory
+> this should be only bltbitmap or something. Only problem could
+> be when texture would have to be trashed to make space for another
+> one. But maybe some kind of texture locking could be possible?
+>
+Currently, we don't have anything like that. It could theoretically be 
+made possible to set a render target, i.e. tell Warp3D to render into a 
+texture. However, this requires that the chip is actually capable of 
+that. For the Permedia2 for example there is a special optimized texture 
+format that cannot be rendered to.
+
+Something like that might come in a later revision. In fact, Warp3D 5 
+aka Ami3D 1.0 will make some severe changes (while staying backward 
+compatible, don't worry :-)
+
+>Two:
+>
+>    In my engine I'm storing vertex colour as 3(rgb) + 1(a) floating point
+> values. These values are then passed through W3D_ColorPointer to
+> W3D_DrawElements. But these 4 values take 16 bytes of memory, so
+> I thought that I could store them in UBYTE's. This is supported by
+> W3D but I was wondering which representation 3D chips are using
+> (fixed point of float?), so this could be done without conversion.
+>
+This highly depends on the chip, although all chips we support now 
+(except for the ViRGE, but that chip is so outdated that it doesn't even 
+have a setup engine) have both floating point and packed color (i.e. 
+ubytes).
+
+The vertex array functions (which should be preferred over the 
+traditional functions anyway) support quite a number of formats, but of 
+course most of the time only a few of them are natively supported. The 
+problem is that these might be different, i.e. one supports RGBA, 
+another one support ARGB etc. In any case however the UBYTEs are faster 
+and smaller, since less data has to be transferred over the bus, and 
+less storage is required. The only drawback is that they lack 
+resolution. This is not a problem right now because the chips all only 
+support 8 bit per color, but this will be a "problem" in the future... 
+(not really a problem since it is still compatible).
+
+Regards,
+
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08696.001
+Subject: Re: Rendering into texture and other stuff.
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Mon, 22 Oct 2001 19:53:24 +0200
+
+
+Hi,
+
+> Currently, we don't have anything like that. It could theoretically be=20
+> made possible to set a render target, i.e. tell Warp3D to render into a=
+=20
+> texture. However, this requires that the chip is actually capable of=20
+> that. For the Permedia2 for example there is a special optimized textur=
+e=20
+> format that cannot be rendered to.
+
+    Huh? In some previous mails You said that textures are stored in a
+ piece of gfx memory. Is it true? Are they stored there in this optimized
+ format? Or format that gfx chip supports (R5G5B5 for example)? How does
+ it look?. I have read that to do rendering into texture, chip have
+ to be capable of doing that, but never had a clue why;)
+
+> Something like that might come in a later revision.
+
+    Would be very usefull.
+
+> In fact, Warp3D 5=20
+> aka Ami3D 1.0 will make some severe changes (while staying backward=20
+> compatible, don't worry :-)
+
+    You mean API compatible of course;) Are You planning to add
+ new features from the begining, or the main target is to only provide
+ drivers for new cards? And is there (small?) possibility, that there wou=
+ld
+be
+ a driver for let's say Matrox, that users of currently used PCI solution=
+s
+ could use? You know, buying a new computer is a bit too expensive for so=
+me
+ of developers. And Matrox with T&L  would give a huge boost , because it
+ decreses memory speed influence.
+
+>> Two:
+
+ [ color storage format ]
+
+> This highly depends on the chip, although all chips we support now=20
+> (except for the ViRGE, but that chip is so outdated that it doesn't eve=
+n=20
+> have a setup engine) have both floating point and packed color (i.e.=20
+> ubytes).
+
+    That's good. I thought that it's done by the driver before sending da=
+ta,
+ and only speedup I would gain would be in some engine parts.
+ BTW. I don't care for now about future cards supported, because cpu will
+ be much faster, that converting (if necessary) ints to float would be=20
+ "quite" fast (I'm not counting other speeduos). But now You have to
+optimize
+ everything that's possible.
+
+> Regards,
+
+Regards
+
+
+----------------------------------------------------------------------
+Znajd=BC MP3 -> Wyszukiwarka multimediow. Jedyna w Polsce.
+Nowe Centrum Wyszukiwania >> http://szukaj.interia.pl/
+
+@endnode
+@node 08697.001
+Subject: Re: Re: Rendering into texture and other stuff.
+From: Hans-Joerg Frieden <Hans-JoergF@hyperion-entertainment.com>
+Date: Tue, 23 Oct 2001 22:43:57 +0200
+
+Michal Wozniak wrote:
+
+ >Huh? In some previous mails You said that textures are stored in a
+ > piece of gfx memory. Is it true? Are they stored there in this optimized
+ > format? Or format that gfx chip supports (R5G5B5 for example)? How does
+ > it look?. I have read that to do rendering into texture, chip have
+ > to be capable of doing that, but never had a clue why;)
+ >
+There are some chips, like the Permedia2, that support so called tiled
+memory organization. For the Voodoo we don't use that but for Permedia2
+there where problems when not using it due to some RAM timing. Basically
+the tiling makes the memory more cache coherent and generally faster to
+read, but cannot be in most cases used for direct access or rendering to...
+
+ >You mean API compatible of course;) Are You planning to add
+ > new features from the begining, or the main target is to only provide
+ > drivers for new cards? And is there (small?) possibility, that there 
+would
+ >be
+ > a driver for let's say Matrox, that users of currently used PCI solutions
+ > could use? You know, buying a new computer is a bit too expensive for 
+some
+ > of developers. And Matrox with T&L  would give a huge boost , because it
+ > decreses memory speed influence.
+ >
+I am still hoping that the OS 4 will come for the classic hardware...
+
+Yes, we're planning to stay API compatible, but there will be some major
+changes in the way Warp3D is organized and used. There is some legacy
+stuff that we want to get rid of, and some things that need changing to
+accomodate the new features. For example there will be the need to have
+complete 3D pipeline to allow for T&L to be used.
+
+With Matrox there are a few others things that might help tremendously
+(especially on AGP), but that's something that's covered by an NDA :-)
+
+ >That's good. I thought that it's done by the driver before sending data,
+ > and only speedup I would gain would be in some engine parts.
+ > BTW. I don't care for now about future cards supported, because cpu will
+ > be much faster, that converting (if necessary) ints to float would be
+ > "quite" fast (I'm not counting other speeduos). But now You have to
+ >optimize
+ > everything that's possible.
+ >
+There is still the chance that it is done by the driver, since not all
+chips need to support floating point or UBYTE at all (the ViRGE, for
+example, supports neither; you have to convert that to fix point numbers
+and do the complete gradient calculation yourself - not a pretty sight I
+can tell you :-)
+
+But generally UBYTES are faster.
+
+Regards
+
+-- 
+Hans-Joerg Frieden
+Senior Software Developer, Hyperion Entertainment
+Mail: Hans-JoergF@hyperion-software.de
+Web: http://www.hyperion-entertainment.com
+
+
+
+@endnode
+@node 08703.002
+Subject: Re: info 3d
+From: Michal Wozniak <wozniak_m@mail.gwl.koszalin.tpnet.pl>
+Date: Mon, 29 Oct 2001 16:15:48 +0200
+
+On 29-Pa=BC-01 Alessandro Braccini wrote:
+
+> Hello all,
+
+    Hi,
+
+> this is the first time i write to this ml.
+
+> I would like to try the power of w3d by writing some small examples but
+> the function CreateContext always returns a NULL value (witn a -2 error
+> message: invalid input).
+
+> Where is my error? Can you help me please??
+
+    Please not thet I'm guessing now;)
+
+    In tags, please use W3D_TRUE/FALSE
+    If You are using doubleheight tag, i think You should open a screen t=
+hat
+has doubleheight;)
+
+    If You are passing bitmap, use screen's bitmap.
+
+    I haven't tried to make there modifications, but why not trying;)
+ I will try to correct it and send it later.   =20
+
+> Thank you
+> Alessandro Braccini
+
+Regards
+
+
+------------------------------------
+Prawdy i mity o kobiecym orgazmie.
+http://polki.interia.pl/seks/erotyka
+------------------------------------
+
+@endnode
+@node 08703.001
+Subject: info 3d
+From: Alessandro Braccini <alex_dran@libero.it>
+Date: Mon, 29 Oct 2001 13:05:43 +0100
+
+Warning: This is a message in MIME format. Your mail reader does not
+support MIME. Some parts of this message will be readable as plain text.
+To see the rest, you will need to upgrade your mail reader. Following are
+some URLs where you can find MIME-capable mail programs for common platforms:
+
+  Amiga............: YAM          http://www.yam.ch/
+  Unix.............: Metamail     ftp://ftp.bellcore.com/nsb/
+  Windows/Macintosh: Eudora       http://www.qualcomm.com/
+
+General info about MIME can be found at:
+
+http://www.cis.ohio-state.edu/hypertext/faq/usenet/mail/mime-faq/top.html
+
+
+--BOUNDARY.2014426832.3
+Content-Type: text/plain
+
+
+Hello all,
+
+this is the first time i write to this ml.
+
+I would like to try the power of w3d by writing some small examples but the
+function CreateContext always returns a NULL value (witn a -2 error
+message: invalid input).
+
+Where is my error? Can you help me please??
+
+Thank you
+Alessandro Braccini
+--BOUNDARY.2014426832.3
+Content-Type: text/plain; charset=iso-8859-1; name="Example.c"
+Content-Disposition: attachment; filename="Example.c"
+Content-Transfer-Encoding: quoted-printable
+
+#include <stdio.h>
+#include <clib/exec_protos.h>
+#include <clib/intuition_protos.h>
+#include <clib/dos_protos.h>
+#include <clib/asl_protos.h>
+#include <clib/Warp3D_protos.h>
+#include <fd/Warp3D.h>
+
+#ifndef __STORM__
+#pragma msg 193 ignore
+#pragma msg  93 ignore
+#endif
+
+//#include <clib/cybergraphics_protos.h>
+//#include <proto/cybergraphics.h>
+//#include <pragmas/cybergraphics_pragmas.h>
+//#include <cybergraphics/cybergraphics.h>
+
+//PROTOTIPIZZAZIONE DELLE FUNZIONI
+int HandleAll(BOOL);
+int ReqMessage(char*,char*,char*);
+void doErr(int);
+
+struct Library *Warp3DBase=3DNULL;
+struct Library *IntuitionBase=3DNULL;
+struct Library *AslBase=3DNULL;
+struct Library *CyberGfxBase=3DNULL;
+struct Screen *screen1=3DNULL;
+struct Window *window1=3DNULL;
+struct BitMap *bitmap1=3DNULL;
+struct ScreenModeRequester *SMR1=3DNULL;
+
+ULONG ModeID,format,CError,Wx,Wy;
+UBYTE *ver=3D"$VER: 3DExample by AlexDran v1.1\0";
+char *Errs[6]=3D{"Error: Could not open Warp3D.library",
+               "Error: No driver available!!!!",
+               "Error: Some problems with libraries",
+               "Error: Unable to open window",
+               "Error: Unable to create context",
+               "Error: Unable to open screen"};
+BOOL wb=3DFALSE,HWDriver=3DFALSE,SWDriver=3DFALSE,wbmode=3DFALSE;
+W3D_Driver **drivers;
+
+W3D_Context *context1=3DNULL;
+struct TagItem contextTags1[]=3D{
+                W3D_CC_MODEID,NULL,
+                W3D_CC_BITMAP,NULL,
+                W3D_CC_YOFFSET,NULL,
+                W3D_CC_DRIVERTYPE,W3D_DRIVER_BEST,
+                W3D_CC_DOUBLEHEIGHT,TRUE,
+                W3D_CC_FAST,TRUE,
+                TAG_DONE,NULL};
+struct TagItem smTags1[]=3D{
+                ASLSM_InitialDisplayID,0x50011100,
+                ASLSM_InitialDisplayWidth,640,
+                ASLSM_InitialDisplayHeight,480,
+                //ASLSM_DoWidth,TRUE,
+                //ASLSM_DoHeight,TRUE,
+                TAG_DONE,NULL};
+struct TagItem wsmTags1[]=3D{
+                W3D_SMR_TYPE,W3D_DRIVER_3DHW,
+                W3D_SMR_SIZEFILTER,TRUE,
+                W3D_SMR_DESTFMT,~W3D_FMT_CLUT,
+                ASLSM_MinWidth,640,
+                ASLSM_MaxWidth,641,
+                ASLSM_MinHeight,480,
+                ASLSM_MaxHeight,481,
+                TAG_DONE};
+
+int main (int argc, char *argv[])
+{
+    int R;
+    if (!(R=3DHandleAll(TRUE)))
+    {
+        Delay(100);
+
+    }
+    else if (R>0) doErr(R);
+    HandleAll(FALSE);
+    return(0);
+}
+
+void wbmain(struct WBStartup *argmsg)
+{
+    wb=3DTRUE;
+    main(NULL,NULL);
+}
+
+int HandleAll(BOOL Operation)
+{
+    int Result=3DNULL;
+    ULONG flags=3DNULL;
+    if (Operation)
+    {
+        Warp3DBase=3D(struct Library*)OpenLibrary("Warp3D.library",0L);
+        if (Warp3DBase)
+        {
+            flags=3DW3D_CheckDriver();
+            if (flags & W3D_DRIVER_3DHW) HWDriver=3DTRUE;
+            if (flags & W3D_DRIVER_CPU) SWDriver=3DTRUE;
+            if (flags=3D=3D0) Result=3D2;
+
+            drivers=3DW3D_GetDrivers();
+
+            format=3DW3D_GetDestFmt();
+        }
+        else Result=3D1;
+        IntuitionBase=3D(struct Library*)OpenLibrary("intuition.library",=
+37L);
+        AslBase=3D(struct Library*)OpenLibrary("asl.library",38L);
+        CyberGfxBase=3D(struct Library*)OpenLibrary("cybergraphics.librar=
+y",40L);
+        if (!((IntuitionBase)||(CyberGfxBase)||(AslBase))) Result=3D3;
+
+        if (wbmode)
+        {
+            screen1=3DLockPubScreen("Workbench");
+            if (screen1) {Wx=3D(screen1->Width)*2/3;Wy=3D(screen1->Height=
+)*2/3;}
+            else {Wx=3D500;Wy=3D400;}
+            if (screen1) UnlockPubScreen("Workbench",screen1);
+        }
+        else
+        {
+            //ModeID=3DW3D_RequestMode(wsmTags1);
+
+            SMR1=3DAllocAslRequest(ASL_ScreenModeRequest,smTags1);
+            if (AslRequest(SMR1,NULL))
+            {
+                if (!(screen1=3DOpenScreenTags(NULL,
+                                    SA_Width,SMR1->sm_DisplayWidth,
+                                    SA_Height,SMR1->sm_DisplayHeight,
+                                    SA_DisplayID,SMR1->sm_DisplayID,
+                                    SA_ShowTitle,FALSE,
+                                    SA_Draggable,FALSE,
+                                    TAG_DONE))) Result=3D6;
+
+                if (Result!=3D6)
+                {
+                    Wx=3Dscreen1->Width;
+                    Wy=3Dscreen1->Height;
+                    contextTags1[0].ti_Data=3D(ULONG)SMR1->sm_DisplayID;
+                    //contextTags1[2].ti_Data=3D(ULONG)SMR1->sm_DisplayHe=
+ight;
+                }
+                else
+                {
+                    Wx=3D640;
+                    Wy=3D480;
+                }
+            }
+            else Result=3D-1;
+        }
+
+        if (Result=3D=3D0)
+        {
+            if (!(window1=3DOpenWindowTags(NULL,
+                                        WA_Width,Wx,
+                                        WA_Height,Wy,
+                                        WA_Left,0,
+                                        WA_Top,0,
+                                        WA_CustomScreen,(ULONG)screen1,
+                                        WA_Activate,TRUE,
+                                        WA_Title,NULL,
+                                        WA_CloseGadget,FALSE,
+                                        WA_Backdrop,TRUE,
+                                        WA_Borderless,TRUE,
+                                        WA_IDCMP,IDCMP_CLOSEWINDOW|IDCMP_=
+VANILLAKEY|IDCMP_RAWKEY|IDCMP_MOUSEBUTTONS|IDCMP_MOUSEMOVE|IDCMP_DELTAMOV=
+E,
+                                        WA_Flags,WFLG_REPORTMOUSE|WFLG_RM=
+BTRAP,
+                                        TAG_DONE))) Result=3D4;
+
+            if (Result=3D=3D0)
+            {
+                bitmap1=3Dwindow1->RPort->BitMap;
+                contextTags1[1].ti_Data=3D(ULONG)bitmap1;
+                context1=3DW3D_CreateContext(&CError,contextTags1);
+
+                if (!(context1)) {Result=3D5; printf("%d\n",CError);}
+            }
+        }
+    }
+    else
+    {
+        if (context1) W3D_DestroyContext(context1);
+        if (SMR1) FreeAslRequest(SMR1);
+        if (window1) CloseWindow(window1);
+        if ((screen1)&&(!wbmode)) CloseScreen(screen1);
+        if (Warp3DBase) CloseLibrary((struct Library*)Warp3DBase);
+        if (CyberGfxBase) CloseLibrary((struct Library*)CyberGfxBase);
+        if (IntuitionBase) CloseLibrary((struct Library*)IntuitionBase);
+        if (AslBase) CloseLibrary((struct Library*)AslBase);
+    }
+
+    return(Result);
+}
+
+int ReqMessage (char *wt, char *txt, char *gdt)
+{
+    BOOL Result=3DNULL;
+    if (IntuitionBase)
+    {
+        struct EasyStruct EasyReq1=3D{sizeof(struct EasyStruct),NULL,wt,t=
+xt,gdt};
+        Result=3DEasyRequest(NULL,&EasyReq1,NULL,NULL);
+    }
+    return(Result);
+}
+
+void doErr(int R)
+{
+    if (wb) ReqMessage ("Error",Errs[R-1],"Ok");
+    else printf("%s\n",Errs[R-1]);
+}
+
+--BOUNDARY.2014426832.3--
+
+
+@endnode
+@node 08706.001
+Subject: Re: info 3d
+From: Alessandro Braccini <alex_dran@libero.it>
+Date: Wed, 31 Oct 2001 21:45:49 +0100
+
+Hello all!
+
+Despite the last advices (very good) the example still not work!!!
+
+Can you help me, one more time, please????
+
+thank you
+Alessandro Braccini
+
+@endnode

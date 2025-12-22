@@ -1,0 +1,278 @@
+@DATABASE "ADB50"
+@INDEX "ADB:Misc/Index.Text/Main"
+@HELP "ADB:Misc/Help/Main"
+@NODE "Main" "AmigaDOS For Beginners - Part 50 - The ADDBUFFERS Command"
+
+@{B}@{U}@{JCENTER}AMIGADOS FOR BEGINNERS
+
+BY FRANK BUNTON
+
+@{" COPYRIGHT © FRANK P. BUNTON 1993-1998 " LINK "ADB:Misc/Read_Me_First!!/Copyright"}
+
+PART 50 - THE ADDBUFFERS COMMAND@{UB}@{UU}
+@{JLEFT}
+
+@{B}Location@{UB}     - "C" directory (All AmigaDOS versions)
+
+@{B}Purpose@{UB}      - To change the number of cache buffers allocated to a
+               disk drive.
+
+@{B}Availability@{UB} - All AmigaDOS Versions
+@{JCENTER}
+
+@{" What Is a Cache Buffer?    " LINK "Cache"} All AmigaDOS Versions
+@{" How Many Bytes per Buffer? " LINK "HowBig"} All AmigaDOS Versions
+@{" Default Buffer Size        " LINK "Default"} All AmigaDOS Versions
+@{" The ADDBUFFERS Usage       " LINK "Usage"} All AmigaDOS Versions
+@{" Subtracting Buffers        " LINK "Subtracting"} Version 2.0 Onwards  
+@{" Checking How Many Buffers  " LINK "Checking"} Version 2.0 Onwards  
+@{" How Many Buffers to Add?   " LINK "HowMany"} All AmigaDOS Versions
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Cache" "Part 50 - The ADDBUFFERS Command - What Is A Buffer"
+
+@{B}@{U}What Is a Cache Buffer?@{UB}@{UU}
+
+The plain English definition of "cache" is "A hiding place or storage
+place for provisions". In computer terms, it is a part of memory set aside
+to store information.
+
+There does not seem to be a plain English definition of "Buffer" which
+can be compared to the computer usage but it is similar to a "cache" in
+that it stores information.
+
+A "Cache Buffer" is one that stores data coming from or going to the disk
+in such a way that it is reusable until overwritten by something else.
+Thus if you read some data from the disk then that data will be stored
+in the cache buffers and, provided enough buffers are allocated, then
+a second reading of the same data will be taken from the buffer and not
+from the disk.
+
+We can illustrate this by carrying out the following actions.
+
+1. If you are using a workbench disk in df0: then first make DIR @{"resident" LINK "ADB:Parts_21-30/24.Resident/Main"}
+   (if it is not already resident) with:-
+
+   > RESIDENT c:dir PURE ADD
+
+   This is so that loading dir itself from the workbench disk in df0: will
+   not interfere with our test.
+
+2. Now make sure there is a disk in df0: and enter:-
+
+   > DIR df0:
+
+   The drive activity light should come on briefly as data is read from the
+   disk.
+
+3. Now enter the same DIR command again.
+
+   If the light does NOT come on again, then this second reading of the
+   data (i.e. the directory) is being read from the buffer, not from the
+   disk.
+
+4. If the activity light DOES comes on again then there have not been many
+   buffers allocated to the drive and the data is coming from the disk
+   again. Try entering:-
+
+   > ADDBUFFERS df0: 50
+
+   and try the DIR command again TWICE. This time, the second use of DIR
+   should not cause disk activity.
+
+Another way in which buffers can make drive access more efficient is that
+the initial reading of data from the disk is much faster with a lot of
+buffers than with only a few.
+
+As an example, if a large text file is read from disk and displayed in
+a window (e.g. by using the "TYPE" command), then you will notice occasional
+pauses while new data is read from disk and stored in the buffer before
+being displayed. Reading from disk to buffer is a lot faster than displaying
+the data on screen so the periods of text display are a lot longer than
+the periods of disk reading. Thus you will see text being written to screen
+for a few seconds, a very short pause while new data is read, then more
+text is displayed. If the drive had only 1 buffer then this display would
+be very jerky indeed and the whole process would be very slow. By having
+a lot more buffers, this jerkiness is greatly reduced and the whole process
+is speeded up.
+
+(@{B}Note@{UB} - users of the faster or accelerated Amigas may not notice this
+jerkiness.)
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "HowBig" "Part 50 - The ADDBUFFERS Command - How Many Bytes"
+
+@{B}@{U}How Many Bytes Of memory Per Buffer?@{UB}@{UU}
+
+The manuals say that adding 1 buffer will reduce free memory by about
+500 bytes. However, I have found that memory actually decreases by about
+560 bytes for each buffer.
+
+Thus, if you increase the @{"default" LINK "Default"} 5 buffers for a floppy to 30 you will
+loose 14000 bytes.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Default" "Part 50 - The ADDBUFFERS Command - Default Buffers"
+
+@{B}@{U}Default Buffer Numbers@{UB}@{UU}
+
+Floppy drives have a default of 5 buffers.
+
+Hard drives usually have about 30 buffers but this is set from the
+"HDToolBox" program which is used when the hard drive is first set up or
+later has its parameters altered.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Usage" "Part 50 - The ADDBUFFERS Command - Usage"
+
+@{B}@{U}The ADDBUFFERS Usage@{UB}@{UU}
+
+ADDBUFFERS can be used in these ways:-
+
+  ADDBUFFERS DriveName Number     All AmigaDOS versions
+
+  ADDBUFFERS DriveName            AmigaDOS 2.0 Onwards
+
+This second usage is discussed @{"later" LINK "Checking"}.
+
+The command is normally used as follows:-
+
+  ADDBUFFERS DriveName Number
+
+where "DriveName" is the drive to which buffers are to be added (e.g.
+"df1:") and "Number" is the number of cache buffers to be added. For
+example:-
+
+  > ADDBUFFERS df1: 25
+
+will add 25 buffers to df1:
+
+A negative number can be used to @{"subtract" LINK "Subtracting"} buffers.
+
+As the command @{B}ADDS@{UB} buffers, if no buffers had previously been added to
+df1: (i.e. it had the @{"default" LINK "Default"} number of 5 buffers) then the above command
+line would result in the df1: having 30 buffers.
+
+@{B}From AmigaDOS 2.0 onwards@{UB}, the use of the command will give a display
+indicating how many buffers are now assigned to the drive. For example,
+increasing df1: from default 5 to 30 with:-
+
+  > ADDBUFFERS df1: 25
+
+  --> df1: has 30 buffers
+
+So, from AmigaDOS versions 2.0 onwards, the usage in the startup-sequence
+file is:-
+
+  ADDBUFFERS >Nil: df1: 25
+
+to prevent the message appearing on screen.
+
+(No message at all is given for @{B}AmigaDOS 1.3 and earlier@{UB}.)
+
+This command is usually used at or near the start of a startup-sequence
+file but it can also be used at a CLI/Shell prompt.
+
+The ADDBUFFERS command can be used on floppies or hard drives although,
+as mentioned @{"earlier" LINK "Default"}, the number of hard drive buffers is normally set
+through the "HDToolBox" program.
+
+Although it is possible to use it on the RAD: disk, it would be pointless,
+and a waste of memory, to do so as everything in RAD: is already in RAM
+memory.
+
+It cannot be used on the RAM: disk.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Subtracting" "Part 50 - The ADDBUFFERS Command - Subtracting Buffers"
+
+@{B}@{U}Subtracting Buffers@{UU} Version 2.0 Onwards@{UB}
+
+Buffers can be subtracted with, for example:-
+
+  > ADDBUFFERS df1: -25
+
+If there were already 30 buffers, then a message would be given:-
+
+  df1: has 5 buffers
+
+If you try to subtract more buffers than exists, for example:-
+
+  > ADDBUFFERS df1: -200
+
+then the number of buffers will be reduced to:-
+
+  3   for   AmigaDOS 3.0 onwards
+
+  1   for   AmigaDOS 2.1 and earlier
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Checking" "Part 50 - The ADDBUFFERS Command - Checking How Many"
+
+@{B}@{U}Checking How Many Buffers Exists@{UU} Version 2.0 Onwards@{UB}
+
+The number of buffers currently allocated can be examined with:-
+
+  > ADDBUFFERS df1:
+
+and the number of buffers currently allocated will be displayed.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "HowMany" "Part 50 - The ADDBUFFERS Command - How Many Buffers To Add"
+
+@{B}@{U}How Many Buffers to Add?@{UB}@{UU}
+
+This depends entirely on your system set up.
+
+Up to a point, adding more buffers can make your drive access more efficient
+but if it is done to excess then the efficiency with which programs run
+might become affected because available RAM has been reduced too much.
+
+If you have a small 0.5 mb system with 3 drives, and allocate 50 buffers
+to each drive then you have chewed up a massive 16% of your total RAM!
+
+If you have a large 10 mb system and add the same number of buffers then
+you have used up only 0.8% of your total RAM.
+
+Then again, a user who uses the disk drives a lot may like to have a lot
+of buffers whereas a user who does not use drives very often may prefer
+to have few buffers and save RAM for other things.
+
+What it all comes down to is that it is a personal decision.
+
+If you are unsure, then just stick with the buffers allocated in the
+standard startup-sequence file for floppies and to those recommended for
+hard drives in the "HDToolBox" program.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+

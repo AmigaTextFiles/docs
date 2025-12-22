@@ -1,0 +1,359 @@
+@node Der GNU C Compiler
+@section Der GNU C Compiler: Allgemeine Informationen und Installation
+@cindex Gcc
+Dieser Abschnitt enthält Informationen über den Amiga-Port des
+GNU C Compilers generell und die Installation insbesondere.
+
+@menu
+* Aktuelle Version:: Die aktuelle gcc-Version
+* Anforderungen:: Hardwareanforderungen
+* Autoren:: Wer hat es gemacht?
+* Gcc-Quellen:: Wo finde ich die gcc-Quelltexte?
+* Inline-Dateien:: Wie erzeuge ich Inline-Dateien?
+* Amiga-Libraries:: Wie konvertiere ich die Amiga-Libraries für den gcc?
+* Installation:: Wie installiere ich den gcc?
+* Kompilieren:: Mein erstes C-Programm
+* Hilfe:: Wichtige Informationsquellen
+@end menu
+
+
+@node Aktuelle Version
+@subsection Aktuelle Version
+@cindex Version (gcc)
+Die aktuelle gcc-Version ist 2.6.0 und an 2.6.1 wird gearbeitet.
+Sie enthält eine neue Version der ixemul.library (v40.3), aber
+man sollte sich wegen Fehlern, die sich auf 68000-Systemen bemerkbar
+machen, ixemul404.lha vom Aminet oder von meiner FTP-Site holen.
+Außerdem gibt es eine neue library, libnix, die das Benützen der
+ixemul.library verhindert.
+2.6.1 wird Protos (wie bei SAS-C) enthalten, um das Kompilieren
+von SASC-Code unter gcc leichter zu machen.
+Ein neuer Assembler, gas-2.5, ist enthalten, ein Paket namens q_anote
+ermöglicht die Ausgabe von gemischtem C/Asm-Code zu Debugging-Zwecken.
+In Arbeit ist die Fähigkeit des Compilers, den Stack wachsen zu
+lassen, damit man vor dem Starten von gcc nicht mehr den Stack setzen
+muß.
+
+
+@node Anforderungen
+@subsection Hardwareanforderungen
+@cindex Hardwareanforderungen (gcc)
+Jeder Amiga (vom A1000 bis zum A4000/40) ist prinzipiell in der
+Lage, die GNU-Utilities für AmigaDOS zu benutzen. Allerdings braucht
+man wenigstens 4MB RAM, um kleinere oder mittlere Projekte zu
+übersetzen, für größere (z.B. für gcc selbst) entsprechend mehr.
+Gigamem und VMM arbeiten mit gcc zusammen, es *könnte* also evtl.
+auch mit weniger gehen. Dazu braucht man aber eine MMU.
+@xref{68EC0xx}.
+
+Eine volle Installation mitsamt C++ und Objective-C, inline-Dateien
+und Commodore Includes (@pxref{Include-Dateien}) benötigt ca. 20 MB
+Platz auf der Festplatte.
+
+Kickstart 1.2/1.3 wird nicht mehr unterstützt. Wer KS 1.2/1.3 hat,
+sollte sich eine bessere Kickstart-Version kaufen.
+Gcc arbeitet auch unter Kickstart 1.2/1.3, die volle Funktionalität
+ist aber erst ab Kickstart 2.x+ vorhanden. Eine schnelle CPU
+(z.B. 68030@@25MHz oder besser) ist ebenfalls sinnvoll.
+
+
+@node Autoren
+@subsection Wer hat es gemacht?
+@cindex Autoren (gcc)
+Gcc und damit zusammenhängende Software wurde von den folgenden
+Personen auf den Amiga portiert (@pxref{Hilfe}):
+@example
+	Gcc v2.2.2:   Markus Wild
+	Gcc v2.3.3:   Markus Wild
+	Gcc v2.4.5:   Philippe Brand, Lars Hecking, Fred Fish
+	Gcc v2.5.0 und später: Philippe Brand, Fred Fish, Leonard Norrgard
+
+	Ixemul.library:    Markus Wild, Leonard Norrgard, R. Luebbert
+	Libnix:		   Matthias Fleischer, Gunther Nikl
+        Gerlib:            Gerhard Müller
+@end example
+
+
+@node Gcc-Quellen
+@subsection Wo finde ich die gcc-Quelltexte?
+@cindex Quelltexte (gcc)
+
+Alle gcc-Quelltexte und alle Binärdateien findet man auf:
+
+@enumerate
+@item Aminet (wuarchive.wustl.edu und Mirror wie ftp.luth.se) in
+/pub/aminet/dev/gcc (@pxref{FTP})
+@item Ramses The Amiga Flying BBS:
+@example
+	+33-1-60037015  HST Dual v32 terbo 4800-21600
+        +33-1-60037713  SupraFax v32bis    4800-14400
+        +33-1-60037716  Tornado v22bis     1200-2400
+@end example
+in Topic @file{Development}, Area @file{Gcc} (are 156).
+@end enumerate
+
+Den originalen GNU-Quelltext bekommt man
+
+@enumerate
+@item von denselben FTP-Servern wie die Binaries
+@item gnu.prep.ai.mit.edu (18.71.0.38) in @file{/pub/gnu}
+@item Ramses The Amiga Flying BBS in Topic
+@file{AmigaUnix/Unix/Linux/NetBSD}, Area @file{Gnu Source Code}
+@end enumerate
+
+Diese Archive sollten alles Nötige enthalten, mit Ausnahme der
+Quelltexte der ixemul.library. Diese erhält man ebenfalls auf dem
+Aminet, Directory @file{dev/gcc}. (Zur Zeit ist die Version 40
+der ixemul.library in Arbeit. Die Quelltexte werden am gleichen
+Ort sein.)
+
+Durch Richard Stallman, Free Software Foundation, ist festgelegt:
+
+"The GPL says that any distribution of binaries must contain either the
+source code or a written offer to supply source code (see the GPL for
+details of what is required)."
+
+Übersetzt: Die GPL (GNU General Public License) legt fest, daß jede
+Distribution entweder den Quelltext oder das schriftliche (oder
+geschriebene?) Angebot, diese zu liefern, enthalten muß. (Näheres
+siehe in der GPL.)
+
+
+@node Inline-Dateien
+@subsection Inline-Dateien
+@cindex Inline-Dateien (gcc)
+@cindex fd2inline
+@cindex gen31
+@cindex gen20
+@cindex gen30
+Die Inline-Dateien für den gcc kann man aus den originalen
+FD-Dateien von Commodore wie folgt erzeugen (@xref{Include-Dateien},
+@pxref{Pragmas}):
+
+@example
+CLI> Assign INCLUDE: GCC:os-include
+CLI> Assign FD: INCLUDE:fd
+CLI> Makedir INCLUDE:inline
+CLI> cd USR:bin/geninline
+CLI> gen31
+@end example
+
+Dies sollte alle Inline-Dateien in @file{GCC:os-include/inline}
+erzeugen. Falls man die 2.0- bzw. 3.0-Includes besitzt, sollte
+man gen20 bzw. gen30 benutzen. Inline-Dateien für OS3.1 (rev 40.13)
+sind in <gcc-aktuell> enthalten. @xref{Aktuelle Version}.
+@footnote{Perl Skripte haben Schwierigkeiten, die Include-Dateien
+von AmigaDOS korrekt zu behandeln. Hier wäre etwas freiwillige
+Arbeit nötig ...}
+
+Auch mit dem Programm fd2inline kann man Inline-Dateien erzeugen:
+
+@example
+CLI> fd2inline <fd_file> <proto_file>
+@end example
+
+
+@node Amiga-Libraries
+@subsection Wie konvertiere ich die Amiga-Libraries für den gcc?
+@cindex Amiga-libraries (gcc)
+@cindex hunk2gcc
+Ab gcc Version 2.6.0 werden dank den libnix-Autoren (Matthias Fleischer
+und Gunther Nikl) AmigaDOS Linklibraries unterstützt.
+
+Wenn man trotzdem eine gcc-Linklibrary generieren will, gibt es zwei Methoden:
+
+1. Mit hunk2gcc, dem AmigaDOS-Object-Konvertierer von Markus Wild.
+Dazu braucht man zunächst eine aktuelle Kopie der amiga.lib
+(aus dem NDU, @pxref{Include-Dateien}). Nachdem man sich ein
+Directory für die konvertierten Dateien erstellt hat,
+wechselt man mit cd in dieses Directory und gibt das Folgende
+ein:
+@example
+	hunk2gcc amiga.lib [..further libs if you like..]
+@end example
+@noindent
+Dies erzeugt ein Objektfile wie a.out für jedes einzelne Modul,
+das die Library enthält. Diese Module muß man anschließend in
+einer gcc-Library zusammenfassen:
+@example
+	ar qc libamiga.a obj.*
+	ranlib libamiga.a
+@end example
+@noindent
+Das Programm ranlib fügt eine Symboltabelle in die Library ein.
+(Dadurch wird der Zugriff auf die Library sehr viel schneller.)
+
+2. Eine libamiga.a mit libnix zu generieren ist recht leicht, braucht
+aber einige Zeit. Man dekomprimiere sources.lha aus dem libnix-Archiv
+und starte ein 'make libamiga.a'.
+
+@strong{Beachte:} Solange man keine reinen AmigaDOS-Funktionen verwendet, kann man
+auch eine Pseudo-Library erzeugen:
+@example
+  cat "int dummy;" >dummy.c
+  gcc -c dummy.c
+  ar crv libamiga.a dummy.o
+  mv libamiga.a gcc:lib
+@end example
+
+
+@node Installation
+@subsection Wie installiere ich den gcc?
+@cindex Installation (gcc)
+
+@enumerate
+@item  Falls dies die erste Installation von gcc ist:
+
+Mache das Folgende:
+
+@example
+cd ort_mit_sehr_viel_platz      ; ÄNDERN! Gib eine Schublade an
+makedir gnu
+lha x gcc260-base.lha           ; Der erste Teil, du brauchst ihn
+@end example
+
+Jetzt mußt du @file{gnu/s/user-startup} an dein @file{S:User-Startup}
+anhängen (Ersetze Devel:GNU durch deinen eigenen Gnu Pfad).
+
+Weiter:
+
+@example
+execute gnu/s/user-startup     ; setzt wichtige Assigns
+copy gnu/envarc/#? ENVARC:
+@end example
+
+@strong{Ändere} die folgenden Zeilen!
+Wenn du einen 68000- oder 68010-Amiga hast, entferne das "-020"
+aus allen folgenden Zeilen!
+
+@example
+lha x gcc260-c-020.lha      ; Der C-compiler; du brauchst ihn
+lha x gcc260-doc.lha        ; Wenn du die Dokumentation zu gcc willst
+lha x gcc260-c++-020.lha    ; Wenn du C++ haben willst
+lha x gcc260-objc-020.lha   ; Wenn du Objective-C haben willst
+lha x gcc260-utils.lha      ; Wenn du zusätzliche Utilities haben willst
+                            ; (empfohlen zur Kompatibilität mit Unix)
+lha x gcc260-utilsdoc.lha   ; Wenn du Dokumentation zu allen Utilities willst
+@end example
+
+Mit dem Script @file{restorelinks} mußt du Links generieren:
+
+@example
+sh /gnu/s/restorelinks      ; ÄNDERN! Füge " copy" an diese Zeile an,
+                            ; wenn du MakeLink nicht benützen willst,
+                            ; sondern Files lieber kopieren willst
+@end example
+
+Schließlich:
+
+@example
+lha x gcc260-diffs.lha      ; Wenn du gcc neu kompilieren willst
+lha x gcc260-texi.lha       ; Wenn du Postscript-Doku generieren willst
+@end example
+
+Auf zum nächsten Punkt und fröhliches Kompilieren!
+
+@item Wenn du ein Upgrade deiner gcc-Umgebung von v2.5.x machen willst,
+dearchiviere einfach gcc260-base.lha und gcc260-c-020.lha. Gehe sicher,
+daß du deine frühere ixemul.library löschst, wo sie sich auch befindet.
+(Üblicherweise in @file{LIBS:})
+
+@end enumerate
+
+@strong{Beachte}: Eine neue Version der ixemul.library wird verwendet, gehe bitte
+sicher, daß nirgends eine andere Kopie ist, die in Konflikt mit der neuen Version geraten kann.
+
+
+@node Kompilieren
+@subsection Kompilieren
+@cindex Kompilieren (gcc)
+
+Wie wär's mit einem netten @file{Hello world}?
+
+@example
+#include <stdio.h>
+
+main()
+@{
+  printf("Hello World!\n");
+@}
+@end example
+
+Das war recht einfach ;-) Jetzt müssen wir es kompilieren.
+Es gibt eine Menge Optionen in gcc, aber die einfachste Möglichkeit zu kompilieren ist:
+
+@example
+CLI> gcc -o hello hello.c
+@end example
+
+Einfach?
+Hier sind mehr Optionen:
+
+Ziel-Prozessoren von Motorola:
+Man kann reinen 68000 code, 68020, 68030, 68040 und/oder 68881 kompilieren.
+(Siehe Gcc-Dokumentation, Kapitel
+@file{Invoking Gcc/SubModel Options/M680X0 Options for Motorola specific compilation flags}.
+
+@example
+CLI> gcc -m68020 -m68881 -o hello hello.c
+@end example
+
+Dies kompiliert Programme mit 68020 Code und direkten FPU-Befehlen und
+bindet mit den beschleunigten Libraries aus @file{GCC:lib/lib020}.
+
+Optimierung:
+Entweder du willst keine Optimierung oder du gibst @file{-O} an, das den
+Code optimiert, oder @file{-O2} für bessere Optimierung (Siehe die
+Dokumentation im Kapitel @file{Invoking Gcc/Optimize Options}).
+Inzwischen gibt es auch eine @file{-O3} Option, die noch weiter geht.
+
+@example
+CLI> gcc -O2 -o hello hello.c
+@end example
+
+Ein schnelles "Hello World" ;-)
+
+Codegenerierung:
+Vielleicht willst du residente Programme haben.
+Die Option dazu heißt @file{-resident}.
+
+@example
+CLI> gcc -resident -o hello hello.c
+@end example
+
+Natürlich kannst du alle Optionen mischen, so etwa:
+
+@example
+CLI> gcc -O2 -m68020 -m68881 -resident -o hello hello.c
+@end example
+
+Dies wird ein hoch optimiertes residentes Programm für 68020 und 68881 ergeben.
+
+@strong{Wichtig:} Wenn du nur AmigaOS-Funktionen verwendest oder aus irgendwelchen
+philosophischen Gründen keine ixemul.library verwenden willst,
+dann kannst du diese loswerden durch:
+
+@example
+CLI> gcc -noixemul -o foobar foobar.c
+@end example
+
+natürlich nur, wenn du libnix hast (enthalten in gcc 2.6.0).
+
+
+@node Hilfe
+@subsection Wichtige Informationsquellen
+@cindex Informationen (gcc)
+@cindex Hilfe (gcc)
+Der aktuelle Betreuer des Amiga-Ports von gcc ist:
+@example
+    Philippe BRAND
+    Fidonet: Ramses The Amiga Flying BBS 2:320/104.21
+    Email:   phb@@colombo.telesys-innov.fr (ONLY for personnal email).
+    Ftp:     colombo.telesys-innov.fr:/pub/amigados-gnu
+             or /pub/incoming/uploads for uploads.
+@end example
+
+Es gibt auch eine Mail-Liste in Finnland. @xref{Mail-Listen}.
+Philippe Brand wird im Normalfall Fragen an diese Liste
+weiterleiten.
+

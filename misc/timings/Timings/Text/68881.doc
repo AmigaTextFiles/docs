@@ -1,0 +1,213 @@
+All timings are for cache case and two-clock reads and writes.
+
+Effective Address Calculations Execution Timing
+Addressing Mode        cea
+Dn                       0
+An                       0
+(An)                     6
+(An)+                    6
+-(An)                    6
+(d16,An)                 2 !
+xx.W                     2
+xx.L)                    4
+#data                    0
+(d8,An,Xn)               4 !
+(d16,An,Xn)              6 !
+(B)                      6
+(d16,B)                  8
+(d32,B)                 14
+([B],I)                 11
+([B],I,d16)             11
+([B],I,d32)             13
+([d16,B],I)             13
+([d16,B],I,d16)         13
+([d16,B],I,d32)         15
+([d32,B],I)             19
+([d32,B],I,d16)         19
+([d32,B],I,d32)         21
+
+(!) An could be replaced by PC
+B = Base address: 0, An, PC, Xn, An+Xn, PC+Xn
+I = Index:        0, Xn
+Note that Xn cannot be in B and I at the same time. Scaling
+and size of Xn does not affect timing.
+
+Instruction           clocks  function
+FABS                     35   absolute value
+FACOS                   625   arc cosine
+FADD                     51 ! add
+FASIN                   581   arc sine
+FATAN                   403   arc tangent
+FATANH                  693   hyperbolic arc tangent
+FCMP                     33 ! compare
+FCOS                    391   cosine
+FCOSH                   607   hyperbolic cosine
+FDIV                    103 ! divide
+FETOX                   497   e to the x power
+FETOXM1                 545   e to the x power minus 1
+FGETEXP                  45   get exponent
+FGETMAN                  31   get mantissa
+FINT                     55   integer part
+FINTRZ                   55   integer part, round to zero
+FLOGN                   525   logarithm base e
+FLOGNP1                 571   logarithm base e of x+1
+FLOG10                  581   logarithm base 10
+FLOG2                   581   logarithm base 2
+FMOD                     67 ! modulo
+FMOVE to FPn             33   move
+FMUL                     71 ! multiply
+FNEG                     35   negate
+FREM                     67 ! remainder
+FSCALE                   41 ! scale exponent
+FSGLDIV                  69 ! single precision divide
+FSGLMUL                  59 ! single precision multiply
+FSIN                    391   sine
+FSINCOS                 451   simultaneous sine and cosine
+FSINH                   687   hyperbolic sine
+FSQRT                   107   square root
+FSUB                     51 ! subtract
+FTAN                    473   tangent
+FTANH                   661   hyperbolic tangent
+FTENTOX                 567   10 to the x power
+FTST                     33   test
+FTWOTOX                 567   2 to the x power
+
+(!): dyadic operation
+
+Source:
+       FPm              + 0
+       Mem, Integer     +27+cea (+2, if !)
+       Mem, Single      +19+cea (+2, if !)
+       Mem, Double      +25+cea (+2, if !)
+       Mem, Extended    +23+cea (+2, if !)
+       Mem, Packed BCD +837+cea
+If source is a MC68020 data register, subtract 5 clocks.
+
+Addressing modes allowed:
+monadic: FSIN.<fmt> EA,FPn
+         FSIN.x     FPm,FPn
+         FSIN.x     FPn
+
+dyadic:  FADD.<fmt> EA,FPn
+         FADD.x     FPm,FPn
+
+FMOVE to Memory:
+Destination     Integer Single Double Extended  Packed
+FMOVE             100     80     86      72      1996 (?)
+If destination is a MC68020 data register, subtract 2 clocks.
+
+
+FMOVE control register & FMOVEM
+
+                        clocks
+FMOVE FPcr,Rn           31
+FMOVE FPcr,EA           33+cea
+FMOVE Rn,FPcr           28
+FMOVE EA,FPcr           33+cea
+FMOVE #data,FPcr        30
+
+FMOVEM FPcr_list,EA     27+6n+cea
+FMOVEM EA,FPcr_list     27+6n+cea
+FMOVEM #data,FPcr_list  25+6n
+
+FMOVEM FPdr_list,EA     37+25n+cea      (always Extended)
+FMOVEM EA,FPdr_list     35+23n+cea      (always Extended)
+FMOVEM Dn,EA            51+25n+cea      (Dn contains register list)
+FMOVEM EA,Dn            49+23n+cea      (Dn contains register list)
+
+Conditional instructions execution timing
+
+FBcc                    20/18           (taken/not taken)
+FDBcc                   20/24           (expired/not expired)
+FNOP                    18
+FScc                    18/22/20+cea    (Dn/(An)+/Mem)
+FTRAPcc                 18/20/22        (-/.W/-L) (+21, if trap)
+
+FRESTORE                21-314
+FSAVE                   16-554
+
+
+Constant ROM
+
+FMOVECR #num,FPm        29 clocks       move constant from ROM to register
+
+number    value                     content
+ $00      3.1415926535897931        pi
+ $01-$0a  invalid                   undefined
+ $0b      3.0102999566398114E- 01   log10(2)
+ $0c      2.7182818284590450        e
+ $0d      1.4426950408889633        log2(e)
+ $0e      4.3429448190325181E- 01   log10(e)
+ $0f      0.0000000000000000        0
+ $10-2f   invalid                   undefined
+ $30      6.9314718055994528E- 01   ln(2)
+ $31      2.3025850929940454        ln(10)
+ $32      1.0000000000000000        10^0
+ $33      1.0000000000000000E  01   10^1
+ $34      1.0000000000000000E  02   10^2
+ $35      1.0000000000000000E  04   10^4
+ $36      1.0000000000000000E  08   10^8
+ $37      1.0000000000000000E  16   10^16
+ $38      9.9999999999999987E  31   10^32
+ $39      9.9999999999999987E  63   10^64
+ $3a      9.9999999999999988E 127   10^128
+ $3b      9.9999999999999986E 255   10^256
+ $3c      9.9999999999999997E 511   10^512
+ $3d      overflow                  10^1024
+ $3e      overflow                  10^2048
+ $3f      overflow                  10^4096
+
+Packed BCD
+
+The FMOVE.P command reads or writes a 96-bit Packed Decimal Real.
+The following bits are used:
+  bit number    content
+        95      sign of mantissa
+        94      sign of exponent
+     93/92      unused
+     91-80      3-digit exponent
+     79-67      zero, unless a binary-to-decimal conversion overflow occurs
+     66- 0      17-digit mantissa
+
+The numbers can be output from the coprocessor in a format readily
+used for printing by a program. For example:
+        FMOVE.P fp3,Buffer{#5}
+ converts the floating-point data register content into a packed BCD
+string with five digits to the right of the decimal point.
+
+
+Optimisations for the 68882
+
+The 68882 is somewhat optimised in hardware. There is a independent
+conversion unit implemented to convert binary real formats (Single,
+Double or Extended), when loaded from or stored in memory. The
+FP-register are dual-ported.
+Because of that, the 68882 can do some work in parallel.
+- When the '882 receives an instruction, it can initiate the instruc-
+  tion, fetch the necessary operands, and convert them to the internal
+  extended format even though the Arithmetic Unit is busy completing
+  execution of a previous instruction.
+- For binary real formats exist optimized FMOVE instructions. These
+  FMOVE execute twice as fast as the corresponding FMOVE of the '881.
+  The FMOVE are also potentially fully concurrent and, therfore, can
+  be completely executed during the execution of a previous instruction.
+- The '882 has a more optimized coprocessor interface than the '881.
+  If an arithmetic instruction has data formats of Single, Double or
+  Extended, the dialogs are designed to increase the potential overlap
+  with subsequent instructions. This overlap can significantly decrease
+  the effective instruction execution time.
+
+Warnings:
+The FSAVE-command of the '882 needs 32 bytes more space than the '881.
+If you need FPU-instructions inside an interrupt-handler, you have to
+use a FSAVE before any other FPU-instruction and therefore a FRESTORE
+before the RTE-instruction.
+
+Suggested optimisations:
+- use Single, Double or Extended formats
+- avoid conflicting registers to start the next command faster
+- use fast FMOVE-command after fast and slow FMOVEs
+  after slow calculations
+- for iterations: do two iterations per loop to avoid register-
+  conflicts
+

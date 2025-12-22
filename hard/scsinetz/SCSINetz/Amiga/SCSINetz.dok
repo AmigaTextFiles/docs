@@ -1,0 +1,289 @@
+
+AMIGA & PC SCSI-Netzwerk
+------------------------
+
+Erfahrungsbericht von ICEHAWK!
+
+
+
+SCSI-Netz
+---------
+
+Viele haben einen Amiga und einen PC-Kompatiblen zuhause stehen, den sie
+gerne über SCSI vernetzt haben möchten.
+Beim Amiga ist SCSI fast standart, beim PC zwar nicht so verbreitet,
+aber dennoch machbar. Viele haben schon überlegt, ob man einen Amiga mit
+einem PC über SCSI verbinden kann. Man kann...
+
+Der Vorteil liegt auf der Hand, es müssen nicht 2 CDRoms oder etc. angeschaft
+werden, da beide Rechner auf alle Medien im SCSI-Netz zugreifen können.
+
+Nur der Amiga kann auf die Festplatte des PCs zugreifen, um Files aus-
+zutauschen. Umgekehrt geht es leider nicht, da dem PC die nötige Software
+fehlt!
+
+Ich habe ein Amiga 3000 mit internen SCSI-Controller und 1GByte Festplatte
+mit einem PC mit Adaptec SCSI-Controller und 200MByte Festplatte über SCSI
+verbunden! Die Rechner sind über ein 50poliges SCSI-Kabel miteinander
+verbunden.
+
+
+UNBEDINGT LESEN!
+----------------
+
+Diese Anleitung sollte NUR FÜR Leute sein, die nicht zwei linke Hände
+haben und wissen wie man mit einem Lötkolben umgeht!
+
+Hardware & SCSI Erfahrungen sollten schon vorhanden sein!
+
+ICH ÜBERNEHME KEINERLEI HAFTUNG FÜR ENSTANDENE SCHÄDEN ETC.!!!
+
+DIE UMBAUTEN SIND AUF EIGENE GEFAHR!
+
+ALLE VON MIR GEMACHTEN ANGABEN SIND OHNE GEWÄHR!
+
+
+Hardware anforderungen:
+-----------------------
+
+Für ein SCSI-Netzwerk mit einem Amiga und PC werden folgende Anforderungen
+gestellt:
+
+HARDWARE:
+---------
+-Amiga:Amiga mit SCSI-Festplatte
+-PC   :PC-Kompatiblen mit SCSI-Festplatte
+-Amiga:SCSI-Controller mit externem SCSI-Anschluß!
+-PC   :SCSI-Controller mit externen SCSI-Anschluß!
+-     :Anschluß Kabel 50polig Centronics oder 25poligen SUB-D
+
+Bei den SCSI-Controllern sollten sich die SCSI-ID (UNIT) einstellen lassen
+und die TERM-POWER (+5V) abschalten lassen!
+
+
+
+Software:
+---------
+Amiga:CrossDOS Standart System 2.x (Besser CROSSDOS V5.0!)
+PC   :Ein kleines Programm, das die Verzeichnis Struktur neu einliest.
+
+DiskChange für PC
+-----------------
+
+Diskchange bewirkt ein Update des PC-Filesystems.
+Dies wird benötigt, wenn ein SCSI-Netz mit einem Amiga & PC aufgebaut
+wird. Der DOS Interrupt 21 entleert alle DiskBuffer, so daß danach ein
+erneutes Einlesen des aktuellen Verzeichnisses erfolgt.
+
+Aufruf: Diskchge
+
+
+
+Aufbau des SCSI-Netzes:
+-----------------------
+
+1. Als erstes sollte der TERM-POWER (Die +5Volt die den SCSI-Bus einspeisen)
+   nur bei EINEM Gerät eingespeist werden.
+   Der TERM-POWER (+5V) für den SCSI-Bus DARF NUR BEI EINEM SCSI-CONTROLLER
+   EINGESPEIST WERDEN!
+   
+   ACHTUNG!!!
+   ----------
+   DURCH MEHRFACHEN EINSPEISEN DER +5V kann man seine HARDWARE ZERSTÖREN!!!
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   AMIGA 3000:
+   -----------
+   Beim Amiga 3000 internen SCSI-Controller sollte man sich das Handbuch
+   nehmen und die DIODE D800 suchen. Diese DIODE ist die SCSI-Schutzdiode!
+   Ich habe einfach die eine Seite der Diode auf der Mutterplatine abgeknipst
+   und dazwischen einen Sicherungshalter eingelötet.
+
+   Vorher:
+        DIODE D800
+        ---------                         
+   o----| |     |------------------------o
+        ---------                         
+
+   Nachher:
+        DIODE D800     1Ampere Sicherung oder Sicherungshalter
+        ---------         ----------      
+   o----| |     |---------|--------|-----o
+        ---------         ----------      
+
+   ACHTUNG! GARANTIE VERLUST!!!
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Beim Adaptec 1542CF kann man leider nicht die TERM-POWER (+5V) abschalten!
+
+
+
+2. Die TERM-Widerstände dürfen nur am Anfang und am Ende des SCSI-Buses
+   gesteckt sein! (Bei mir Festplatte im Amiga3000 und Festplatte im PC)
+   Beim SCSI-Controller im Amiga und PC sind die Widerstände gezogen!
+
+
+
+3. Der PARITY-CHECK sollte bei keinem der angeschlossenen Geräte ein-
+   geschaltet sein.
+
+
+4. Jedes SCSI-Gerät muß eine eigene SCSI-ID zugewiesen werden.
+   
+   Amiga:
+   Der Amiga SCSI-Controller sollte man auf UNIT 7 belassen, die interne
+   Festplatte auf UNIT 1 stecken!
+
+   PC:
+   Den PC-SCSI Controller gibt man die SCSI-ID 6 (UNIT) Die Art der
+   Einstellungen hängt vom verwendeten SCSI-Controller ab. Ob über
+   Jumper oder Software (BIOS)
+   Die interne Festplatte des PCs MUß auf UNIT 0 gesteckt sein, da sonst
+   der PC NICHT von der Festplatte bootet!!!
+
+
+
+Einfaches Beispiel: Amiga 3000 mit PC über SCSI vernetzt
+
+      50poliges SCSI-Kabel
+  ---------------------------------------------
+  |                                           |
+  |25polige SUB-D Buchse                      |50polige Centronics Buchse
+  |                                           |
+|-----------------------------|             |-------------------------------|
+| Interner SCSI-Controller    |             | Adaptec SCSI-Controller       |
+| |TERM-POWER (+5V) OFF!!!    |             | |TERM-POWER (+5V) ON!         |
+| |KEINE WIDERSTÄNDE!         |             | |KEINE WIDERSTÄNDE!           |
+| |                           |             | |                             |
+| | Festplatte                |             | | Festplatte                  |
+| |------------|              |             | |------------|                |
+| |            |              |             | |            |                |
+| |   UNIT 1   |              |             | |   UNIT 0   |                |
+| |Widerstände |              |             | |Widerstände |                |
+| |   gesetzt  |              |             | |   gesetzt  |                |
+| |            |              |             | |            |                |
+| |------------|              |             | |------------|                |
+|                             |             |                               |
+|-----------------------------|             |-------------------------------|
+           Amiga3000                                        PC
+
+
+
+SOFTWARE:
+---------
+
+Für den PC braucht man nur das Programm "DISKCHGE.EXE", das ein neueinlesen
+des aktuellen Verzeichnisses bewirkt. Dies wird benötigt, wenn man vom Amiga
+Files auf die Festplatte des PCs überträgt! Beim Amiga wird der DOS-Befehl
+"DISKCHANGE" von Commodore mitgeliefert!
+TIP: Die Festplatte des Amigas sollte man dem PC nicht als Laufwerk zu
+verfügung stellen, da der PC dieses Format (Amiga-Format) nicht unterstüzt!
+Damit werden mögliche Fehler vermieden. Wie z.b. Amiga Festplatte Formatieren!
+
+Für den Amiga benötig man den "MOUNT" Befehl und eine Mountlist für die
+Festplatte im PC.
+Da man NUR mit dem Amiga auf die Files des PC zugreifen kann, muß die Festplatte
+des PCs dem Amiga über den Amiga Dos-Befehl "MOUNT" angemeldet werden.
+
+
+
+INSTALLATION:
+-------------
+
+PC:
+
+Kopieren Sie einfach das Programm "DISKCHGE.EXE" auf ihre
+Festplatte ins Verzeichnis "C:\DOS". Das wars auch schon!
+
+AMIGA:
+
+Erstellen Sie eine Mountlist für die im PC vorhandene Festplatte.
+Am einfachsten geschieht das, in dem Sie CROSSDOS V5.0 nehmen und bei der
+Installation von CROSSDOS die Option "Install an 100% MS-DOS Harddrive"
+anklicken! Die Software erstellt Ihnen eine Mountlist für ihre PC-Festplatte.
+
+Meine Mountlist sieht z.b. so aus: (CROSSDOS ist vorraussetzung!)
+
+/* MountFile Entry for full MS-DOS Disk.
+   Disk Size:  199 Meg
+   Vendor and drive name: 000  Unknown  199 Meg
+*/
+    Surfaces = 1
+    BlocksPerTrack = 1
+    LowCyl = 0                      /* Erster Zylinder der Festplatte */
+    HighCyl = 408573                /* Letzter Zylinder der Festplatte */
+    DosType = 0x4d534800
+    BufMemType = 0
+    Device = "scsi.device"          /* Bei anderen SCSI-Controller ändern */
+    Unit = 0                        /* SCSI-ID Nummer der Festplatte */
+    Flags = 0
+    FileSystem = L:CrossDOSFileSystem
+    Mask = 0x00fffffe
+    MaxTransfer = 0x00ffffff
+    BlockSize = 512
+    StackSize = 2000
+    Priority = 5
+    GlobVec = -1
+    Buffers = 5
+    Activate = 1
+
+
+
+Nachdem beide Rechner soweit installiert sind, kann man sie miteinander über
+ein 50poliges SCSI-Kabel verbinden! BITTE BEIDE GERÄTE VORHER AUSSCHALTEN!!!
+
+Vor dem ersten einschalten PRÜFEN SIE NOCHMAL ALLES!!!
+
+Der TERM-POWER (+5V) für den SCSI-Bus DARF NUR BEI EINEM SCSI-CONTROLLER
+   EINGESPEIST WERDEN!
+   
+   ACHTUNG!!!
+   ----------
+   DURCH MEHRFACHEN EINSPEISEN DER +5V kann man seine HARDWARE ZERSTÖREN!!!
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Nun können Sie beide Rechner einschalten. Beide Rechner sollten nun wie
+gewohnt hochfahren! - Wenn nicht, sofort ausschalten und nochmals alle
+Punkte durchgehen!
+
+Falls Sie nur ein Rechner eingeschaltet haben und dieser sich mit Fehler
+meldet, könnte es daran liegen, das noch der zweite Rechner miteingeschaltet
+werden muß!
+Es könnte sein, daß wenn nur der Amiga eingeschaltet wird, es zu Meldungen
+wie: "DEVICE xxxx has an READ/WRITE ERROR ON xxxx" kommt!
+Keine Panik, dies ist normal! Es sind keine Fehler auf der Festplatte.
+Da der Bus nicht richtig TERMINIERT ist, kommt diese Meldung. Schalten Sie
+einfach den PC mit ein!
+
+Da der PC (bei mir) die TERM-Power (+5V) einspeist, kann man auch nur den PC
+einschalten. Dieser Bootet dann normal, wie gewohnt!
+
+Wenn man die TERM-Power NUR beim Amiga einspeist, könnte es umgekehrt sein!
+Also am besten beide gleichzeitig einschalten!
+
+Auf dem Amiga sollte sich nun die Festplatte des PCs über das Device "PCC:"
+ansprechen lassen!
+
+ABER VORSICHT!
+--------------
+ZWEI RECHNER DÜRFEN NICHT GLEICHZEITIG AUF EIN UND DAS SELBE MEDIUM ZUGREIFEN!
+
+Genau so kann man auch CDRoms oder Syquest-Laufwerke für beide Seiten nutzen!
+
+Viel Spaß beim austauschen der Daten...
+
+Wer fragen, probleme usw. hat, kann sich an mich wenden!
+
+Zu ereichen, bin ich in einer der EazyBBS Mailboxen:
+
+The Blackhole Tel:030/6262281
+
+ByteChannel   Tel:030/8122442
+
+DumpingGround Tel:030/4327188
+
+MoonBase      Tel:030/6613791
+
+Einfach Mail an USER "ICEHAWK"
+
+gez.THE REAL ICEHAWK 2100 <>

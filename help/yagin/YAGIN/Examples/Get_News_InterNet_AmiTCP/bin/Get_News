@@ -1,0 +1,35 @@
+
+; $VER: Get_News 1.0 (5.7.95) Arndt van der Molen
+
+changetaskpri -2
+
+echo "*NFollowing newsgroups are subscribed in your 'UULIB:News/Active' file:"
+echo "---------------------------------------------------------------------"
+type UULIB:News/Active
+
+
+echo "*NGetting NEWS from your server '$nntpserver' ...*N"
+INet:c/nntpget SUBSCRIPTIONS=UULIB:News/Active DATESTAMP=UULIB:.nntp_ds TO=UULIB:News/batched_news APPEND NNTPSERVER=$nntpserver NBUFS=15
+echo "*NGetting NEWS finished!"
+echo "-----------------------------------------------------------------"
+
+IF NOT `list uulib:News/batched_news lformat="%L"` EQ "empty"
+  echo "*NSorting NEWS to UUNEWS: ...*N"
+  UUCP:c/rnews UULIB:News/batched_news
+  delete >NIL: UULIB:News/batched_news
+  echo "Sorting NEWS finished!"
+ELSE
+  echo "*NNo NEWS to sort ..."
+ENDIF
+echo "-----------------------------------------------------------------"
+
+echo "*NTrimming Message ID history file to 7 days ...*N"
+UUCP:c/trimhist 7
+echo "Trimming Message ID finished!"
+echo "-----------------------------------------------------------------"
+
+echo "*NDon't forget to occasionally trim the message base with 'trimnews' ...*N"
+
+echo "*NReady!*N"
+
+changetaskpri 0

@@ -1,0 +1,316 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                16.Teil...
+
+So, nachdem wir wissen wie wir unsere sachen auch weitergeben und damit
+Strunzen koennen, macht es doch gleich wieder spass, oder ?
+
+In diesem Teil werde ich am anfang erstmal ein paar neue Befehle
+vorstellen, sie aber nicht in irgendein programm verpacken. Ich bin sicher
+das ihr diese Befehle irgendwann gut gebrauchen koennt, und dann erinnert
+ihr euch bestimmt daran.
+
+Als ersten nette befehl kommt der Swap-befehl. Er kann auf die Adress und
+Datenregister zugreifen, und vertauscht oberes Wort mit dem unteren.
+Aus...
+
+$40981546
+
+wird...
+
+$15464098
+
+Naja, hoert sich ja nicht besonders an. Aber den grund warum ich den Befehl
+vorstelle, ich hatte ja gesagt ich stelle nur die Befehle vor die man
+wirklich zum Intro schreiben braucht, ist, das er sich ganz besonders gut
+fuer manipulationen an Copperlisten eignet, wenn es darum geht Adressen
+einzutragen.
+Wie ihr wisst sind die Adresse in einer Copperliste immer getrennt in
+Highwort und Lowwort.
+
+Um die adresse $40000 als adresse fuer die erste Bitplane festzulegen, muss
+man das ja die beiden befehle..
+
+$00e0 $0004
+$00e2 $0000
+
+schreiben. Naja wenn wir wissen wo das liegt koennen wir das ja relativ
+einfach eintragen. Aber was ist wenn wir zum Beispiel die Adresse der
+Sprite datenliste in die Copperliste eintragen wollen. Dann gibt es schon
+schwierigkeiten. Wir koennten das zwar ermitteln, weil wir ja das mainprog
+mit Org/Load fixieren. Aber die Adresse der Datenliste aendert sich ja
+jedesmal wenn wir erweiterungen am listing vornehmen, also das ist es nicht.
+Die moeglichkeit ist also, sich mit Move.l # die Adresse in ein Datenregister
+zu holen, um dann die Zwei worte in die Copperliste einzutragen.
+In der Praxis sieht das dann so aus...
+
+        Move.l  #Sprite1,d0
+        Move.w  d0,Copperlist+2
+        Swap    d0
+        Move.w  d0,Copperlist+6
+        Rts
+
+Copperlist:
+dc.w    $0120,$0000
+dc.w    $0122,$0000
+dc.l    $-2
+
+Sprite1:
+..Hier liegt dann die Spritedefinition
+
+Die Funktion muesste eigentlich Klar sein...
+
+Dann kommt ein Kuerzel das man z.b hinter die Befehle Move, Add und Sub
+klemmen kann.
+
+Naemlich `q`...
+
+Es bedeutet dann soviel wie Quick, man kann damit allerdings nur
+vorzeichenbehaftete 4 bit werte uebertragen. Also von -8 bis +7.
+Quick wird es genannt weil es sehr schnell geht, denn der wert wird direkt
+in den Befehl mit eingebaut. Es kommt nur ein Wort bei raus, und das der
+Prozessor das Schneller abarbeiten kann ist ja wohl jedem Klar..ne.
+
+Wenn irgendwie moeglich solltet ihr wenn irgendwie moeglich bei Sprung
+operationen immer die Branch befehle vor ziehen. Also anstatt
+
+Jmp und Jsr...immer Bra und Bsr...
+
+Denn dort ist sowieso der Befehl kuerzer. Man kann ihn aber auch von hand
+noch kuerzer machen. Indem man einfach .S fuer kurze Distanz, oder .L fuer
+lange Distanz eingebt. Wenn ihr euch vertut und Kurz statt lang eingebt ist
+das nicht so schlimm, der Seka merkt das und verbessert euch. Falls aber
+umgekehrt, wenn ihr also .L schreibt, aber .S moeglich waere, tja dann habt
+ihr pech gehabt, da mischt sich der Seka nicht ein.
+Dieses Kuerzel habt ihr aber auch schon in meinen Listings gesehen. Es
+klebt immer an den Bne`s, Beq`s, und an den Bsr`s dran. Naja jetzt wisst
+ihr auch was das bedeutet.
+
+Eine weiteres Kuerzel kann man noch in den Daten fuer den befehl
+unterbringen. Und zwar wenn man mit Adresse arbeitet die eigentlich nur ein
+Wort lang sind, dann waere es unsinnig ein ganzes langwort dafuer zu
+verschwenden. Es koennte dann so aussehen...
+
+Vorher
+        Move.l $00000040,$00000050
+
+schiebt das langwort von $40 nach $50
+Das ergibt nach dem Assemblieren
+
+2 Bytes fuer den Move befehl
+4 Bytes fuer die Adresse $00000040
+4 Bytes fuer die Adresse $00000050
+
+----------------------------------
+10 Bytes
+
+Wenn ihr aber die Kuerzel benutzt, sieht es so aus.
+
+        Move.l $0040.w,$0050.w
+
+belegt..
+
+2 Bytes fuer den Move befehl
+2 Bytes fuer die Adresse $00000040
+2 Bytes fuer die Adresse $00000050
+
+----------------------------------
+6 Bytes
+
+Denkt daran, die schreibweise $0040 aendert nichts, das .w muss dahinter,
+denn ich kann den Befehl mit den Langwoertern auch so schreiben.
+
+        Move.l $40,$50
+
+Es bleiben langwoerter, und als solche werden sie eingesetzt.
+
+Naja, wir haben also im Beispiel 4 Bytes gespart, was das ist nicht viel,
+das meint ihr aber auch nur, wenn ihr mal euren ersten Bootblock
+beschreibt, dann werdet ihr noch an mich denken, den dort zaehlt jedes
+Byte.
+Leider gibt es kein Kuerzel .B, denn dann waere die ersparnis noch
+groesser.
+
+Jetzt kommt ein Befehl den ich manchmal benutze, um schnell irgend was
+auszutauschen.
+Stellt euch vor ihr habt irgendwann mal eine tolle Routine geschrieben, die
+einen Haufen sachen ausrechnet, und die ergebnisse in allen Datenregistern,
+das heisst von 0 bis 7. Und irgendwann schreibt ihr mal ein programm das
+halt solche werte braucht, und ihr erinnert euch an die alte
+Routine...Jetzt merkt ihr aber das die routine etwas anders ist, und zwar
+so das das Ergebnis was die neue Routinen in d6 braucht, in d7 liegt, und
+das ergebnis was sie in d7 braucht, aber in d6 liegt.
+Jetzt gibt es drei moeglichkeiten dieser Situation Herr zu werden.
+
+Wir schreiben eine der beiden Routinen um...was aber bei 20 Kilobyte
+SourceCode nicht gerade leicht ist. Und da Programmierer grundsaetzlich
+faule Menschen sind, faellt das also weg.
+
+Also muessen wir gucken wie wir da sachen vertauscht kriegen, so viel ist
+klar. Man kann es mit dem Stack, oder mit einer X-beliebigen adresse
+machen. Hier die zwei moeglichkeiten.
+
+        Move.l d6,$40000
+        Move.l d7,d6
+        Move.l $40000,d7
+
+Oder
+
+        Move.l  d6,-(a7)
+        Move.l  d7,d6
+        Move.l  (a7)+,d7
+
+Die zweite moeglichkeit ist etwas komplizierter, aber wird im Source
+kuerzer als die erste. Der effekt ist derselbe, was vorher in d6 stand
+steht jetzt in d7, und umgekehrt.
+
+Aber jetzt tritt der neue Befehl auf die Buehne. Er heisst schlicht und
+ergreifend `Exchange` kurz `EXG`, und mit ihm passiert dann die ganze
+sachen in einem Wort.
+
+        Exg     d6,d7
+
+Das wars...Im prinzip ist es dasselbe wie die kuerzere Variante von eben,
+denn der Prozessor macht genau das auch. Nur wenn er es macht geht es
+natuerlich viel schneller. Alles Klor ?
+
+Es kommt immer mal wieder vor das man, wenn man ein Intro programmiert, die
+einzelnen Effekte in Modulen abarbeiten laesst. Dabei kann es vorkommen das
+man die module an verschiedenen Tagen programmiert, und nicht darauf achtet
+welche Arbeits und datenregister man den nun noch frei hat. Und wenn man
+ein Intro mit 20 Effektmodulen hat, dann wird es eng mit den registern, mit
+denen man doch so hervorragend arbeiten kann, oder.
+
+So, da gibt es eine ganz einfache sache. Wir legen uns jeden die inhalte der
+Datenregister und der Adressregister jedes Modules, einen Sicherungsplatz
+an, indem wir nach abarbeitung des Modul alle sachen abspeichern, und bevor
+wir das naechste mal mit dem modul anfangen, holen wir uns einfach die
+sachen wieder rein. Das saehe, wenn wir es jetzt machen muessten allerdings
+etwas lang, naemlich so aus.
+
+        Move.l d0,$40000
+        Move.l d1,$40004
+        ....
+        ....
+        Move.l a0,$40020
+        Move.l a1,$40024
+
+naja das waere ja ein bisschen lang. Das haben sich die Leute die den 68000
+gebaut haben auch gedacht, und deshalb fuer den move befehl noch ein Kurzel
+ausgedacht. naemlich `m`. Das `m` steht fuer viele oder mehrere, das heisst
+wir koennen mit einem Befehl direkt mehrere register retten. Wir koennen
+sie dann auf den Stack oder einfach in den Speicher schreiben. Der Befehl
+der den Kompletten registerinhalt nach $40000 rettet sehae dann so aus.
+
+        Movem.l d0-d7/a0-a6,$40000
+
+Er erhoeht auch selbsttaetig die adresse wo er das hinschreibt.
+Wir muessen allerdings nicht alles retten, sondern wir koennen auch ganz
+bestimmt retten. Wenn wir nur d0,d1,d4,d5,d7,a0,a1,a2 und a6 retten wollen
+schreiben wir einfach
+
+        Movem.l d0-d1/d4-d5/d7/a0-a2/a6,$40000
+
+Also ihr seht..ziemlich cool der Befehl. Natuerlich geht es zurueck
+genauso. Der Befehl der den ersten Movem befehl von mir rueckgaengig macht
+heisst
+
+        Movem.l $40000,d0-d7/a0-a6
+
+Mehr nicht...
+
+Nach moeglichkeit den Clr befehl in langen schleifen und auch sonst meiden.
+Denn er dauert einfach zu lange. Ein Ersatz fuer diese Schleife
+
+        Lea $40000,a0
+        Move.w #$ffff,d0
+Clearloop:
+        Clr.l (a0)+
+        Dbf d0,clearloop
+        Rts
+
+waere ohne Clr.l, und sehr viel schneller...
+
+        Lea $40000,a0
+        Move.l #$ffff,d0
+Clearloop:
+        Moveq.l #0,(a0)+
+        Dbf d0,clearloop
+        Rts
+
+All right ?
+
+Wenn ihr mal etwas groessere sachen programmiert, und ihr kleine Zeitliche
+abstaende braucht, dann koennt ihr euch ja mit der einfachen Warteschleife
+helfen die ihr schon kennt. Aber gerade bei sachen in Echtzeit, muss man
+manchmal kurze abstaende warten. Je nach dem sind die Abstaende sogar so
+kurz, das man noch nicht mal eine kleine Routine dazwischensetzen kann.
+Dazu gibt es einen netten Befehl, der eigentlich nichts macht. Und so
+heisst er auch..
+
+        `Nop` - No OPeration
+
+Der Prozessor braucht Vier Taktzyklen um zu merken das der Befehl garkeinen
+gueltigen Code ergibt, dann springt er weiter. Solche Codes gibt es noch
+viele andere. Die Erbauer von Prozessoren, nehmen immer einen davon der
+dann den Namen `Nop` kriegt, und dann ist das so.
+
+So jetzt kommt die Aufstellung der Sprungkriterien fuer die Befehle aus der
+Gruppe der Bedingten Branch Befehle. Zwei davon kennt ihr ja schon, Bne und
+Beq, ich zaehle sie aber der komplettheit wegen nochmal auf.
+
+Das B davor muesst ihr euch immer denken, da ich nur die bedingung
+beschreibe.
+
+CC = Carry Flag nicht gesetzt           (Carry Flag wird spaeter erklaert)
+
+CS = Carry Flag gesetzt
+
+EQ = Zero Flag gesetzt, oder letzte Operation gleich 0
+
+GE = Groesser oder Gleich    > =
+
+GT = Groesser, aber mit vorzeichen    >
+
+HI = Groesser    >
+
+LE = Kleiner oder 0, aber mit vorzeichen    <
+
+LS = Kleiner oder Gleich    < =
+
+LT = Kleiner, aber mit vorzeichen    <
+
+MI = Wert im Minus Bereich    -
+
+NE = Zero Flag nicht gesetzt, oder letzte operation nicht 0    <>
+
+PL = Wert im Plus Bereich
+
+VC = Overflow nicht gesetzt, mit vorzeichen      (Overflow Flag kommt spaeter)
+
+VS = Overflow gesetzt, mit vorzeichen
+
+
+So das waeren sie, den Groessten teil braucht man halt sehr selten, es ist
+aber schon mal gut wenn man weiss das es sie ueberhaupt gibt.
+
+So jetzt noch ein Paar Klaerende worte zum Carry- und Overflow Flag.
+
+Zuerst da carryflag....
+
+Was die Flags sind wisst ihr ja schon, deshalb kann ich ja loslegen.
+Das Carry Flag ist praktisch das 33 ste Bit der Datenregister, wenn ein
+Wert durch Addition zu gross fuer ein Datenregister wird, dann wird der
+rest ins Carry geschrieben. Deshalb mus man es bei Addtion und Subtraktion
+immer beruecksichtigen.
+
+Das Overflowflag ist immer dann gesetzt wenn bei der letzten operation, ein
+bereich ueberschritten wurde, sei es der Byte, Wort oder Langwort bereich.
+Sobald die Zahl diesen Ueberlaueft wird es gesetzt. Wofuer das gut sein
+soll weiss ich zwar nicht, aber ich habe es so gelernt.
+
+So jetzt erstmal in die Heia, muss morgen inne Schule...
+
+bis denne
+
+                Jeff Kandle

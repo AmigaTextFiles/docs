@@ -1,0 +1,20 @@
+CLEAR   MACRO           ; quick way to clear a D register on 68000
+        MOVEQ   #0,\1
+        ENDM
+
+EVEN    MACRO           ; word align code stream
+        DS.W    0
+        ENDM
+
+LINKSYS MACRO           ; link to a library without having to see a _LVO
+        LINKLIB _LVO\1,\2
+        ENDM
+
+CALLSYS MACRO           ; call a library without having to see _LVO
+        CALLLIB _LVO\1
+        ENDM
+
+XLIB    MACRO           ; define a library reference without the _LVO
+        XREF    _LVO\1
+        ENDM
+

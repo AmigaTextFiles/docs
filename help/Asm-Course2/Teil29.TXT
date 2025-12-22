@@ -1,0 +1,258 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                29.Teil...
+
+Wieder sind ein paar Tage ins Land gezogen. Ich moechte behaupten das wir
+alle aelter geworden sind. Naja, weiter gehts mit frischem Schwung.
+
+Ich hoffe ihr kommt mit dem SinusscrolleransatzSource klar. Muesstet ihr
+aber schon schaffen. Positionen aus Tabellen lesen und bedingte Schleifen
+programmieren koennt ihr ja schon.
+
+So, dann will ich mal weiter machen mit den Bobs.
+Vielleicht haben einige schon versucht die neue Verknuepfung auf die Bobs
+anzusetzen. Duerfte bei einplanebobs auch geklappt haben. Aber sobald
+mehrere Planes ins Spiel kamen, sah es etwas bunter aus als wie es haette
+aussehen sollen.
+Nun das ist eigentlich etwas verwunderlich, denn da wo etwas vom Bobs
+gesetzt war, ist auch in der Quelle etwas gesetzt, und da wo nichts ist, da
+wurde ein Bit vom Hintergrund eingesetzt.
+
+Warum Funktioniert es nicht ?
+
+Ganz klar...Wenn ein Bit der Quelle Bob nicht gesetzt ist heisst das noch
+lange nicht das da nichts gesetzt ist. Es koennte ja eine Plane weiter
+etwas gesetzt sein. Und da die Bits die Farbgebung der Bobs sind, macht da
+ein dazwischengeschobenes Bit, ne ganze Menge aus.
+
+Was ist also zu tun ?
+
+Nun wir muessten neben dem Normalen Bobs noch eine Plane oder ein Abbild
+des Bobs haben in dem alle gesetzten Bits, egal in welcher Plane,
+verzeichnet sind. Dieses verzeichnis koennten wir dann als grundlage fuer
+die verknuepfung nehmen. Die verknuepfungen saehe dann ungefaehr so aus.
+
+1.  D  =  A  wenn  C = 1 und B = 0   2.  D = B wenn C = 0
+
+Das heisst das C nur noch ausschlaggeber fuer die Aktion ist.
+
+Wir erreichen so ein verzeichnis indem wir einen Bob mit 8 Farben im 16
+Farben Modus malen und dabei nur die Farben 8 - 15 benutzen. die 4. Plane
+koennen wir dann als verzeichnis benutzen, da in ihr Automatisch alle
+gesetzten Bits verzeichnet sind, schlau was ?
+
+Naja, da solche verknuepfungen auch ne menge Zeit kosten, muessen wir auch
+ein paar Tricks und Kniffe beherschen die uns schneller werden lassen.
+
+Die Tips sind zwar nicht alle von mir, sind aber trotzdem gut. Ich setze immer
+noch eine erklaerung darunter.
+
+1. Man vermeide 32-Bit-Immediate-Werte.
+
+Also, man sollte nicht mit direkten Langwoertern arbeiten.
+
+Beispiel: Wenn man ein Rotierende Schleife programmieren will, dann sind
+die Zeiger (A0,A1) um die Laenge des Elements voneinander verschoben. Die
+Initialisierung saehe normal dann so aus.
+
+        Move.l  #$40000,A0
+        Move.l  #$40004,A1
+
+Scheusslich...Wir aber geben der tabelle einen Namen und initialisieren so..
+
+        Lea     Tabelle(Pc),A0
+        Move.l  A0,A1
+        Add.l   #4.w,A1
+
+Das ist sehr viel kuerzer, und damit auch gleichzeitig schneller.
+
+2. Man vermeide 32-Bit-Operanden zusammen mit Adressregistern.
+
+Solange es irgendwie geht sollte man ueberhaupt Langwoerter nicht benutzen,
+denn sind sind fuer den MC 68000 sehr schwer zu holen, da er ja nur ein
+Word pro Lungenzug aus dem Speicher ziehen kann.
+
+3. Man vermeide 32-Bit-Absolut Adressen...
+
+Also die Source-Kot zeile
+
+        Move.l  $40000,$50000
+
+ist Tabu....Sie dauert haarstraeubend lange.
+
+4. Man vermeide die Mul- und Div anweisungen..
+
+Wenn man ein bisschen scharf ueberlegt kommt man oft auf einen anderen Weg
+an das gewuenschte Ergebnis zu kommen.
+
+5. Was der Verfassers jetzt meint weiss ich nicht, aber er sagt das man die
+Quick anweisung des MC 68000 vergessen sollte. Naja er wird schon seine
+gruende haben. Ich kann nur sagen das ich sie gerne benutze, schon alleine
+weil sie so kurz ist.
+
+6. Was ich aber schon gesagt habe ist das man die Clr- anweisung komplett
+aus den Assemblerbuechern streichen sollte. Ein Befehl mit nur einen
+Parameter der ganz genau weiss was er zutun hat, und der dann so lange
+dafuer braucht, der gehoert einfach nicht in ein gutes Programm.
+Desweiteren fuehrt er, weiss ich warum seine Anweisung zweimal aus. Das ist
+bei Strobe Registern nicht gerade das wahre, oder ?
+
+Hier mal ein aufstellung von einfachen Befehlen, und wie man diese durch
+andere Adressierungsarten verkuerzt oder verschnellert, oder beides !
+
+L1:     Move.l  #1,D0                   6 Bytes         12 Zyklen
+
+L2:     Add.l   #2,A0                   6 Bytes         16 Zyklen
+
+L3:     Move.l  #3,Datavariable         10 Bytes        28 Zyklen
+
+L4:     Muls.w  #10,D0                  4 Bytes         70 Zyklen
+
+L5:     Clr.l   D0                      2 Bytes         6 Zyklen
+
+
+Durch geschickten einsatz der moeglichkeiten, erreicht man dasselbe
+schneller und kuerzer so...
+
+L1:     Moveq   #1,D0                   2 Bytes          4 Zyklen
+
+L2:     Addq.w  #2,A0                   2 Bytes          8 Zyklen
+
+L3a:    Moveq   #3,D0                   2 Bytes          4 Zyklen
+        Move.l  D0,Datavariable         6 Bytes         20 Zyklen
+                                        -------         ---------
+                                        8 Bytes         24 Zyklen
+
+L3b:    Moveq   #3,D0                   2 Bytes          4 Zyklen
+        Move.l  D0,(a4)                 4 Bytes         16 Zyklen
+                                        -------         ---------
+                                        6 Bytes         20 Zyklen
+
+L4:     Move.l  D0,D1                   2 Bytes          4 Zyklen
+        Lsl.l   #2,D1                   2 Bytes         12 Zyklen
+        Add.l   D1,D0                   2 Bytes          8 Zyklen
+        Add.l   D0,D0                   2 Bytes          8 Zyklen
+                                        -------         --------
+                                        8 Bytes         32 Zyklen
+
+L5:     Moveq   #0,d0                   2 Bytes          4 Zyklen
+
+
+7. Wenn man fuer eine 32-Bit-Konstante MOVEQ verwenden kann, soll man es
+auch tun.
+
+Folgende Routine....
+
+        And.l   #15,D2                   6 Bytes        16 Zyklen
+        Or.l    #2,D3                    6 Bytes        16 Zyklen
+        Sub.l   #28,D4                   6 Bytes        16 Zyklen
+        Cmp.l   #1,D1                    6 Bytes        14 Zyklen
+                                        --------        ---------
+                                        24 Bytes        62 Zyklen
+
+Werden kuerzer und schneller, so geschrieben
+
+        Moveq   #15,D0                   2 Bytes         4 Zyklen
+        And.l   D0,D2                    2 Bytes         8 Zyklen
+        Moveq   #2,D0                    2 Bytes         4 Zyklen
+        Or.l    D0,D3                    2 Bytes         8 Zyklen
+        Moveq   #28,D0                   2 Bytes         4 Zyklen
+        Sub.l   D0,D4                    2 Bytes         8 Zyklen
+        Moveq   #1,D0                    2 Bytes         4 Zyklen
+        Cmp.l   D0,D1                    2 Bytes         8 Zyklen
+                                        --------        ---------
+                                        16 Bytes        48 Zyklen
+
+Allerdings muss man nicht immer auf Register zurueckgreifen wenn man
+groessere Werte Addieren will und man die Grenze der Quick-anweisung
+sprengt.
+
+Anstatt
+
+        Sub.l   #10,D0                   6 Bytes        16 Zyklen
+
+Schreibt man genauso schnell, aber im Code kuerzer.
+
+        Subq.l  #8,D0                    2 Btyes         8 Zyklen
+        Subq.l  #2,D0                    2 Bytes         8 Zyklen
+                                        --------        ---------
+                                         4 Zyklen       16 Zyklen
+
+Man kann sich aber auch mit dem Moveq-Befehl behelfen wenn es um Grosse
+werte geht. Ein Beispiel waere anstatt
+
+        Move.l  #$10000,D0               6 Bytes        12 Zyklen
+
+schreibt man
+
+        Moveq   #1,D0                    2 Bytes         4 Zyklen
+        Swap    D0                       2 Bytes         4 Zyklen
+                                        --------        ---------
+                                         4 Bytes         8 Zyklen
+
+8. Man verwende fuer Adressregister die .W form wenn moeglich.
+
+Also    Move.l Execbase.w,a6
+
+9. Man fuehre Operationen, wenn moeglich, in Adressregistern aus. Soll
+etwa eine Konstante in ein Adressregister geladen werden, koennte dies wie
+folgt codiert werden:
+
+        Move.l  #502,A1                  6 Bytes        12 Zyklen
+
+Dasselbe kann man aber auch mit der Lea-Anweisung erreichen.
+
+        Lea     502.w,A1                 4 Bytes         8 Zyklen
+
+
+Ein weiterer Tip ist, das man ruhig mehere gleiche Kommandos hintereinander
+schreiben kann, wenn man so schneller auf das Ergebnis kommen kann. Also
+anstatt..
+
+        Exg     A0,D0                    2 Bytes         6 Zyklen
+        Lsl.l   #2,D0                    2 Bytes        12 Zyklen
+        Exg     D0,A0                    2 Bytes         6 Zyklen
+                                        --------        ---------
+                                         6 Bytes        24 Zyklen
+
+Das Exg ist scheinbar noetig, da man ja nur Datenregister `Shiften` kann.
+
+Der Ersatz fuer diese Zeilen waere einfacher....
+
+        Add.l   A0,A0                    2 Bytes         8 Zyklen
+        Add.l   A0,A0                    2 Bytes         8 Zyklen
+                                        --------        ---------
+                                         4 Bytes        16 Zyklen
+
+Und da wir gerade beim Thema Shifts sind, hier ein paar einfache Regeln.
+
+10a: Wenn die Anzahl der Schiebepositionen groesser als 15 ist, fuehre man
+eine Swap-anweisung durch und Subtrahiere 16 von der anzahl der
+durchzufuehrenden Shifts
+
+10b: Wenn die Zahl 1 ist, und es sich um einen Links-Shift handelt, dann
+ist ein Add-anweisung vorzuziehen.
+
+So, diese Tips und Tricks hier, setze ich meistens bei meinen Programmen
+ein, und kann euch sagen das sie wirklich gut sind. Allerdings moechte ich
+euch auch ein paar Tips geben, die ich beim Codes eines Intro`s benutzen.
+
+Wenn es um Aufwendige Teil-Routinen geht, dann Speichere ich den
+Source.Code ab und loeschen den Speicher. Dann fange ich mit der Routine
+an. Da ich weiss was als Ergebnis bei einem Ganz bestimmten Wert rauskommen
+muss, kann ich jeden neuen Befehl beobachten. Dazu koennt ihr die Register
+ausgabe beim Ruecksprung in den Seka benutzen. Lasst euch Zeit damit, denn
+so eine Routine die z.B Die Bobkoordinaten, oder Logopositionen anhand
+eines Bytes errechnet kommt ohne Muls und Divs anweisungen meist nicht aus.
+Wenn man allerdings die Tips beruecksichtigt kommt man noch ziemlich billig
+davon.
+
+Wenn ihr allerdings groessere Programme selber schreiben solltet, dann ist
+es besser ihr schreibt euch die Gliederung bis in sehr kleine Teilprobleme
+auf. Dann koennt ihr jedes kleine Progamm einzeln schreiben, und braucht
+sie dann nur noch anzupassen.
+
+Soviel fuer Heute
+
+                Jeff Kandle
+

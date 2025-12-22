@@ -1,0 +1,505 @@
+<html>
+<head>
+<title>Amiga C Kurs f&uuml;r Einsteiger</title>
+<META NAME="description" CONTENT="Amiga C Kurs f&uuml;r Einsteiger">
+<META NAME="keywords"    CONTENT="C, Amiga, Programmierung, Kurs, Einsteiger, StormC">
+<META NAME="author"      CONTENT="Norman Walter">
+
+<script language="JavaScript" src="JavaScript/C-Kurs_Kapitel.js" type="text/javascript">
+</script>
+
+</head>
+<body bgcolor="black" link="#DDDDDD" vlink="#BBBBBB">
+<center>
+<TABLE>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="140">
+<CENTER>
+<A HREF="index.html" NAME="Home"><IMG SRC="Home.png" ALT="Home" BORDER="0"></A><BR>
+<A HREF="download.html" NAME="Downloads"><IMG SRC="Download.png" ALT="Downloads" BORDER="0"></A><BR>
+<A HREF="Links.html" NAME="Links"><IMG SRC="Links.png" ALT="Links" BORDER="0"></A><BR>
+<a href="cgi-bin/GB_SHOW.cgi" method="POST"><img SRC="guestbook.png" BORDER=0 alt="Guestbook"></a>
+<p>
+<A HREF="http://www.norman-interactive.com/email_feedback.html">
+<IMG SRC="@.png" Border="0" Alt="e-mail"><BR><small>e-mail</small></A><BR>
+<p>
+
+<img src="C-Kurs/C-Kurs_sm.png" alt="Amiga C Kurs f&uuml;r Einsteiger" vspace="20"><BR>
+
+<NOSCRIPT>
+<font color="red">
+Diese Seite ben&ouml;tigt JavaScript.
+Entweder Ihr Browser unterst&uuml;tzt kein JavaScript, oder Sie haben es deaktiviert.
+</font>
+</NOSCRIPT>
+
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+
+  erzeuge_Kapitel(8);
+
+//-->
+</SCRIPT>
+
+<p>
+</CENTER>
+</TD>
+<TD VALIGN="TOP" ALIGN="TOP" WIDTH="400" HEIGHT="600">
+<center>
+<p>
+<BR>
+<font color="white">
+
+<img src="C-Kurs/C-Kurs.png" alt="Amiga C Kurs f&uuml;r Einsteiger"><BR>
+</center>
+<p>
+<font color="gray"><H2>&Uuml;bungen zur graphics.library</H2></font><BR>
+<p>
+Falls Sie Student sind kennen Sie vielleicht folgendes Problem:
+Die vom Dozenten in der Vorlesung vorgerechneten Aufgaben erscheinen Ihnen schl&uuml;ssig
+und Sie glauben, den Sachverhalt verstanden zu haben. In der Pr&uuml;fung m&uuml;ssen Sie dann
+entsetzt feststellen, da&szlig; Sie nicht in der Lage sind, &auml;hnliche Aufgaben selbst zu bearbeiten.
+<p>
+Damit es Ihnen bei diesem Kurs nicht so ergeht, machen wir jetzt ein paar &Uuml;bungen.
+
+<p>
+<font color="gray"><H2>&Uuml;bung 8.1</H2></font><BR>
+<p>
+Schreiben Sie eine Funktion, die mit Hilfe von <a href="C-Kurs_8_2.html"><TT>RectFill</TT></a>
+ein gef&uuml;lltes Quadrat zeichnet.
+Das Quadrat soll dabei durch einen Kreis mit Mittelpunkt (X,Y) und Radius r beschrieben
+werden, der die Kanten des Quadrats ber&uuml;hrt.
+<p>
+
+<center>
+<img src="C-Kurs/Box.png" alt="Box"><BR>
+</center>
+
+<p>
+Machen Sie dabei folgende geometrische &Uuml;berlegungen: Ein Quadrat ist ein Spezialfall
+eines Rechtecks, bei dem alle Kanten gleich lang sind.
+Es gilt Kantenl&auml;nge a = Kantenl&auml;nge b. Anhand der oben gezeigten Skizze
+k&ouml;nnen Sie erkennen, da&szlig; der Radius r des Kreises genau der H&auml;lfte der Seitenl&auml;nge des Quadrats
+entspricht. &Uuml;berlegen Sie nun, wie Sie von den Parametern des Kreises (Mittelpunkt und Radius)
+auf die Koordinaten des linken, oberen und rechten, unteren Ecks des Quadrats kommen.
+Zur Erinnerung: Die Funktion <a href="C-Kurs_8_2.html"><TT>RectFill</TT></a> erwartet als Eingabeparameter
+die Koordinaten des linken, oberen und rechten, unteren Ecks des zu zeichnenden Rechtecks.
+<p>
+Wir wollen dabei die Technik der <a href="C-Kurs_2_3.html">Modularisierung</a> verwenden.
+Dies hat den Vorteil, da&szlig; wir die erzeugten Module auf einfache Weise in anderen Programmen
+wiederverwenden k&ouml;nnen. Das Definitionsmodul sei schon vorgegeben:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Quadrat.h<br>
+&nbsp;*&nbsp;&nbsp;Definitionsmodul<br>
+&nbsp;*/<br></font>
+<br>
+#ifndef&nbsp;QUADRAT_H<br>
+#define&nbsp;QUADRAT_H<br>
+<br>
+<font color="#008822"><b>//&nbsp;Funktionsprototyp&nbsp;der&nbsp;Funktion&nbsp;Quadrat<br></b></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;Quadrat(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*MeinRastPort,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;y,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;r);<br>
+<br>
+#endif<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Unsere Funktion <TT>Quadrat</TT> erwartet als Eingabeparameter einen
+<a href="C-Kurs_4_2.html">Zeiger auf eine Struktur</a> vom Typ <TT>RastPort</TT>,
+die Koordinaten des Kreismittelpunks, sowie den Radius <TT>r</TT> des Kreises.
+<p>
+
+Vervollst&auml;ndigen Sie jetzt selbst&auml;ndig das Implementierungsmodul:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;Quadrat.c<br>
+&nbsp;*&nbsp;&nbsp;Implementierungsmodul<br>
+&nbsp;*/<br></font>
+<br>
+#ifndef&nbsp;QUADRAT_H<br>
+#include&nbsp;<font color="#EEDD05">"Quadrat.h"</font><br>
+#endif<br>
+<br>
+<font color="#008822"><b>//&nbsp;Zeichnet&nbsp;ein&nbsp;Quadrat&nbsp;mit&nbsp;Radius&nbsp;r&nbsp;an&nbsp;den&nbsp;Koordinaten&nbsp;x,y<br></b></font>
+<font color="#AA00FF"><b>void</b></font>&nbsp;Quadrat(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*MeinRastPort,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;y,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;r)<br>
+{<br>
+&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Hier&nbsp;fehlt&nbsp;noch&nbsp;etwas<br></b></font>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Da unsere Funktion den R&uuml;ckgabewert <TT>void</TT> hat, also nichts zur&uuml;ckgibt
+brauchen Sie auch keine <TT>return</TT> Anweisung beim Verlassen der Funktion.
+Wir k&ouml;nnten hier auch einen speziellen R&uuml;ckgabewert f&uuml;r Fehler benutzen,
+aber darauf verzichten wir in diesem einfachen Beispiel.
+Als Hinweis sei gesagt, da&szlig; eine elegante L&ouml;sung m&ouml;glich ist, bei der zwischen
+den geschweiften Klammern nur eine einzige Zeile steht.
+
+<p>
+
+<p>
+Testen Sie Ihre Funktion mit dem folgenden Programm:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#FFFFFF">
+/*&nbsp;&nbsp;&nbsp;Quadrat_Demo.c<br>
+&nbsp;*<br>
+&nbsp;*/<br></font>
+<br>
+#include&nbsp;&lt;exec/types.h&gt;<br>
+#include&nbsp;&lt;exec/exec.h&gt;<br>
+#include&nbsp;&lt;intuition/intuition.h&gt;<br>
+#include&nbsp;&lt;graphics/gfx.h&gt;<br>
+#include&nbsp;&lt;dos/dos.h&gt;<br>
+<br>
+#include&nbsp;&lt;proto/intuition.h&gt;<br>
+#include&nbsp;&lt;proto/graphics.h&gt;<br>
+#include&nbsp;&lt;proto/exec.h&gt;<br>
+<br>
+<font color="#008822"><b>//&nbsp;Eigene&nbsp;Includes<br></b></font>
+#include&nbsp;<font color="#EEDD05">"Quadrat.h"</font><br>
+#include&nbsp;<font color="#EEDD05">"Quadrat.c"</font><br>
+<br>
+<font color="#008822"><b>//&nbsp;Symbolische&nbsp;Konstanten<br></b></font>
+#define&nbsp;WIDTH&nbsp;400&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite&nbsp;des&nbsp;Fensters<br></b></font>
+#define&nbsp;HEIGHT&nbsp;300&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he&nbsp;des&nbsp;Fensters<br></b></font>
+<br>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Window</font>&nbsp;*Fenster;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;Window-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*<font color="#45FF65">IntuitionBase</font>;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;IntuitionBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*<font color="#45FF65">GfxBase</font>;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;GfxBase-Struktur<br></b></font>
+<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">RastPort</font>&nbsp;*rp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeiger&nbsp;auf&nbsp;RastPort-Struktur<br></b></font>
+<br>
+<font color="#AA00FF"><b>int</b></font>&nbsp;main(<font color="#AA00FF"><b>void</b></font>)<br>
+{<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Intuition&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">IntuitionBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"intuition.library"</font>,36L);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Graphics&nbsp;Library&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;=&nbsp;(<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">GfxBase</font>&nbsp;*)&nbsp;<font color="#FFFFAA">OpenLibrary</font>(<font color="#EEDD05">"graphics.library"</font>,0L);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;mittels&nbsp;Tags&nbsp;&ouml;ffnen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fenster&nbsp;=&nbsp;<font color="#FFFFAA">OpenWindowTags</font>(NULL,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Left,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;linken&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Top,&nbsp;100,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Abstand&nbsp;vom&nbsp;oberen&nbsp;Rand<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Width,&nbsp;WIDTH,&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Breite<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Height,&nbsp;HEIGHT,&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;H&ouml;he<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Title,&nbsp;<font color="#EEDD05">"Quadrat&nbsp;Demo"</font>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenstertitel<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_CloseGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Close-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DragBar,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ziehleiste<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_DepthGadget,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Depth-Gadget<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_GimmeZeroZero,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Ursprung&nbsp;0/0<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_IDCMP,&nbsp;IDCMP_CLOSEWINDOW,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WA_Activate,&nbsp;TRUE,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;aktivieren<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TAG_DONE);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(Fenster&nbsp;!=&nbsp;NULL)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rp&nbsp;=&nbsp;Fenster->RPort;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;rp&nbsp;zeigt&nbsp;auf&nbsp;RastPort&nbsp;des&nbsp;Fensters<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetRast</font>(rp,&nbsp;1L);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fensterinhalt&nbsp;l&ouml;schen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">SetAPen</font>(rp,&nbsp;2L);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Farbe&nbsp;setzen<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeichnet&nbsp;ein&nbsp;Quadrat&nbsp;in&nbsp;der&nbsp;Mitte&nbsp;des&nbsp;Fensters<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Quadrat(rp,WIDTH/2,HEIGHT/2,50);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Auf&nbsp;Close-Gadget&nbsp;warten<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Wait</font>(1L&nbsp;&lt;&lt;&nbsp;Fenster-&gt;UserPort-&gt;mp_SigBit);<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">CloseWindow</font>(Fenster);&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Fenster&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;}&nbsp;<font color="#008822"><b>//&nbsp;end&nbsp;if<br></b></font>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Libraries&nbsp;schlie&szlig;en<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">GfxBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">GfxBase</font>);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#45FF65">IntuitionBase</font>&nbsp;!=&nbsp;NULL)&nbsp;<font color="#FFFFAA">CloseLibrary</font>((<font color="#AA00FF"><b>struct</b></font>&nbsp;<font color="#45FF65">Library</font>&nbsp;*)<font color="#45FF65">IntuitionBase</font>);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>return</b></font>&nbsp;0;<br>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Achten Sie darauf, da&szlig; sich Ihre selbst geschriebenen Include-Dateien
+<TT>Quadrat.h</TT> und <TT>Quadrat.c</TT> im selben Verzeichnis wie Ihr
+Programm <TT>Quadrat_Demo.c</TT> befinden.
+<p>
+
+<font color="gray"><H2>&Uuml;bung 8.2</H2></font><BR>
+<p>
+Wie wir in der Lektion <a href="C-Kurs_2_2.html">Makros statt Funktionen</a>
+gesehen haben, k&ouml;nnen wir h&auml;ufig einfache Funktionen durch Makros ersetzen.
+<p>
+In der AmigaOS include-Datei <TT>gfxmacros.h</TT> gibt es das Makro
+<TT>DrawCircle</TT>, welches einen Kreis als Sonderfall einer Ellipse
+definiert:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+#define&nbsp;DrawCircle(rp,cx,cy,r)&nbsp;&nbsp;<font color="#FFFFAA">DrawEllipse</font>(rp,cx,cy,r,r)<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Analog dazu kann man ein Quadrat als Sonderfall eines Rechtecks betrachten.
+<p>
+Schreiben Sie eine Header-Datei Namens <TT>Box.h</TT>, die ein Makro Namens
+<TT>Box</TT> enth&auml;lt. Das Makro <TT>Box</TT> soll dabei genau die selbe Aufgabe
+wie die Funktion <TT>Quadrat</TT> aus &Uuml;bung 8.1 erf&uuml;llen.
+<p>
+&Auml;ndern Sie dann das Programm <TT>Quadrat_Demo.c</TT> so ab, da&szlig; es Ihr Makro
+<TT>Box</TT> anstatt der Funktion <TT>Quadrat</TT> zum Zeichnen des Quadrats
+verwendet.
+
+<p>
+<font color="gray"><H2>&Uuml;bung 8.3</H2></font><BR>
+<p>
+In der Lektion &uuml;ber <a href="C-Kurs_5_3.html">rekursive Funktionen</a> wurde bereits angedeutet, da&szlig;
+man diese sehr gut f&uuml;r die Erzeugung von Fraktalgrafiken verwenden kann.
+<p>
+Robert Sedgewick demonstriert in seinem Buch "Algorithmen in C" an einem
+sehr anschaulichen Beispiel (hier leicht abge&auml;ndert)
+die Verwendung rekursiver Funktionen:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>void</b></font>&nbsp;star(&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;x,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;y,&nbsp;<font color="#AA00FF"><b>int</b></font>&nbsp;r)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(r>0)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;star(x-r,y+r,r/2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;star(x+r,y+r,r/2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;star(x-r,y-r,r/2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;star(x+r,y-r,r/2);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Box(rp,x,y,r);<br>
+&nbsp;&nbsp;}<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Die Funktion <TT>star</TT> zeichnet eine Fraktalgrafik durch rekursive Funktionsaufrufe.
+<p>
+Versuchen Sie einmal sich anhand der oben gezeigten Funktion klarzumachen, warum
+diese terminiert (= abbricht) und hier keine Endlosrekursion vorliegt.
+Bedenken Sie dabei, da&szlig; ein <TT>int</TT> Wert geteilt durch einen <TT>int</TT> Wert
+wieder einen <TT>int</TT> Wert ergibt, d.h. eventuelle Nachkommastellen bei
+der Division verloren gehen (siehe auch Kapitel 1, <a href="C-Kurs_1_4.html">Arithmetische Operatoren</a>).
+<p>
+Schreiben Sie unter Verwendung Ihres in &Uuml;bung 8.2 angefertigten Makros <TT>Box</TT>
+ein Programm, welches die oben gezeigte Funktion zum Zeichnen einer Fraktalgrafik
+verwendet. Rufen Sie dazu in Ihrem Programm die Funktion <TT>star</TT> wie folgt auf:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Zeichnet&nbsp;das&nbsp;Fraktal<br></b></font>
+&nbsp;&nbsp;&nbsp;star(WIDTH/2,HEIGHT/2,80);<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+<TT>WIDTH</TT> und <TT>HEIGHT</TT> sind dabei die Breite und H&ouml;he
+Ihres Fensters.
+<p>
+Das Ergebnis sollte so aussehen:
+<p>
+
+<center>
+<img src="C-Kurs/Fraktalstern.png" alt="Fraktalstern"><BR>
+</center>
+
+<p>
+
+<p>
+<font color="gray"><H2>&Uuml;bung 8.4</H2></font><BR>
+<p>
+
+Schreiben Sie ein Programm, welches mittels <a href="C-Kurs_8_2.html"><TT>Move</TT></a>
+und <a href="C-Kurs_8_2.html"><TT>Draw</TT></a>
+ein gleichseitiges Dreieck zeichnet, das auf der Spitze steht.
+
+<p>
+
+<center>
+<img src="C-Kurs/Dreieck.png" alt="Dreieck"><BR>
+</center>
+
+<p>
+
+W&auml;hlen Sie die Reihenfolge der Linien so, da&szlig; das Dreieck gegen den Uhrzeigersinn
+gezeichnet wird. Beginnen Sie beim linken Eckpunkt, ziehen Sie dann eine Linie
+zum unteren Eckpunkt usw. . Die Reihenfolge der Eckpunkte wird in der n&auml;chsten
+&Uuml;bung noch eine Rolle spielen. Lassen Sie dabei wie im Bild oben noch etwas
+Abstand vom Fensterrand.
+<p>
+
+<p>
+<font color="gray"><H2>&Uuml;bung 8.5</H2></font><BR>
+<p>
+
+Die folgende Funktion zeichnet die sogenannte <i>Kochsche Kurve</i> zwischen
+zwei Punkten mit den Koordinaten (X0/Y0) und (X1/Y1). Die Koordinaten werden
+dabei als <TT>float</TT> Werte angegeben.
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+<font color="#AA00FF"><b>void</b></font>&nbsp;Koch(<font color="#AA00FF"><b>float</b></font>&nbsp;X0,&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;Y0,&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;X1,&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;Y1)<br>
+{<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;AX&nbsp;=&nbsp;X0;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;AY&nbsp;=&nbsp;Y0;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;BX&nbsp;=&nbsp;(2.0*X0+X1)/3.0;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;BY&nbsp;=&nbsp;(2.0*Y0+Y1)/3.0;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;CX&nbsp;=&nbsp;(X0+X1)/2.0&nbsp;-&nbsp;<font color="#852608"><b>sqrt</b></font>(3.0)/6.0*(Y1-Y0);<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;CY&nbsp;=&nbsp;(Y0+Y1)/2.0&nbsp;+&nbsp;<font color="#852608"><b>sqrt</b></font>(3.0)/6.0*(X1-X0);<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;DX&nbsp;=&nbsp;(X0+2.0*X1)/3.0;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;DY&nbsp;=&nbsp;(Y0+2.0*Y1)/3.0;<br>
+<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;EX&nbsp;=&nbsp;X1;<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>float</b></font>&nbsp;EY&nbsp;=&nbsp;Y1;<br>
+<br>
+&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Es&nbsp;werden&nbsp;nur&nbsp;Linien&nbsp;der&nbsp;L&auml;nge&nbsp;&lt;&nbsp;4&nbsp;gezeichnet<br></b></font>
+&nbsp;&nbsp;<font color="#AA00FF"><b>if</b></font>&nbsp;(<font color="#852608"><b>pow</b></font>(X0-X1,2)+<font color="#852608"><b>pow</b></font>(Y0-Y1,2)&lt;4.0)<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Amiga&nbsp;Grafik-Primitiven<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Move</font>(rp,&nbsp;<font color="#AA00FF"><b>int</b></font>(X0),<font color="#AA00FF"><b>int</b></font>(Y0));&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Cursor&nbsp;bewegen<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#FFFFAA">Draw</font>(rp,&nbsp;<font color="#AA00FF"><b>int</b></font>(X1),<font color="#AA00FF"><b>int</b></font>(Y1));&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Linie&nbsp;ziehen<br></b></font>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<font color="#AA00FF"><b>else</b></font><br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<font color="#008822"><b>//&nbsp;Rekursive&nbsp;Funktionsaufrufe<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Koch(AX,AY,BX,BY);&nbsp;<font color="#008822"><b>//&nbsp;Linie&nbsp;von&nbsp;a&nbsp;nach&nbsp;b<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Koch(BX,BY,CX,CY);&nbsp;<font color="#008822"><b>//&nbsp;Linie&nbsp;von&nbsp;b&nbsp;nach&nbsp;c<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Koch(CX,CY,DX,DY);&nbsp;<font color="#008822"><b>//&nbsp;Linie&nbsp;von&nbsp;c&nbsp;nach&nbsp;d<br></b></font>
+&nbsp;&nbsp;&nbsp;&nbsp;Koch(DX,DY,EX,EY);&nbsp;<font color="#008822"><b>//&nbsp;Linie&nbsp;von&nbsp;d&nbsp;nach&nbsp;e<br></b></font>
+&nbsp;&nbsp;}<br>
+<br>
+}<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+&Auml;ndern Sie Ihr Programm aus &Uuml;bung 8.4 so ab, da&szlig; die Koordinaten
+der Eckpunkte des Dreiecks als <TT>float</TT> Werte angegeben werden.
+Ersetzen Sie die Funktionsaufrufe zum Zeichnen der Kanten des Dreiecks
+durch die obige Funktion <TT>Koch</TT>, so da&szlig; zwischen den Eckpunkten des
+Dreiecks anstatt gerader Linien die Kochsche Kurve gezeichnet wird.
+<p>
+
+Da die Funktion <TT>Koch</TT> die Funktionen <TT>sqrt</TT> und <TT>pow</TT> verwendet,
+mu&szlig; am Anfang des Programms die <a href="C-Kurs_6_1.html">Standard-Definitionsdatei</a>
+<TT>math.h</TT> eingebunden werden:
+
+<p>
+<center>
+<TABLE border="0" cellpadding="5" cellspacing="0" bgcolor="#AAAAAA"><TR>
+<TD>
+<!-- begin of C code -->
+&nbsp;#include&nbsp;&lt;math.h&gt;<br>
+
+<!-- end of C code -->
+
+</TD>
+</TR>
+</TABLE>
+</center>
+<BR>
+<p>
+
+Das Ergebnis ist die Kochsche Schneeflocke:
+<p>
+
+<center>
+<img src="C-Kurs/Schneeflocke.png" alt="Schneeflocke"><BR>
+</center>
+
+<p>
+
+</font>
+</center>
+</TD>
+
+</TABLE>
+
+</body>
+</html>

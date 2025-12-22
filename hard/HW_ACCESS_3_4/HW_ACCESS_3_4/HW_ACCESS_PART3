@@ -1,0 +1,340 @@
+
+        Hardware Access Using The AmigaBASIC And ARexx Interpreters.
+        ------------------------------------------------------------
+
+                                   Part 3.
+                                   -------
+
+  Yep, it's me again... :)
+
+  Well from Parts 1 & 2 we accessed the simplest of the hardware registers
+  that have some use for specific applications. The Audio Filter and the
+  Video Mode swtiches.
+
+  We are now going start messing with the AMIGAs Games/Joystick Port.
+
+  This is a VERY capable port and has many, MANY uses other than the
+  known standard ones. When using pure assembler/machine-code it can be
+  accessed at 75+KHz when using a standard A1200(HD) or 25+KHz on the
+  A500, A500+ and A600(HD). Big box AMIGAs can access it even faster.
+  This makes the games port very useful indeed.
+
+  The first access we are going to use is the ports' FIRE button.
+
+  This is a TTL, (Transistor Transistor Logic), level digital input/output
+  pin. It defaults as a digital input upon any RESET of the computer.
+
+  From now on I will describe some simple project that can be connected
+  to this port that is NOT pertaining to normal Joystick use.
+
+----------------------------------------------------------------------------
+
+                           Pin 6, The FIRE Button.
+                           -----------------------
+
+  Pin 6 of the 9 pin ~D~ type games plug at the rear of the A1200(HD) is the
+  FIRE button. It can be programmed as either INPUT, (normal bootup mode),
+  OR OUTPUT via two registers. These registers are:-
+
+  1) CIAAPRA - pra, 0xBFE001, 12574721 - bit 7; the FIRE button.
+  2) CIAADDRA - ddra, 0xBFE201, 12575233 - bit 7; 1 = OUTPUT, 0 = INPUT.
+
+  This button has been used by myself as a 10MHz Frequency Counter using
+  pin 6 in standard INPUT mode. If the AMIGA is booted up then CIAADDRA
+  does NOT need to be altered - so for the first part I will describe
+  a simple project using pin 6 in this mode.
+
+----------------------------------------------------------------------------
+
+                           A Simple Logic Probe.
+                           ---------------------
+
+  Logic probes are used to detect logic states of 0 or 1 in various parts
+  of a digital circuit board. The games port pin 6 can be used as a very
+  limited logic probe. It will only work with basic logic states and at
+  very low frequencies BUT is useful nevertheless. The hardware is SO
+  simple it meets my CRITERIA with ease.
+
+----------------------------------------------------------------------------
+
+  Technical Specifications:-
+  --------------------------
+
+  Maximum Input Voltage.......  + or - 12 Volts maximum.
+  Over Voltage Protection.....  Yes, limited to 10 Seconds duration.
+  Input Impedance.............  Greater than 1.5 KilOhms.
+  Detectable Pulse Width......  0.5 second approximately.
+  Indeterminate DC Range......  N/A.
+  TTL Logic 0.................  0 Volts to 1.0 Volts, + or - 0.25 Volts.
+  TTL Logic 1.................  1.25 Volts to 4.75 Volts, + or - 0.25 Volts.
+  Display.....................  Standard Workbench window.
+  Negative Logic Detection....  No.
+  Settling Time...............  Approximately 1 second for a standard
+                                A500 and OS1.3x.
+
+----------------------------------------------------------------------------
+
+  Circuit Diagram:-
+  -----------------
+
+  The INPUT 1.5 KilOhm resistor is a current limiter and at the tapping
+  point, pin 6, two small signal silicon diodes are placed ~polarity
+  reversed~ across the supply as shown in the circuit below.
+
+  (Note, best viewed in ~topaz 8 font~.)
+
+   Pin 7. *-------------------+ <-- +5V.
+                              |
+                              |
+                            --+-- +
+                             / \  D1, (D4), (1N4148).
+                            '---`
+                              |
+                              |        R1, (R2).
+   Pin 6, (9). *--------------*-*-------\/\/\/-------O Probe INPUT.
+                                |   (1.5 KilOhms).     Blue, (White).
+                                |
+                              --+-- +
+                               / \  D2, (D3), (1N4148).
+                              '---`
+                                |
+                                |
+   Pin 8. *---------------------*--------------*-----O   GND.
+                                               |    (Screen/Black).
+     ^                                       __|__
+     |                                       /////
+     |
+     +-- 9 Way ~D~ Type socket pin numbers.
+
+  If there is a voltage swing greater than APPROXIMATELY +5.6V or less
+  than -0.6V then this voltage is current limited through R1 and CLAMPED
+  to either the +5V rail or GND. Although the photographs and drawings
+  show a white wire connected to another 1.5 KilOhm resistor and linked
+  to pin 9, then this can be ignored until a future magazine issue where
+  it WILL be required. As it is SO simple you may as well build it now
+  ready for that future project/experiment, including the white wire... :)
+
+  Parts List:-
+  ------------
+
+  (Special part numbers from MAPLIN for the UK, at the time of writing.)
+
+                          http://www.maplin.co.uk
+
+  1) R1, (R2)......................  1.5 KilOhms, 1/8W, resistor.
+  2) D1, D2, (D3, D4)..............  1N4148, silicon diode.
+  3) Connecting Wire...............  Any, Blue, White and Black.
+  4) 9 Way ~D~ Type Socket.........  RK61R.
+  5) ~D~ Shell.....................  FP27E, IF you can get it to fit... :)
+  6) Sleeving......................  IF required.
+  7) Crocodile Clip Black..........  FK34M, for the other end of the cable.
+  8) Probe Red.....................  L26BH. for the other end of the cable.
+  9) Small Stripboard/Veroboard....  10 holes by 4 tracks in size.
+
+  All components should be available from ANY source.
+  All tolerances + or - 10% or better.
+
+  Refer to photographs and drawings for the construction method.
+  (The drawings DO NOT show the fitting of the crocodile clip and the probe,
+  it is assumed that by now it will be obvious where these go at the other
+  end of the two wires; the blue wire connected to the probe, the black wire
+  connected to the crocodile clip.)
+
+  Standard tools and soldering equipment as required.
+
+----------------------------------------------------------------------------
+
+  AmigaBASIC Code:-
+  -----------------
+
+10 REM Simple games port pin 6 READ access, Games Port Logic Probe. 
+20 REM Public Domain, original copyright, (C)2006, B.Walker, G0LCU.
+30 REM Written for - http://www.thecryptmag.com - as a simple project.
+40 REM This project is for ALL ages.
+50 REM See the drawing for the circuit.
+
+100 REM Set up a simple window.
+110 WINDOW 1,"Games Port Logic Probe.",(0,0)-(462,64),6
+120 CLS
+
+130 REM Set up any variables.
+140 LET a$="(C)2006, B.Walker, G0LCU."
+150 LET version$=" $VER: Logic-Probe.B_Version_0.80.00_(C)29-09-2006_G0LCU."
+150 LET state=1
+
+190 REM Set up the display.
+200 PRINT
+210 PRINT version$
+220 PRINT
+230 PRINT "         Press the SPACE BAR or Esc keys to Quit."
+240 LOCATE 7,23
+250 PRINT "Logic state";state;CHR$(8);".  "
+
+390 REM This is the main loop.
+400 LET a$=INKEY$
+410 IF a$=" " OR a$=CHR$(27) THEN GOTO 1000
+420 LET state=PEEK(12574721&)
+430 IF state>=128 THEN LET state=1
+440 IF state=1 THEN GOTO 460
+450 IF state<=127 THEN LET state=0
+460 LOCATE 7,23
+470 PRINT "Logic state";state;CHR$(8);".  "
+500 GOTO 400
+
+990 REM Safe exit from the program.
+1000 WINDOW CLOSE 1
+1010 SYSTEM
+
+----------------------------------------------------------------------------
+
+  ARexx Code:-
+  ------------
+
+/* Logic Probe using the ARexx interpreter. */
+
+/* ---------------------------------------- */
+/* LP.rexx, (C)01-10-2006, B.Walker, G0LCU. */
+/* ---------------------------------------- */
+/*    Released as Public Domain Software.   */
+/* ---------------------------------------- */
+
+/* Set up any constants or variables. */
+  state=1
+  logic='1'
+  copyright='9'x'$VER: Logic-Probe.rexx_Version_0.80.00_01-10-2006_(C)G0LCU.'
+
+/* Use ECHO for ordinary printing to the screen and SAY for printing results. */
+/* Set up the games port logic probe screen. */
+  ECHO 'c'x
+  ECHO 'd'x'9'x'9'x'9'x'Click left mouse button to Quit.'
+  ECHO 'a'x'9'x'9'x'   Logic Probe using pin 6 of the games port.'
+  ECHO 'a'x'a'x'9'x'9'x'9'x'        Logic state = 1.'
+
+/* This is the main loop. */
+  DO FOREVER
+/* Read the 'pra' register for bit 7, pin 6 of the games port. */
+/* ALSO bit 6, pin 6 of the mouse port from the same register... :) */
+    state=IMPORT('00BFE001'x,1)
+    IF BITTST(state,7)=1 THEN logic='1'
+    IF BITTST(state,7)=0 THEN logic='0'
+/* Left mouse button to quit the program. */
+    IF BITTST(state,6)=0 THEN CALL getout
+/* Print the results to the screen. */
+    SAY 'b'x'9'x'9'x'9'x'        Logic state = '||logic
+  END
+
+/* Exit the program safely. */
+getout:
+  EXPORT('00BFE001'x,'FC'x,1)
+  ECHO 'c'x
+  SAY copyright
+  EXIT(0)
+
+----------------------------------------------------------------------------
+
+CIA == Complex Interface Adaptor.
+TTL == Transistor Transistor Logic.
+CIAADDRA == CIA 'a' 'ddra', CIA 'a' data direction register 'a'.
+CIAAPRA == CIA 'a' 'pra', CIA 'a' programmable register 'a'.
+ 
+The code sections above ignore the CIAADDRA, 'ddra' register as this is
+correctly set during a boot or reboot. The 'ddra' is the 'data direction
+register a' for the CIAA 'pra'. As we are READING CIAAPRA register AT bit 7,
+(and bit 6 because bit 6 is the left mouse button), then there is no reason
+to switch the 'ddra' register to READ mode for these two bits of the
+register CIAAPRA, hence no line in either code segment to change the state
+of this register. CIAADDRA is set to 3 decimal and as a '1 = output' then
+bits 0 and 1 of CIAAPRA CAN be written to. See below for bit 0, and bit 1
+is the audio filter control bit. See the last magazine issue about writing
+to bit 1.
+
+Now 'pra' is the 'programmable register a' for CIA 'a' and all we need to
+do is read bit 7 as this equates to pin 6 of the games port, pin 6 of the
+mouse port equates to bit 6 of 'pra' but we are not going to pursue this
+any further as the mouse is always in use for other functions and for all
+intents and purposes is 'out of bounds'.
+
+If the decimal value of 'pra' is greater than OR equal to 128 then bit 7
+must be at TTL level high so therefore bit 7 MUST equal a logic 1. If the
+decimal value is less than OR equal to 127 then bit 7 must be at TTL level
+low so therefore bit 7 MUST equal a logic 0.
+
+Bit 0 of CIAA 'pra' MUST NEVER be altered from its value as this is 'in
+theory' connected to the physical RESET line. Instability could/would result
+if you mess about with this bit. SO BEWARE!!!.......
+
+DO NOT ALTER THIS BIT, (BIT 0), UNLESS YOU KNOW WHAT YOU ARE DOING...
+
+---------------------------------------------------------------------------- 
+
+Just a quick note that ALL of my components for this project were RECYCLED
+from the 'junk' box and NOTHING was purchased NEW AT ALL, so for me all it
+cost was my time... :)
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Freeware and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200(HD) in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. Also tested on an A600(HD) in 2MB and 6MB
+    modes. All test conditions were/are running STANDARD KS2.0x to 3.1x,
+    and using standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before disconnecting or connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~docs/hard~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================
+
+That's all for now folks... :)

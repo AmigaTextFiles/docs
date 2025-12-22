@@ -1,0 +1,396 @@
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                                                 APPENDIX A
+                                                ERROR/FLOW CONTROL CONCEPTS
+
+
+          At 2400 and 1200 bps, the Courier HST uses the MNP error control
+          protocol, Service Levels 1-5.  MNP was originally developed by
+          Microcom, Inc. and is now in the public domain.  At 9600, 7200
+          and 4800 bps the modem uses similar, compatible error control
+          procedures developed by USRobotics.
+
+          In USRobotics implementations, we use the general term ARQ
+          (automatic repeat request) to denote a connection under error
+          control.  Error-free data transmission is ensured through two
+          features:
+
+               o    error-detection and retransmission techniques;
+
+               o    data buffering and flow control.
+
+          NOTE:  As with all protocols, error control only works when the
+          Courier HST connects with another modem that implements the same
+          protocol.
+
+          MNP LEVEL NEGOTIATION
+
+          When the modems negotiate an ARQ connection, they indicate their
+          highest of the first three Service Levels, 3, 2, or 1, and agree
+          to operate at the highest possible level.  The Courier HST
+          indicates Level 3 in its MNP error-control parameter.  If
+          necessary, the Courier drops back to meet the requirements of the
+          other modem.  This establishes the error-control (ARQ)
+          connection.
+
+          Levels 4 and 5, which enhance throughput performance, are only
+          possible if an ARQ connection is established.  The Courier
+          negotiates for a Level 4 connection, with the longer, streamlined
+          transmission frames described below.  Whether or not Level 4 is
+          agreed upon, the Courier also negotiates for a Level 5 connection
+          (data compression).  It's possible for an ARQ connection to be at
+          Level 1, 2 or 3, with or without Level 4 and/or Level 5.
+
+          Throughput
+
+          Chapters 3 and 4 include recommended modem settings and file-
+          transfer guidelines for gaining maximum throughput.  The
+          following descriptions of MNP Levels 1-5 include achievable
+          throughput statistics.
+
+
+
+
+
+                                                                         A-1
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Level 1
+
+          This level, often called Block Mode, supports half-duplex (one
+          way at a time) transmission.  The sending modem transmits a block
+          of data and waits for an acknowledgment from the receiving modem
+          before sending the next.
+
+          Level 1 is the slowest and is included because some computer
+          equipment is restricted to either sending or receiving at any one
+          time.  This mode of operation is usually observed in
+          communications between terminals rather than in terminal-to-
+          computer or computer-to-computer links.
+
+          Level 2
+
+          This level, often called Stream Mode, supports full-duplex
+          transmission in which data flows in both directions at the same
+          time.  Throughput at Level 2, due to protocol overhead, achieves
+          about 84% of the throughput of a normal modem, or approximately
+          202 characters per second (cps) at 2400 bps.
+
+          Level 3
+
+          Level 3 incorporates Level 2 and is more efficient.  Modems
+          sending at Level 3 strip the Start and Stop bits from the data
+          characters and transmit the data across the link in bit format,
+          as in synchronous transmission, rather than in character format.
+          The receiving modem reinserts the Start and Stop bits for each
+          character before passing the data to the receiving computer or
+          terminal.
+
+          This procedure offsets the protocol overhead loss so that
+          throughput is about 108% that of a normal modem.  Under optimal
+          conditions, two Level 3 modems operating at 2400 bps can exchange
+          data at approximately 254 characters per second.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         A-2
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Level 4
+
+          At this level, the information in the headers of transmission
+          frames is streamlined to eliminate some of the protocol overhead.
+          In addition, the size of the frames is greater than with Level 3.
+
+          The results in characters per second (cps) are as follows.  These
+          reflect operations without the data compression available with
+          MNP Level 5.
+
+                              Characters per Second
+               Link Rate      Level 3   Level 4        
+               9600           1100      1160
+               2400            254       276
+               
+          In general, with Level 4 you can expect a throughput gain of 5%,
+          although actual throughput depends on the type of call.  Gains on
+          long-link satellite calls can range from 25-50%.
+
+          Level 5
+
+          Under data compression, the sending modem detects redundant units
+          of data and recodes them into shorter units of fewer bits.
+          Examples include the frequent occurrences of spaces, control
+          characers, or the characters e and s in ASCII text files.  The
+          receiving modem decompresses the redundant data units before
+          passing them to the receiving computer/terminal.
+
+          With data compression, throughput of up to 19.2k bps is possible.
+          Achievable throughput rates for different kinds of files, in
+          characters per second (cps), are shown in the following table.
+
+          The table assumes the following optimal conditions:
+
+               o    DTE rate set at 19.2k bps; modem set to &B1
+               o    Connection (link) rate of 9600 bps
+               o    Level 4 also enabled (longer transmission frames)
+               o    Straight data (e.g., not already compressed, no file-
+                    transfer protocol)
+               o    Transmission from a fast (e.g., 286) computer
+               
+
+
+
+
+
+
+
+
+
+
+
+                                                                         A-3
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+               File Type                          Throughput (cps)
+               Assembler or Compiler Listing      1920
+               Text file                          1550-1750
+               Binary file:  .EXE                 1450-1600
+               Binary file:  .COM                 1400-1500
+               .ARC files (common on BBS's)       1000-1100*
+               Random binary 8-bit                 975-1050*
+               
+               *As mentioned on Page 4-2, these files are already
+               compressed or appear to the modem to be compressed.  If they
+               undergo additional data compression, they become longer.
+
+          ERROR DETECTION/RETRANSMISSION
+
+          During an ARQ connection the transmitting modem divides the data
+          it receives from the computer or terminal into blocks, and
+          attaches header and trailer information.  The result is called a
+          frame, as shown in Figure A.1.
+
+                                          
+
+
+                          Figure A.1 -- Transmission Frame
+
+
+          Included in the header or trailer are a frame number and block-
+          size information as well as a frame-check code.  This last code
+          is derived by the sending modem through an algorithm performed on
+          all of the data in the frame.  The technique is called cyclic-
+          redundancy checking (CRC).
+
+          The receiving modem performs the same computation and checks to
+          see if its results match the received CRC code.  If the results
+          match, the receiving modem sends a positive acknowledgement to
+          the sending modem.  Meanwhile, the sending modem keeps a copy of
+          all frames it sends until each is positively acknowledged.
+
+          If the CRC codes don't match, the receiving modem initiates the
+          automatic repeat request (ARQ) procedure.  The receiving modem
+          tells the sending modem which frame is in error, and doesn't
+          accept any more frames until the frame in question is received
+          correctly.  The sending modem goes back to the specified frame,
+          retransmits it, and continues from there.  In this way the
+          protocol protects against errors and also ensures that the data
+          arrives in sequence.
+
+          FLOW CONTROL
+
+          The modem stores data from the DTE in its Transmit buffer, and
+          data received from a remote system in its Receive buffer, as
+          shown in Figure A.2.
+
+                                                                         A-4
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                          
+
+
+                          Figure A.2 -- Flow Control Buffer
+
+
+          Separate commands enable Transmit Data flow control (&Hn) and
+          Received Data flow control (&In, &Rn).  Chapter 4 contains
+          instructions on when and how to use these commands.
+
+          Flow Control Examples
+
+          The labels used in the following examples indicate the following
+          devices:
+
+          DTE  Data Terminal Equipment:  the computer or terminal to which
+               a modem is attached.
+
+          DCE  Data Communications Equipment:  the Courier or remote modem.
+
+          Example 1 -- Transmit Data
+
+          The &Hn command allows you to select software flow control,
+          hardware flow control, or both.  Hardware flow control is most
+          reliable and is recommended, if possible.  Under hardware control
+          the modem raises or lowers the Clear to Send (CTS) signal via the
+          RS-232C interface.  Under software flow control the modem sends
+          the DTE the ASCII XON/XOFF characters described in Chapter 4.
+
+          
+
+                         Figure A.3 -- Transmit Flow Control
+
+
+          Assume that there are disturbances on the line (line hits) and
+          DCE2, the receiving modem, detects a transmitted frame error.
+          DCE2 tells DCE1 to retransmit the frame and accepts no additional
+          frames until it receives the affected frame correctly.
+
+          Meanwhile, the computer/terminal (DTE1) continues sending to
+          DCE1, and data backs up in the Transmit buffer.  As the buffer
+          approaches capacity, DCE1 signals DTE1 to stop sending data.
+          DCE1 also retransmits the specified frame and continues
+          transmitting.  When enough data is transmitted to half empty the
+          buffer, DCE1 signals DTE1 to resume sending data.
+
+          As mentioned in Chapter 4, Transmit Data flow control is also
+          essential if the DTE is set to send to the modem at a rate higher
+          than the link rate.
+
+
+
+                                                                         A-5
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Example 2 -- Received Data
+
+          It may be necessary or desirable to stop incoming data
+          temporarily, for example, in order to review what's on the screen
+          and take some kind of action.  In the following diagram, the
+          labels indicate operations when three different command options
+          are used, as follows:
+
+               &I1  The user at DTE1 sends an XOFF command to the modem to
+                    have it stop passing on data from the Receive buffer.
+                    The modem also transmits the XOFF to the remote
+                    computer, which stops sending.  DCE1 resumes passing
+                    received data to DTE1 when the user sends an XON
+                    signal.
+
+               &I2  The user sends the same XON/XOFF commands to DCE1, but
+                    the modem doesn't pass them on to the remote computer.
+
+               &R2  DTE1 lowers the Request to Send (RTS) signal at the RS-
+                    232C interface.  This signals DCE1 to stop passing on
+                    received data.
+
+                                          
+
+
+                      Figure A.5 -- Received Data Flow Control
+
+
+          Be sure to review Chapters 3 and 4 before using the error/flow
+          control commands.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         A-6
+
+
+
+

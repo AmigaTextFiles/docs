@@ -1,0 +1,517 @@
+                ===============================
+                NComm Host Script Documentation
+                ===============================
+           Doc ver 3, for script 2.10E, date 90-10-14
+          Revision 3.1, extended for 2.11E, 90-11-01
+          Revision 3.2, small revisions for 2.11aE, 91-03-19
+          Revision 4.0, extended for 2.20E,92-02-24 -- 02-29
+
+   The NComm Host Script was written by Daniel Bloch 1989.
+ The NComm Host Script eXtended (ver 2.00Enad/2.00nad and up) was written
+              by Nils-Arne Dahlberg 1990, 1991 and 1992
+   Documentation written by Torkel Lodberg and Nils-Arne Dahlberg
+
+
+    This is an informal version of the fourth "official" english release, the
+things that have changed since 2.06E are not many, but some nasty bugs have
+been removed. Compared with 2.10E there are two changes:
+    I've include a simple questionare for first-time users, and added a
+possibility to just let some users upload files to the BBS.
+    Compared to 2.11E the following things have been changed/added:
+    Possibility to choose character set.
+    A more flexible way to handle users.
+    A faster (and safer) way to choose transfer protocol.
+
+    For more info about them, see the script. The new features are described
+later in this document. I have also made some corrections (sigh) from the
+earlier version.
+
+    The original plan was to implement the NComm host mode as a part of the
+NComm program, but, since the program would grow _large_, the host mode was
+implemented as a script. Of course, the NComm script language had to be
+enhanced, and functions specifically needed for the project were
+implemented. The result is one of the most powerful host modes available by
+any communication program...
+
+                How to set up NHS
+                =================
+
+    Before setting up NHS, please assure that the following files are
+available; 'C:LIST', 'C:DELETE', 'C:FILENOTE', 'C:EXECUTE', 'C:COPY',
+'C:DIR' and one of 'LHarc', 'Arc', or 'Zoo'.
+
+    To set up NHS, a few changes have to be made to the 'host.script'. All
+variables that need to be maintained have been placed at top of the script.
+First, a few directory names have to be defined. All directory names should
+end with a colon or a slash, and the directories must exist before you
+start using the script.
+
+    The variable '$dir' shall contain the name of the directory where all
+miscellaneous files are kept. In other words, this is where bulletins,
+menus, messages, textfiles and so on have to rely. The NComm Host Script
+will log all user operations in a log file that will be created in this
+directory.
+
+    The variables $menudir, $bulldir and $msgsdir should point at
+directories containing menus, bulletins and messages, respectively.
+
+    The variable $bulldir should point to a directory where all bulletins
+are stored.
+
+    The variable '$uldir' shall contain the name of the NHS upload
+directory - all files uploaded will be placed here.
+
+    The variable '$dldir' shall contain the name of the NHS download
+directory - copy the files which shall be available for download
+into this directory. Use the CLI command 'FILENOTE' for adding file
+descriptions. If '$uldir' and '$dldir' point to the same directory,
+files uploaded will be available for download immediately. Otherwise,
+the files have to be moved to the '$dldir' directory.
+
+    The variables '$apack', '$alist' and '$aextract' must be set to the
+archive program's pack, list end extract commands. The variable '$arch'
+should contain the program's default extension.
+
+    The variable '$hold' shall contain the name of the NHS hold directory.
+All ZOO files extracted will be placed in this directory. Please notice
+that existing HOLD files wil be deleted at initialization, do not store
+other files in this directory!
+
+    Now, a few file names have to be defined. The variable '$holdzoo'
+shall contain the name of the temporary hold ZOO file. Files will be
+added to this file.
+
+    The variable '$tmp' shall contain the name of the temporary text file
+used by NHS for file listings and so on.
+
+    The variable '$sysname' should contain the name of your system.
+
+    The variable '$doscomm' should contain the directory where the
+dos commands that sysop sand cosysops can execute from remote, are placed.
+
+    Specify the name of the directory lister in the variable '$list'.  This
+will normally be C:List.
+
+    Specify the name of the quick directory lister in the variable '$qlist'.
+this will normally be C:dir.
+
+    The variable '$maxbaud' is to be set to your modems maximum baudrate.
+
+    A few changes also have to be made to the NComm configuration.
+End-Of-Line TX should be set to CR+LF, the character set should be set to
+ISO and G&R Host Mode has to be ENABLED. You should use a two colour screen
+for faster screen updates. The G&R download dir MUST be set to the directory
+specified in the variable '$dldir'. This is due to Zmodem downloads always
+being created in the current download directory. Save the configuration as
+"host.config" and place it in the directory used for miscellaneous files. A
+sample configuration file has been included.
+
+    NHS will display two files at logon. The file "prelog" contains the
+actual login text, "postlog" will be displayed after a successful login...
+And at the logout NHS will show the file 'logout'. When a new user is
+loging on, the file 'NewUser' is displayed. Edit them to suit your needs.
+
+    All menus are stored as textfiles. The file "menu0" contains the main
+menu, "menu1" contains a list of file transfer commands, "menu3" contains
+the SYSOP commands, "menu4" is the private mail menu and finally "menu5" is
+the messages areas menu. Example files have been included.
+    The second menu-choice is taken from files named .menu0, .menu1,
+.menu2, .menu4 and .menu5. There is no .menu3 because the sysop menu
+is not reached by more than one or two users anyway.
+
+    To install bulletins, simply create files "bull0", "bull1" and so on.
+You must also remember to edit the bulletin menu, which is contained in the
+text file "menu2". Again, example files have been included.
+
+    The file 'CharSets' contains the charsets that NComm supports. Should a
+future version of NComm support a new charset, simply add the new name last
+in the list. If, for some reason, you don't want to support a certain
+charset, simply remove that line. This file should normally be left as it
+is.
+
+    The files 'TransProtos' and 'TransProtosS' contains the transfer
+protocolls you want to support. 'TransProtos' has lines like 'X = Xmodem'
+and so on. The first letter is the letter the script commands 'upload' and
+'download' normally uses for that protocoll, the text after the '=' is
+simply what the protocoll is called. The standard setup doesn't support the
+following protocolls:
+Ymodem-G            (This protocoll normally demands a modem with error
+                    correction)
+External XPR        (Since no external protocoll normally are defined)
+Jmodem              (Se NComm.doc for what is needed)
+Compuserve QuickB   (Se NComm.doc for what is needed)
+
+'TransProtos' just contains the first letter of each line from
+'TransProtosS'. The reason for this system is to avoid a long row of if-then
+lines in the script (there are too many anyway, belive me).
+
+
+                        Modem Setup
+                        ===========
+    You might have to change a bit after the label 'init:' in the script
+so your modem is initialized in the right way.
+    NHSx needs echo on (E1), result codes (V1) and all resultcodes (X4).
+You also have to turn off autoanswer (S0=0).
+
+                Using the NComm Host Script
+                ===========================
+
+    Execute the 'host.script' using the Execute Script function. If all
+files and directories have been created successfully, the modem will be
+initialized and a small menu will appear on screen. You may enter 'SPACE'
+for logging on locally. The 'R'-command is for testing the remote/local
+check that is included for sysops. Some modems have to been turned off
+before logging on locally.
+    When you log on for the first time, you are automaticly made sysop,
+this aproach is used to avaoid the old 'file-in-a-directory'-aproach that
+was used in the last version (this will actually save quite a lot of place
+on your disk).
+
+    The NComm Host Script does not support Page Break, so use CTRL-S and
+CTRL-Q for halting / resuming text output.
+
+    When a user loggs on for the first time he will be asked for the
+following information:
+    Name
+    Password to use
+    Character set
+    Prefered transfer protocoll
+    Adress (3 lines)
+    Computer
+    This information is stored in the userfile together with status of the
+user.
+
+    When logging in, the file 'prelog' will be displayed. The host will now
+prompt you for your name. The second time you enter an uncorrect password,
+you will be thrown off the board. You will also be thrown off the board
+after 5 minutes of inactivity. If you used the correct password, the file
+'postlog' will be displayed...
+
+    Press 'Enter' to continue - NHS will now display the main menu. Here is
+a description of the different commands available;
+
+MAIN MENU                                                  File; "menu0"
+========================================================================
+<B>     Bulletins
+                        Displays  the  bulletin  menu.  A description of
+                        bulletin menu commands follows further down.
+
+<C>     Comments to sysop
+                        Enters  comment  into system.  Prompts you for a
+                        subject.   You  will  then  enter  a simple line
+                        editor  that  must  be  used  for  entering your
+                        comment.   Press  CTRL-Z  on  a  blank line when
+                        finished.  The message will be added to the file
+                        'comments'  -  it can be read by using the SYSOP
+                        command [R]ead private messages.
+
+<E>     Read and Write private messages
+                        Goto the Private Mail menu.
+
+<F>     File-menu
+                        Displays  the  file menu.  A description of file
+                        menu commands follows further down.
+
+<G>     Log out
+                        Brings up a prompt asking you if you want to log
+                        off  the  system or not.  The hangup string will
+                        be  sent to the modem if the answer is positive.
+                        NHS will start waiting for the next caller.
+
+<L>     List Users
+                        Prints a list of all users.
+                        <Sysop/Cosysop will also see the status of the user
+                        this status can be changed with the 'U'-command in
+                        the sysop-menu.>
+<M>     Messages menu
+                        Jump to a submenu for messages.
+
+<O>     Page operator
+                        Will  ring  the bell for SYSOP at local console.
+                        When  chatting,  you may return to the main menu
+                        by pressing CTRL-Z.
+
+<P>     Change Password
+                        Used if you want to change your password. You are
+                        asked to input it twice to make sure that you
+                        haven't made any spelling mistakes.
+
+(S)     Sysop functions
+                        Only available for SYSOP and cosysop. Displays
+                        the SYSOP menu. A description of SYSOP menu
+                        commands follows further down.
+                        This entry isn't in the menu, but it still works.
+
+
+<V>     View version number
+                        Outputs the current version of the script. It
+                        was actually first just placed there for testing
+                        purposes, but it's easier to leave it than risk
+                        messing things up by removing it...
+
+FILE MENU                                                  File; "menu1"
+========================================================================
+
+<ADD> file to HOLD
+                            Prompts  you  for  a filename. The file will
+                            be added to the HOLD directory.
+
+<DIR> List files in HOLD
+                            Displays the contents of the HOLD directory.
+
+<EXT>ract packed file to HOLD
+                            Prompts you  for  a  filename. The file must
+                            have  the extension $arch. The file will be
+                            extracted into the HOLD directory.
+
+<DEL>ete file(s) from HOLD
+                            Prompts you for a filename. The file will be
+                            deleted from the HOLD directory.
+
+<GET> files in HOLD
+                            Packs  the  contents  of  the HOLD directory
+                            into the hold packed  file. The command will
+                            prompt   you   for  the  preferred  transfer
+                            protocol (Xmodem / YModem / Zmodem /
+                            Ymodem-Batch / YModem-G), and the transfer
+                            will start.
+
+<L>ist files
+                            Lists the contents of the download directory
+                            using  the  command specified in the '$list'
+                            variable.
+
+<D>ownload file
+                            Prompts  you  for  a  filename  and transfer
+                            protocol (Xmodem / YModem / Zmodem /
+                            Ymodem-Batch / YModem-G), and the transfer
+                            will start. If you just press enter at the
+                            protocollpromt you will use your prefered
+                            protocoll.
+
+<U>pload file
+                            Prompts  you  for  a  filename  and transfer
+                            protocol (Xmodem / YModem / Zmodem /
+                            Ymodem-Batch / YModem-G), and the transfer
+                            will start. If you just press enter at the
+                            protocollpromt you will use your prefered
+                            protocoll.
+
+<V>iew packed file
+                            Prompts  you  for  a filename. The filename
+                            must include the extension . The contents of
+                            the file will be displayed on screen.
+
+<Q>uit
+                            Quits to main menu.
+
+
+
+BULLETIN MENU                                              File; "menu2"
+========================================================================
+
+<xx>
+         Displays bulletin #xx on screen. The file 'BULLxx' must exist.
+
+<Enter> or <Q>
+         Quits to main menu.
+
+
+SYSOP MENU                                                 File; "menu3"
+========================================================================
+
+<B>ackup
+                         Starts a remote backup-sequence.
+
+<R>ead private messages
+                         Displays  the  file  'comments' on screen.  All
+                         user comments are contained here.
+
+<L>ist user log
+                         Displays the file 'log' on screen. The log file
+                         contains  a  list  of  all user operations that
+                         have been made.
+
+<D>elete user log
+                         Asks for a confirm. Deletes the file 'log' from
+                         disk and creates a blank log file.
+
+<C>omments delete
+                         Asks for a confirm. Deletes the file 'comments'
+                         from disk and creates a blank comments file.
+
+<Q>uit to main menu
+                         Quits to main menu.
+
+<S>tart another script
+                         Starts another script, just an experimental thing.
+
+<U>pdate a user
+                         Gives you the possibility to change status (New,
+                         Normal, Cosys or Sysop) the Uploadcredit and the
+                         downloadcredit. A new user has no possibility to
+                         do uploads.
+
+In addition to this, you can enter a DOS-command which will be executed and
+the result will be displayed on screen. Which commands you can execute,
+depends on the script setup. (See above.)
+
+Private Mail                                         Menu4;
+==================================================================
+<Q>  To Main menu
+                        Quits to main menu.
+
+<R>  Read letters to you
+                        Read the letters to you.
+
+<W>  Write a letter to someone
+                        Write a letter to someone. You have to input the
+                        name of the reciver and a subject. You  will
+                        then enter a simple line editor that must be used
+                        for  entering your message. Press CTRL-Z on a
+                        blank line when finished. The message will be
+                        added to the file '<receiversname>' - it can be
+                        read by using the command <R>ead letters.
+
+<E>  Erase all letters to you
+                        Ask for confirmation and if ok, erases yor messages
+                        file.
+
+<G>  Grab all messages and letters in a file
+                        First, copies your messages to hold, and asks if the
+                        same shall be done with area messages and bulletins.
+                        The messages are packed and sent as a binary file.
+
+Boringtowns BBSs Areamenu:
+==========================
+<xx> Different message areas
+
+<R> Read messages
+                        Asks for the correct area and sends the file.
+
+<W> Write messages
+                        Asks for area and receiver of message. After
+                        that you are asked to input a subject. The message-
+                        entering is done in the same way as comment to
+                        sysop. (See above)
+<Q> Back to Main menu
+                        You should know this by now, really.
+
+
+More info:
+The userfile (i.e., the file where all user information is stored) has the
+following layout. (You should normally not have to edit this file, but who
+knows...)
+
+#                           (File-start marker)
+Nils-Arne Dahlberg          (The users name)
+qrup                        (Password)
+ISO                         (Prefered character set)
+N                           (Upload credit, Y or N)
+N                           (Download credit, Y or N)
+10                          (Status)
+Sysop                       (The status in letters)
+z                           (Prefered protocoll)
+Sun Feb 23 16:05:34 1992    (Last logout)
+Smällgatan 6A               (Address)
+S-597 52  ÅTVIDABERG        (Address)
+Fido: 2:204/417             (Address)
+Amiga 2000C                 (Computer)
+#                           (Start of next user/end of file)
+
+
+  Some new features (2.10)
+
+    If you want another program to stop NHSx, without just throwing a
+possible user away, do it this way:
+    Let the program create a file called "RAM:C/NHSQUIT" and place the
+delete command in ram:c. Then you just let the program wait until the file
+"RAM:C/NHSQUIT" doesn't exists and go on after that. One possible use of this
+is if you want to use your computer for automatic phone- calls at certain
+times (using it as a fido-point or fido-host).
+
+    You can, from the sysop menu, now start an ncomm-script. This is purely
+exprimental, and you canæt get back to the BBS, but I'll think of some use
+:-).
+    This script MUST end with the line: CHAIN Host.script to restart
+the BBS. An example, do-nothing, script is included.
+
+
+
+
+Things changed since version 1.3 of the script is:
+
+ * All users have their own password
+
+ * Cosysop status added
+
+ * All of NComms protocols are supported
+
+ * Private messages to/from all users
+
+ * Multiple messages areas
+
+ * A remote-backup function added
+
+ * Possibility to choose archive program by sysop
+
+Added since 2.06E
+
+ * Possibility to let another program break the script
+
+ * The sysop or cosysop can start another script from the sysop menu
+   This is just an experimental feature without use, yet...
+
+Added since 2.10E
+
+ * Possibility to exclude users from upload
+
+ * A small questionnaire for first-time users
+
+Added since 2.11E
+
+ * Prefered protocoll is saved between sesions.
+
+ * Prefered character set is saved between sesions.
+
+ * The questionare answers is saved in the same file as the userinfo.
+
+
+    Coming featuers
+    ===============
+    These things will probably be ShareWare or FreeWare
+
+ * A more usefull message handling system (it is actually under beta-testing)
+
+    It will contain the usual read Next/Previous, Enter message and Reply
+commands. This will be handled by an external program, MessHandle, which will
+save the messages in a format readable by ConfMail.
+
+ * A better system for user handling
+
+ * Multiple file areas
+
+ * External programs for User and File handling.
+
+ * Maybe a complete Fido-net package.
+
+
+
+To get hold of me:
+EMail
+FidoNet 2:204/417
+My own bbs, +46 120 109 75, swedish only
+Rodeløkka (M)BBS (+47 2 380949)
+
+
+Snail-Mail:
+    Nils-Arne Dahlberg
+    Smaellgatan 6A
+    S-597 52  AAtvidaberg
+    SWEDEN
+
+And some credits:
+Fido-net is a registred trademark of Tom Jennings
+ConfMail is (c) Spark Software, Inc.  (Bob Hartman)
+And, if you havn't understod that by now, NComm is (c) Daniel Bloch & Co
+

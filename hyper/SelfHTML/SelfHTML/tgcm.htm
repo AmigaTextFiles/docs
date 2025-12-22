@@ -1,0 +1,208 @@
+<html>
+<head>
+<title>SELFHTML: CGI/Perl / Perl-Sprachelemente / CGI-typische Anweisungen in Perl</title>
+<meta name="description" content="(SELFHTML 7.0) Welche Perl-Anweisungen typisch f&uuml;r den einsatz in CGI-Scripts sind.">
+<meta name="keywords" content="SELFHTML, Perl, CGI">
+<link rel=stylesheet type="text/css" href="wselfhtm.css"> 
+</head>
+<body bgcolor=#FFFFFF text=#000000 link=#AA5522 vlink=#772200 alink=#000000>
+
+<p><nobr><a class="an" name="top"><img src="x2.gif" width=16 height=13 border=0></a> <a href="selfhtml.htm"><b>SELFHTML</b></a>/<a href="tq.htm" target="_parent">Quickbar</a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tg.htm"><b>CGI/Perl</b></a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tgc.htm"><b>Perl-Sprachelemente</b></a></nobr></p>
+<hr noshade size=1>
+<table cellpadding=4 cellspacing=1 width=100%>
+<tr>
+<td bgcolor=#EEEEEE class="doc" width=110><img src="xweb.gif" width=106 height=109></td>
+<td bgcolor=#EEEEEE class="doc" valign=bottom width=100%><h2>CGI-typische Anweisungen in Perl</h2></td>
+</tr>
+<tr>
+<td bgcolor=#EEEEEE class="doc" valign=top align=center>
+<img src="x5.gif" width=30 height=20 vspace=6 border=0 alt="Diese Seite ist ein Dokument mit Informationstext">
+</td>
+<td bgcolor=#FFFFFF valign=top nowrap>
+
+<p>
+<img src="xgdown.gif" width=14 height=10 border=0>&nbsp;<a href="#a1"><b>Formulardaten einlesen</b></a> <br>
+<img src="xgdown.gif" width=14 height=10 border=0>&nbsp;<a href="#a2"><b>Eingelesene Formulardaten als Mail zum Formularanbieter senden</b></a><br>
+<img src="xgdown.gif" width=14 height=10 border=0>&nbsp;<a href="#a3"><b>HTML-Code an Browser senden</b></a>
+</p>
+
+
+</td>
+</tr><tr><td colspan=2 bgcolor=#EEEEEE class="doc"><a href="#bottom"><img src="xgdown.gif" width=14 height=10 border=0></a>&#160;</td></tr>
+</table>
+
+
+
+<h2 class="Sh2"><a class="an" name="a1">Formulardaten einlesen</a></h2>
+
+<p>Den folgenden Perl-Code k&ouml;nnen Sie verwenden, um Formulardaten eines beliebigen HTML-Formulars &uuml;ber CGI einzulesen. Beachten Sie, da&szlig; dies kein vollst&auml;ndiges Perl-Script ist, sondern lediglich ein in sich abgeschlossener Programmteil, den Sie f&uuml;r eigene Zwecke verwenden k&ouml;nnen.</p>
+
+<h3 class="xmp"><a class="an" name="a11">Perl-Code:</A></h3>
+<table width=100% cellpadding=10><tr><td class="xmpcode" bgcolor=#FFFFDD>
+<pre>
+if($ENV{'REQUEST_METHOD'} eq 'GET')
+ {
+  $Daten = $ENV{'QUERY_STRING'}
+ }
+else
+ {
+  read(STDIN, $Daten, $ENV{'CONTENT_LENGTH'});
+ }
+
+@Formularfelder = split(/&amp;/, $Daten);
+foreach $Feld (@Formularfelder)  
+ {
+  ($name, $value) = split(/=/, $Feld);   
+  $value =~ tr/+/ /;
+  $value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack(&quot;C&quot;, hex($1))/eg;
+  $value =~ s/&lt;!--(.|\n)*--&gt;//g;      
+  $Formular[$i] = $name;   
+  $i = $i + 1;
+  $Formular[$i] = $value;   
+  $i = $i + 1;
+ }
+</pre></td></tr></table>
+
+<h3 class="xpl">Erl&auml;uterung:</h3>
+
+<p>Der obige Perl-Code pr&uuml;ft zuerst, ob das HTML-Formular die Methode GET oder POST anwendet, und holt sich abh&auml;ngig davon die &uuml;bergebenen Formulardaten. Es ist also egal, welche Methode im HTML-Formular angegeben wird - dieser Perl-Code kommt in jedem Fall an die &uuml;bergebenen Daten.</p> 
+
+<p>Die Daten stehen zun&auml;chst in dem <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcb.htm"><b>Skalar</b></a> <tt>$Daten</tt>. Der Wert von <tt>$Daten</tt> hat in diesem Stadium das Aussehen des <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgbf.htm#a2"><b>Formulardatenstroms bei der &Uuml;bertragung von Formulardaten</b></a>.</p>
+
+<p>Mit der Anweisung <tt>@Formularfelder = split(/&amp;/, $Daten);</tt> wird die Zeichenkette <tt>$Daten</tt> <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgck.htm#a2"><b>in eine Liste verwandelt</b></a>. Als Trennzeichen, das aus dem Datenstrom Listenelemente macht, wird das kaufm&auml;nnische Und (&amp;) angegeben. Durch dieses Zeichen sind die im Formulardatenstrom die einzelnen Formularfelder voneinander getrennt.</p>
+
+<p>Anschlie&szlig;end werden die einzelnen Felder der neuen <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgcb.htm#a2"><b>Liste</b></a> <tt>@Formularfelder</tt> in einer <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgce.htm#a3"><b>foreach-Schleife</b></a> behandelt. Zuerst wird jedes Formularfeld in zwei Bestandteile zerlegt, wobei als Trennzeichen das Istgleichzeichen angegeben wird. Die beiden Teile werden in den Skalaren <tt>$name</tt> und <tt>$value</tt> abgelegt. In <tt>$name</tt> steht dann genau das, was in dem betreffenden HTML-Formularelement mit der Angabe <tt>name=</tt> definiert wurde. In <tt>$value</tt> steht das, was der Anwender als Wert f&uuml;r das betreffende Formularelement eingegeben oder ausgew&auml;hlt hat. Angenommen, das HTML-Formular enth&auml;lt ein <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tchb.htm#a1"><b>einzeiliges Eingabefeld</b></a>, das mit <tt>&lt;input name=&quot;Spitzname&quot; size=60 maxlength=60&gt;</tt> definiert wurde. Weiter angenommen, der Anwender hat in diesem Feld &quot;Hotzenplotz&quot; eingegeben. Dann steht f&uuml;r dieses Formularfeld im Skalar <tt>$name</tt> der Wert <tt>Spitzname</tt>, und im Skalar <tt>$value</tt> steht der Wert <tt>Hotzenplotz</tt>.</p>
+
+<p>Mit den <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgck.htm#a6"><b>Suche-Ersetze-Vorg&auml;ngen</b></a> in den weiteren Anweisungen der for-Schleife werden die st&ouml;renden Steuerzeichen, die noch aus dem Formulardatenstrom &uuml;brig geblieben sind, entfernt.</p> 
+
+<p><a class="an" name="a12">Die Daten des Formulars</a> werden schlie&szlig;lich in eine Liste <tt>@Formular</tt> geschrieben. Die geraden Elemente dieser Liste, also <tt>$Formular[0]</tt>, <tt>$Formular[2]</tt>, <tt>$Formular[4]</tt> usw. enthalten die Feldnamen, zu denen der Anwender Angaben gemacht hat. Die ungeraden Elemente, also <tt>$Formular[1]</tt>, <tt>$Formular[3]</tt>, <tt>$Formular[5]</tt> enthalten die jeweils zugeh&ouml;rigen Daten, die der Anwender eingegeben oder ausgew&auml;hlt hat. Diese Liste k&ouml;nnen Sie im weiteren Verlauf des Perl-Scripts weiterverarbeiten.</p>
+
+<h3 class="inf">Beachten Sie:</h3>
+
+<p>Die hier vorgestellten Beispiel-Codes sind sehr primitiv und haben eher die Aufgabe, das Prinzip der Abl&auml;ufe zu erl&auml;utern. Wenn Sie eine professionellere L&ouml;sung ben&ouml;tigen, m&uuml;ssen Sie diese selbst programmieren oder auf ein ausgereiftes <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tbbc.htm#a3"><b>Freeware-Script</b></a> zur&uuml;ckgreifen.</p>
+
+
+<table bgcolor=#EEEEEE class="doc" width=100%><tr><td>
+<a href="#top"><img src="xgoup.gif" width=14 height=10 border=0></a><a href="#bottom"><img src="xgdown.gif" width=14 height=10 border=0></a>&#160;
+</td></tr></table>
+<h2 class="Sh2"><a class="an" name="a2">Eingelesene Formulardaten als Mail zum Formularanbieter senden</a></h2>
+
+<p>Ausgef&uuml;llte Formulardaten k&ouml;nnen Sie beispielsweise in eine Datei auf dem Server schreiben, die Sie regelm&auml;&szlig;ig auswerten. Die meisten Anbieter m&ouml;chten ausgef&uuml;llte Formulardaten jedoch gleich als E-Mail zugeschickt bekommen.<br>
+Der folgende Perl-Code setzt auf dem <img src="xgoup.gif" width=14 height=10 border=0>&nbsp;<a href="#a11"><b>Perl-Code weiter oben</b></a> auf, mu&szlig; also im gleichen Script weiter unten stehen.</p>
+
+<h3 class="xmp">Perl-Code:</h3>
+<table width=100% cellpadding=10><tr><td class="xmpcode" bgcolor=#FFFFDD>
+<pre>
+$Mailprogramm = &quot;/usr/lib/sendmail&quot;;  # siehe Erl&auml;uterung unten
+$MailSubject = &quot;Formluar-Feedback&quot;;   # siehe Erl&auml;uterung unten
+$Empfaenger = &quot;IhrName\@Provider\.xxx&quot;; # siehe Erl&auml;uterung unten
+$SenderName = $Formular[1];           # siehe Erl&auml;uterung unten
+$SenderMail = $Formular[3];           # siehe Erl&auml;uterung unten
+
+open(MAIL,&quot;|$Mailprogramm -t&quot;) || die;
+
+print MAIL &quot;To: $Empfaenger\n&quot;;
+print MAIL &quot;From: $SenderMail $SenderName\n&quot;;
+print MAIL &quot;Subject: $MailSubject\n\n&quot;;
+
+$i = 0;
+$max = $#Formular;
+for($i=0;$i&lt;=$max;$i=$i+2)
+{ 
+ print MAIL &quot;$Formular[$i]: $Formular[$i+1]\n&quot;;
+}
+close(MAIL);
+</pre></td></tr></table>
+
+
+<h3 class="xpl">Erl&auml;uterung:</h3>
+
+<p>Der obige Perl-Code definiert zun&auml;chst einige <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tecb.htm#a1"><b>Skalare</b></a>.<br>
+Der erste und wichtigste Skalar ist <tt>$Mailprogramm</tt>. Hier m&uuml;ssen Sie angeben, wo sich auf dem Server-Rechner das Programm befindet, das als Server f&uuml;r abgehende E-Mails arbeitet. Das Standard-Programm daf&uuml;r ist das Programm <tt>sendmail</tt>, das auf fast allen Server-Rechnern im Internet eingesetzt wird - ein typischer Eintrag ist auf Unix-Rechnern daher <tt>/usr/lib/sendmail</tt>. Fragen Sie gegebenenfalls Ihren Provider, was Sie hierbei genau eintragen m&uuml;ssen. Wenn dieser Wert fehlt oder falsch ist, funktioniert die E-Mail-&Uuml;bertragung nicht!<br>
+Dem Skalar <tt>$MailSubject</tt> im obigen Perl-Code k&ouml;nnen Sie das Subject der Feedback-Mail angeben, die Ihnen zugeschickt wird.<br>
+Bei dem Skalar <tt>$Empfaenger</tt> m&uuml;ssen Sie Ihre eigene E-Mail-Adresse angeben bzw. die Adresse, an die die Mails geschickt werden sollen.<br>
+Die beiden Skalare <tt>$SenderName</tt> und <tt>$SenderMail</tt> wurden im obigen Perl-Code eigentlich nur der besseren Lesbarkeit wegen definiert. Diesen Skalaren werden bestimmte Inhalte aus dem Formular zugewiesen. Das geht allerdings nur, wenn Ihr Formular ein Feld f&uuml;r den Namen des Ausf&uuml;llers und ein Feld f&uuml;r dessen E-Mail-Adresse enth&auml;lt. Tragen Sie in diesem Fall die korrekten Indexnummern # bei <tt>$Formular[#]</tt> ein (siehe dazu <img src="xgoup.gif" width=14 height=10 border=0>&nbsp;<a href="#a12"><b>weiter oben</b></a>).</p>
+
+<p>Der obige Perl-Code &ouml;ffnet im weiteren Verlauf die Programmdatei des Mail-Servers. Die Option <tt>-t</tt> bei der <tt>open</tt>-Funktion bezieht sich auf das angenommene Programm <tt>sendmail</tt>. Wenn Sie ein anderes Programm benutzen oder benutzen m&uuml;ssen, erkundigen Sie sich, wie man dieses Programm mit auszuliefernden Mail-Daten aufrufen kann!<br>
+Wenn das Programm nicht ge&ouml;ffnet werden kann, wird das obige Perl-Script mit <tt>die</tt> kommentarlos beendet. An dieser Stelle k&ouml;nnten Sie eine Fehlerbehandlung einbauen.</p>
+
+<p>Mit den <tt>print</tt>-Befehlen schreibt das Script die ihm bekannten Daten in den Mailheader. Jede Internet-E-Mail hat ein einheitliches Format. Im Kopf der Mail stehen diverse Angaben. Einige davon werden erst im Verlauf der Reise zum Empf&auml;nger gesetzt.</p>
+
+<p>Innerhalb der <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgce.htm#a3"><b>for-Schleife</b></a> werden die einzelnen Formulardaten in die E-Mail geschrieben. Feldnamen und Feldinhalte des ausgef&uuml;llten Formulars werden durch Doppelpunkt voneinander getrennt.</p>
+
+<h3 class="inf">Beachten Sie:</h3>
+
+<p>Die hier vorgestellten Beispiel-Codes sind sehr primitiv und haben eher die Aufgabe, das Prinzip der Abl&auml;ufe zu erl&auml;utern. Wenn Sie eine professionellere L&ouml;sung ben&ouml;tigen, m&uuml;ssen Sie diese selbst programmieren oder auf ein ausgereiftes <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tbbc.htm#a3"><b>Freeware-Script</b></a> zur&uuml;ckgreifen.</p>
+
+
+<table bgcolor=#EEEEEE class="doc" width=100%><tr><td>
+<a href="#top"><img src="xgoup.gif" width=14 height=10 border=0></a><a href="#bottom"><img src="xgdown.gif" width=14 height=10 border=0></a>&#160;
+</td></tr></table>
+<h2 class="Sh2"><a class="an" name="a3">HTML-Code an Browser senden</a></h2>
+
+<p>Eine der wichtigsten Aufgaben von CGI-Scripts ist es, HTML-Code an den aufrufenden WWW-Browser zu senden. Dabei d&uuml;rfen Sie Variablen Ihres Perl-Scripts nach Belieben in den HTML-Code mit einbauen.<br>
+Der folgende Perl-Code setzt auf dem <img src="xgoup.gif" width=14 height=10 border=0>&nbsp;<a href="#a11"><b>Perl-Code weiter oben</b></a> auf, mu&szlig; also im gleichen Script weiter unten stehen. Er sendet ein Dankesch&ouml;n an den Anwender, der ein Formular ausgef&uuml;llt hat.</p>
+
+<h3 class="xmp">Perl-Code:</h3>
+<table width=100% cellpadding=10><tr><td class="xmpcode" bgcolor=#FFFFDD>
+<pre>
+print &quot;Content-type: text/html\n\n&quot;;
+print &quot;&lt;html&gt;\n&quot;;
+print &quot;&lt;head&gt;\n&quot;;
+print &quot;&lt;title&gt;Danke!&lt;/title&gt;\n&quot;;
+print &quot;&lt;/head&gt;\n&quot;;
+print &quot;&lt;body bgcolor=#FFFFFF text=#000000 link=#009900 vlink=006600 alink=#0000FF&gt;\n&quot;;
+print &quot;&lt;h1&gt;Danke&lt;/h1&gt;\n&quot;;
+print &quot;Wir freuen uns, da&amp;szlig; Sie unser Formular ausgef&amp;uuml;llt \n&quot;;
+print &quot;haben. Hier zur Kontrolle Ihre Angaben:&lt;p&gt;\n&quot;;
+
+for($i=0;$i&lt;=$max;$i=$i+2)
+{ 
+ print &quot;&lt;b&gt;$Formular[$i]:&lt;/b&gt; $Formular[$i+1]&lt;br&gt;\n&quot;;
+}
+print &quot;&lt;p&gt;&lt;hr noshade size=1&gt;&lt;p&gt;&quot;;
+print &quot;&lt;i&gt;Ihr Name, &lt;a href=\&quot;mailto:IhrName\@Provider.xx\&quot;&gt;IhrName\@Provider.xx&lt;/a&gt;&lt;/i&gt;&quot;;
+print &quot;&lt;/body&gt;\n&quot;;
+print &quot;&lt;/html&gt;\n&quot;;
+</pre></td></tr></table>
+
+<h3 class="xpl">Erl&auml;uterung:</h3>
+
+<p>HTML-Code k&ouml;nnen Sie in Perl ganz einfach mit Hilfe der <tt>print</tt>-Funktion schreiben. Im obigen Code wird auf diese Weise eine vollst&auml;ndige HTML-Datei an den WWW-Browser geschickt.</p>
+
+<p>Wichtig ist dabei zun&auml;chst die erste Anweisung. Sie lautet stets  <i>print &quot;Content-type: text/html\n\n&quot;;</i>. Das ist noch kein HTML-Code. Der WWW-Browser, der den Code empf&auml;ngt, erwartet zun&auml;chst einen HTTP-Header. Dieser Header mu&szlig; zumindest Informationen dar&uuml;ber enthalten, welche Art von Daten folgen. Mit dieser Anweisung teilen Sie dem Browser mit, da&szlig; HTML-Code folgt. Unbedingt wichtig sind dabei auch die beiden <tt>\n\n</tt> am Ende!</p>
+
+<p>Danach werden mit <tt>print</tt> die &uuml;blichen Befehle zum Aufbau einer HTML-Datei notiert. Besondere Beachtung verdient die <img src="x3.gif" width=15 height=10 border=0>&nbsp;<a href="tgce.htm#a3"><b>for-Schleife</b></a> in der Mitte des Beispiel-Codes. Dort werden die Inhalte der Liste <tt>@Formular</tt> (siehe <img src="xgoup.gif" width=14 height=10 border=0>&nbsp;<a href="#a12"><b>weiter oben</b></a>) HTML-formatiert ausgegeben. Diese M&ouml;glichkeit, Variableninhalte direkt in den auszugebenden HTML-Code einzubinden, ist der Grund, warum CGI h&auml;ufig auch als &quot;dynamisches HTML&quot; bezeichnet wird.</p>
+
+<p>Schlie&szlig;lich sollten Sie noch die HTML-Ausgabe des mailto-Befehls im unteren Teil des Beispiel-Codes beachten. Wenn Sie HTML-Tags mit Angaben ausgeben wollen, die in Anf&uuml;hrungszeichen stehen m&uuml;ssen, so wie die <tt>href</tt>-Angabe, dann m&uuml;ssen Sie die Anf&uuml;hrungszeichen mit einem umgekehrten Schr&auml;gstrich maskieren. Sonst w&uuml;rde der Perl-Interpreter einen Fehler melden. Ebenfalls maskieren m&uuml;ssen Sie auf die gleiche Weise das E-Mail-Zeichen <tt>@</tt>, da dieses Zeichen in einer <tt>print</tt>-Funktion von Perl andernfalls als Name einer auszugebenden Liste interpretiert w&uuml;rde.</p>
+
+
+
+
+
+<table cellpadding=4 cellspacing=1 width=100%>
+<tr><td colspan=2 bgcolor=#eeeeee>
+<a href="#top"><img src="xgoup.gif" width=14 height=10 border=0></a>
+</td></tr>
+<tr><td bgcolor=#EEEEEE class="doc" align=right width=110>weiter:<a href="tha.htm"><img src="xgnext.gif" width=10 height=10 border=0 hspace=10></a></td>
+<td bgcolor=#FFFFFF><img src="x3.gif" width=15 height=10 border=0> <a href="tha.htm"><b>Computer und geschriebene Sprache</b></a>
+</td></tr>
+<tr>
+<td bgcolor=#EEEEEE class="doc" align=right width=110>zur&uuml;ck:<a href="tgcl.htm"><img src="xgprev.gif" width=10 height=10 border=0 hspace=10></a></td>
+<td bgcolor=#FFFFFF width=100%><img src="x3.gif" width=15 height=10 border=0> <a href="tgcl.htm"><b>Mit Zahlen und Zeit arbeiten</b></a>
+</td>
+</tr>
+<tr><td colspan=2 bgcolor=#EEEEEE>&#160;</td></tr>
+</table>
+<hr noshade size=1>
+<p><nobr><img src="x2.gif" width=16 height=13 border=0> <a href="selfhtml.htm"><b>SELFHTML</b></a>/<a href="tq.htm" target="_parent">Quickbar</a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tg.htm"><b>CGI/Perl</b></a>&#160;
+<img src="x2.gif" width=16 height=13 border=0> <a href="tgc.htm"><b>Perl-Sprachelemente</b></a></nobr><br>
+<nobr><a class="an" name="bottom">&copy; 1998</A> <img src="xgmail.gif" width=15 height=10 border=0>&nbsp;<a href="mailto:muenz@csi.com">Stefan M&uuml;nz, muenz@csi.com</a></nobr></p>
+
+
+
+</body>
+</html>

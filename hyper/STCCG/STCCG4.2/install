@@ -1,0 +1,322 @@
+; Update-Install-Script for STCCG.guide
+;
+; © 1997-2000 Ralf Schwate
+;
+; $VER:STCCG-update-install 2.2 (24-Jan-00)
+;
+; Version 2.2
+;
+; 1.0  Initial Release
+; 2.1  Used for Update of 2.0 to 2.1
+; 2.2  Started working on new installer types
+;      (OS 3.5 and NG)
+;
+(if (= @language "english")
+    (
+        (set @abort-button "Cancel installation")
+        (set @app-name "STCCGguide")
+        (set #stccg_introduction (cat "\n"
+
+            "STCCG.guide 4.2                                    \n"
+            "All Rights Reserved.                               \n"
+            "                                                   \n"
+            "©2000 Ralf Schwate                                 \n"
+            "                                                   \n"
+            "An AmigaGuide-Database for the Card Game           \n"
+            "   Star Trek Customizable Card Game                \n"
+        ))
+        (set #stccg_error (cat
+
+            " Some error has occured. Please inform the author  \n"
+            " (e.g. schwate@yahoo.com) after having tried a     \n"
+            " different Installer release.                      \n"
+        ))
+        (set #stccg_datafile_missing (cat
+
+            " Datafiles are missing! You also need the archive  \n"
+            " STCCGdata.lha extracted in the same directory     \n"
+            " where you extracted this archive!                 \n"
+            "\n"
+            " Aborting install....                              \n"
+        ))
+        (set #stccg_where "Please select a destination for the STCCG.guide drawer")
+        (set #stccg_where_help
+            (cat "Use this dialogue to select the partition or the directory where you "
+                 "want the STCCG.guide drawer to be created.\n\n"
+                 @askdir-help
+            )
+        )
+        (set #stccg_create "Creating STCCGguide drawer")
+        (set #stccg_create_help
+            (cat "A drawer name STCCGguide is created. Within the STCCG.guide is stored\n\n"
+                 @askdir-help
+            )
+        )
+        (set #stccg_update_install (cat
+
+            " You already have STCCG.guide installed. This      \n"
+            " installation assumes, you want an update of the   \n"
+            " installation.                                     \n"
+            " If you want to install new, abort the installation\n"
+            " remove the assign 'STCCG:' ('assign STCCG: remove'\n"
+            " in a shell) and start the installation a second   \n"
+            " time!                                             \n"
+        ))
+        (set #stccg_updatenew_install (cat
+            " installation assumes, you want an update of the   \n"
+            " installation.                                     \n"
+            " If you want to install new, abort the installation\n"
+            " remove the environment variable STCCGguide        \n"
+            " ('del env:STCCGguide' in a shell) and start the   \n"
+            " installation a second time!                       \n"
+        ))
+        (set #stccg_new_install (cat
+
+            " This is a new installation of STCCG.guide!        \n"
+            " A directory will be created in which all files    \n"
+            " will be copied!                                   \n"
+        ))
+        (set #stccg_already_installed_font (cat
+
+            " It seems you already have installed a             \n"
+            " StarTrek.font!                                    \n"
+            " You need an 8pt size font to use the Guides       \n"
+            " correctly. If you installed this font with a      \n"
+            " previous STCCGguide version you are safe.         \n"
+        ))
+        (set #stccg_install_font "Installing needed fonts in Fonts:?\n")
+        (set #stccg_install_font_help (cat "\n"
+
+            " STCCG.guide needs the font StarTrek.font in size 8\n"
+            " to correctly display some of its pages.           \n"
+            " The installer script tries to install this font   \n"
+            " into the Fonts:-directory.                        \n"
+        ))
+        (set #stccg_already_installed_crille (cat "\n"
+
+            " It seems you already have installed a             \n"
+            " StarTrekTNGCrille.font!                           \n"
+            " You need an 30pt size font to use the Guides      \n"
+            " correctly. If you installed this font with a      \n"
+            " previous STCCGguide version you are safe.         \n"
+        ))
+        (set #stccg_install_crillefont_help (cat "\n"
+
+            " STCCG.guide needs the font StarTrekTNGCrille.font \n"
+            " in size 30 to correctly display some of its pages.\n"
+            " The installer script tries to install this font   \n"
+            " into the Fonts:-directory.                        \n"
+        ))
+        (set #stccg_add_assign "Add XXPATH assign to user-startup?\n")
+        (set #stccg_add_assign_help (cat "\n"
+
+            " STCCG.guide needs this assign to find crosslinked \n"
+            " files in it's database!                           \n"
+        ))
+        (set #stccg_install_show_script (cat
+
+            " There is already a show-script installed!         \n"
+            " Do you want to update the current show-script?    \n"
+        ))
+        (set #stccg_install_show_script_help (cat "\n"
+
+            " STCCG.guide needs the show-script to show pictures\n"
+            " contained in the guide. There should be no need to\n"
+            " update the current script. Only if the viewing    \n"
+            " utility cannot be found anymore.                  \n"
+        ))
+        (set #stccg_viewer "Please select a viewer for pictures in the database")
+        (set #stccg_viewer_help (cat "\n"
+
+            " STCCG.guide needs this file to show the pictures  \n"
+            " included in the database. Should support iff- and \n"
+            " gif-formats!                                      \n"
+        ))
+        (set #stccg_complete "\nInstallation complete.")
+    )
+)
+
+; ** Setting of Variables
+;
+
+(set #install_mode 0)
+(set #install_mode_new 0)
+(set #install_mode_update 1)
+(set #install_mode_newupdate 2)
+(set #install_show_script 1)
+(set #install_show_script_no 0)
+(set #install_show_script_yes 1)
+
+(onerror (
+
+    (if (> @ioerr 0)
+
+        (message (cat "\n ERROR CODE: " @ioerr "\n\n" #stccg_error))
+    )
+))
+
+
+; ** Start of Installation
+;
+
+; Test whether Installer of OS3.5 is used
+(if (> @installer_version 44)
+    (
+        (set #myversion 1)
+    )
+)
+; Test whether NG Installer is used
+(if @installer-ng-version
+    (
+        (set #myversion 2)
+    )
+)
+
+(message #stccg_introduction)
+
+(welcome)
+
+(transcript "On installing STCCG.guide ...")
+
+(complete 0)
+
+; Look for old version of STCCG
+(if (getenv "STCCGguide")
+    (
+        (set #oldversion (substr (getenv "STCCGguide") 0 3))
+        (set #install_mode #install_mode_newupdate)
+        (message (cat (" You already have STCCG.guide %s installed. This  \n" #oldversion) #stccg_updatenew_install))
+    )
+    (
+        (if (exists "STCCG:" (noreq))
+            (
+                (set #install_mode #install_mode_update)
+            )
+            (
+                (message #stccg_new_install)
+                (set #install_mode #install_mode_new)
+            )
+        )
+    )
+)
+
+(set #defaultinstdir "user:personal")
+
+(if (> #install_mode 0)
+    ( ; update installation
+        (set #install_dir (expandpath "STCCG:"))
+    )
+    ( ; new installation
+        (set #installdir (askdir (prompt #stccg_where) (help #stccg_where_help) (default #defaultinstdir)))
+        (set #install_dir (tackon #installdir "STCCGguide"))
+        (makedir #install_dir (prompt #stccg_create) (help #stccg_create_help) (confirm))
+    )
+)
+
+(set @default-dest (#install_dir))
+
+; installing guide-Files
+(complete 10)
+
+(copyfiles (source "Guides") (dest #install_dir) (all))
+(copyfiles (source "STCCGguide.readme") (dest #install_dir) (all))
+
+; installing path into guide
+(complete 60)
+
+; installing show
+(complete 70)
+
+(set install_show_script install_show_script_no)
+(if (exists "STCCG:show" (noreq))
+    (set install_show_script
+        (askbool
+            (prompt #stccg_install_show_script)
+            (help #stccg_install_show_script_help)
+            (default 0)
+        )
+    )
+    (if (= install_mode install_mode_update)
+        (if (exists "T:show" (noreq))
+            (
+                (set install_show_script
+                    (askbool
+                        (prompt #stccg_install_show_script)
+                        (help #stccg_install_show_script_help)
+                        (default 0)
+                    )
+                )
+                (if (= install_show_script install_show_script_yes)
+                    (copyfiles (source "T:show") (dest "STCCG:"))
+                    (delete ("T:show") (optional force))
+                )
+            )
+            (set install_show_script install_show_script_no)
+        )
+        (set install_show_script install_show_script_no)
+    )
+)
+
+(if (= install_show_script install_show_script_no)
+    (
+        (if (exists "c:")
+            (set viewer_default "c:")
+            (set viewer_default "")
+        )
+        (if (exists "c:vt")
+            (set viewer_default "c:vt")
+            (set viewer_default "")
+        )
+        (if (exists "c_aminet:vt")
+            (set viewer_default "c_aminet:vt")
+            (set viewer_default "")
+        )
+        (set #show_file
+            (askfile
+                (prompt #stccg_viewer)
+                (help   #stccg_viewer_help)
+                (default viewer_default)
+            )
+        )
+        (set stccg_show (".key pic\n%s <pic> &\n" #show_file))
+        (textfile (dest "STCCG:show") (append stccg_show))
+    )
+)
+
+; installing icons
+(complete 80)
+
+(copyfiles (source "Icons/3.1") (dest #install_dir) (all))
+
+; installing fonts
+(complete 90)
+
+(if (exists "fonts:StarTrek" (noreq))
+    (message #stccg_already_installed_font)
+    (copyfiles
+        (prompt #stccg_install_font)
+        (help #stccg_install_font_help)
+        (source "Fonts")
+        (dest "Fonts:")
+    )
+)
+
+(if (exists "fonts:StarTrekTNGCrille" (noreq))
+    (message #stccg_already_installed_crille)
+    (copyfiles
+        (prompt #stccg_install_font)
+        (help #stccg_install_crillefont_help)
+        (source "Fonts")
+        (dest "Fonts:")
+    )
+)
+
+; installing env-Variables
+(complete 95)
+
+(copyfiles (source "Misc/STCCGguide") (dest "envarc:") (all))
+(copyfiles (source "Misc/STCCGguide") (dest "env:") (all))
+
+(complete 100)
+
+(exit #stccg_complete)

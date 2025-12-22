@@ -1,0 +1,91 @@
+               CD32 Floppy Disk Drive Interface  V1.1
+
+                         By Bruce Abbott
+
+
+
+                            Description
+
+ This circuit adds either an internal or external floppy disk drive to
+ your CD32. It is wired directly onto the CD32 motherboard.
+
+
+                             Features
+
+ - Supports 1 internal drive, and 3 external drives.
+ - Uses standard electronic parts (no custom chips).
+ - Low cost.
+ - Internal fitting.
+ - Compatible with FMV cartridge.
+ - Printed Circuit Board design provided.
+
+
+
+                           How It Works
+
+ The circuit is designed to emulate the disk drive controls of CIAA and
+ CIAB. This requires an output port at address $bfd100, and an input port
+ at $bfe001. Since The AKIKO chip already has an input port at $bfe001,
+ we must disable AKIKO at this address, and take over all functions that
+ this port monitors. This includes the the existing /FIRE0, /FIRE1, /LED
+ and /MUTE. To these we add the required disk drive status signals  /RDY,
+ /TRK0, /WPRO, and /CHNG. This is done with a 74LS541 8 bit tristate
+ buffer (U1).
+
+ To disable AKIKO we need to pull down the PUNT line (using diode D1).
+ When we do this AKIKO will stay off the bus. When the /DS (data strobe)
+ goes low we assert /DSACK1 (with U4 & U7), which tells the CPU that data
+ is ready for reading.
+
+ The output port at $bfd100 is also present in AKIKO, but only as an
+ internal register. We need to supply an external register (U2) in
+ parallel with this, which will generate the disk drive control signals.
+ Since the register will power up in an unknown state, it is necessary
+ to disable the outputs until the first time the processor accesses the
+ port. This is done by using a flip-flop (2nd half of U6) connected to
+ the output enable line.
+
+ The rest of the circuit is quite simple. U5, U3 and part of U4 select the
+ correct addresses for the ports. A disk drive motor latch and ID circuit
+ is formed from U6, U4 and U7 (this is required for a bare internal drive
+ only. External drives already have this circuitry). Finally, the write
+ enable signal must be inverted.
+
+
+                             Limitations
+
+ Suppporting the INDEX pulse would require a complex circuit to generate
+ an interrupt. Luckily, this signal is ignored by the system when using
+ Amiga disks, so we can get get away with not providing it. Unfortunatey
+ this does not apply to MSDOS formatted disks, which need the INDEX to
+ determine the start of a track. Some hardware banging games also use it
+ (eg. Cool Spot), and therefore will not work with my interface.
+
+
+
+                             Installation
+
+ I have designed a printed circuit board that fits completely inside the
+ CD32, connecting to the motherboard via the Kickstart ROM. A few extra
+ wires also have to be soldered onto the motherboard. It is possible to
+ mount a disk drive inside the CD32 case, in the space reserved for an
+ FMV cartridge.
+
+
+
+                           Legal Mumbo Jumbo
+
+ I am placing this project into the public domain, so you are free to do
+with it whatever you see fit.
+
+
+
+
+                           Bruce Abbott
+                           604 Buller Street
+                           Hastings 4201
+                           New Zealand
+
+                    email: bhabbott@inhb.co.nz
+
+

@@ -1,0 +1,309 @@
+@DATABASE "Transactor Lessons"
+@AUTHOR Walter Cazzola
+@(C) 1998 Walter Cazzola
+@$VER: TransactorLessons 1.0 (20.10.98) Copyright © 1998 Walter Cazzola
+@FONT thinpazb.font 8
+@SMARTWRAP
+@INDEX "transactor_lessons.guide/Main"
+@NODE "Main" "AmigaDOS Quarta Lezione"
+
+@{JLEFT}
+@{b}Quarta Lezione: Task e Processi (prima parte)@{ub}
+                                           
+
+
+
+oggi cominceremo a vedere gli eseguibili Amiga.
+Questi sono divisi in task e processi.
+La differenza più importante tra task e processo è che il primo,
+essendo ad un livello più basso, non può usare la @{i}dos.library@{ui} e
+nemmeno chiamare funzioni che la potrebbero usare (file, librerie su
+disco da aprire), il secondo invece non ha queste limitazioni.
+Le funzioni e procedure che exec ci mette a disposizione sono:
+
+
+  1) @{i}APTR AddTask( struct Task *task, APTR initPC, APTR finalPC );@{ui}
+
+  2) @{i}void RemTask( struct Task *task );@{ui}
+
+  3) @{i}struct Task *FindTask( UBYTE *name );@{ui}
+
+  4) @{i}BYTE SetTaskPri( struct Task *task, long priority );@{ui}
+
+  5) @{i}ULONG SetSignal(unsigned long newSignals, unsigned long signalSet);@{ui}
+
+  6) @{i}ULONG SetExcept(unsigned long newSignals, unsigned long signalSet);@{ui}
+
+  7) @{i}ULONG Wait( unsigned long signalSet );@{ui}
+
+  8) @{i}void Signal( struct Task *task, unsigned long signalSet );@{ui}
+
+  9) @{i}BYTE AllocSignal( long signalNum );@{ui}
+
+ 10) @{i}void FreeSignal( long signalNum );@{ui}
+
+ 11) @{i}LONG AllocTrap( long trapNum );@{ui}
+
+ 12) @{i}void FreeTrap( long trapNum );@{ui}
+
+
+
+       @{i}void ChildFree( APTR tid );
+
+       void ChildOrphan( APTR tid );
+
+       void ChildStatus( APTR tid );
+
+       void ChildWait( APTR tid );@{ui}
+
+
+Tralasciamo le varie @{i}ChildXXX@{ui} che non sono documentate e che non ho la
+più pallida idea di cosa facciano (anche se ho una vaga intuizione).
+Vediamo prima le più semplici. La funzione @{i}FindTask@{ui} ha la stessa
+funzione delle precedenti @{i}FindXXX@{ui}, ovvero ricercare un dato task nella
+lista di exec. Con la caratteristica in più che se viene chiamata con
+NULL come parametro, restituirà il puntatore del task chiamante.
+Questo è molto utile per utilizzare la funzione @{i}SetTaskPri@{ui} sul proprio
+task. Come dice il nome, questa serve per impostare una nuova priorità
+al task specificato, ritornando la vecchia priorità.
+
+Ci sono poi le funzioni 5, 7, 8, 9 e 10 che servono un pò come la
+Signal e la Alarm sui sistemi unix. Infatti è possibile richiedere al
+sistema di riservare un determinato segnale per poi rimanere in attesa
+di questo.
+
+I segnali disponibili per task sono 32 (da 0 a 31), di cui i primi 16
+per l'utente. Se viene specificato come parametro -1, la funzione
+ritornerà il primo segnale libero.
+
+Una volta che il segnale è stato allocato, ci si può porre in sua
+attesa con la funzione @{i}Wait@{ui}. Spetterà poi ad un'altro task (o allo
+stesso sistema operativo, a seconda del tipo di segnale richiesto)
+risvegliare il task con una @{i}Signal@{ui}.
+
+Finito di usare il segnale, lo si potrà restituire con una @{i}FreeSignal@{ui}.
+Infine la @{i}SetSignal@{ui} serve per impostare o leggere il valore di un
+segnale usando una maschera.
+
+Per esempio, per controllare e reimpostare il segnale @{i}<CTRL-C>:@{ui}
+
+
+  if(SetSignal(0L,SIGBREAKF_CTRL_C) & SIGBREAKF_CTRL_C)
+  {
+          printf("Hai premuto CTRL-C!\n");
+  }
+
+
+Bisogna però rendere noto, come fa infatti la documentazione di
+sistema, che queste funzioni sono a basso livello e che in pratica
+vengono usate dal sistema operativo per realizzare le porte messaggi.
+Infatti, se avessimo due porte messaggi dal quale voler aspettare,
+dovremo utilizzare questo frammento di codice:
+
+
+   [...]
+
+
+   struct MsgPort *port1,*port2;
+
+   ULONG sigs1,sigs2,signals;
+
+            [...]
+
+   sigs1 = 1L << port1 -> mp_SigBit;
+
+   sigs2 = 1L << port2 -> mp_SigBit;
+
+   signals = Wait(sigs1 | sigs2);
+
+   if(signals & sigs1)
+
+   {
+
+            [...]
+   }
+
+   else if(signals & sigs2)
+
+   {
+
+            [...]
+
+   }
+
+   else
+
+   {
+
+            [...]
+
+   }
+
+   [...]
+
+
+Adattandolo ovviamente alle proprie esigenze. Per esempio, se volessimo
+ricevere messaggi da due finestre aperte (anticipo un attimo le future
+lezioni):
+
+
+   [...]
+
+
+   struct Window *win,win2;
+
+   ULONG sigs1,sigs2,signals;
+
+   sigs1 = (1L  << win -> UserPort -> mp_SigBit);
+
+   sigs2 = (1L  << win2 -> UserPort -> mp_SigBit);
+
+   signals = Wait(sigs1 | sigs2);
+
+   [...]
+
+
+@{i}AllocTrap@{ui}, @{i}FreeTrap@{ui} e @{i}SetExcept@{ui}, servono le prime per richiedere e poi
+poter rilasciare una TRAP della CPU per poter rimpiazzare il codice di
+default con del proprio.
+Mentre la @{i}SetExcept@{ui} serve per impostare un'eccezione.
+Le trappole che mette a disposizione exec sono quelle associate
+all'istruzione assembly TRAP. Infatti la @{i}AllocTrap@{ui} può essere chiamata
+con un numero compreso tra 0 e 15 o -1 per nessuna preferenza.
+
+Solitamente trap ed eccezioni servono a gestori di hardware, o di
+interrupt, ovvero programmi a bassissimo livello. Difficile che un
+programma MUI, richieda un'eccezione.
+
+Rimangono per ultime le funzioni @{i}AddTask@{ui} e @{i}RemTask@{ui}.
+Come il loro nome spiega, servono per aggiungere e rimuovere un task
+dalla lista di sistema.
+
+Notare che tutte le risorse allocate, dovranno essere deallocate
+precedentemente o non saranno rilasciate.
+
+La funzione @{i}RemTask@{ui}, libera le liste di memoria presenti nella lista
+@{i}tc_MemEntry@{ui} della struttura Task, che ora vedremo.
+Per creare un task, ci viene in contro la funzione CreateTask della
+@{i}amiga.lib@{ui}.
+
+
+   struct Task *CreateTask(STRPTR name,LONG pri,funcEntry initPC ,ULONG stackSize);
+
+
+Questa funzione, si preoccupa di allocare tutto il necessario e di
+chiamare internamente la @{i}AddTask@{ui} per accodare il task appena creato.
+Inoltre inizializza il campo @{i}tc_MemEntry@{ui} in modo che quello che è stato
+allocato dalla @{i}CreateTask@{ui} venga rimosso dalla @{i}RemTask@{ui}.
+Vediamo una chiamata tipica di questa funzione:
+
+
+   extern void functionName();
+
+   char *tname = "unique name";
+
+   struct Task *task;
+
+   task = CreateTask(tname,0L,functionName,4000L);
+
+
+crea un task di nome unique name, a priorità 0 e con 4000 byte di stack
+facendo partire l'esecuzione dalla funzione functionName che risiede in
+un modulo esterno a quello chiamante che sarà stato compilato senza il
+controllo dello stack poiché è dinamico.
+
+
+Vediamo dunque la struttura Task:
+
+
+   /* Please use Exec functions to modify task structure fields, where available. */
+
+
+   struct Task {
+
+     struct  Node tc_Node;
+
+     UBYTE   tc_Flags;
+
+     UBYTE   tc_State;
+
+     BYTE    tc_IDNestCnt;      /* intr disabled nesting*/
+
+     BYTE    tc_TDNestCnt;      /* task disabled nesting*/
+
+     ULONG   tc_SigAlloc;       /* sigs allocated */
+
+     ULONG   tc_SigWait;        /* sigs we are waiting for */
+
+     ULONG   tc_SigRecvd;       /* sigs we have received */
+
+     ULONG   tc_SigExcept;      /* sigs we will take excepts for */
+
+     UWORD   tc_TrapAlloc;      /* traps allocated */
+
+     UWORD   tc_TrapAble;       /* traps enabled */
+
+     APTR    tc_ExceptData;     /* points to except data */
+
+     APTR    tc_ExceptCode;     /* points to except code */
+
+     APTR    tc_TrapData;       /* points to trap data */
+
+     APTR    tc_TrapCode;       /* points to trap code */
+
+     APTR    tc_SPReg;          /* stack pointer     */
+
+     APTR    tc_SPLower;        /* stack lower bound    */
+
+     APTR    tc_SPUpper;        /* stack upper bound + 2*/
+
+     VOID    (*tc_Switch)();    /* task losing CPU    */
+
+     VOID    (*tc_Launch)();    /* task getting CPU  */
+
+     struct  List tc_MemEntry;  /* Allocated memory. Freed by RemTask() */
+
+     APTR    tc_UserData;       /* For use by the task; no restrictions! */
+
+   };
+
+
+A questo punto, siccome ad inizio lezione avevamo introdotto la
+differenza tra task e processo, vediamo quindi le procedure e funzioni
+che ci mette a disposizione, questa volta la @{i}dos.library@{ui}:
+
+
+   struct MsgPort *CreateProc( STRPTR name, long pri, BPTR segList, long stackSize );
+
+   struct Process *CreateNewProc( struct TagItem *tags );
+
+   struct Process *CreateNewProcTagList( struct TagItem *tags );
+
+   struct Process *CreateNewProcTags( unsigned long tag1type, ... );
+
+   LONG RunCommand( BPTR seg, long stack, STRPTR paramptr, long paramlen );
+
+   struct Process *FindCliProc( unsigned long num );
+
+   BPTR LoadSeg( STRPTR name );
+
+   void UnLoadSeg( BPTR seglist );
+
+   BPTR NewLoadSeg( STRPTR file, struct TagItem *tags );
+
+   BPTR NewLoadSegTagList( STRPTR file, struct TagItem *tags );
+
+   BPTR NewLoadSegTags( STRPTR file, unsigned long tag1type, ... );
+
+
+Che vedremo nel dettaglio la prossima lezione.
+
+
+
+
+@{JCENTER}
+@{"Lezione Precedente" link amigados_lesson_3.guide}
+@{"Indice AmigaDOS" link transactor_lessons.guide/AMIGADOS}
+@{"Indice Corsi" link transactor_lessons.guide}
+@{"Lezione Successiva" link amigados_lesson_5.guide}
+@ENDNODE                                                                                             

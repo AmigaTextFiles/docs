@@ -1,0 +1,294 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                 5.Teil...
+
+
+Ne, Leute ich hab mirs ueberlegt, wir arbeiten erstmal ein bisschen mit dem
+Listing was wir schon haben. Wir widmen uns erst einmal einfachen effekten
+mit farben und so. Wir lernen dabei auch erstmal ein paar tolle neue
+Sachen, die man in Assembler machen kann. Kopierroutinen, einfachere
+Zaehlroutinen, und wie man leichte schwingungen (sinusse) von Hand eingibt.
+
+So, jetzt verbessern wir erstmal die Zaehlroutine die wir bei der Sache mit
+der Powerled benutzt hatten, wir machen sie einfacher, und gestalten sie so
+das man sie Wunderbar auch als Zaehlroutine fuer eine Kopieraktion benutzen
+kann...erinnern wir uns, wie hatten wir die Erste Routine gemacht.
+
+        Move.w #$5000,d0
+Loop:   Sub.w #1,d0
+        Bne.s Loop
+        Rts
+
+Ungefaehr so sah das doch aus oder...Jetzt habe ich aber einen befehl der
+Das `Sub` und das `Bne` in sich vereinigt
+
+Dbra oder Dbf
+
+Dasselbe programm saehe so aus...
+
+        Move.w #$5000,d0
+Loop:   Dbf d0,loop
+        Rts
+
+So, was macht der Dbf (Dbra)-befehl. Er zaehlt das hinter ihm angegebene
+Rgister eins runter, und verzweigt immer wenn -1 noch nicht erreicht ist,
+das ist der Unterschied zum `Bne` Befehl, denn der Verzweigt ja bekanntlich
+bei 0.
+
+So, jetzt zum Kopieren...das A und O der Intro und Demoschreiberei.
+Allerdings muessen wir noch eine Adressierungsart des Move-befehl`s
+kennenlernen, besser gesagt zwei...aber das seht ihr ja dann.
+
+8.Indirekte Adressierung
+
+Also, eine weitere schoene Sache ist die Indirekte Adressierung. Es sieht
+so aus, das in der Quell oder Ziel Spalte, nicht die adresse direkt steht,
+sondern nur wo die Adresse steht. Erstmal ein Beispiel mit dem Jmp befehl
+
+Stellt euch vor bei $20000 sieht es so aus
+
+00 02 a0 00
+
+stellt euch weiter vor irgendwo im SourceCode steht eben jenes Mnemonic
+
+...
+...
+...
+Jmp ($20000)
+...
+...
+...
+
+Was passiert wenn der Prozessor auf diesen Befehl trifft. Er Analysiert den
+Jmp Befehl, sieht das er Indirekt ist. Und holt sich den Wert aus der
+Adresse die bei dem Jmp befehl steht, und legt das Langwort das an dieser
+Adresse zu finden ist in den PC...den rest kennt ihr ja, vonwegen das er da
+jetzt weiterarbeitet und so. Er wuerde also nach $2a000 springen.
+
+Was das mit Kopieren zutun hat ist ganz einfach. Sehen wir uns mal ein
+Routine an die mit unseren Mitteln geschrieben ist, und die 20 Langwoerter
+ab $20000 nach $30000 Kopiert
+
+Move.l $20000,$30000
+Move.l $20004,$30004
+Move.l $20008,$30008
+Move.l $2000c,$3000c
+Move.l $20010,$30010
+Move.l $20014,$30014
+Move.l $20018,$30018
+Move.l $2001c,$3001c
+Move.l $20020,$30020
+Move.l $20024,$30024
+Move.l $20028,$30028
+Move.l $2002c,$3002c
+Move.l $20030,$30030
+Move.l $20034,$30034
+Move.l $20038,$30038
+Move.l $2003c,$3003c
+
+
+Das geht ja an sich noch, und wenn es auf schnelligkeit ankommt, und es
+wirklich `Nur` um 20 Langwoerter handelt kann man es so machen.
+Aber was ist wenn man 128000 bytes Kopieren will, 32000 Zeilen Sourcecode
+ist ein bisschen viel...Also nehmen wir mal die Vorzuege der indirekten
+Adressierung, erst das beispiel mit kurzen Saetzen, und dann die ganze
+sache peinlich genau erklaert, den jetzt ist es sehr wichtig, da die
+indirekte Adressierung sehr wichtig.
+
+Folgendes programm Kopiert ebenfalls 20 langwoerter von $20000 nach $30000
+
+Start:  Lea $20000,a0           ; Quell Adresse nach A0
+        Lea $30000,a1           ; Ziel Adresse nach A1
+        Move.w #19,d0           ; Laenge-1 nach d0, da Dbf bis -1 zaehlt
+Loop:   Move.l (a0),(a1)        ; Kopiert wert von $20000 nach $30000,
+                                ; allerdings inidirekt, da ja in A0 und A1
+                                ; die Zeiger auf die stellen stehen.
+        Add.l #4,a0             ; Zeiger in A0 auf naechstes Langwort
+                                ; stellen.
+        Add.l #4,a1             ; A1 ebenfalls
+        Dbf d0,loop             ; Schon 20 mal, nein -> zurueck
+        Rts
+
+So mehr nicht, das prinzip ist klar, oder ?
+Der Vorteil liegt in der Kuerze, denn das programm wird nicht laenger egal
+wieviel ich damit kopiere. Ob 30 langwoerter oder 64 Kilobyte, es bleibt
+dasselbe programm.
+
+Es holt sich erst die Zeiger auf Quell und Ziel bereich in die
+Adressregister 0 und 1, den mit denen kann man auch indirekt arbeiten...
+Dann wird der Counter nach D0 geholt, wie ich gesagt hatte zaehlt der Dbf
+befehl bis minus 1, deshalb muss ich das vorher beruecksichtigen, und die
+laenge direkt -1 nehmen. Nachdem er dann von der Quelle die in A0 steht zum
+Ziel das in A1 steht ein Langwort kopiert erhoeht er die beiden Zeiger so
+dass sie jetzt aus $20004 und $30004 zeigen...usw..nach dem 20.sten
+Durchlauf schmeisst der dbf befehl uns raus indem er ueberlesen wird, und
+dann kommt der Rts befehl......->
+
+Schoen das ist ja recht kurz..aber es geht noch kuerzer
+
+Und zwar mit der Indirekten Postinkrementalen Adressierung, oder
+Rueckwaerts mit der Indirekten Predekrementalen Adressierung.
+
+Hoert sich schwer an, is ess aber nicht...Denn dies Adressierungs art
+uebernimmt nur dieses Add.l #4 im SourceCode, indem sie die Zeiger
+automatisch erhoeht nachdem gelesen und geschrieben wurde. Besser noch, Wir
+muessen gucken was wir dazu addieren, falls wir Woerter kopieren koennen
+wir ja nich plus 4 nehmen, dann wuerden fehler auftreten is ja klar, und
+bei Byte waere es schlimm...Diese Adressierung schaut auch nach was ich
+Kopiert habe, und setzt dementsprechend die Zeiger weiter, das heiss
+Kopiert man Bytes setzt sie die Zeiger auf um 1 (byte) weiter, Kopiert man
+langwoerter wird das entsprechende Register auch um 4 Byte`s (langwort)
+weiter gestellt...Das listing von Eben saehe jetzt so aus
+
+Start:  Lea $20000,a0
+        Lea $30000,a1
+        Move.w #19,d0
+Loop:   Move.l (a0)+,(a1)+
+        Dbf d0,loop
+        Rts
+
+Wird ja immer kuerzer....
+
+So noch schnell die erklaerung der beiden dollen woerter
+
+Post bedeutet `Nachher`, und Inkremental bedeutet erhoehen...Also es wird
+Nachher erhoeht
+
+Pre bedeutet `Vorher`, und Dekremental bedeutet erniedrigen....also es wird
+vorher erniedrigt.
+
+Sinn hat das Vielleicht nicht, aber es ist nuetzlich, besonders wenn sich
+Quell und ziel bereich ueberlappen. Aber hier erstmnal das listing mit den
+Aenderungen wenn es Predekremantal arbeiten soll
+
+Start:  Lea $20040,a0           ; Natuerlich muessen wir dann auch ganz
+                                ; hinten anfangen.
+        Lea $30040,a1
+        Move.w #19,d0
+Loop:   Move.l -(a0),-(a1)
+        Dbf d0,loop
+        Rts
+
+Alles klor...
+
+So noch eine Kleine Spielerei wenn ihr mal Speicher bereiche Spiegeln
+muesst, bei bilder geht es zwar nicht, da die aus Bitplanes bestehen, aber
+um texte zu spiegeln oder so reicht sie... Man laesst einfach einen zeiger
+ab und den anderen auflaufen, schaut her !
+
+Start:  Lea $20000,a0
+        Lea $30040,a1
+        Move.w #19,d0
+Loop:   Move.l (a0)+,-(a1)
+        Dbf d0,loop
+        Rts
+
+Mit ein bisschen logischem denken koennt ihr euch die funktion ja erklaeren,
+falls nicht muesst ihr euch das kapitel noch mal durchlesen...
+
+Natuerlich kann man mit dieser Geilen Adressierungsart auch noch toll
+loeschen...
+
+Start:  Lea $20000,a0
+        Clr.l d0
+        Move.l #$20000,d0
+Loop:   Move.l d0,(a0)+
+        Dbf d0,loop
+        Rts
+
+...loescht 128 Kbyte ab $20000.
+
+9.Weiter mit dem Copper
+
+So, will ich noch ein bisschen mit sogenannten billig effekte aufhalten,
+weil man sie halt immer wieder braucht, zum Beispiel einen balken der von
+oden nach unten zieht.
+Als Grundlage nehme ich unser Ersten Copperlisten Programm damit ihr nicht
+wieder alles neuabtippen muss. Wir werden zwar bald aus diesen SourceCode
+rauswachsen aber im Moment reicht er noch eine Zeit.
+
+Also, gehen wir das erstmal Theoretisch durch, wenn ihr es versteht einfach
+nicken. Dann werden wir das Programm schritt fuer schritt modifiziern..
+
+Nun, wir muessten eigentlich nur die Wait befehle bearbeiten, und zwar nur
+die positionen worauf sie warten, das koennten wir mit add machen, und zwar
+mit add #$100, damit wir die Zeilen Nummer und nicht den Pixel treffen.
+Desweiteren muessen wir natuerlich auch eine Warteschleife einbauen damit
+das auch klappt, und nicht zu schnell geht. Also jetzt kommt das listing un
+alles was Ergaenzt wurde ist gross geschrieben.
+
+
+Execbase = 4
+Openlibrary = -552
+CIAapra = $BFE001
+Cop1lc  = $DFF080
+Forbid = -132
+Permit = -138
+
+Start:  move.l Execbase,a6      ; Vorbereitungen fuer Forbid und
+                                ; Openlibrary.
+        jsr Forbid(a6)          ; Forbid
+        clr.l d0                ; Versionsnummer Egal
+        lea gfxname,a1          ; Name der zu oeffnenden Lib nach A1
+        jsr Openlibrary(a6)     ; Graphics.library oeffnen
+        move.l d0,gfxbase       ; Adresse der Lib merken
+
+        move.l #copperliste,Cop1lc ; Adresse der Copperliste nach Cop1lc
+
+
+        LEA COPPERLISTE,A0
+        MOVE.W #$5000,D0
+Wait:   DBF D0,WAIT
+        ADD.W #$100,4(a0)
+        ADD.W #$100,12(a0)
+
+
+        Btst #6,CIAapra         ; Kennt ihr schon
+        Bne.s wait
+
+        Move.l gfxbase,a0       ; Basisadresse nach a0
+        Move.l 38(a0),Cop1lc    ; 38. sten wert einfach nach Cop1lc
+                                ; schreiben
+        Jsr Permit(a6)          ; Multitasking erlauben
+        Clr.l d0                ; kein returncode
+        Rts
+
+Gfxname:        dc.b "graphics.library",0
+even
+Gfxbase:        dc.l 0
+Copperliste:
+
+dc.w $0180,$0000
+dc.w $200f,$fffe
+dc.w $0180,$0f00
+dc.w $220f,$fffe
+dc.w $0180,$0000
+
+copperlistenende:
+dc.l $-2                ; ende der copperliste , -2 = $fffffffe
+
+End:
+
+Erstmal die naechste dazugekommene Adressierungsart, es ist die Indirekte
+mit Adressdistanz. Das Heisst, es wird der Angegebene Zeiger genommen, und
+die Adressdistanz dazu gezaehlt. Beispiel
+
+        Lea $40000,a0
+        Move.l #$23452345,$28(a0)
+        Rts
+
+Es wird erst der zeiger $40000 nach a0 geholt, und dann der Wert $234523345
+nach A0 + Distanz geschrieben, das waere dann $40028.
+Warum ich das gemacht habe ?..Nun ich habe in A0 die adresse meiner
+Copperliste gehabt, und dann habe ich nur noch abgezaehlt anwievielter
+stelle die Wait befehle stehen, um sie zu Modifizieren, geschickt, ne?
+
+Modifizieren geschieht ja durch Add.w #$100 wie ihr gesehen habt.
+
+Das mit der Warte schleife ist ansich ja gut so aber wenn man was auf dem
+Bildschirm macht sollte man zu einer anderen loesung greifen, aber dazu das
+Naechste mal...
+
+Have a nice Night
+
+                Jeff Kandle

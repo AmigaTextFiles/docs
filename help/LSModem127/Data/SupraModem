@@ -1,0 +1,1089 @@
+@Database "Supra MODEM Commands and Docs"
+
+@NODE Main "Supra MODEM Commands and Docs"
+
+NOTE:   This file includes commands, result codes, and display codes
+        NOT AVAILABLE on all models and revisions.  Some commands are new
+        or were omitted from Reference Manual.  NOT ALL commands are
+        available or functional in all modes and states.  This document
+        is provided for reference only and is NOT certified to be free
+        from errors.  This document is produced and maintained by Supra's
+        Technical Support Staff as a customer service.
+
+144_LIST.TXT  Rev 1.1  (PHM 2/15/94)  from Supra BBS (503)967-2444
+
+        This document covers the following SupraFAXModem products:
+
+        SupraFAXModem v.32bis (Ext)     sn: 14E165501 (and later)
+        SupraFAXModem 144i              sn: 0051400   (and later)
+        SupraFAXModem 144LC             sn: LCE038462 (and later)
+        SupraFAXModem 144PB             All units
+        SupraCOMcard 144                All units
+
+The command string buffer on the SupraFAXModem is limited to 254 characters.
+
+DIRECT Commands (Commands NOT preceded by other characters)
+
+A/      Re-execute Last Command
+nnn     Escape Code per setting in register S2 (Default is ANSI character 43,
+        the "+" symbol) (This command must be preceded and followed by a
+        minimum period of no transmission set is register S12.)
+<CR>    (A carriage return) - Terminate connection attempt in progress during
+        the dialing or protocol neg. process.
+
+DIALING Commands (Commands that follow ATD)
+
+-()i    These symbols and spaces are ignored (or invalid and therefore ignored)
+         and maybe be used in the dialing string.
+0-9     DTMF code for the given number
+A-D     DTMF code for the given letter
+L       Dial the last dialing string (limitted to the first 40 characters).
+P       Pulse dial the following digits
+R       Accepted, but no action occurs.
+Sn      Use dialing string stored in register n (0 to 3)
+T       Tone dial the following digits
+W       Wait for dialtone
+*       DTMF code for "star"
+#       DTMF code for "gate"
+@       Wait for "quiet answer" (A 5 second silence.)
+,       Pause (time set in S8) before finishing dialing string
+!       Hook flash (go on-hook for 700ms)
+^       Turn on 1300Hz call originating pulse
+;       Return to command state without going "on-hook"
+
+AT Commands (Commands that follow AT)
+
+=x      Write value x to the last S register viewed.
+?       Displays current setting for the last S register accessed.
+A       Answer Phone Line
+Bn      BELL/V.2x mode switches for 300 & 1200 bps {varies by model}
+         B0=V.21 (300 bps) & v.22 (1200 bps)
+         B1=BELL 103 (300 bps) & Bell 212A (1200 bps) (default in NA)
+
+         B0=v.22 (1200 bps)
+         B1=Bell 212A (1200 bps) (default in NA)
+         B15=V.21 (300 bps)
+         B16=Bell 103 (300 bps) (default in NA)
+C1      Carrier Control Selection
+         Provided for backward compatibility only. Does nothing but return "OK"
+D       Dial Command
+         Dials any mixed string of dialing commands. (See Dialing Commands)
+En      Command Echo
+         E0=not echo
+         E1=do echo (default)
+Fn      Line Select Modulation (Use either ATFn or a combination of ATS37=n
+              and ATN0, but DO NOT try to USE BOTH at the same time.)
+         F0     AutoMode Selection (Same as N1)
+         F1     300 bps only (Same as N0S37=1,uses protocol in Bn setting
+                        S31 bit 1 set to 0 and S37=1)
+         F2     Not Used (returns "OK")
+         F3     v.23 only 75TX/1200RX (originate) or 1200TX/75RX (answer)
+                        (Same as N0S37=7, S31 bit 1 set to 0 and S37=1)
+         F4     1200 bps only (protocol according to Bn setting)
+                        (Same as N0S37=5, S31 bit 1 set to 0 and S37=5)
+         F5     2400 bps only (v.22bis)
+                        (Same as N0S37=6, S31 bit 1 set to 0 and S37=6)
+         F6     4800 bps only (v.32/v.32bis)
+                        (Same as N0S37=8, S31 bit 1 set to 0 and S37=8)
+         F7     7200 bps only (v.32bis)
+                        (Same as N0S37=12, S31 bit 1 set to 0 and S37=12)
+         F8     9600 bps only (v.32/v.32bis)
+                        (Same as N0S37=9, S31 bit 1 set to 0 and S37=9)
+         F9     12000 bps only (v.32bis)
+                        (Same as N0S37=10, S31 bit 1 set to 0 and S37=10)
+         F10    14400 bps only (v.32bis)
+                        (Same as N0S37=11, S31 bit 1 set to 0 and S37=11)
+Hn      Hook Control
+         H0=On-Hook (Hang Up)
+         H1=Off-Hook (pick up phone line) for the time period set in S7.
+In      Identification Codes
+         I0=SupraFAXModem product ID code
+         I1=ROM checksum
+         I2=Test Checksum (OK if correct, ERROR if not)
+         I3=ROM revision code
+         I4=Encrypted report of supported protocols
+         I5=Supra Copyright info.
+         I6=Country Code for country PSTN Signals are Configured for.
+         I7=DSP Model & Version Code
+         I10=Supported Features (encoded - see end of text for listing)
+         I99=Electronic Serial Number
+Ln      Speaker Volume
+         L0,L1   Low
+         L2      Medium (default)
+         L3      High
+L+n     Increase Total Volume Gain n units (1-32) (Not the same as Ln)
+                (This command currently only in use on PowerBook models.)
+L-n     Decrease Total Volume Gain n units (1-32) (Not the same as Ln)
+                (This command currently only in use on PowerBook models.)
+Mn      Speaker Control
+         M0      OFF
+         M1      On until carrier is received (default)
+         M2      Always On
+         M3      On when answering/On only after dialing & until carrier detect
+Nn      AutoMode Selection (Carrier Rate when Originating Call)
+         N0=Connect ONLY at rate set in S37 register
+            (N0S37=0 forces the modem to dial at the current serial port rate.)
+         N1=Connect Normally (default)
+On      Return from COMMAND MODE to ONLINE state
+         O0=Return to ONLINE state
+         O1=Request a retrain & Return to ONLINE state
+P       Set dialing mode to PULSE (Sets S14 bit 5 to 1)
+Qn      Result Code Mode
+         Q0=Enabled (Default)
+         Q1=Disabled
+         Q2=Enabled when Originating, Disabled when answering
+Sr?     Reports value in S register r
+SCr?    Reports value is SC register r
+Sr=n    Write value n into S register r
+SCr=n   Write value n into SC register r
+T       Set dialing mode to TONE (Sets S14 bit 5 to 0)
+Vn      Result Code mode select
+         V0=Numeric
+         V1=Verbose (default)
+Wn      Error Correction Result Code Selection
+         W0=CONNECT XXXX (DTE rate) (default)
+         W1=Report Error Correction Mode
+         W2=CONNECT XXXX (DCE rate)
+Xn      Dialing mode/CONNECT result codes
+         X0=Blind Dial (ignore Dialtone & Busy), send CONNECT
+         X1=Blind Dial, send CONNECT XXXX
+         X2=follow Dialtone, but ignore Busy, send CONNECT XXXX
+         X3=follow Busy, but ignore Dialtone, send CONNECT XXXX or BUSY
+         X4=send CONNECT XXXX, BUSY, or NO DIALTONE (default)
+Yn      Long Space Disconnect
+         Y0=Not active (default, S27 bit7 set to 0)
+         Y1=Active (S27 bit7 set to 1, see manual for function)
+Zn      Soft reset and Load Stored profile n (last functional command on line)
+         Z0=resets modem & loads stored profile 0
+         Z1=resets modem & loads stored profile 1
+&Cn     DCD (RLSD) signal control
+         &C0=DCD always on
+         &C1=DCD follows carrier state (ON when carrier present)
+&Dn     Modem reaction to DTR on to off transition greater than S25 setting
+              a  b  c  (Settings of &Qn)
+         &D0= N  2  1
+         &D1= 3  3  1
+         &D2= 1  1  1
+         &D3= 4  4  1
+
+         List of modem reactions:
+
+         N=No Action
+         1=Hang up if off-hook & auto-answer is disabled
+         2=Hang up if off-hook & auto-answer not disabled
+         3=Switch to asynchronous command state
+         4=Perform soft reset (like ATZ and profile is set by &Y setting)
+
+         List of &Q states:
+         a. &Q0,&Q5,&Q6
+         b. &Q1,&Q4
+         c. &Q2,&Q3
+
+&Fn     Load Factory Default Configuration
+         &F0     No flow control, No error correction, No data compression
+         &F1     MAC hardware flow control, correction & compression active
+         &F2     Hardware flow control, correction & compression active
+                 (&F2 is default for DOS, WINDOWS, AMIGA, & STAND ALONE units.)
+&Gn     Guard Tone Selection
+         &G0     Do Not generate guard tones   (US Default)
+         &G1     Generate 550Hz guard tone     (not supported)
+         &G2     Generate 1800Hz quard tone    (World Wide support models only)
+&Jn     Phone Jack Selection
+         &J0     Select RJ-11, RJ-41, & RJ-45S (Default)
+         &J1     Select RJ-12 & RJ-13          (not supported)
+&Kn     Serial Port Flow Control
+         &K0=None
+         &K3=Bidirectional Hardware (RTS/CTS)
+         &K4=Software (XON/XOFF)
+         &K5=Transparent Software flow control
+         &K6=Software (XON/XOFF) & Hardware (RTS/CTS) flow control
+&Ln     Line Type Selection
+         &L0    Dial-up line (Default)
+         &L1    Leased Line  (not supported)
+&Mn     Same function as &Q(0-3) settings.
+&Pn     Pulse dialing MAKE/BREAK ratio
+         &P0 39%/61% make/break ratio at 10PPS {US/CANADA}  (Default)
+         &P1 33%/67% make/break ratio at 10PPS {UK/Hong Kong}
+         &P2 39%/61% make/break ratio at 20PPS
+         &P3 33%/67% make/break ratio at 20PPS {Japan}
+&Qn     Asynchronous/Synchronous Mode Selection
+         &Q0     Asynchronous Direct mode
+         &Q1 *   Synchronous Mode 1 (Terminal must support both modes.)
+                  Call placed Async, modem switches to Sync. When DTR is dropped
+                 modem returns to Async.
+         &Q2 *   Synchronous Mode 2 Modem dials number in stored location 0
+                  when DTR goes from LOW to HIGH.
+         &Q3 *   Synchronous Mode 3 Dial number manually on a telephone, and
+                  then bring DTR high to let the modems connect.
+     * CAUTION!  Be VERY careful when issuing these commands!  Once you enter
+                  &Q(1-3) and save it to memory, there are only three known
+                  ways to return to Asynchronous Mode:
+                 1. Issue AT &Q(0,5-9) &W from a Synchronous Terminal to restore
+                    the modem to Asynchronous Mode.
+                 2. Connect modem to an Asynchronous Terminal with the DTR
+                    signal (line 20) disabled (a "break-out" box works very
+                    nicely for this) and issue the configuration you want or
+                    AT &Q(0,5-9) &W to return the modem to Asynchronous Mode.
+                 3. Send the modem in to our repair department.
+         &Q4     Not Used
+         &Q5     Asynchronous Reliable Mode (most common default)
+         &Q6     Asynchronous Normal Mode
+&Rn     RTS Synchronous Mode
+         (In Asynchronous mode CTS is always ON unless &K3 is set.)
+         &R0     CTS responds to RTS (default)
+         &R1     CTS always on unless &K3 is set
+&Sn     DSR Action Select
+         &S0 Always on (default)
+         &S1 Follows EIA specification (Active following carrier tone, and
+          until carrier is lost.)
+&Tn     Modem test modes for trained technicians (you must set the serial port
+          at 2400 or 9600, set the modem with AT&F0, and set S18 between 1 and
+          255if you wish the tests to stop on their own.)
+         AT&T0   Terminate test in progress
+         AT&T1   Local Analog Loopback (+++ then &T0 to stop)
+         AT&T2   Returns ERROR
+         AT&T3   Local Digital Loopback for remote modem
+         AT&T4   Grant request for Remote Digital Loopback (default)
+         AT&T5   Prohibit request for Remote Digital Loopback
+         AT&T6   Remote Digital Loopback
+         AT&T7   Remote Digital Loopback with self-test
+         AT&T8   Local Analog Loopback with self-test (+++ then &T0 to stop)
+&V      Display Configuration Profiles
+&Wn     Write ACTIVE Profile to Stored Profile n
+         &W0     Writes to profile 0
+         &W1     Writes to profile 1
+&Xn     Synchronous Transmit Clock Source
+         &X0=Modem generated (default)
+         &X1=DTE supplied
+         &X2=Derived from the data carrier received from the remote modem.
+&Yn     Select Configuration Loaded at power-up
+         &Y0=Load profile 0 (default)
+         &Y1=Load profile 1
+&Zx=n   Write telephone number n into register number x (0-3).
+\\An     Maximum MNP Block Size for Stream Links
+         \\A0     64 characters
+         \\A1     128 characters
+         \\A2     192 characters
+         \\A3     256 characters (default)
+\\Bn     Transmit Break of length n x 100ms where n is 1 to 9 in non-error
+         correction state.  (Sends Link Attention in MNP mode)
+\\F      Display Telephone Directory (As stored via AT&Zn)
+\\Gn     Modem-to-Modem XON/XOFF flow control (Normal and Direct Mode Only)
+         \\G0=Disabled (default)
+         \\G1=Enabled
+\\Jn     Enable DTE Auto Rate Adjustment
+         \\J0    Disabled
+         \\J1    DTE rate is adjusted to match carrier rate.
+\\Kn     Break Processing Control (controls remote modem during MNP mode)
+         When received from local DTE & Modem is in Data Transfer Mode:
+          \\K0,\\K2,\\K4   Enter command state without sending BREAK to remote
+          \\K1           Clear Modem & Terminal Buffers & send BREAK to remote
+          \\K3           Don't clear Buffers, but send BREAK to remote
+          \\K5(default)  Send BREAK to remote in sequence with any transmitted
+                         data (default)
+         In Escape (Online Command) mode:
+          \\K0,\\K1           Clear data buffers and sends break to remote modem.
+          \\K2,\\K3           Send break to remote modem immediately.
+          \\K4,\\K5(default)  Send break to remote modem in sequence with data.
+         When received from remote modem in non-error correction mode:
+          \\K0,\\K1           Clear data buffers and sends break to DTE
+          \\K2,\\K3           Send break to DTE immediately.
+          \\K4,\\K5(default)  Send break in sequence with received data to DTE.
+\\Ln     MNP Block Transfer Control
+         \\L0     Use Stream Mode for MNP Links (default)
+         \\L1     Use Block Mode for MNP Links
+\\N      Operating Mode
+         \\N0     Normal Mode (carrier and port rate may differ - No MNP or V42,
+                        forces &Q6)
+         \\N1     Direct Mode (carrier rate "matches" port rate - No MNP or V42,
+                        forces &Q0)
+         \\N2     Reliable Mode (a V42 or MNP connection must be made or the
+                        modem will hang up, forces &Q5 S36=4 S48=7)
+         \\N3     AutoReliable Mode (default mode where ALL connection are
+                        supported, forces &Q5 S36=7 S48=7)
+         \\N4     LAPM Mode (a V42 connection must be made or the modem will
+                        hang up, forces &Q5 S48=0)
+         \\N5     MNP Mode (a MNP connection must be made or the modem will
+                        hang up, forces &Q5 S36=4 S48=128)
+\\S      Report Active Configuration
+\\W      Split-Speed Operation (v.23)
+         \\W0    Disable split-speed mode (default)
+         \\W1    Enable split-speed mode v.23 (forces F3)
+%Cn     Data Compression Enable/Disable
+         %C0     Disabled
+         %C1     MNP5 Enabled
+         %C2     V.42bis (BTLZ) Enabled
+         %C3     MNP5 & V.42bis (BTLZ) Enabled
+%En     Auto Retrain & Fallback/Fall Forword based on line quality monitoring
+         %E0=Disabled (Default)
+         %E1=Enable Auto Retrain based on line quality
+         %E2=Enable Fallback/Fall Forward baed on line quality
+         %E3=Undefined
+%Fn     Split-Speed Direction Select
+         %F1    75TX/1200RX
+         %F2    1200TX/75RX
+         %F3    v.23 Half-Duplex (independant of \\W)
+%Gn     Rate Renegotiation based on line monitor readings
+         %G0=Disabled
+         %G1=Enabled (Default)
+%L      Reports Received Signal Level (at connection to DSP) nnn in -dBm.
+         nnn=9 or stronger       reports as 9
+         nnn=10 to 42            reports as value directly
+         nnn=43 or weaker        reports as 43
+%Q      Report Received signal Quality (nnn range 0 to 127)
+         nnn=1 to 8 current signal quality excellent (higher rate may be used)
+         nnn=9 to 20 current signal good (best carrier rate for line condition)
+         nnn=20 to 30 current signal poor (lower carrier rate should be used)
+         nnn=31 to 127 signal very bad (or gone), try forcing a lower rate
+         NOTE: Modem uses 8 and 20 as rate renegotiation watermarks.
+%TTnn   PTT Testing Utilities
+        (Set S10=255 to transmit data in the absence of a received signal)
+        00-09   DTMF tone dial digits 0 to 9
+        0A      DTMF digit *
+        0B      DTMF digit A
+        0C      DTMF digit B
+        0D      DTMF digit C
+        0E      DTMF digit #
+        0F      DTMF digit D
+        10      v.21 channel #1 mark (originate) symbol
+        11      v.21 channel #2 mark symbol
+        12      v.23 backward channel mark symbol
+        13      v.23 forward channel mark symbol
+        14      v.22 originate signalling at 600 bps
+        15      v.22 originate signalling at 1200 bps
+        16      v.22bis originate signalling at 2400 bps
+        17      v.22 answer signalling (guard tone if PTT required)
+        18      v.22bis answer signalling (quard tone if required)
+        19      v.21 channel #1 space symbol
+        1A      v.21 channel #2 space symbol
+        1B      v.23 backward channel space symbol
+        1C      v.23 forward channel space symbol
+        1D      v.27ter carrier
+        1E      v.29 carrier
+        20      v.32 @9600 bps
+        21      v.32bis @14400 bps
+        22      v.17 @14400 bps
+        30      Silence (on-line) - i.e. go off-hook
+        31      v.25 answer tone
+        32      1800 Hz guard tone
+        33      v.25 calling tone (1300Hz)
+        34      Fax calling tone (1100Hz)
+*B      Return Blacklisted Numbers
+         Displays a numbered chart of currently BLACKLISTED numbers {Except
+         permanently forbidden numbers based on country setting}  "OK" is
+         returned if no temporary numbers are BLACKLISTED.
+*C      Remote Password Configuration (for MNP connections ONLY)
+         Gives ENTER PASSWORD prompt and accepts a 6 to 12 charactor
+         alphanumeric string.  (Default is QWERTY)
+*D      Return Delayed Numbers
+         Displays a numbered chart of DELAYED numbers and the length of delay
+         in the format HH:MM:SS  "OK" is returned if no numbers are delayed.
+*E      Exit Remote Configuration Mode
+*Hn     Link Negotiation Speed (MNP 10)
+         *H0    Link negotiation occurs at highest supported rate (Default)
+         *H1    Link negotiation occurs at 1200 bps.
+         *H2    Link negotiation occurs at 4800 bps.
+*L      Display Secure Access Directory
+         Displays a numbered chart (0-19) of all secure access (callback)
+         directory entries in the following format: #-Password:Callback_Number
+         If no callback number is set then the colon is omitted.
+*NCnn   Country Select
+         Sets country PSTN parameters to the code number specified.
+         ERROR is returned if the country selected is not currently supported.
+*Px:p:n Store/Delete a Password/Phone Number Pair
+        *Px(0-19):p(password of 6 to 12 charactors):n(0 to 40 dialing codes)
+         If the last colon and dialing codes are omitted then password check
+         occurs, but no call-back occurs.
+*R      Request Remote Configuration Mode (during MNP mode connection ONLY)
+         If successful, a REMOTE PASSWORD prompt is display, and you should
+         issue the 6 to 12 charactor password currently set.  If the password
+         is accepted, a !AT prompt will be displayed and a limitted set of
+         commands can then be issued with the "AT" header omitted.  Exit this
+         mode with the *E command.
+*Zn     Change Dialing Codes (Used in countries like NORWAY that support two
+                methods of pulse dialing.)
+         *Z0    Use dial code 0 (default)
+         *Z1    Use dial code 1
+#CID?   Displays current CallerID mode (0-2)
+#CID=n  Caller ID Mode
+         #CID=0 Disable Caller ID (Default)
+         #CID=1 Enable Formatted Caller ID Mode
+          Result code syntax is as follows:
+           DATE=MMDD (where MM is month number 01-12 & DD is day 01-31)
+           TIME=HHMM (where HH is hour 00-23 & MM is minute 00-59)
+         "Single Page Mode"
+           NMBR= number code or statement*
+               * The NUMBER CODE is normally either the subscriber's area code,
+                 local exchange, and subscriber loop number, OR a code unique to
+                 that individual subscriber. STATEMENTs are used for calls from
+                 non Caller ID Areas and subscribers requesting no display.
+           NAME= listed subscriber name <this is an option not always supported>
+         "Multiple Page Mode"
+           MESG= formatted number string * **
+               * Here is an example string: 030A35303339363732343030
+                 The string uses this code: CCLL#0#1#2#3#4#5#6#7#8#9
+                 CC (03) is the code meaning this is "Multiple Page" Caller ID
+                 LL is the hexadecimal length of the data in the string.
+                    (in this case 0A hex - 10 decimal)
+                 #n's are the ASCII digits dialed (in hexadecimal)
+                    A neat trick to convert these to decimal is to note that
+                    the first digit is always a number "3" and the second digit
+                    is the decimal number dialed, so the formatted string:
+                    030A35303339363732343030 converts directly to 5039672400
+              ** At the time of this printing, conversion of "Multiple Page"
+                    Caller ID string coversion is not supported in the modem,
+                    so the data is displayed in the raw hexadecimal format.
+         #CID=2 Enable Raw (ASCII printable HEX number) Mode
+         #CID=? Returns Caller ID Modes supported.
+)M      Cellular Power Level Adjustments (MNP 10)
+         )M0    Power not adjusted during MNP 10 link negotiation (Default)
+         )M1    Power level adjusted during MNP 10 link negotiation.
+@Mn     MNP-10 Power Level (0-31)
+-Kn     MNP Extended Services (MNP 10)
+         -K0    Disable v.42 LAPM to MNP 10 connection
+         -K1    Enable v.42 LAPM to MNP 10 connection
+-Qn     Fallback to v.22bis/v.22 in MNP10 mode
+         -Q0    Disabled (Fallback only allowed to 4800 bps)
+         -Q1    Enabled (Fallback allowed to v.22bis/v.22) (Default)
+
+V.25bis Commands / Indications
+
+Commands
+
+CIC     Connect Incoming Call (goes off-hook to answer call, if no call is
+                present INV is returned)
+CNL     Local Configuration (in Async. mode this command allows AT Command to
+                be used - CNLS0=3) {Extended V.25bis}
+CRI     Call Request with Number and Indentification (same as CRN, but a ";"
+                charactor can be inserted and followed by a code, which the
+                modem will ignore.)
+CRN     Call Request with Number (goes off-hook and attempts to dial the string
+               issued with the command)
+        These charactors are accepted in the string:
+        0-9     Digits 0-9
+        *       "Star" digit (Tone dial only)
+        #       "Gate" digit (Tone dial only)
+        T       Select TONE dialing
+        P       Select PULSE dialing
+        <       Pause (Length set via S8)
+        =       Pauses for twice the period set in S8
+        :       Wait for dialtone
+        &       Flash (Goes ON-Hook for the period set in S29)
+        ^       Enable calling tone
+CRS     Call Request with Memory Address (same as CRN, but dials string stored
+                in dialing memory locations 0-19)
+DIC     Disregard Incoming Call (Ignores incoming call, returns INV if no call
+                is present or autoanswer is not enabled)
+PRI     Program Identification (Just returns VAL)
+PRN     Program Number (stores dialing string into the select dialing string
+                memory location)  PRN (0-19);(dialing string)
+RLD     List Request of Delayed Call Numbers (Display a numbered chart of
+                delayed numbers and the delay periods)
+RLF     List Request of Forbiden Numbers (Lists numbers blacklisted during
+                modem operations according to country setting procedures)
+RLI     List Request of Identification Numbers
+RLN     List Request of Stored Numbers (Dialing Strings)
+
+Indications
+
+CFI     Call Failure Indication (Sends message followed by coded failure reason)
+        AB      No Dialtone or call abort timer expired.
+        CB      Local Circuit busy (phone off-hook)
+        ET      BUSY (engaged) tone detected
+        FC      Requested number on Forbidden call list (no call attempted)
+        NT      Ringback detected or stopped & call abort timer expired
+        RT      Ringback detected & call abort timer expired
+CNX     Connect (maybe be followed by a code to show speed of connection)
+DLC     Delayed Call (returns code with length of call delay)
+INC     Incoming Call (sent when ring signal is detected)
+INV     Invalid Command (issued if command is invalid or unable to be executed)
+LSD     List of Delayed Call Numbers (returned in responce to RLD)
+LSF     List of Forbidden Numbers (returned in responce to RLF)
+LSI     List of Identification Numbers (returned in responce to RLI)
+VAL     Valid Command (sent if command is executed & no other responce occurs)
+
+
+S Registers
+
+S0      Number of Rings to Auto Answer (0 to 255) (0 is disable & default)
+S1      Number of Rings before last answer.
+S2      Escape Code character (0 to 255) (default is 43 "+")
+S3      Carriage Return character (0-127) (default is 13)
+S4      Line Feed character (0-127) (default is 10)
+S5      Backspace character (0-32) (default is 8)
+S6      Time to Wait before Blind Dial (2-255 seconds)  (default is 2)
+         (Applies only in X,X1, or X3 dialing mode)
+S7      Time to Wait for Carrier (1-255 seconds) (default is 50)
+S8      Pause Time for Comma Dial Command (0-255 seconds) (default is 2)
+S9      Time to Wait Before Recognizing Carrier (1-255 1/10 seconds)
+         (Default is 6)
+S10     Delay from Lost Carrier to Hang Up (1-255 1/10 seconds) (Default is 14,
+         Modem assumes carrier always present if set to 255)
+S11     DTMF Tone Duration/Spacing (35 to 102 1/100 seconds) (Default is 95)
+S12     Escape Code Guard Time (0 to 255 1/50 seconds) (0 to disable, the
+         default is 50)
+S13     Reserved
+S14     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1)   Reserved
+         1 (2)   Command echo (En)
+                  0 Disabled (E0)
+                  1 Enabled  (E1 default)
+         2 (4)   Quiet Mode (Qn)
+                  0 Send result codes (Q0 default)
+                  1 No result codes   (Q1)
+         3 (8)   Result codes (Vn)
+                  0 Numeric (V0)
+                  1 Verbose (V1 default)
+         4 (16)  Reserved
+         5 (32)  Dial Mode
+                  0 Tone  (T default)
+                  1 Pulse (P)
+         6 (64)  Reserved
+         7 (128) Carrier Mode
+                  0 Answer
+                  1 Originate
+S15     Reserved
+S16     Diagnostic Test Mode setting -Bit Mapped (default 0)
+         0       &T1     0 Disable       1 Enable
+         1       Not Used
+         2       &T3     0 Disable       1 Enable
+         3       &T4/&T5 0 Off           1 In progress
+         4       &T6     0 Disable       1 Enable
+         5       &T7     0 Disable       1 Enable
+         6       &T8     0 Disable       1 Enable
+         7       Not Used
+S17     Reserved
+S18     Test Mode Timer (0-255 seconds, 0=Runs endlessly)
+S19     Reserved
+S20     Reserved
+S21     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1)   Set by &Jn command but ignored otherwise
+                  0 &J0 (default)
+                  1 &J1
+         1 (2)   Reserved
+         2 (4)   CTS Mode (&Rn)
+                  0 CTS always on   (&R0)
+                  1 CTS follows RTS (&R1 default)
+         3 (8) & 4 (16) DTR behavior (&Dn)
+                  0,0 &D0 (default)
+                  1,0 &D1
+                  0,1 &D2
+                  1,1 &D3
+         5 (32)  DCD (RLSD) behavior (&Cn)
+                  0 &C0 (Default)
+                  1 &C1
+         6 (64)  DSR behavior (&Sn)
+                  0 &S0 (Default)
+                  1 &S1
+         7 (128) Long space diconnect (Yn)
+                  0 Y0  (Default)
+                  1 Y1
+S22     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1) & 1 (2)  Speaker volume (Ln)
+                  0,0 Low    (L0)
+                  1,0 Low    (L1)
+                  0,1 Medium (L2 default)
+                  1,1 High   (L3)
+         2 (4) & 3 (8)  Speaker control (Mn)
+                  0,0 Disabled            (M0)
+                  1,0 On until carrier    (M1 default)
+                  0,1 ON Always           (M2)
+                  1,1 On during handshake (M3)
+         4 (16), 5 (32), & 6 (64) Dialing Mode / Result Codes (Xn)
+                0,0,0 X0
+                1,0,0 Reserved
+                0,1,0 Reserved
+                1,1,0 Reserved
+                0,0,1 X1
+                1,0,1 X2
+                0,1,1 X3
+                1,1,1 X4 (Default)
+         7 (128) Reserved
+S23     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1)   Grant RDL
+                  0 RDL not allowed (&T5)
+                  1 RDL allowed     (&T4 default)
+         1 (2), 2 (4), & 3 (8) Assumed DTE Rate
+                0,0,0 0-300 bps
+                1,0,0 600 bps
+                0,1,0 1200 bps
+                1,1,0 2400 bps (Default)
+                0,0,1 4800 bps
+                1,0,1 9600 bps
+                0,1,1 19200 bps
+                1,1,1 Reserved
+         4 (16) & 5 (32) Assumed DTE parity
+                  0,0 Even
+                  1,0 Reserved
+                  0,1 Odd
+                  1,1 None (default)
+         6 (64) & 7 (128) Guard tone (&Gn)
+                  0,0 None    (&G0 Default)
+                  1,0 550 Hz  (&G1)
+                  0,1 1800 Hz (&G2)
+                  1,1 Reserved
+S24     Sleep Inactivity Timer (0-255 seconds 0 default/disable)
+         Number of seconds before modem enters sleep mode without either DTE or
+         phone line activity.
+S25     Delay to DTR (0-255 1/100 seconds, 5 default)
+S26     RTS/CTS Delay (0-255 1/100 seconds, 1 default) (Sync mode only)
+S27     Bit Mapped Option Status
+        Bit(Dec)
+         0 (1), 1 (2), 3 (8) Sync/Async Mode Selection (&Mn/&Qn)
+                0,0,0 &M0/&Q0
+                1,0,0 &M1/&Q1
+                0,1,0 &M2/&Q2
+                1,1,0 &M3/&Q3
+                0,0,1 &Q4
+                1,0,1 &Q5 (Default)
+                0,1,1 &Q6
+         2 (4)   Leased line control (&Ln)
+                  0 Dial-up line (&L0 default)
+                  1 Leased line  (&L1)
+         4 (16) & 5 (32) Internal Sync clock select (&Xn)
+                  0,0 Internal (&X0 default)
+                  1,0 External (&X1)
+                  0,1 Slave    (&X2)
+         6 (64)  CCITT/Bell Mode (Bn)
+                  0 CCITT (B0)
+                  1 Bell  (B1 US default)
+         7 (128) Reserved
+S28     Bit Mapped Options
+        Bit(Dec)
+         0 (1)   V.23 split screen (\\Wn)
+                  0 Disabled (\\W0 default)
+                  1 Enabled  (\\W1)
+         1 (2)   V.23 split screen direction
+                  0 75Tx   (%F0 default)
+                  1 1200Tx (%F1 default)
+         2 (4)   V.23 half-duplex
+                  0 Disabled
+                  1 Enabled (%F3)
+         3 (8) & 4 (16)
+                 Pulse dialing mode (&Pn)
+                  0,0 &P0 (Default)
+                  1,0 &P1
+                  0,1 &P2
+                  1,1 &P3
+         5 (32)  Reserved
+         6 (64)  Reserved
+         7 (128) Reserved
+S29     Flash Dial Modifier Time
+S30     Inactivity Timer (0-255 Unit 10 ms, 0=disable {default})
+         In Reliable mode any data transfer resets timer.
+         In Normal mode only sent data resets timer.
+S31     Bit Mapped Options
+        Bit(Dec)
+         0 (1)   Reserved
+         1 (2)   Auto Mode Selection
+                  0 Disabled (N0)
+                  1 Enabled  (N1 default)
+         2 (4), 3 (8) Error Correction Result Code (Wn)
+                  0,0 DTE Speed only (W0 default)
+                  1,0 Full Reporting (W1)
+                  0,1 DCE Speed only (W2)
+         4 (16)  Reserved
+         5 (32)  Reserved
+         6 (64)  Reserved
+         7 (128) Reserved
+S32     XON Charactor (0-255, Default 17)
+S33     XOFF Charactor (0-255, Default 19)
+S36     Negotiation Failure Treatment (0-7  7 is default)
+         Fallback options when S48=128 or error correction link fails:
+        Bits 0-2
+         2 1 0 (Dec)
+         0,0,0 (0)    Disconnect
+         0,0,1 (1)    Establish Direct connection
+         0,1,0 (2)    Undefined
+         0,1,1 (3)    Establish Normal connection
+         1,0,0 (4)    Establish MNP connection if possible, else Disconnect
+         1,0,1 (5)    Establish MNP connection if possible, else Direct Mode
+         1,1,0 (6)    Undefined
+         1,1,1 (7)    Establish a MNP connection if possible, else Normal Mode
+        Bits 3-5 Reserved
+        Bits 6-7 Same as S110 setting
+           1 0 (Dec)
+           0,0 (0)    V.32 mode
+           0,1 (64)   V.32bis mode
+           1,0 (128)  V.32bis with fallback
+           1,1 (192)  V.32/V.32bis mode forced start at lowest carrier in
+                        S109 and fall forward and fall back using rates set
+                        in S109.
+S37     Forced Single Carrier Rate (0-1,5-12  0 is default)
+         0       Carrier Rate at the rate the last AT command was issued.
+                 (If rate is above highest carrier rate, then the highest
+                 carrier rate the modem supports is used.)
+         1       300 bps
+         2-4     Undefined
+         5       1200 bps
+         6       2400 bps
+         7       1200/75 bps    (v.23 mode)
+         8       4800 bps
+         9       9600 bps
+         10      12000 bps
+         11      14400 bps
+         12      7200 bps
+S38     Delay Before Forced Disconnect (0-255 seconds, default 20)
+         0-254   Delay in seconds from H command, or DTR toggle ON or OFF (if
+                 modem is set to follow DTR), before modem disconnects.
+         255     Modem send data out of buffer until completed or connection
+                 is lost.
+S39     Flow Control
+         0      None                    &K0
+         3      RTS/CTS                 &K3
+         4      XON/XOFF                &K4
+         5      Transparent XON/XOFF    &K5
+         6      RTS/CTS & XON/XOFF      &K6
+S40     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1)   MNP Extended Services (-Kn)
+                  0 Disable (-K0)
+                  1 Enable  (-K1)
+         1 (2)   Power Level Adj. for Cellular Use [)Mn]
+                  0 Auto Adj.  [)M0 default
+                  1 Force Adj. [)M1]
+         2 (4)   MNP Link negotiation speed (*Hn)
+                  0 At highest rate (*H0 default)
+                  1 At 1200 bps     (*H1)
+         3 (8), 4 (16), & 5 (32) Break Handling (\\Kn)
+                0,0,0 \\K0
+                1,0,0 \\K1
+                0,1,0 \\K2
+                1,1,0 \\K3
+                0,0,1 \\K4
+                1,0,1 \\K5
+         6 (64) & 7 (128) MNP Block size (\\An)
+                  0,0 64  (\\A0)
+                  1,0 128 (\\A1)
+                  0,1 196 (\\A2)
+                  1,1 256 (\\A3)
+S41     Bit Mapped Option Status Codes
+        Bit(Dec)
+         0 (1) & 1 (2) Compression Selection (%Cn)
+                  0,0 Disabled        (%C0)
+                  1,0 MNP 5           (%C1)
+                  0,1 V.42bis         (%C2)
+                  1,1 MNP 5 & V.42bis (%C3)
+         2 (4)   Auto Retrain (%En)
+                  0 Disable (%E0 default)
+                  1 Enable  (%E1)
+         3 (8)   Modem to Modem Flow Control (\\Gn)
+                  0 Disable (\\G0 default)
+                  1 Enable  (\\G1)
+         4 (16)  Block mode control (\\Ln)
+                  0 Stream (\\L0 default)
+                  1 Block  (\\L1)
+         5 (32)  Reserved
+         6 (64)  Reserved
+         7 (128) Reserved
+S46     Protocol Selection (136 or 138) (Affects v.42/v.42bis mode)
+         136     Disable Compression
+         138     Enable Compression (default)
+S48     v.42 Negotiation (0,7,128)
+         0       Disable Negotiation, proceed with LAPM
+         7       Enable Negotiation (default)
+         128     Disable Negotiation, fallback per S36 setting
+S80     Soft-Switch Functions (Bit Mapped Options)
+         Bit 0  V.25bis / AT command mode
+                  0 AT
+                  1 V.25bis
+         Bit 1  Remote Configuration
+                 0 Not Permitted
+                 1 Permiited
+         Bit 2  Call Back Security
+                 0 Disabled
+                 1 Enabled
+         Bit 3  Originate/Answer Mode select
+                 0 Originate
+                 1 Answer
+         Bits 4-7 Reserved
+S82     LAPM Break Handling Options (3,7,128)
+         3       Expedited: Modem sends break immediately & data integrity is
+                         maintained before and after break.
+         7       Destructive: Modem sends break immediately & data being
+                         processed by each modem at that time is destroyed.
+         128     In sequence: Modem sends break in sequence with transmitted
+                         data & data integrity is maintained before and after
+                         the break
+S86     Report Connection Failure Cause Code
+         0      Normal disconnect
+         1-3    Undefined Error Code
+         4      Carrier loss
+         5      No error correction at other end
+         6      No response to feature negotiation
+         7      This modem is ASYNC only, other is SYNC
+         8      No framing technique in common
+         9      No protocol in common
+         10     Bad response to feature negotiation
+         11     No sync information from remote
+         12     Normal hangup initiated by remote
+         13     Retransmission limit reached
+         14     Protocol violation occured
+         15-255 Undefined Error Code
+S95     Extended Result Code Control (default sum is 0)
+         Each bit set high in this register enables the corresponding result
+         code regardless of the W command setting.
+        Bit (Decimal Value)
+         0 (1)   CONNECT XXXX result code gives DCE to DCE rate instead of
+                 local DTE to DCE rate.
+         1 (2)   Append /ARQ to verbose CONNECT result code if protocol is NONE
+         2 (4)   Enable CARRIER XXXX result code
+         3 (8)   Enable PROTOCOL XXXX result code
+         4 (16)  Undefined
+         5 (32)  Enable COMPRESSION result code
+         6 (64)  Undefined
+         7 (128) Undefined
+S109    v.32/v.32bis Negotiation Rate Selection (default sum is 62)
+         Each bit set high in this register enables the corresponding rate as
+         a valid rate to be used during rate negotiation.
+        Bit (Decimal Value)
+         0 (1)   Unused
+         1 (2)   4800 bps
+         2 (4)   7200 bps
+         3 (8)   9600 bps
+         4 (16)  12000 bps
+         5 (32)  14400 bps
+         6 (64)  Unused
+         7 (128) Unused
+S110    v.32/v.32bis Mode & Rate Negotiation Control
+         0       Normal v.32 mode (no v.32bis support)
+         1       Normal v.32bis mode
+         2       v.32bis mode with automatic rate renegotiation (default)
+         3       v.32bis mode with automatic rate renegotiation starting with
+                 the lowest rate set in S109 and working up one defined rate at
+                 a time toward the highest rate set in S109 (based on %Q level
+                 at each rate prior to stepping up.) (If the modem steps back
+                 down, it will also follow the S109 settings.)
+S202    Remote Access Escape Character (0-255, Default 170)
+
+SCn=n   BUSY Detect Watermark Controls
+         Each register "pair" holds the value for each setting.  To set a value,
+         divide the setting by 256.  The integer goes in the second register,
+         while the remained goes in the first.  (A setting of 516 would convert
+         to 2 Remainder 4, and could be set by sending ATSC0=4SC1=2 to the
+         modem.)  Settings are in 1/100ths of a second.
+        Default values:
+         Minimum BUSY ON Time
+          SC0=30
+          SC1=0
+         Maximum BUSY ON Time
+          SC2=75
+          SC3=0
+         Minimum BUSY OFF Time
+          SC4=30
+          SC5=0
+         Maximum BUSY OFF Time
+          SC6=75
+          SC7=0
+         (Defaults support FCC Spec. BUSY signal.  Setting SC0=25 & SC4=25
+          allows FAST BUSY to also be detected as BUSY.)
+SC8=n   Set number of valid BUSY Pulses before reporting BUSY (4 is default)
+
+
+FAX commands of special interest to Supra Users:
+        +FAE=n  (CLASS 1 Only) Adaptive Answer / Silent Answer Mode Control
+                 0       Disable Both
+                 1       Adaptive Answer ONLY
+                 2       Adaptive Answer & Silent Answer
+                 3       Silent Answer ONLY
+        +FAA=n  (CLASS 2 Only) Adaptive Answer / Silent Answer Mode Control
+                 0       Disable Both
+                 1       Adaptive Answer ONLY
+                 2       Adaptive Answer & Silent Answer
+                 3       Silent Answer ONLY
+
+Connection Result Codes:
+
+Numeric Verbose
+0       OK
+1       CONNECT                 (300 bps)
+2       RING
+3       NO CARRIER
+4       ERROR
+5       CONNECT 1200
+6       NO DIALTONE
+7       BUSY
+8       NO ANSWER
+9       CONNECT 0600
+10      CONNECT 2400
+11      CONNECT 4800
+12      CONNECT 9600
+13      CONNECT 7200
+14      CONNECT 12000
+15      CONNECT 14400
+16      CONNECT 19200
+17      CONNECT 38400
+18      CONNECT 57600
+19      CONNECT 115200          (Not Currently Supported on MOST models)
+22      CONNECT 1200/75         (Models with v.23 support only)
+23      CONNECT 75/1200         (Models with v.23 support only)
+
+24      DELAYED
+32      BLACKLISTED
+33      FAX
+35      DATA
+
+40      CARRIER 300
+44      CARRIER 1200/75         (Models with v.23 support only)
+45      CARRIER 75/1200         (Models with v.23 support only)
+46      CARRIER 1200
+47      CARRIER 2400
+48      CARRIER 4800
+49      CARRIER 7200
+50      CARRIER 9600
+51      CARRIER 12000
+52      CARRIER 14400
+
+66      COMPRESSION: CLASS 5    (MNP 5)
+67      COMPRESSION: V.42BIS    (BTLZ)
+69      COMPRESSION: NONE
+
+70      PROTOCOL: NONE
+77      PROTOCOL: LAP-M         (V.42)
+80      PROTOCOL: ALT           (MNP)
+81      PROTOCOL: ALT - CELLULAR        (MNP 10)
++FC     +FCERROR
+
+V.32 & V.32BIS EXTERNAL DISPLAY CODES
+
+Red LED's
+
+        OH      Off Hook
+        RD      Receiving Data
+        SD      Sending Data
+        TR      Terminal Ready (Follows DTR per &Dn setting)
+
+Green LED Display PANEL
+
+        AA      Auto Answer (RI displayed during ring)
+        CD      Carrier Detected
+        DC      Data Compression in use
+        DI      Dialing
+        FX      FAX MODE
+        LP      LAPM Error Correction in use.
+        M2      MNP2 Error Correction in use.
+        M3      MNP3 Error Correction in use.
+        M4      MNP4 Error Correction in use.
+        M5      MNP5 Data Compression in use.
+        OK      Modem Powered Up Correctly and Ready for Use.
+        RE      Receive Error while using LAPM or MNP mode.
+        RI      Ring Indicator
+        RT      Retrain in progress
+        TE      Transmit Error while using LPAM or MNP mode.
+        TM      Test Mode in use.
+        3       300 bps connection
+        12      1200 bps connection
+        24      2400 bps connection
+        48      4800 bps connection
+        72      7200 bps connection
+        96      9600 bps connection
+        120     12000 bps connection
+        144     14400 bps connection
+                                   
+Encoded Optional Feature List (ATi10)
+
+NOTE ->   These codes are being added to SupraFAXModem ROMs, but in some cases
+          not all codes have been added that are supported by a given product,
+          and codes have been assigned for features not yet available.
+
+        Code    Feature                         Functions/Commands/Codes Added
+        101     Fax CLASS 1                     Normal CLASS 1 FAX Command Set
+        104     Fax CLASS 2                     Normal CLASS 2 FAX Command Set
+        105     Fax CLASS 2.0                   Normal CLASS 2.0 FAX Command Set
+        115     CCITT v.17 (14.4 Fax)           Adds 12k & 14.4k fax operation
+        120     Worldwide PSTN Support          %TTnn   PTT Cert. Test Signals
+                                                *NC?    Display Country Config.
+                                                *NCn    Change County Config.
+                                                *Zn
+        121     CCITT v.23                      %Fn (1-3)
+                                                %F1     75T/1200R
+                                                %F2     1200R/75T
+                                                %F3     v.23 HALF DUPLEX
+                                                Adds These Result Codes:
+                                                Numeric Verbose
+                                                22      CONNECT 1200TX/75RX
+                                                23      CONNECT 75TX/1200RX
+                                                44      CARRIER 1200/75
+                                                45      CARRIER 75/1200
+        122     CCITT v.25bis                   See list above
+        123     Blacklisting                    *B      Display Blacklisted #'s
+                                                *D      Display Delayed #'s
+                                                Adds These Result Codes:
+                                                24      DELAYED
+                                                32      BLACKLISTED
+        124     Access Security                 *C      Enb. Sec. Acc. & Req.PW
+                                                *E      Exit Sec. Access
+                                                *L      List PW & CB directories
+                                                *P      Stores PassWords
+                                                *R      Request Sec. Acc. Mode
+        140     CCITT v.32bis (14.4 Data)       Adds 7200, 12k, & 14.k carriers
+        141     Silent Answer                   +FAE=n
+                                                +FAA=n  > CLASS 2 units only <
+        142     Caller ID                       #CID=n
+        143     MNP 10                          -B      Forced FB to 1200
+                                                -C      MNP10 Sync Mode
+                                                -C1     MNP10 Async Mode
+                                                -C2     MNP 2
+                                                -C3     MNP 3
+                                                -K      No LAPM to MNP10 Conv.
+                                                -K1     Conv. LAPM to MNP10
+                                                -Q      FB to v.22/v.22bis
+                                                -Q1     No FB to v.22/v.22bis
+                                                -Un  Tx Level Change during FF
+                                                -U0     auto attn to -10dBm
+                                                -U1     auto attn to -18dBm
+                                                -U2     auto attn to -22dBm
+                                                -U3     auto attn to -25dBm
+                                                -U4     Force 2400 to -10dBm
+                                                -U5     Force 2400 to -18dBm
+                                                -U6     Force 2400 to -22dBm
+                                                -U7     Force 2400 to -25dBm
+                                                )M      Tx fixed at -10dBm
+                                                )M1     Tx attempt Tx < -10dBm
+                                                *H0     Link Neg. at Top Speed
+                                                *H1     Link Neg. at 1200
+                                                *H2     Link Neg. at 4800
+        144     MNP "Cellular"                  In Docs if a Supported Feature
+        145     AutoSync                        In Docs if a Supported Feature
+        146     Enhanced Configuration Display  \\S      Enhanced Display Codes
+        160     Programable Voice               In Docs if a Supported Feature
+        161     ADPCM                           In Docs if a Supported Feature
+        162     MACE                            In Docs if a Supported Feature
+        170     Handset Support                 In Docs if a Supported Feature
+        171     Headset Support                 In Docs if a Supported Feature
+        180     16b Buffer Emulation Mode       In Docs if a Supported Feature
+        181     SupraSmart                      In Docs if a Supported Feature
+        182     SupraSmart 16b DMA              In Docs if a Supported Feature
+        190     Flash ROM AMD                   In Docs if a Supported Feature
+        191     Flash ROM ATMEL                 In Docs if a Supported Feature
+        200     V.FC                            In Docs if a Supported Feature
+
+144PB Current Load
+
+        ON----> @ 150mA  Modem Port is open and modem is activity in use.
+        Sleep-> @  55mA  Modem Port is open, but modem is not processing any
+                         commands and is not OFF-HOOK.
+        OFF--->     0mA  Modem Port is closed.
+
+
+***    WARNING   ***
+
+The following commands are accepted by some models, but are ONLY for internal
+use at Supra.  (Supra's staff cannot assist you in regard to these commands,
+and under no case should you attempt use or adjust these settings.):
+
+        ATS91=x
+        ATS92=x
+        ATS99=x
+        AT!(x)
+
+These commands are quite powerful and can cause unpredictable or total lack
+of operation.  (In many cases, service at Supra would be required to restore
+normal operation.)
+
+
+@ENDNODE

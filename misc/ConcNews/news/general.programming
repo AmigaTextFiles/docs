@@ -1,0 +1,1814 @@
+Article 22807 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!zaphod.mps.ohio-state.edu!wupost!sdd.hp.com!col.hp.com!fc.hp.com!koren
+From: koren@fc.hp.com (Steve Koren)
+Newsgroups: comp.sys.amiga.programmer
+Subject: SAS6.1 users: please read
+Message-ID: <ByM64K.6z2@fc.hp.com>
+Date: 2 Dec 92 04:07:32 GMT
+Sender: news@fc.hp.com (news daemon)
+Organization: Hewlett-Packard Fort Collins Site
+Lines: 45
+X-Newsreader: Tin 1.1.3 PL5
+
+I am posting this note to let SAS 6.1 users know of a serious
+problem I have found which can cause insiduous problems with
+your code.  I have sent this to EMITS and am just pointing
+it out here in hopes someone else can avoid what I ran in to.
+I thought twice about posting it here because I do not want
+to reflect badly on SASC, which is wonderful in general.  But
+I decided that the magnitude of the problem warrents a warning
+to other users.  I'm sure they'll fix it right pronto.  SAS has
+been very responsive to fixing things reported via EMITS, and
+collectively deserve our appriciation for that I think.
+
+Consider this code:
+
+/***********************************************************************
+ **   sc test1.c
+ **   slink from lib:c.o test1.o to test1 lib lib:sc.lib
+ ***********************************************************************/
+
+# include <stdio.h>
+# include <string.h>
+
+main(int argc, char **argv) {
+   char *str = "abc";
+   int  num = 7;
+
+   if ((strlen(str) - num) > 0) {
+      printf("Ooops!\n");
+   }
+
+   exit(0);
+}
+
+Even though one would expect
+   if ((strlen(str) - num) > 0) {
+
+in cases where strlen(str)=3 and num=7 to fail (ie, 3-7 is -4,
+and -4 is NOT greater than 0 last time I checked), the if
+statement passes instead.
+
+I hope this helps someone else avoid the code problems I was
+having.  I'm sure they'll fix this for 6.2.  SASC continues,
+IMHO, to be the best development environment for the Amiga bar
+none.
+
+  - steve
+
+
+Article 22955 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!cbmvax!cbmehq!cbmger!edohwg!heinz
+From: heinz@edohwg.adsp.sub.org (Heinz Wrobel)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re:  SAS6.1 users: please read
+Message-ID: <heinz.0561@edohwg.adsp.sub.org>
+Date: 3 Dec 92 19:40:50 GMT
+References: <92337.012542MLO@SLACVM.SLAC.STANFORD.EDU> <ByMz9y.J0H@fc.hp.com>
+Organization: Edotronik GmbH
+Lines: 15
+
+In article <ByMz9y.J0H@fc.hp.com> koren@fc.hp.com (Steve Koren) writes:
+>But personally, I'd expect the result of doing arithmetic on a signed
+>and unsigned int to result in a signed number.
+
+Sorry. If one of the operands is unsigned then you'll get an unsigned result.
+
+>   - steve
+
+--
+Heinz Wrobel, Edotronik GmbH (ECG018)
+FAX +49 89 850 51 25 / TEL +49 89 850 25 20 (HOME!&VOICE, sometimes...)
+Path: cbmehq!cbmger!edohwg!heinz@cbmvax.commodore.com
+"It's good to have a mouse, it's faster if you can do without one..."
+"He who doesn't develop with an A2024 doesn't know about font independent
+ user interfaces..."
+
+
+Article 22987 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!mcsun!uunet!ukma!gatech!concert!sas!mozart.unx.sas.com!jamie
+From: jamie@cdevil.unx.sas.com (James Cooper)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS6.1 users: please read
+Message-ID: <Byr0Gs.1qn@unx.sas.com>
+Date: 4 Dec 92 18:53:14 GMT
+References: <92337.012542MLO@SLACVM.SLAC.STANFORD.EDU> <ByMz9y.J0H@fc.hp.com>
+Sender: news@unx.sas.com (Noter of Newsworthy Events)
+Organization: SAS Institute Inc.
+Lines: 32
+Originator: jamie@cdevil.unx.sas.com
+Nntp-Posting-Host: cdevil.unx.sas.com
+
+
+In article <ByMz9y.J0H@fc.hp.com>, koren@fc.hp.com (Steve Koren) writes:
+>LORETI, Maurizio (MLO@SLACVM.SLAC.STANFORD.EDU) wrote:
+>> Is this a real error? strlen returns a size_t argument
+>> according with ANSI, and size_t (defined in <stddef.h>) is
+>
+>Maybe you're right; maybe its supposed to because size_t is unsigned int
+>even though num is signed.
+>
+>However, at the very least it is something to be aware of, because when
+>I compile this under 5.10b it does just the opposite thing with the same
+>code :-)
+>
+>I can believe the program is doing the correct thing by ANSI standards.
+>But personally, I'd expect the result of doing arithmetic on a signed
+>and unsigned int to result in a signed number.
+
+Maurizio is correct.  Your code is operating according to the ANSI
+standard rules for handling mathematics on different types (unsigned vs
+signed).  Therefore, this cannot be "fixed"...
+
+It is something worth noting, though.  Perhaps we can add it to Appendix
+5, "Converting from Version 5 to Version 6" in the next set of manuals
+(and update pages, when we do 'em).
+
+-- 
+---------------
+Jim Cooper
+(jamie@unx.sas.com)                             bix: jcooper
+
+Any opinions expressed herein are mine (Mine, all mine!  Ha, ha, ha!),
+and not necessarily those of my employer.
+
+
+Article 23016 of comp.sys.amiga.programmer:
+Path: etek.chalmers.se!chalmers.se!sunic!news.funet.fi!fuug!fipnet!diode.fipnet.fi!elfuerte!harry
+From: harry@elfuerte.fipnet.fi (Harri P Pesonen)
+Newsgroups: comp.sys.amiga.programmer
+Subject: Re: SAS6.1 users: please read
+Message-ID: <harry.03fq@elfuerte.fipnet.fi>
+Date: 5 Dec 92 16:11:58 GMT
+Organization: Fipnet, Helsinki, Finland
+Lines: 15
+X-NewsSoftware: GRn 1.16f (10.17.92) by Mike Schwartz & Michael B. Smith
+
+In article ??? koren@fc.hp.com (Steve Koren) writes:
+> 
+> I can believe the program is doing the correct thing by ANSI standards.
+> But personally, I'd expect the result of doing arithmetic on a signed
+> and unsigned int to result in a signed number.
+
+I thought that it depends on what is on the left side.
+
+(unsigned)1 - (signed)2 -> (unsigned)-1, which is 65535 or 2^32-1
+
+>    - steve
+
+-- 
+    Harri Pesonen               harry@elfuerte.fipnet.fi
+    Helsinki, Finland, EC?      Markka is floating...  1 USD = 5.1 FIM
+
+
+Article 623 of comp.programming:
+Newsgroups: comp.programming
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!uunet!mnemosyne.cs.du.edu!nyx10!colin
+From: colin@nyx10.cs.du.edu (Colin Plumb)
+Subject: Re: Best way to manage memory in a text editor
+Message-ID: <1993Dec6.222518.14989@mnemosyne.cs.du.edu>
+X-Disclaimer: Nyx is a public access Unix system run by the University
+ 	of Denver for the Denver community.  The University has neither
+ 	control over nor responsibility for the opinions of users.
+Sender: usenet@mnemosyne.cs.du.edu (netnews admin account)
+Organization: Nyx, Public Access Unix at U. of Denver Math/CS dept.
+References: <1993Dec5.171902.21420@bilver.oau.org>
+Date: Mon, 6 Dec 93 22:25:18 GMT
+Lines: 29
+
+In article <1993Dec5.171902.21420@bilver.oau.org>,
+Alex Matulich <alex@bilver.oau.org> wrote:
+>
+>Hi.  I'm the author of a timed script player for titling foreign videos.
+>My users have been clamoring for a built-in editor to my software, so I
+>began writing a simple text editor to do the job.
+>
+>I soon discovered that I had several memory management options open to me,
+>and I was uncertain which was best.  Certainly some were more difficult to
+>implement than others. 
+
+Get a book titled _The Craft of Text Editing: Emacs for the modern world_.
+It is the definitive reference for all sorts of algorithms.  It's also
+highly enlightening just to read.  By Craig Finseth.  MIT PRess, *I think*,
+but I might be wrong.
+
+In any case, the best general algorithm is the buffer gap.  That is,
+you have a buffer of a given size, with all the text smashed up against
+the beginning and end of the buffer, with a gap where the cursor is.
+(Actually, don't move the gap until you type a character.)
+
+If the gap "fills in" and becomes zero size, you can either make the
+buffer larger, or go to a paged buffer gap, where you keep a list of
+fixed-size pages, and split and merge when they become empty and full.
+
+But get Finseth's book.  It addresses *all sorts* of issues in text editor
+design.
+-- 
+	-Colin
+
+
+Article 625 of comp.programming:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!agate!usenet
+From: william@pinoko.berkeley.edu (William E. Grosso)
+Newsgroups: comp.programming
+Subject: Re: Best way to manage memory in a text editor
+Date: 6 Dec 1993 23:55:03 GMT
+Organization: University of California, Berkeley
+Lines: 14
+Message-ID: <2e0gon$rml@agate.berkeley.edu>
+References: <1993Dec6.222518.14989@mnemosyne.cs.du.edu>
+NNTP-Posting-Host: pinoko.berkeley.edu
+
+Colin Plumb writes
+> 
+> Get a book titled _The Craft of Text Editing: Emacs for the modern world_.
+> It is the definitive reference for all sorts of algorithms.  It's also
+> highly enlightening just to read.  By Craig Finseth.  MIT PRess, *I think*,
+> but I might be wrong.                                 ^^^^^^^^^
+> 
+
+
+Springer-Verlag. 1-800-Springer.
+
+
+
+Bill Grosso
+
+
+Article 626 of comp.programming:
+Newsgroups: comp.programming
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!uunet!cs.utexas.edu!utnut!torn!newshub.ccs.yorku.ca!oz
+From: oz@ursa.sis.yorku.ca (Ozan S. Yigit)
+Subject: Re: Best way to manage memory in a text editor
+In-Reply-To: alex@bilver.oau.org's message of Sun, 5 Dec 1993 17:19:02 GMT
+Message-ID: <OZ.93Dec6221357@ursa.sis.yorku.ca>
+Followup-To: comp.programming
+Sender: news@newshub.ccs.yorku.ca (USENET News System)
+Organization: The Electric Skillet
+References: <1993Dec5.171902.21420@bilver.oau.org>
+Date: Tue, 7 Dec 1993 03:13:57 GMT
+Lines: 1274
+
+Alex Matulich asks for some ideas on memory management for
+his editor:
+	[some ideas he came across]
+
+   That's all I could think of.  Does anybody else have any better ideas, or
+   recommendations?  How do most text editors handle this issue? 
+
+you already know about the finseth book, which is an ok reference,
+but for additional ideas, take a look at pike's article at SP&E[1]
+and the oberon book[2]. if you want to use buffer-gap or something
+like it, here is some code by Lars Wirzenius that may help you get
+started.
+
+oz
+---
+[1] Rob Pike.
+    The Text Editor sam
+    Software--Practice and Experience (17), 813-845.
+    1987
+    [ftp-able as nexus.yorku.ca:pub/oz/sam.ps.Z]
+
+[2] Wirth & Gutknecht
+    Project Oberon: The Design of an Operating System & Compiler
+    Addison-Wesley
+    1993
+---
+
+[...]
+
+
+Article 2566 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!sol.ctr.columbia.edu!news.kei.com!yeshua.marcam.com!zip.eecs.umich.edu!umn.edu!kksys.com!haapi!bee!sar
+From: sar@bee.beehive.mn.org (Steven A. Reisman)
+Subject: Re: counting 1 bits
+References: <1993Dec13.142639.12004@cs.kuleuven.ac.be>
+Organization: Steven Reisman & Associates
+Date: Tue, 14 Dec 1993 04:29:00 GMT
+X-Newsreader: TIN [version 1.1 PL8]
+Message-ID: <1993Dec14.042900.10161@bee.beehive.mn.org>
+Lines: 29
+
+Stefaan Decorte (stefaan@cs.kuleuven.ac.be) wrote:
+
+: Does there exist an (efficient) instruction to count the number of 1 bits in a 
+: unsigned long data type?  (preferably in C but assembler is also ok).
+: Or does there exist a way around performing the inefficient 32-part loop?
+
+Try the following:
+
+
+#include <stdio.h>
+
+int	cardcount(unsigned long x)
+{
+	x = (x & 0x55555555) + ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
+	return x % 255;
+}
+
+main ()
+{
+  printf("%d\n", cardcount(0xFFFFFFFF));
+  printf("%d\n", cardcount(0x12345678));
+  printf("%d\n", cardcount(0x12481248));
+}
+-- 
+Steven A. Reisman
+12695 4th St. S.                                  sar@beehive.mn.org      
+Afton, MN  55001                                      (612) 436-7125
+
+
+Article 6140 of comp.lang.c:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!agate!doc.ic.ac.uk!pinky.shu.ac.uk!hs-5419-john.shu.ac.uk!J.R.Jagger
+From: J.R.Jagger@shu.ac.uk (Jon Jagger)
+Newsgroups: comp.lang.c
+Subject: Re: coding standards wanted
+Date: Wed, 12 Jan 1994 11:41:33
+Organization: Sheffield Hallam University
+Lines: 12
+Message-ID: <J.R.Jagger.26.000BB1AC@shu.ac.uk>
+NNTP-Posting-Host: hs-5419-john.shu.ac.uk
+X-Newsreader: Trumpet for Windows [Version 1.0 Rev A]
+
+John Korman was asking about coding standards.
+Someone else mentioned a book but they could not remember the details.
+I think they were refering to
+
+C Style: Standards and Guidelines
+by David Straker
+published by Prentice Hall
+ISBN 0-13-116898-3
+
+It is a good book, well worth a read.
+Cheers
+JJ
+
+
+Article 1247 of comp.programming:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!sol.ctr.columbia.edu!news.unomaha.edu!crcnis1.unl.edu!manager
+From: mgleason@cse.unl.edu (Mike Gleason)
+Newsgroups: comp.programming
+Subject: Re: Algorithm for finding all possible combinations
+Date: 30 Jan 1994 22:57:43 GMT
+Organization: NCEMRSoft
+Lines: 176
+Distribution: world
+Message-ID: <2ihe18$hqu@crcnis1.unl.edu>
+References: <2ighh8$g8f@nntp.hut.fi> <Jan.30.16.35.33.1994.13266@pegasus.rutgers.edu>
+NNTP-Posting-Host: cse.unl.edu
+
+chiun@pegasus.rutgers.edu (Remo Williams) writes:
+
+|>	I have three chunks of a data, named a, b and c. I need to
+|>	process them in every possible order. So I need to organize
+|>	them like this:
+|>		a b c
+|>		a c b
+|>		b a c
+|>		b c a
+|>		c a b
+|>		c b a
+
+|Pseduocode:	z:=c
+|		for x:= a to c do
+|		    for y:= b to c do
+|			if (x<y) and (y<z) do
+|			write (x,y,z)
+|			write (z,y,z)
+
+That's swell, but I believe the original poster wanted something for
+the general case.
+
+Here's a chunk of code I wrote last year for this purpose.  This is
+copyrighted code, but I don't mind what you use it for as long as
+you don't use it as your homework assignment:
+
+
+/* WeakPermDriver.c
+ * Copyright 1993 by Mike Gleason.
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define DONE				(1)
+#define NOT_DONE			(0)
+#define DEFAULT_N			(4)
+#define MAXPERMSIZE			(32)
+
+typedef int SetElement;
+typedef SetElement Permutation[MAXPERMSIZE];
+
+static void PermToCycle(Permutation p, int permSize, char *cycle)
+{
+	int i, j;
+	Permutation used;
+	SetElement x, y, cstart;
+	int ncycles = 0;
+
+	for (i=0; i<permSize; i++)
+		used[i] = 0;
+
+	*cycle++ = '(';
+	x = 1;
+	used[x-1] = 1;
+	cstart = x;
+	*cycle++ = (char)(x + '0');
+
+	for (;;) {
+		y = p[x-1];
+		if (y == cstart) {
+			/* End cycle. */
+			/* First get rid of any 1-cycles. */
+			if (cycle[-2] == '(')
+				cycle -= 2;
+			else {
+				*cycle++ = ')';
+				++ncycles;	/* Count 2-cycles, and larger. */
+			}
+			x = -1;
+			for (j=0; j<permSize; j++)
+				if (used[j] == 0) {
+					x = j + 1;
+					cstart = x;
+					used[j] = 1;
+					*cycle++ = '(';
+					*cycle++ = (char)(x + '0');
+					break;
+				}
+			if (x < 0)
+				break;		
+		} else {
+			*cycle++ = (char)(y + '0');
+			used[y - 1] = 1;
+			x = y;
+		}
+	}
+	if (ncycles == 0)
+		*cycle++ = '1';		/* Must be identity cycles. */
+	*cycle = 0;
+}	/* PermToCycle */
+
+static void PrintPerm(Permutation p, int permSize, int permNum)
+{
+	int i;
+	char cy[128];
+
+	printf("%3d: ", permNum);
+	PermToCycle(p, permSize, cy);
+	for (i=0; i<permSize; i++)
+		printf("%d%c", p[i], (i == permSize - 1) ? ' ' : '-');
+	printf(" = %s\n", cy);
+}	/* PrintPerm */
+
+
+
+static int NextPerm(Permutation p, int permSize)
+{
+	int i;
+	
+	/* First find where in the permutation the "largest" element is. */
+	for (i=0; p[i] != permSize; ) ++i;
+
+	/* Check to see if that element is in the first position. */
+	if (i==0) {
+		/* If this element is in the first position, and the size of
+		 * the (sub)permutation is only 1 element, there is no next
+		 * permutation, so say we're finished.  We'll get to this point
+		 * if the permutation we were asked to "next" was in descending
+		 * order, and that one is the last one, therefore there is no
+		 * next permutation.
+		 */
+		if (permSize==1)
+			return DONE;
+
+		/* Otherwise, shift all the other elements "back" one slot. */
+		memmove(p, p+1, (permSize - 1) * sizeof(SetElement));
+		
+		/* Recursively call myself to work on a smaller sub-permutation. */
+		if (NextPerm(p, permSize - 1) == DONE)
+			return DONE;
+			
+		/* Now stick the "largest" element in the last position. */
+		p[permSize - 1] = (SetElement) permSize;
+	} else {
+		p[i] = p[i-1];
+		p[i-1] = permSize;
+	}
+	return (NOT_DONE);
+}	/* NextPerm */
+
+
+
+void main(int argc, char *argv[])
+{
+	int n = DEFAULT_N;	/* Number of elements in the set to permute. */
+	int permNum = 0;	/* Not the rank, since they're not computed
+						 * in ascending order.
+						 */
+	Permutation perm;	/* The set of elements. */
+	int i;
+
+	/* Get the 'n' from the command line, if you specified one. */
+	if (argc > 1) {
+		i = atoi(argv[1]);
+		if ((i > 1) && (i <= MAXPERMSIZE))
+			n = i;
+	}
+
+	/* Initialize the first permutation. */
+	for (i=0; i<n; i++)
+		perm[i] = i+1;
+	
+	/* Loop until we've found them all. */
+	do {
+		PrintPerm(perm, n, ++permNum);
+	} while (NextPerm(perm, n) == NOT_DONE);
+	
+	exit(0);
+}	/* main */
+
+/* eof */
+--
+______________________________________________________________________________
+mike gleason                 mgleason@cse.unl.edu             NCEMRSoft, baby!
+
+
+Article 5332 of comp.sys.amiga.programmer:
+Newsgroups: comp.sys.amiga.programmer
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!xlink.net!uni-heidelberg!rz.uni-karlsruhe.de!stepsun.uni-kl.de!uklirb!feck
+From: feck@informatik.uni-kl.de (Christoph Feck IRZ)
+Subject: Re: Text Editor: suggest some features you would like [LONG]
+Message-ID: <1994Feb1.154058@informatik.uni-kl.de>
+Sender: news@uklirb.informatik.uni-kl.de (Unix-News-System)
+Nntp-Posting-Host: uklirb.informatik.uni-kl.de
+Organization: University of Kaiserslautern, Germany
+References: <2hdn8n$o24@st-james.comp.vuw.ac.nz> <2hgvt9$14tt@msuinfo.cl.msu.edu> <DAST.94Jan26105934@pop.sth.frontec.se> <2ij1t8INNd7h@iraun1.ira.uka.de>
+Date: Tue, 1 Feb 1994 14:40:58 GMT
+Lines: 90
+
+My (never completed) editor uses a double linked list of
+doubly buffer-gapped arrays with pointers and lenghts to
+pooled and multi buffer-gapped lines :)  Uh, sounds wired?
+
+Ok, lemme explain:  (All from mind, I'm not here at my Amiga)
+
+struct Text
+{
+    struct List blocks;
+    ...
+};
+
+struct Block
+{
+    struct MinNode node;
+    word allocated;   /* size of the array */
+    word firstfree;   /* implies a gap at the and of the array */
+    word gap;         /* second, `floating' gap */
+    word gapsize;
+    struct Line *array;
+};
+
+
+array looks like this:
+
+array -> +-------------+
+         | struct Line | 0    entry 0 always used (unless gap is 0)
+         +-------------+
+         | struct Line | 1
+         +-------------+
+         | struct ELine| 2    gap = 2
+         +-------------+
+         | (free)      | 3    gapsize = 2 (2..3)
+         +-------------+
+         | struct Line | 4    gap + gapsize = 4
+         +-------------+
+         | struct Line | 5
+         +-------------+
+         | struct ELine| 6    firstfree = 6
+         +-------------+
+         | (free)      | 7    allocated = 8 (0..7)
+         +-------------+
+
+Emtpy array (can be removed during garbage collection):
+
+array -> +-------------+
+         | struct ELine| 0    allocated = 1, gap = 0, gapsize = 0, firstfree = 0.
+         +-------------+
+
+An array should not hold more than 200...1000 lines.  (depending on total no. of lines)
+
+struct Line      (8 bytes, quite handy for scaled 020 indexing)
+{
+    char *string;   /* points to address into pool */
+    uword length;   /* 1...65535 chars in one line (including '\0' byte) */
+    uword flags;   /* misc flags, for display routines, garbage collectors, and folds */
+};
+
+For ease of use, the ending Line in a block looks like this:
+
+struct ELine
+{
+    char *null;   /* always NULL */
+    struct Line *next;  /* NULL, if no next line (EOT) */
+};
+
+Using gaps avoids large block moves, when inserting/removing lines.
+
+
+Now the pools...  Pools are actually standard exec pools, like
+in Allocate/Deallocate.  Every string starts on a 8 byte boundary.
+Inserting characters requires reallocating a puddle only every 8
+chars.  The total overhead per line is about 14 bytes (average).
+
+The routines are a bit complicated ;)  For example, to copy
+a selection to another text, the routine collects as much
+adjacent lines in a pool as possible and copies them using
+CopyMemQuick()
+
+Moving to another position just requires re-linking and perhaps
+a bit sorting the struct Blocks.
+
+More about buffer gaps can be read in the amazing book:
+"The Craft of Text Editing - Emacs for the Modern World"
+
+Ciao,
+Christoph
+
+3k// Christoph Feck, TowerSystems
+\X/ Amiga - Intuition inside.
+
+
+Article 10209 of comp.lang.c:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!agate!ames!olivea!hal.com!parlo.hal.COM!not-for-mail
+From: paul@hal.COM (Paul Sander)
+Newsgroups: comp.lang.c,comp.std.c
+Subject: Re: allocating 0 bytes with malloc()?
+Date: 27 Feb 1994 02:37:46 -0800
+Organization: HaL Computer Systems, Inc.
+Lines: 46
+Message-ID: <2kpt5q$6gb@parlo.hal.COM>
+References: <1994Feb21.112831.1594@inmos.co.uk> <mmj5ohINNphv@exodus.eng.sun.com> <id.DZ871.EL3@nmti.com> <mn092vINNa0o@exodus.Eng.Sun.COM>
+NNTP-Posting-Host: parlo.hal.com
+Xref: dd.chalmers.se comp.lang.c:10209 comp.std.c:1104
+
+In article <mn092vINNa0o@exodus.Eng.Sun.COM>,
+Robert Corbett <corbett@lupa.Eng.Sun.COM> wrote:
+>>In article <mmj5ohINNphv@exodus.eng.sun.com>,
+>>
+>>Non-portable code:
+>>
+>>	ptr = malloc(size);
+>>	if(ptr==0 && size!=0) fail...
+>>
+>>Portable code:
+>>
+>>	if(size == 0)
+>>		ptr = NULL;
+>>	else {
+>>		ptr = malloc(size);
+>>		if(ptr==0) fail...
+>>	}
+>>
+>>I don't see the problem.
+>
+>Merriam Webster's Collegiate Dictionary, tenth edition, defines the word
+>obstacle as "something that impedes progress or achievement."  Note the
+>word "impedes."  An obstacle need not prevent progress or achievement, it
+>need only impede it.
+
+Most folks I know who are concerned about this issue have this macro in
+their portability library:
+
+#define myMalloc(x) ( (x) ? malloc(x) : (void*) 0 )
+
+
+They don't seem to consider malloc's behavior in this regard to be much
+of an obstacle.  And those that don't like their system's implementation
+of malloc for whatever reasons replace it anyway; there are lots of free
+implementations of it around and it's easy to add one to a link line.
+
+I guess I work on a different set of problems than Mr. Corbett; I've
+never needed to pass a 0 argument to malloc.  Instead, I've always found
+ways to optimize away the need to allocate no memory.  But I would be
+interested in reading (via email) about cases where this technique
+substantially simplified the code.
+-- 
+Paul M. Sander  (408) 379-7000  |  "You are in a maze of twisty little
+HaL Computer Systems, Inc.      |   methods, all just a little different."
+1315 Dell Avenue                |   
+Campbell, CA  95008  USA        |
+
+
+Article 10479 of comp.lang.c:
+Newsgroups: comp.lang.c,comp.std.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!news.unt.edu!news.oc.com!pssparc2.oc.com!lfw
+From: lfw@pssparc2.oc.com (Larry Weiss)
+Subject: Re: allocating 0 bytes with malloc()?
+Message-ID: <lfw.762560906@pssparc2.oc.com>
+Sender: usenet@ra.oc.com
+Organization: OpenConnect Systems, Dallas, TX
+References: <jeffroCL24Ks.3qr@netcom.com> <KARL.94Feb13142514@ursa-major.spdcc.com> <761528644snz@genesis.demon.co.uk> <1994Feb21.112831.1594@inmos.co.uk> <2kvpth$56i@bb29c.mdd.comm.mot.com>
+Distribution: na
+Date: Tue, 1 Mar 1994 22:28:26 GMT
+Lines: 44
+Xref: dd.chalmers.se comp.lang.c:10479 comp.std.c:1140
+
+mitchell@mdd.comm.mot.com (Bill Mitchell) writes:
+
+>in comp.lang.c, conor@inmos.co.uk (Conor O'Neill) said:
+>>However, unfortunately the issue is now moot. ANSI C says that
+>>malloc(0) is one of those funny little wrinkles, and as such,
+>>programmers must code around it.
+
+>Where?  Section 4.10.3.3 says, in its entirety:
+>    4.10.3.3 The malloc Function
+>    
+>    Synopsis
+>        #include <stdlib.h>
+>        void *malloc(size_t size);
+>    
+>    Description
+>        The malloc function allocates space for an object whose size is
+>        specified by size and whose value is indeterminate.
+>    
+>    Returns
+>        The malloc function returns either a null pointer or a pointer to
+>        the allocated space.
+
+There is additional language in the enclosing section 7.10.3 (ISO numbering, 
+your 4.10.3):
+
+7.10.3 Memory management functions
+
+   The order and contiguity of storage allocated by sucessive calls to the
+calloc, malloc, and realloc functions is unspecified.  The pointer returned
+if the allocation succeeds is suitably aligned so that it may be assigned
+to a pointer to any type of object and then used to access such an object
+or an array of such objects in the space allocated (until the space is 
+explicitly freed or reallocated).  Each such allocation shall yield a 
+pointer to an object disjoint from any other object.  The pointer returned
+points to the start (lowest byte address) of the allocated space.  If
+the space cannot be allocated, a null pointer is returned.  If the size 
+of the space requested is zero, the behavior is implementation-defined;
+the value returned shall be either a null pointer or a unique pointer.
+The value of a pointer that refers to freed space is indeterminate.
+
+-- 
+Larry Weiss, lfw@oc.com  
+214/888-0471
+
+
+Article 10274 of comp.lang.c:
+Newsgroups: comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!hunts.x.co.uk!clive
+From: clive@sco.com (Clive D.W. Feather)
+Subject: Re: malloc(0)
+Sender: clive@x.co.uk (Clive Feather)
+Message-ID: <CLxF2A.DJ@x.co.uk>
+Date: Mon, 28 Feb 1994 08:46:58 GMT
+References: <plf.762372852@bert.cs.byu.edu>
+Organization: Santa Cruz Organization
+Lines: 22
+
+In article <plf.762372852@bert.cs.byu.edu> plf@bert.cs.byu.edu (Paul L Fagerburg) writes:
+> What's the big deal about malloc(0)? It's really considered bad
+> programming style. The ANSI definition defines malloc(0) to return
+> a NULL pointer; it's that simple. Nobody on God's green earth
+> needs to allocate 0 bytes for use; it's usally to catch that one
+> exception that really shouldn't happen anyway if you're writing
+> clean code.
+
+Gack, another idiot on the loose.
+
+The ISO and ANSI standards both defined malloc(0) to be *either* NULL
+*or* a unique pointer (and there's a separate issue as to what "unique"
+means in this context, but I won't go into it).
+
+While malloc(0) might not appear useful, being able to go realloc(ptr,0)
+is. Any code that dynamically resizes a buffer can potentially use it.
+
+-- 
+Clive D.W. Feather     | Santa Cruz Operation    | If you lie to the compiler,
+clive@sco.com          | Croxley Centre          | it will get its revenge.
+Phone: +44 923 816 344 | Hatters Lane, Watford   |   - Henry Spencer
+Fax:   +44 923 210 352 | WD1 8YN, United Kingdom |
+
+
+Article 10333 of comp.lang.c:
+Newsgroups: comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!psinntp!psinntp!chico.spr.com!psinntp!hns!jabba!hsspes1
+From: t_akrishnan@bart.hns.com
+Subject: Re: Survey: how does your compiler right-shift
+Message-ID: <28FEB199412014462@jabba>
+Sender: hsspes1@jabba (PES GROUP AT HSS)
+Date: Mon, 28 Feb 1994 17:01:00 GMT
+News-Software: VAX/VMS VNEWS 1.41    
+References: <2kghb7$p53@nack.craycos.com> <CLxuHM.78n@bfsec.bt.co.uk>
+Organization: Hughes Network Systems, Inc.
+Lines: 47
+
+In article <CLxuHM.78n@bfsec.bt.co.uk>, dallison@bfsec.bt.co.uk writes...
+>In article p53@nack.craycos.com, ferguson@craycos.com (Scott Ferguson) writes:
+>>Right-shifting a signed int produces different results under different
+>>compilers, some fill in the upper bits with the sign bit, others just
+>>fill with zeros. I'm porting some code that relies heavily on the assumption
+>>that signed int's get filled with the sign bit (it's the mpeg encoder and
+>>decoder).
+
+>Surely the whole idea of a signed shift right is to sign extend.  Is this not
+>defined in the ANSI standard?  
+
+The result of E1>>E2 is E1 right shifted E2 bit positions.  In addition,
+if E1 is an unsigned type or a signed type with a non-negative value, 
+E1>>E2 is defined to yield the result E1 / (2 ^ E2) - where the ^ represents
+exponentiation.  The reason is presumably to ensure that 0>>E2 would always
+yield 0.  On a ones complement machine, an all-bit set value represents a sort
+of 0, in this case, the >> operator will have to do a SIGNED SHIFT to
+generate an all-bit-set zero as the result.
+
+	On a twos complement machine, the right shift operator for a
+non-negative value is always a bit-shift, with 0 filling from the left.  Thus
+it may or may not be a signed shift - the effects are equivalent.
+
+	For negative values of E1 (which implies a signed type for E1),
+the result is implementation-defined.  This would allow systems with no
+signed shift instruction to implement the >> operator efficiently.  Ones
+complement machines with no signed-shift are the only category which would
+have to go to extra lengths to implement >>.
+
+>Most machines have instruction modifiers for
+>both types of shift.
+
+	But some don't have.  The ANSI Rationale 3.3.7 (on a signed shift
+requirement):
+	" ... such a requirement might slow down fast code and ... the
+usefulness of sign extended shifts is marginal. (Shifting a negative
+twos-complement integer arithmetically right one place is NOT the same as
+dividing by two!)."
+
+-----
+/* What is mind? No matter.
+   What is matter? Never mind. */
+
+/* Ajoy Krishnan T,
+   Senior S/W Engineer, Hughes Software Systems,
+   New Delhi - 19, India.
+   (ajoyk%hss@lando.hns.com)*/
+
+
+Article 10701 of comp.lang.c:
+Newsgroups: comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!news.unt.edu!news.oc.com!pssparc2.oc.com!lfw
+From: lfw@pssparc2.oc.com (Larry Weiss)
+Subject: Re: Where can I get the ANSI C specification?
+Message-ID: <lfw.762730464@pssparc2.oc.com>
+Keywords: ANSI C 
+Sender: usenet@ra.oc.com
+Organization: OpenConnect Systems, Dallas, TX
+References: <CM1o3I.12x@acsu.buffalo.edu> <CM30nA.C0D@and.nl> <CM3L24.7JH@noose.ecn.purdue.edu>
+Date: Thu, 3 Mar 1994 21:34:24 GMT
+Lines: 16
+
+kwunnan@dorrenbacher.ecn.purdue.edu (Kwun-Nan Lin) writes:
+>I need a complete ANSI C specification. It will serve as a reference
+>to the compiler I am going to write for my Ph.D thesis.
+
+The least expensive way to get the full text is to purchase the book
+"The Annotated ANSI C Standard" as annotated by Herbert Schildt.
+ISBN 0-07-881952-0
+Osbourne McGraw-Hill
+$39.95
+
+The book contains the standard's text with the ISO 9899 section numbering.
+
+-- 
+Larry Weiss, lfw@oc.com  
+214/888-0471
+
+
+Article 12207 of comp.lang.c:
+Newsgroups: comp.lang.c++,comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!cs.utexas.edu!csc.ti.com!tilde.csc.ti.com!mksol!mccall
+From: mccall@mksol.dseg.ti.com (Fred McCall)
+Subject: Re: Here's a neat idiom for y'all...
+Message-ID: <1994Mar22.163726.18125@mksol.dseg.ti.com>
+Followup-To: comp.lang.c++,comp.lang.c
+Organization: Texas Instruments Inc
+X-Newsreader: TIN [version 1.2 PL0]
+References: <CMu245.DE3@marin.cc.ca.us> <2mb4hs$4vs@crl.crl.com>  <lfw.763998847@pssparc2.oc.com> <2mdapj$9ph@crl2.crl.com> <EJH.94Mar21140731@larry.gsfc.nasa.gov> <2ml75l$d00@chico.staf.phil.ruu.nl>
+Date: Tue, 22 Mar 1994 16:37:26 GMT
+Lines: 29
+Xref: dd.chalmers.se comp.lang.c++:14006 comp.lang.c:12207
+
+Hendrik Jan Veenstra (hjv@phil.ruu.nl) wrote:
+
+: But, as some other have pointed out already, this usage is fairly non-standard
+: and for many (including myself) it's 'strange' to read.  It just don't look
+: good...
+: What you want to do is compare ptr to NULL -- i.e. 'if ptr equal to NULL...',
+: which would be translated to C thus: "if (ptr == NULL)...".  For me 'if NULL is
+: equal to ptr' is illogical, irritating, annoying, silly, ...&*&#$*  :-)
+
+Well, some of us find the overly-verbose 'if (ptr == NULL)'
+"illogical, irritating, annoying, silly, ..." and prefer to write it
+as 'if (!ptr)'.  This makes prefectly good sense if one merely
+remembers that a pointer with a nil value is a pointer which does not
+point to a legal object -- in other words, it is an 'un-pointer'.
+
+: ANd besides, any half-decent compiler will emit a warning on construct like
+: "if (a = b)", so the probelm is non-existent to begin with.
+
+I hate compilers that do this.  It's one of those messages I turn off
+(because this isn't a mistake that I, personally, make -- I make other
+mistakes, instead -- and because there are a lot of times when I *am*
+doing an assignment in the conditional clause and I don't want my real
+errors obscured by a bunch of noisy warnings).
+
+-- 
+"Insisting on perfect safety is for people who don't have the balls to live
+ in the real world."   -- Mary Shafer, NASA Ames Dryden
+------------------------------------------------------------------------------
+Fred.McCall@dseg.ti.com - I don't speak for others and they don't speak for me.
+
+
+Article 12260 of comp.lang.c:
+Newsgroups: comp.lang.c++,comp.lang.c
+From: fred@genesis.demon.co.uk (Lawrence Kirby)
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!demon!genesis.demon.co.uk!fred
+Subject: Re: Here's a neat idiom for y'all...
+References: <CMu245.DE3@marin.cc.ca.us> <2mb4hs$4vs@crl.crl.com>  <lfw.763998847@pssparc2.oc.com> <2mdapj$9ph@crl2.crl.com> <EJH.94Mar21140731@larry.gsfc.nasa.gov> <2ml75l$d00@chico.staf.phil.ruu.nl> <1994Mar22.163726.18125@mksol.dseg.ti.com>
+Organization: none
+Reply-To: fred@genesis.demon.co.uk
+X-Newsreader: Demon Internet Simple News v1.27
+Lines: 27
+Date: Tue, 22 Mar 1994 20:16:35 +0000
+Message-ID: <764367395snz@genesis.demon.co.uk>
+Sender: usenet@demon.co.uk
+Xref: dd.chalmers.se comp.lang.c++:14076 comp.lang.c:12260
+
+In article <1994Mar22.163726.18125@mksol.dseg.ti.com>
+           mccall@mksol.dseg.ti.com "Fred McCall" writes:
+
+>: ANd besides, any half-decent compiler will emit a warning on construct like
+>: "if (a = b)", so the probelm is non-existent to begin with.
+>
+>I hate compilers that do this.  It's one of those messages I turn off
+>(because this isn't a mistake that I, personally, make -- I make other
+>mistakes, instead -- and because there are a lot of times when I *am*
+>doing an assignment in the conditional clause and I don't want my real
+>errors obscured by a bunch of noisy warnings).
+
+It's common to add an extra set of parentheses to indicate that this is what
+was really intended as in:
+
+if ((a = b))
+
+Compilers like gcc recognise this and suppress the warning. It also makes
+things much clearer to somebody else maintaining the code. It's quite natural
+for assignments in expressiojns to be parenthesised e.g.
+
+if ((ch = getchar()) == EOF)
+
+-----------------------------------------
+Lawrence Kirby | fred@genesis.demon.co.uk
+Wilts, England | 70734.126@compuserve.com
+-----------------------------------------
+
+
+Article 12233 of comp.lang.c:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!eunet.no!EU.net!howland.reston.ans.net!sol.ctr.columbia.edu!news.kei.com!bloom-beacon.mit.edu!senator-bedfellow.mit.edu!tada
+From: tada@ATHENA.MIT.EDU (Michael J Zehr)
+Newsgroups: comp.lang.c
+Subject: Re: Variable Length Structures ?
+Date: 22 Mar 1994 15:36:27 GMT
+Organization: Massachusetts Institute of Technology
+Lines: 40
+Message-ID: <2mn39r$ajs@senator-bedfellow.MIT.EDU>
+References: <Cn0qAy.7KB@cbfsb.cb.att.com> <ua302aa.764269592@sun2>
+NNTP-Posting-Host: alfredo.mit.edu
+
+In article <ua302aa.764269592@sun2> ua302aa@sun2.LRZ-Muenchen.DE (Kurt Watzka) writes:
+>ddewar@cbnewsb.cb.att.com (derek.a.dewar) writes:
+>>Does anyone out there in C-land know if it's at all possible to have 
+>>a variable length structures in C ? Something like the following :
+>Try something like this:
+>   struct blah {
+>      /* fixed fields */
+>      int num_fields;
+>      int var[ 1 ];
+>   }
+>
+>Then allocate memory like this 
+>   struct blah *p = (struct blah *)
+>      malloc( sizeof( struct blah ) +
+>              (num_fields - 1 ) * sizeof( int ) );
+>You can't successfully use sizeof on such a "variable length
+>structure". [or assignment]
+
+
+
+The C standards committee recently ruled that this is not strictly
+conforming and not guaranteed to work.  While it will work on most
+platforms, one should be aware of this when using it.  
+
+Naturally a C vendor is free to provide this as a language extension,
+but if they don't *say* they provide it, then they don't have to.  (No,
+I'm not too happy about the situation either.)
+
+[The reasoning behind the restriction has to do with compilers that
+might do bounds checking based on the declared size of the array.  One
+can also imagine segmented architectures for which the size of the
+struct is just below the size of a segment, but the extra space makes it
+larger than a segment, yet accesses to the array are generated by the
+compiler assuming that the array is in the same segment as the rest of
+the structure.  I'm not claiming there *are* such architectures, only
+that there could be.]
+
+*sigh*
+
+-michael j zehr
+
+
+Article 12415 of comp.lang.c:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!not-for-mail
+From: p0070621@oxford-brookes.ac.uk (Tommy Wareing)
+Newsgroups: comp.lang.c
+Subject: Re: Anecdote wanted...
+Date: 24 Mar 1994 08:09:36 -0600
+Organization: Oxford Brookes University
+Lines: 19
+Sender: daemon@cs.utexas.edu
+Message-ID: <Cn5zEp.EtL@uk.ac.brookes>
+References: <cspw.764443368@alpha.ru.ac.za> <znr764465429k@fenris>
+NNTP-Posting-Host: cs.utexas.edu
+
+Ken Corbin (kenc@fenris.com) wrote:
+> My favorite was a, possibly apocryphal, tale that an early version of a
+> new fighter control software would have flipped the aircraft
+> upside down if it crossed the equator.
+
+The one I heard was that Polaris missiles store the "time since switch-on"
+in a short. The result was that, during the gulf war, they had to be
+rebooted about every 18 hours for the guidance software to work
+properly.
+
+What I want to know is where it displayed the "Keyboard not present -
+Press F1 to continue" message :)
+
+--
+  _________________________   _________________________________________
+ /  Tommy Wareing          \ /  And I dream of movies                  \
+|  p0070621@brookes.ac.uk   X   They won't make about me when I'm dead  |
+ \  0865-483389            / \      - Jon Bon Jovi, Keep the Faith     /
+  ~~~~~~~~~~~~~~~~~~~~~~~~~   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Article 13324 of comp.lang.c:
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!darwin.sura.net!nntp.st.usm.edu!whale.st.usm.edu!not-for-mail
+From: chambles@whale.st.usm.edu (John William Chambless)
+Newsgroups: comp.lang.c
+Subject: Re: `char *a="text"` same as `char a[] = "text"` ??
+Date: 4 Apr 1994 10:52:33 -0500
+Organization: The Greys
+Lines: 73
+Message-ID: <2npd41$29pb@whale.st.usm.edu>
+References: <sstasuke.49.0004A173@wtc34a.daytonOH.ncr.com> <2midmf$5e0@dawn.mmm.com> <2mjvo8$cju@chico.staf.phil.ruu.nl> <1994Apr1.133445.6009@hns.com>
+NNTP-Posting-Host: whale.st.usm.edu
+Summary: Idiots are always right.
+Keywords: RTFM clue ANSI lvalue
+
+In article <1994Apr1.133445.6009@hns.com>, Joe Dunn <jdunn@hns.com> wrote:
+>In article <2mjvo8$cju@chico.staf.phil.ruu.nl>, hjv@phil.ruu.nl (Hendrik Jan Veenstra) writes:
+>|> First of all: there have already been several correct follow-ups to the
+>|> original question. If you're *not* sure about the correctness of your reply,
+>|> you might consider not posting it...
+
+>you should follow your own advice...
+
+ROTFL!
+The irony of your reply is classic considering how totally incorrect
+your post is.
+
+>this is absolutely wrong!! you can modify a exactly like this. only in c++
+>if you declare the pointer to a string a constant can you not modify the string
+
+Oh, really? Wow, you should immediately notify Dennis Ritchie, Brian Kernighan,
+and the ANSI comittee on C! They ALL have it wrong!
+
+>a literal string is nothing more than an array. try it:
+                                                ^^^^^^^^
+Oh, okay. Since it works on YOUR copy of the FooBar WhizBang
+C compiler on _your_ machine, it MUST be valid code!
+
+
+>        char *a = "text";
+>        printf("a = %s\n",a);
+>        a[1] = 'f';
+>        printf("a = %s\n",a);
+
+*deep sigh*
+One more time, class--from the top:
+
+From the ANSI/ISO C Standard, 6.5.7:
+
+	"...the declaration
+
+	char *p = "abc";
+
+	defines p with type "pointer to char" that is initialized to
+	point to an object with type "array of char" with length 4 whose 
+	elements are initialized with a character string literal. If an
+	attempt is made to use p to modify the contents of the array,
+	the behaviour is undefined."
+
+The fourth paragraph of section 5.5 of K&R2 says the same thing.
+
+If you're unsure what "undefined" means, it's in Annex G of the standard,
+or you can read all about it in the comp.lang.c archives.
+>
+>sorry, no difference. in a real operating system that does not have the
+>segmented memory of DOS, code space and data space, these definitions can
+>be used interchangaebly. 
+
+The OS is irrelevant.
+The fact is  that some compilers will accept bletcherous code such as
+your example, but the Standard does not require them to.
+
+Run lint on your example, and see what it says.
+
+> Naturally, when DOS grows up and becomes a true 32 bit operating system
+> then we can all go back to using the statements interchangeably.
+
+Why use them interchangably?
+Most of us have already solved the problem  by learning to write
+ANSI-compliant code. Code that depends on the quirks of a particular
+compiler is dangerous.
+>
+> 
+
+
+-- 
+*  Billy Chambless                  University of Southern Mississippi
+* "IBM is not a necessary evil.  IBM is not necessary."  -- Ted Nelson
+
+
+Article 8 of alt.lang.cfutures:
+Newsgroups: alt.lang.cfutures,comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!uknet!liv!news!bruce
+From: bruce@liverpool.ac.uk (Bruce Stephens)
+Subject: Re: auto int array[n]
+In-Reply-To: lou@xilinx.com's message of Tue, 1 Mar 1994 17:17:39 GMT
+Message-ID: <BRUCE.94Mar3105536@cmsr3.liverpool.ac.uk>
+Sender: news@liverpool.ac.uk (News System)
+Nntp-Posting-Host: cmsr3.scm.liv.ac.uk
+Organization: Centre for Mathematical Software Research, Univ. Liverpool
+References: <ADK.94Feb25182210@ds4.scri.fsu.edu> <1994Mar1.171739.19872@xilinx.com>
+Date: Thu, 3 Mar 1994 10:55:36 GMT
+Lines: 27
+Xref: dd.chalmers.se alt.lang.cfutures:8 comp.lang.c:10642
+
+>>>>> On Tue, 1 Mar 1994 17:17:39 GMT, lou@xilinx.com (Lou Sanchez-Chopitea) said:
+
+>     Probably because it's not needed.
+
+>     void foo (int n)
+>     {
+>         int *pi;
+
+>         pi = calloc( n, sizeof( *pi));
+>         ...;
+>         free( pi);
+>     }
+
+That's all very well, but I still find "int pi[n]" more readable.
+More generally, it would be of great benefit to be able to write
+"double a[n][m]", where n and m are only known at runtime.
+
+Notice that C doesn't even have Fortran's facility with 2-d arrays:
+you can't write
+
+void foo(int n, double a[][n]);
+
+Fortunately, the ANSI C committee is working on it, and at least one
+compiler (GCC) supports this already (together with int pi[n]).
+--
+Bruce                    Institute of Advanced Scientific Computation
+bruce@liverpool.ac.uk    University of Liverpool
+
+
+Article 1572 of comp.programming:
+Newsgroups: comp.programming
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!torn!newshub.ccs.yorku.ca!oz
+From: oz@ursa.sis.yorku.ca (Ozan S. Yigit)
+Subject: Re: Hash function for strings
+In-Reply-To: amundsj@novell.oih.no's message of 3 Mar 1994 17:39:59 GMT
+Message-ID: <OZ.94Mar3155416@ursa.sis.yorku.ca>
+Sender: news@newshub.ccs.yorku.ca (USENET News System)
+Organization: The Electric Skillet
+References: <amundsj.1.0@novell.oih.no>
+Date: Thu, 3 Mar 1994 20:54:16 GMT
+Lines: 27
+
+AMUNDSEN JARLE/3AA/D:
+
+   I am trying to find a good hash function for strings, names that is, and
+   wonder if anyone has an idea on how good such a function can hash. Given
+   that the keys are not known in advance.
+
+there are several good multiplicative ones, eg.
+
+        33      due to dan bernstein [h = (h << 5) + h + c]
+        131     due to gonnet/baeza-yates ("Handbook")
+	65599	due to me (sdbm) [h = (h << 6) + (h << 16) - h + c]
+
+there are also a bunch of scramble-type functions, eg. peter honeyman's
+crc-hash routine from pathalias, or the one from lcc [str and list mgmt
+module]. have you looked at those?
+
+   The function I found to be best, starts at the end of the string and 
+   recursively shifts the hash of the previous character n times to the left and
+   subtracts m, and adds the shift and subtraction of the current character.
+
+is n a constant or the index of the current char? m is the table size?
+
+oz
+---
+C++ was invented because Vogon poetry | electric: oz@sis.yorku.ca
+wasn't destructive enough. -anonymous | ph:[416] 736 2100 x 33976
+
+
+Article 1573 of comp.programming:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!europa.eng.gtefsd.com!library.ucla.edu!csulb.edu!paris.ics.uci.edu!news.claremont.edu!kaiwan.com!kaiwan!preston
+From: preston@kaiwan.com (Preston L. Bannister)
+Newsgroups: comp.programming
+Subject: Re: Hash function for strings
+Date: 3 Mar 1994 13:05:53 -0800
+Organization: Upstanding Systems
+Lines: 41
+Message-ID: <preston.762728626@kaiwan>
+References: <amundsj.1.0@novell.oih.no>
+NNTP-Posting-Host: kaiwan.kaiwan.com
+
+In <amundsj.1.0@novell.oih.no> amundsj@novell.oih.no (AMUNDSEN JARLE/3AA/D) writes:
+
+>I am trying to find a good hash function for strings, names that is, and
+>wonder if anyone has an idea on how good such a function can hash. Given
+>that the keys are not known in advance.
+
+>The keys I used in the test were all different, 1500 in all, and the size
+>of the hash table was 6001. At best, a hash function supplied a unique
+>adress to 75% of the keys, while the rest collided.
+
+I'm rather fond of a simple hash function published in the
+Communications of the ACM a few years back (sorry, no reference).
+
+Briefly the function is:
+
+	char t[256];	/* contains the values 0..255 randomly shuffled */
+
+	char hash(const char* s) {
+		char h = 0;
+		while (*s) {
+			h = t[h ^ *s++];
+		}
+		return h;
+	}
+
+The downside is that this only generates small hash keys (0..255).
+
+The upside is that hash function is _very_ cheap, and tends to
+generate a very uniform distribution of hash keys.  Also, strings that
+hash to the same value tend to be very dissimilar, so searching a hash
+bucket (for instance) is quite fast as the strings miscompare in the
+first few characters.
+
+You can generate bigger hash keys by running the hash function more
+than once, with a different initial value for h, and concatenating the
+results.  This can be faster than running a more complex hash function
+just once.
+-- 
+Preston L. Bannister 
+Upstanding Systems
+preston@kaiwan.com
+
+
+Article 1589 of comp.programming:
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!cs.utexas.edu!swrinde!sgiblab!news.cs.indiana.edu!news.Arizona.EDU!math.arizona.edu!CS.Arizona.EDU!not-for-mail
+From: dave@CS.Arizona.EDU (Dave Schaumann)
+Newsgroups: comp.programming
+Subject: Re: Hash function for strings
+Date: 4 Mar 1994 17:04:23 -0700
+Organization: University of Arizona CS Department, Tucson AZ
+Lines: 64
+Message-ID: <2l8ia7$97d@caslon.CS.Arizona.EDU>
+References: <amundsj.1.0@novell.oih.no> <2l6kis$8jp@scax18.pki-nbg.philips.de>
+NNTP-Posting-Host: caslon.cs.arizona.edu
+
+In article <2l6kis$8jp@scax18.pki-nbg.philips.de>,
+Frank Munkert <ln_fmu@sle20.pki-nbg.philips.de> wrote:
+|
+|In article <amundsj.1.0@novell.oih.no>, amundsj@novell.oih.no (AMUNDSEN JARLE/3AA/D) writes:
+|> I am trying to find a good hash function for strings, names that is, and
+|> wonder if anyone has an idea on how good such a function can hash. Given
+|> that the keys are not known in advance.
+|
+|The performance of several different hash function is discussed
+|in "Aho, Sethi, Ullman: Compilers - Principles, Techniques and Tools;
+|Addison-Wesley, Reading, 1986."
+
+The hash function they use that performs the best is this (well,
+modified just a bit):
+
+	int hash_pjw( char *s, unsigned int size ) {
+	  char *p ; unsigned int h = 0, g ;
+
+	  for( p = s ; *p != '\0' ; p++ ) {
+	    h = (h << 4) + *p
+	    if( (g = h & 0xf0000000) ) { /* note: assumes 32-bit ints */
+	      h = h ^ (g >> 24) ;        /* here, too */
+	      h = h ^ g ;
+	      }
+	    }
+
+	  return h % size ;
+	  }
+
+I've used this with very good results for prime-sized hash tables and
+internal chaining.  For instance, here's the stats for loading /usr/dict/words
+into my hash table using hash_pjw:
+
+	number of rehashes   : 9
+	population           : 24483
+	table size           : 55609
+	load factor          : 0.440270
+	total nodes searched : 73433
+	total search calls   : 52216
+	Avg nodes searched per call: 1.406331
+	probes  keys     %
+	------  -----  ------
+	    1   18982   77.53
+	    2   3498    91.82
+	    3   1218    96.79
+	    4    449    98.63
+	    5    182    99.37
+	    6     83    99.71
+	    7     36    99.86
+	    8     15    99.92
+	    9      7    99.95
+	   10      6    99.97
+	   11      5    99.99
+	   12      1   100.00
+	   15      1   100.00
+
+Note that total search calls > population because of rehashing.
+The hash table starts out at a size of 101, which is probably too
+small, particularly if your planning on loading /usr/dict/words into
+the hash table very often :-).  I can also get a little better behavior
+by tweaking the probe function.
+
+-- 
+Dave Schaumann        dave@cs.arizona.edu
+
+
+Article 6075 of rec.games.hack:
+Newsgroups: rec.games.hack
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!howland.reston.ans.net!agate!ames!ncar!uchinews!cdsmail!timbuk.cray.com!walter.cray.com!ned.cray.com!atl
+From: atl@cray.com (Anthony Laundrie  {x66591 CF/DEV})
+Subject: Easter calculation
+Message-ID: <1994Apr14.101837.9850@ned.cray.com>
+Lines: 26
+Nntp-Posting-Host: tofu.cray.com
+References: <2nb9v7$aqi@dscomsa.desy.de> <1994Mar31.083039.24113@martha.utcc.utk.edu> <2nk8cd$5ju@taco.cc.ncsu.edu>
+Date: 14 Apr 94 10:18:36 CDT
+
+
+   #include <stdio.h>
+
+   easter(y)
+   int y;
+   /* prints the month/day for Easter in a given year */
+   {
+	int a,b,c,d,e,f,g,h,i,k,l,m,n,p;
+
+	a = y % 19;
+	b = y / 100;
+	c = y % 100;
+	d = b / 4;
+	e = b % 4;
+	f = (b + 8) / 25;
+	g = (b  - f + 1) / 3;
+	h = (19*a + b - d - g + 15) % 30;
+	i = c / 4;
+	k = c % 4;
+	l = (32 + 2*e + 2*i - h - k) % 7;
+	m = (a + 11*h + 22*l) / 451;
+	n = (h + l - 7*m + 114) / 31;
+	p = (h + l - 7*m + 114) % 31;
+
+	printf("%d/%d\n",n,p+1);
+   }
+
+
+Article 2014 of comp.programming:
+Newsgroups: comp.programming
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!uunet!mnemosyne.cs.du.edu!nyx10!colin
+From: colin@nyx10.cs.du.edu (Colin Plumb)
+Subject: Re: Data structure for a Text Editor
+Message-ID: <1994Apr13.102452.15600@mnemosyne.cs.du.edu>
+X-Disclaimer: Nyx is a public access Unix system run by the University
+ 	of Denver for the Denver community.  The University has neither
+ 	control over nor responsibility for the opinions of users.
+Sender: usenet@mnemosyne.cs.du.edu (netnews admin account)
+Organization: Nyx, Public Access Unix at U. of Denver Math/CS dept.
+References: <2o5u6r$apr@scratchy.reed.edu>
+Distribution: na
+Date: Wed, 13 Apr 94 10:24:52 GMT
+Lines: 43
+
+In article <2o5u6r$apr@scratchy.reed.edu>,
+Douglas Squirrel <dsquirre@reed.edu> wrote:
+>I am writing a text editor on the Macintosh in Think C.
+>The text is likely to be large (often over 400K, peak about 800K).
+>Editing will be minimal, but viewing will be the main use.  That is, editing
+>should be quick, but viewing should be quicker, even at the expense of edit 
+>speed.
+>Memory will not be a big concern (but it would be nice to avoid being a hog).
+>
+>I am using a linked list of lines terminated by newlines.  The linked list
+>will actually be a balanced binary tree as described by Knuth vol. 3 p.452 ff.
+>
+>Is this 1) reasonable and 2) fast?
+
+I generally hate the linked-list-of-lines technique.
+For lots of good ideas, see The Craft of Text Editing, by Craig Finseth.
+
+Probably the nest is the paged buffer gap.  You break the text into
+a series of pages, each of which is managed by a buffer-gap system.
+You can read the text in a page at a time and build the tree as you do it.
+If you don't edit, the text is basically contiguous in memory.  If you
+edit it, only the pages that hold the data are disturbed.  Using
+fixed-size pages improves memory fragmentation considerably.
+
+What I'd do is in the extra info per page, store the number of newlines
+in the page.  Then use the standard technique in the tree of
+marking each node with the number of newlines in its left subtree
+to let you find the page that holds a given newline (the start of a
+given line) quickly, followed by which linear search is fine in
+a finite-sized page.  That lets you find a given line number very
+quickly.
+
+If you do line-wrapping, and the display width is constant, you can do the
+same for visible lines.  Count a newline every time you have a hard newline
+or reach 80 characters (or whatever).  It sort of breaks down if the
+window keeps changing size, though.  To scroll backwards, you'll have to find
+the previous line's start and work forward from there to figure out where the
+visible tail of it starts.
+
+Don't forget to look at a variety of balanced trees.  I like red-black trees,
+myself.  Then there are B-tree-like variants.
+-- 
+	-Colin
+
+
+Article 2202 of comp.programming:
+Newsgroups: comp.programming
+Path: dd.chalmers.se!news.chalmers.se!sunic!EU.net!sun4nl!baby!jos
+From: jos@and.nl (Jos Horsmeier)
+Subject: Re: Conservative Sorting/Presv Order of Orig??
+Message-ID: <Cor54w.2Jx@and.nl>
+Keywords: sort heap conservative
+Organization: AND Software B.V., Rotterdam
+References: <ConxHx.KHv@acsu.buffalo.edu>
+Date: Sun, 24 Apr 1994 07:07:43 GMT
+Lines: 26
+
+In article <ConxHx.KHv@acsu.buffalo.edu> cudmore@acsu.buffalo.edu (Robert H. Cudmore) writes:
+
+|	I am attempting to sort an array of elements A.  I have a Heap sort
+|up and running, the problem is this:  I need the elements with equal keys
+|to remain in their original order.  Heap sort with building(hiring) and 
+|Sorting(firing) of the array into a heap and then into a sorted array seems
+|to cause the destruction of the original order of all elements. 
+|
+|	Are there efficient O(nlogn) sorting routines that will preserve this
+|original order?  Quicksort seems to do the same destructive ordering of
+|the data where as a simple insertion sort does not.  I would like to stay
+|away from linear complexity sorts and would also like to know if I can't
+|stay away from them.
+
+A cheap trick: for all elements A_1, A_2, ..., A_n add an integer tag
+field to those records and initialize them with the values i for all A_i.
+If two keys compare equal, compare the tag fields. That's all there is
+to it. No two keys will compare equal in this case ...
+
+I hope this helps you out,
+
+kind regards,
+
+Jos aka jos@and.nl
+----------------------------------------------------------------------------
+I'm not hooked on nicotine, it's that I just can't do without it.
+
+
+Article 2212 of comp.programming:
+Newsgroups: comp.programming
+From: fred@genesis.demon.co.uk (Lawrence Kirby)
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!demon!genesis.demon.co.uk!fred
+Subject: Re: Conservative Sorting/Presv Order of Orig??
+References: <ConxHx.KHv@acsu.buffalo.edu>
+Organization: none
+Reply-To: fred@genesis.demon.co.uk
+X-Newsreader: Demon Internet Simple News v1.27
+Lines: 33
+Date: Sun, 24 Apr 1994 15:26:17 +0000
+Message-ID: <767201177snz@genesis.demon.co.uk>
+Sender: usenet@demon.co.uk
+
+In article <ConxHx.KHv@acsu.buffalo.edu>
+           cudmore@acsu.buffalo.edu "Robert H. Cudmore" writes:
+
+>Hello all,
+>
+>        I am attempting to sort an array of elements A.  I have a Heap sort
+>up and running, the problem is this:  I need the elements with equal keys
+>to remain in their original order.  Heap sort with building(hiring) and 
+>Sorting(firing) of the array into a heap and then into a sorted array seems
+>to cause the destruction of the original order of all elements. 
+
+Sorts which preserve the order of equal keys are described as 'stable' sorts.
+
+>        Are there efficient O(nlogn) sorting routines that will preserve this
+>original order?  Quicksort seems to do the same destructive ordering of
+>the data where as a simple insertion sort does not.  I would like to stay
+>away from linear complexity sorts and would also like to know if I can't
+>stay away from them.
+
+Heapsort and Quicksort are not stable. Mergesort is stable, guaranteed O(nlogn)
+in the worst case and is just about the fastest of the O(nlogn) sorts. However
+if you are sorting arrays rather than lists it requires extra workspace (e.g.
+an extra array of n pointers).
+
+You can always make any sort stable by adding a secondary key for
+each element which you initialise in ascending order before starting the
+sort.
+
+-- 
+-----------------------------------------
+Lawrence Kirby | fred@genesis.demon.co.uk
+Wilts, England | 70734.126@compuserve.com
+-----------------------------------------
+
+
+Article 2215 of comp.programming:
+Path: dd.chalmers.se!news.chalmers.se!sunic!trane.uninett.no!nac.no!nntp-oslo.uninett.no!naggum.no!erik
+From: Erik Naggum <erik@naggum.no>
+Newsgroups: comp.programming
+Subject: Re: The Infamous GOTO
+Date: 25 Apr 1994 02:03:17 +0200
+Organization: Naggum Software; +47 2295 0313
+Lines: 74
+Message-ID: <19940425.1934@naggum.no>
+References: <nbschee.85.0010C93D@mailserv.nbnet.nb.ca>
+NNTP-Posting-Host: naggum.no
+
+the condemnations of GOTO are based on the idea that programming a computer
+can be done without reference to or understanding of the actual computer
+being programmed and the less the programmer knows about the hardware, the
+better.  this is obviously false, and teaching this to wanna-be programmers
+is possibly the single worst offense against their intellect, their future
+career, and the against the software industry as a whole.
+
+my tenet is that a programmer who is unable to read the assembly language
+for any given processor on which he programs, does not know what is going
+on, and should not be programming, any more than an architect who has no
+knowledge of actual structures or buildings should not design them.  (other
+aspects of engineering disciplines may or may not apply.)
+
+the belief that GOTO leads to "spaghetti code" is equally obviously false.
+just because you _can_ do something, doesn't mean you will, or have to.
+
+GOTO is not alone, however.  for instance, the C "break", "continue", and
+"return" statements are all variations on the GOTO theme, and allow exit
+from control structures to be more precisely stated than alternatives like
+setting variables that control the looping (thus introducing details of the
+loop behavior where it does not belong) and else'ing through enormous "if"
+statements (thus introducing mental overhead in reading the code), to
+mention two specific examples.
+
+the extremely tiresome thread "REPEAT NO MORE" mentioned in its beginning
+some of the alternatives to loop control structures, and the need for a
+variety of them to support a variety of actual programming needs became
+obvious to most of the readers.  some languages allow labeled loops and an
+"exit" statement to exit a particular loop (Ada), which is just another
+GOTO in disguise, to give just one example, and a lot more elegant than the
+stupidity in the C language with only "exit the innermost loop" construct.
+
+GOTO is fundamental to computer programming.  the key is not to ban it, or
+condemn it, but to invent better ways to express the uses to which it has
+been and may be put.  it is not a coincidence that the languages that
+purport to ban GOTO and variations like the C statements mentioned above,
+are very hard to read because of the clutter introduced to get around the
+lack of these features.  a major disservice to programmers and code
+reviewers alike, in the name of some misunderstood religious cause.
+
+one of the perhaps best examples of the need for the functionality of GOTO
+without GOTO itself, is error processing.  IMNSHO, it makes much more sense
+to "goto error_handler" than to do a lot of processing in the middle of a
+function totally unrelated to processing errors in its assumptions about
+the operating environment.  with languages that has the "return" statement,
+this can effectively isolate the return points and _name_ them.  it is not
+a coincidence that GOTO-less languages and GOTOphobic programmers don't do
+error processing very diligently, and produce lots of code that violate
+Microsoft's look-and-feel "patent" on machines that freeze and crash.
+
+languages that lack the GOTO family of control statements, must have many
+redeeming qualities to maintain a right to be called a _programming_
+language, not just contestants in academic beauty pageants.  functional
+programming languages satisfy this requirement in my mind, and I program
+more in LISP than in any procedural language.  however, when I do program
+in a procedural language, there's usually a GOTO for every 500 statements
+or so.
+
+should beginners be taught to avoid GOTO, or should we all strive not to
+let beginners loose on production software?  programmers who don't know
+when and how to use GOTO properly, will _remain_ beginners, and it is
+better to teach them the reality of the world they will enter before they
+end up with a lot of bad habits and stupid religious notions.  it's just
+like PASCAL programmers who continue to write PASCAL programs in all known
+programming languages, even LISP.  the desirability of an over-protective
+upbringing is probably no higher for programmers than for other people.
+
+best regards,
+</erik>
+--
+Erik Naggum <erik@naggum.no> <SGML@ifi.uio.no>  |  memento, terrigena.
+ISO 8879 SGML, ISO 10744 HyTime, ISO 10646 UCS  |  memento, vita brevis.
+
+for information on SGML and HyTime, try ftp.ifi.uio.no:/pub/SGML first.
+
+
+Article 16676 of comp.lang.c:
+Newsgroups: comp.lang.c
+Path: dd.chalmers.se!news.chalmers.se!sunic!pipex!howland.reston.ans.net!math.ohio-state.edu!jussieu.fr!univ-lyon1.fr!swidir.switch.ch!CERN.ch!dxcern!danpop
+From: danpop@cernapo.cern.ch (Dan Pop)
+Subject: Re: Where to put the {}'s?
+Message-ID: <1994May16.221927.2274@dxcern.cern.ch>
+Sender: danpop@dxcern.cern.ch (Dan Pop)
+Organization: CERN European Lab for Particle Physics
+References: <2r0tet$ak8@acme.gatech.edu> <9umFmc1w165w@qnx.nacjack.gen.nz>
+Date: Mon, 16 May 1994 22:19:27 GMT
+Lines: 23
+
+In <9umFmc1w165w@qnx.nacjack.gen.nz> bruce@qnx.nacjack.gen.nz (Bruce Simpson) writes:
+
+>I don't know of any C compiler worth a pinch of salt that doesn't
+>accept the // form of commenting.  You don't even have to enable
+>C++ compatibility options to use it (hey... even MSC6 lets you use
+>the double slash!)
+
+The // form of commenting does not exist in the C language, it's only a
+syntax error and any compiler that accepts it is simply broken and it's
+not worth a pinch of salt :-)
+
+Consider the following _valid_ C construct:
+
+i = a //* comment */ 2;
+
+If a C compiler fails to compile it properly, that compiler _is_ broken.
+
+Dan
+-- 
+Dan Pop 
+CERN, CN Division
+Email: danpop@cernapo.cern.ch
+Mail:  CERN - PPE, Bat. 31 R-004, CH-1211 Geneve 23, Switzerland
+
+
+Article: 44753 of comp.lang.c
+Path: news.chalmers.se!sunic!trane.uninett.no!eunet.no!nuug!EU.net!howland.reston.ans.net!spool.mu.edu!bloom-beacon.mit.edu!senator-bedfellow.mit.edu!tada
+From: tada@ATHENA.MIT.EDU (Michael J Zehr)
+Newsgroups: comp.lang.c
+Subject: Re: Best way to return to main after an error is detected?
+Date: 8 Jun 1994 13:52:02 GMT
+Organization: Massachusetts Institute of Technology
+Lines: 107
+Message-ID: <2t4ie2$rv6@senator-bedfellow.MIT.EDU>
+References: <jchauvinCr1v88.GEs@netcom.com>
+NNTP-Posting-Host: primavera.mit.edu
+Summary: really general error handling
+
+In article <jchauvinCr1v88.GEs@netcom.com> jchauvin@netcom.com (John H. Chauvin) writes:
+>I have a simple question. What is the best way to return back up the call
+>tree if an error occurs? Here is the way I usually do it. [returning
+>condition codes] Is there a better way?
+
+This is one of those topics that keep coming up.  Whether or not there
+is a "better" way depends on how better is defined, which depends on
+what your development environment is.
+
+[This article should have a generous sprinkling of "usually," "mostly,"
+etc. throughout.  Naturally there are rarely hard and fast rules in
+software engineering.  Please read it accordingly.]
+
+In simple programs, returning an error code is often best, or at least
+most convenient.
+
+In complicated programs, there's another problem that rears its ugly
+head: resource deallocation and/or backtracking.  Suppose you've opened
+a file or malloced some memory and then an error occurs?  Simply
+returning an error code leaves those resources allocated and orphaned.  
+
+If the simple method, returning an error code, is used then functions
+can become quite muddled.  Imagine a function that calls four other
+functions, allocates resources before each call, and has to check for a
+return code, and deallocate everything before returning.
+
+Pretty soon the error-handling becomese a large part of the code, and it
+becomes harder to see the "more important" code the handles the primary
+purpose of the function.  (By "more important" I mean that the primary
+functionality is usually more important to whoever is running the
+program, and thus it's more often going to need maintenance.)
+
+At this point it's generally most convenient to have a full-blown
+error-handling system.  In my experience, the features this needs to
+have are: 
+
+1. non-pervasive.  The error-handling system should be easy to use and
+shouldn't obscure the intent of the rest of the code.  The harded it is
+to use, the more likely it won't get used or will get used improperly.
+
+2. function-registration.  When a resource is allocated, a deallocator
+for it should be registered with the error-handler.  When an error
+occurs, the error-handling system has a list of "cleanup" functions to
+call before control returns to the main body of the program.
+
+3. reentrant/recursive.  It should be possible to stack error traps
+within a large program.
+
+The code which handles these features should also handle displaying the
+error message, so that there's consistent handling of the errors.
+
+
+Implementing such a system is not a huge task but does have some
+pitfalls.  In order to return processing to some point in the code
+without having a number of error returns, one must use setjmp.
+Obviously the last thing the error-handler does after calling the
+cleanup functions is to execute a longjmp.
+
+Using the error-handling system often looks something like:
+
+if (error_exit(error_code, error_class) {
+  /* control returns here after error */
+  error-handling code;
+  return;  /* or something else... */
+}
+
+id = on_error(cleanup, param1, param2, ...);
+do_something();
+if (problem)
+  error(err_code);
+no_error(id);
+...
+clear_error_exit();
+
+In this example, error_exit sets up an error trap.  This has to be a
+macro that does a setjmp.  on_error registers a cleanup function.
+no_error deregisters one.  clear_error_exit clears the error_exit set at
+the beginning.  Of course these functions can be spread out over a
+number of functions.
+
+Often actions have a default cleanup that should be associated with
+them and this can be wrapped in a function.  For example:
+
+void *malloc_remember(size_t size)
+{
+  void *temp;
+  temp = malloc(size);
+  if (temp == NULL)
+    error(ENOMEM);
+  on_error(free, temp);
+  return temp;
+}
+
+Until clear_error_exit is executed, any error will cause the memory
+allocated in malloc_remember to be freed.
+
+Once a system like this is implmented, it can be used much the same way
+as LISP's and C++'s try/catch/throw functions.  It allows one to write
+procedures with full error handling without having the error handling
+code get in the way of the primary functionality.
+
+Just to make it clear, I'll stress that I believe this is overkill for
+simple programs.  I rarely use it in anything less than several thousand
+lines of code.  But I find it absolutely essential for programs much
+larger than this.
+
+-michael j zehr
+
+

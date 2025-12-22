@@ -1,0 +1,3830 @@
+@database ArexxNotes
+
+@node "Main"
+
+                       @{b}  ARexx - First Steps @{ub}
+
+                       @{" The Beginner's Guide " link "what is arfs?"}
+
+This collection of explanations and examples is intended to help a
+complete new-comer to ARexx. It doesn't include every topic, and it
+doesn't say everything there is to say about those topics which it
+does include. But it should give you a clear and successful start, and
+a good basis on which to proceed.
+
+Read the topics, try the examples, and then you'll be ready to
+consult some of the more demanding sources of help such as ARexxGuide.
+
+@endnode
+--------------------------------------------------------------------
+@node "What is ARFS?"
+
+This database is a tutorial aimed at a user wishing to learn how to
+use ARexx.  It covers almost the whole range of ARexx instructions,
+and many of the topics included are accompanied by a small
+ready-to-run demo program.
+
+The database is intended to be accessed using FastRead, a text access
+system designed by Graham Maddox. The entire coverage has been divided
+into 'topics' and, if FastRead is used, a click on a topic title gives
+instant access to the relevant text. The included examples can be run
+simply by clicking on a gadget. This tutorial is also readable by
+Amigaguide, but in that case the example scripts cannot be run.
+
+There are two forms of help supplied as a part of this database :
+
+     ( 1 )   Supplied examples of ready-to-run ARexx scripts
+
+     ( 2 )   An easy way to rehearse ARexx instructions of your own
+
+Read about both of them in the following paragraphs ....
+
+FastRead is a Gui4Cli application, and Gui4Cli is an interpretive GUI
+programming language by Dimitris Keletsekis.
+
+FastRead was written by Graham Maddox, and is used by Gui4Cli as its
+user defined help system.
+
+The text of this database was written by John Collett, who has learned
+much in the process, and who readily acknowledges that he still has
+some way to go.
+
+Contacts :  
+            Graham Maddox : gmaddox@netcentral.co.uk
+            John Collett  : jcollett@waikato.ac.nz
+
+@endnode
+------------------------------------------------------
+@node "Running examples"
+
+The example ARexx scripts in this tutorial are run simply by clicking
+on the [ Macro ] button in the reader window.
+
+             What does the [ Macro ] button actually do?
+             -------------------------------------------
+This is a gadget in the reader window, and executes the contents of a
+script file called 'macro', which in turn runs an Arexx script called
+'Runner.rexx' and provides an output window. that is to say, it opens
+a CLI window, and runs the Runner.rexx program. After viewing the
+results of the example, the CLI window can be closed by a single click
+of the left mouse button.
+
+                 What does 'Runner.rexx' actually do?
+                 -----------------------------------
+This makes use of the fact the FastRead has placed a temporary copy of
+the topic text in a file called Ram:Guide.txt. Runner.rexx looks
+through that text until it finds an ARexx comment line containing
+"Example", and puts that and the following lines into a file called
+Ram:patch.rexx. It stops when it reaches the end of Guide.txt. Then it
+runs the new program called 'patch.rexx'.
+
+@endnode
+------------------------------------------------------
+@node "Do-it-yourself"
+
+            _____________________________________________
+
+            How to try out ARexx instructions of your own
+            _____________________________________________
+
+Go to the 'Try.rexx' topic of this database, and use [ Grab ] to save
+its contents. Save the file to somewhere in the AmigaDOS path list
+such as REXX: or S:. To make it really easy, add the following line to
+your S:Shell-Startup file...
+
+Alias Try "sys:rexxc/rx try.rexx"
+
+This is assuming that you saved it under the name of 'Try.rexx'.
+
+Once that program has been saved, then any time you have a CLI window
+open you can run Try.rexx (or whatever you've called it) for your own
+practice.
+
+Then a practice sequence might go like this :
+
+        |>try
+        |>>right('This string',4)
+        |ring
+        |>>upper('ring')
+        |RING
+        |>><return>          (exits program)
+
+Thus almost any topic you study in this database can be immediately
+explored using your own data as input.  And there are a few hidden
+extras :
+                It's a calculator!
+        |>>(128 - 45) / .25
+        |3320
+
+With a leading full stop it'll carry out instructions such as mumeric
+settings :
+
+        |>>3 / 11
+        |0.2727273
+        |>>.numeric digits 2       /* Note the full stop */
+        |>>3 / 11
+        |0.27
+
+Or try this for a complete mini-program :
+ 
+        |>>.interpret 'do i = 1 to 5 ; say i ; end'
+
+With a leading colon, it'll carry out an AmigaDOS command, as if the
+whole entry had been >>.address command <command> :
+
+        |>>:"copy <sourcefile> <destinationfile"
+        |>>:list            /* You'll get a directory listing */
+
+Explore it. If you try the impossible, you'll get fairly friendly
+error messages.
+
+@endnode
+------------------------------------------------------
+@node "  Try.rexx"
+/*     A Testbed to try out your own ARexx instructions      */
+/* For instructions, read the second topic in this database.  */
+
+rc = 0 ; options prompt ">>"
+
+error: signal on error
+   if rc ~= 0 then do ; say "Command error: RC="rc ; rc = 0 ; end
+
+syntax: signal on syntax
+   if rc ~= 0 then do ; say "*** Error:" errortext(rc) ; rc = 0 ; end
+
+say 'Enter  ?  for help.'
+
+do forever
+   parse pull entry
+   select
+      when entry = "" then exit
+      when strip(entry = '?') then do
+         say "<entry> will display the output of an ARexx expression."
+         say ". <entry> will interpret an ARexx instruction."
+         say ": <entry> will carry out an AmigaDOS command."
+         say "<Return> will exit the program."
+         end
+      when left(entry,1) = "." then interpret substr(entry,2)
+      when left(entry,1) = ":" 
+         then interpret 'address command ' || substr(entry,2)
+
+        /* Other 'when' clauses could be inserted here if you 
+           wish to extend the program. */
+
+      otherwise interpret say entry
+      end
+   end
+
+@endnode
+------------------------------------------------------
+@node "Hello, World"
+                    The traditional first program
+                    -----------------------------
+The first line of an ARexx program must be a comment. If the two lines
+of code below are saved as a script called, say, 'Hello', and then run
+in a CLI window thus :
+
+  >rx Hello
+
+it will produce what you expect. 
+
+Or you can, of course, get 'Runner.rexx' to do it for you, if you
+click on the [ Macro ] button now...
+
+     /* Example */ 
+     say "Hello, World"
+
+@endnode
+------------------------------------------------------
+@node "Supporting libraries"
+                         Supporting libraries
+                         --------------------
+ARexx will get nowhere without LIBS:rexxsyslib.library - you MUST
+have it.  Other libraries listed below are optional supports - you
+can judge for yourself how essential or otherwise they are.
+
+· rexxsupport.library
+Usually regarded as an integral part of the ARexx package, and
+distributed with Workbench 2.1 and 3.0, this library gives you access
+to the following functions :
+
+        Allocmem   ClosePort   Delay    Delete    Forbid   FreeMem   
+        GetArg     GetPkt      MakeDir  OpenPort  Permit   Reply 
+        Rename     ShowDir     Showlist StateF    TypePkt  WaitPkt
+
+· rexxarplib.library
+Not supplied with ARexx, but readily available, this library gives
+access to a handful of useful utility functions, including
+CreateHost(), which in turn opens up 50 or so functions which allow
+you to get to grips with all the Intuition goodies : screens,
+windows, gadgets, menus, graphics .... (Thanks to Willy Langeveld).
+
+· rexxmathlib.library
+Also by Willy Langeveld, this library gives access to a long list of
+maths functions : sin, cos, tan, and so on and so forth.
+
+· And there are others, too many to mention, which serve specialised
+  needs.  
+
+@endnode
+------------------------------------------------------
+@node "Supporting software"
+                         Supporting software
+                         -------------------
+The ARexx package includes some files which are essential, such as
+'rexxmast' and 'rexxsyslib.library' - you can't run ARexx without
+them.
+
+Others are not essential, but very useful. The following are support
+programs, to be used as CLI commands.
+
+        RXC     Terminate ARexx, the opposite of 'rexxmast'.
+                Only needed if you are very low on memory.
+        HI      Halt ARexx scripts.  Very useful if you have a
+                runaway program with a never-ending loop, etc.
+        TS      Start interactive tracing - step by step feedback on
+                everything your program is doing.
+        TE      End interactive tracing.
+        TCO     Open global tracing console. Keeps all trace output
+                in a window of its own, instead of mixing it up with
+                your normal program output.
+        TCC     Close global tracing console.
+        RXSET   Set the value for an ARexx clip, e.g.
+                       RXSET DATAFILE work:source
+                Then an ARexx script would be able to open the
+                required file with : call open('f',getclip('DATAFILE')
+        WaitForPort  
+                Wait for required message port. See the topic
+                'File input/output' and the example there.
+        RXLIB   Add a name to the library list. Does the same as a
+                call to AddLib() within a program.
+@endnode
+------------------------------------------------------
+@node "Clauses"
+                               Clauses
+                               -------
+Clauses are the smallest unit of ARexx that can be executed.
+A clause may be classified as :
+        
+  An assignment : Contains a variable symbol followed by '='
+  e.g. n = 5 ; str = 'These words'
+
+  An instruction : Begins with a keyword
+    ADDRESS  ARG  BREAK  CALL  DO  DROP  ECHO  ELSE  END  EXIT  IF 
+    INTERPRET  ITERATE  LEAVE  NOP  NUMERIC  OPTIONS  OTHERWISE  
+    PARSE  PROCEDURE  PULL  PUSH  QUEUE  RETURN  SAY  SELECT  SHELL
+    SIGNAL  WHEN
+
+  A label : A symbol followed immediately by a colon.
+  e.g. Start:
+       MyFunction:
+
+  A null clause : A line consisting of only blanks or comments.
+
+  A command : Any ARexx expression which cannot be classified as one
+  of the above.  The expression is evaluated and passed to an external
+  host which might be AmigaDOS or an application program.
+
+Multiple clauses : Several clauses may be placed on a single line, in
+which case they must be separated by semi-colons. E.g.
+        m = 5 ; n = 2.45 ; x = 20 ; str = "These words"
+
+Clause continuation :  If a single clause is too long to fit on a
+line, it may be continued on the next.  A comma is used to indicate
+continuation.  String and comment entries are automatically continued
+if no closing delimiter has been found.
+
+@endnode
+------------------------------------------------------
+@node "Operators"
+                              Operators
+                              ---------
+In descending order of priority :
+                                  |
+        ~      Logical NOT        |  ==     Exact equality
+        +      Prefix conversion  |  ~==    Exact inequality
+        -      Prefix negation    |  =      Equality
+        **     Exponentiation     |  ~=     Inequality
+        *      Multiplication     |  >      Greater than
+        /      Division           |  >=,~<  Greater than or equal to 
+        %      Integer division   |  <      Less than
+        //     Remainder          |  <=,~>  Less than or equal to
+        +      Addition           |  &      Logical AND
+        -      Subtraction        |  |      Logical inclusive OR
+        ||     Concatenation      |  ^,&&   Logical exclusive OR
+                                  |
+@endnode
+------------------------------------------------------
+@node "Special characters"
+                          Special characters
+                          ------------------
+Control characters
+------------------
+You need to be aware of the following equivalences :
+
+Decimal     :  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
+Hexadecimal :  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+
+Hex numbers are entered thus : '0F'x  ( = 15)
+                               'FF'x  ( = 255)
+
+One great feature about these is that they can be used to specify
+control characters for screen output, and the linefeed character
+'0A'x is used quite often in the examples in this database.  Such
+characters are not easy to read, and it is a good idea to predefine
+any which are going to be used often. Something like "LF = '0a'x"
+near the start of a program means that the characters LF can
+thereafter be used to invoke a linefeed.  '0a'x and '0A'x are
+both legal.
+
+There are several others, of varying degrees of usefulness :
+
+        '07'x = Beep the screen
+        '09'x = Tab
+        '0b'x = Vertical tab
+        '0c'x = Form feed (has the effect of clearing the window)
+        '0d'x = Carriage return
+        '1b'x = Escape
+        '84'x = Down a line   )  !
+        '85'x = Next line     )  !
+        '8D'x = Up a line
+        '9b'x = Control sequence introducer
+
+Some of the above are included in the example below.
+
+Colour setting
+--------------
+The numbers 30, 31, 32, etc., and 40, 41, 42, etc can be used to
+invoke foreground and background colours for output.
+They call for a clumsy little arrangement of characters, and so a
+strong argument exists for pre-defining them as mentioned above with
+LF.
+
+Either of these two sets :
+
+  Using Escape : '1b'x '[32m'    or    Using CSI :    '9b'x '32m'
+
+sets the foreground colour output to colour 2. A closing partner
+using '31' instead of '32' would be needed to reset it to 31, the
+default colour output.  Predefinitions could be :
+
+    white = '9b'x '32m'    off = '9b'x '31m'
+
+See the example below for more examples.
+
+Style setting
+-------------
+The method is very similar to that of colour setting. The numbers 1,
+2, 4 can be used to invoke bold, italics, or underlining. A zero will
+turn any of them off. Again, see the example below.
+
+Combining colour and style
+--------------------------
+Two numerical arguments can be included, separated by a colon.  See
+the example below.
+
+    /* Example */
+    CSI = '9b'x ;  tab = '09'x ; BEEP = '07'x; FF = '0c'x 
+    DL = '84'x ; UL = '8D'x ; LF = '0a'x 
+    bo = CSI || '1m' ; off = CSI || '0m' 
+    say tab bo 'Special characters - special effects' off LF LF
+
+    say DL 'Printed first' UL 'Printed second' DL DL 'Printed third'
+    say 'Those pieces of text were printed in the order shown.'
+    say 'UL and DL, as defined, were used to go up a line'
+    say 'or down a line.'
+    options prompt lf tab || 'Press <Return> to continue' lf
+    pull more
+    say 'These three lines' BEEP
+    say 'of text were all' BEEP
+    say 'accompanied by a BEEP.' BEEP
+    say 'Did you notice?'
+    pull more
+    say 'When you press <Return> next time, the control character'
+    say 'FF will be used, and will have a "Clear window" effect.'
+    pull more
+    say FF || 'This line and the following prompt should be'
+    say 'all you can see now in this window.'
+    pull more
+
+    fg0 = CSI || '0;31m' ; fg1 = CSI || '31m' 
+    fg2 = CSI || '32m' ; fg3 = CSI || '33m'
+    bg0 = CSI || '40m' ; bg1 = CSI || '41m' 
+    bg2 = CSI || '42m' ; bg3 = CSI || '43m'
+    bonw = CSI || '31;42m' ; wonb = CSI || '32;41m'
+    say 'Background and foreground colours'
+    say tab fg2 "Foreground 2" fg3 "Foreground 3"
+    say tab bg1 "Background 1" bg0 ' ' bg2 "Background 2" bg0
+    say tab bonw "Black on white" wonb "White on black" bg0 fg1
+    pull more
+
+    bo = CSI || '1m'
+    it = CSI || '3m'
+    ul = CSI || '4m'
+    off = CSI || '0m'
+    say 'Styles'
+    /* Note the use of a comma as a continuation character
+       to break the following over-long line. */
+    say tab bo || 'Bold ' || off || it || 'Italics ' || off ,
+        || ul || ' Underlined' || off
+    pull more
+    say 'Combined styles'
+    say tab bo || it || 'Bold and italics' || off
+    say tab it || ul || 'Underlined and italics' || off
+    say tab bo || it || ul || 'Bold and italics and underlined' || off
+    pull more
+
+    say 'The lot'
+    str = ' Bold italics underlined in black and white '
+    say tab bonw || bo || it || ul || str || off bg0 fg0 lf
+    say tab tab bo 'T h e    E n d' off LF LF
+
+@endnode
+------------------------------------------------------
+@node "Comments"
+                               Comments
+                               --------
+The first line of every ARexx program must be a comment. It may be as
+little as '/* */', but it must be there.
+
+Comments are always enclosed within '/*' and '*/'.
+
+       /* This is a comment */
+
+       /* This is a comment which shows
+       that comments may extend
+       over any number of lines. */
+  
+       /*Comments may be nested within comments 
+       /* (very handy during program development) */
+       to suppress whole sections temporarily, including any
+       comments which they may already contain. */
+
+Be generous with comments. They help you and other users.
+They do not slow down the performance of a program.
+@endnode
+------------------------------------------------------
+@node "Variables"
+                              Variables
+                              ---------
+
+Oh, what a sensible language ARexx is!
+-------------------------------------
+There are some stupid programming languages which, unless and until
+you tell them so, do not know that, say, 99, is an integer, that 99.9
+contains a decimal point and is therefore a 'real' number, or that 'a
+string of characters' is a string of characters .  Have you tried C,
+with its longs and its shorts and its signed and its unsigned and all
+the other complicated data types?
+
+No such problems in ARexx. If you assign the values of 99, and then
+99.9, and then 'a string of characters' to a variable called, say,
+var, and then ask ARexx to confirm its value between each assignment,
+it will do so quite happily. It knows that arithmetic processes can be
+carried out on numbers, and that strings of characters can have other
+characters added to them, and so on.
+
+For specialists and addicts
+---------------------------
+Are represented thus :  Hexadecimal numbers   'FF'x  ( = decimal 255)
+                        Binary numbers   '00011101'b ( = decimal 29)
+
+    /* Example */
+    var = 99 ; say var
+    say var '* 3 =' var * 3
+    var = 99.9 ; say var
+    say var || '/3 =' var / 3
+    var = 'a string of characters' 
+    var = 'This is ' || var || '.' ; say var
+    say 'Numbers are obviously addable'
+    var = 123 + 456 ; say '123 + 456 =' var
+    say 'and characters can be concatenated using || .'
+    var = '123' || '456' ; say "'123' || '456' =" var
+    say 'What happens if we try to ADD characters?'
+    var = '123' + '456' ; say "'123' + '456' =" var
+    say 'Or if we try to concatenate numbers?'
+    var = 123 || 456 ; say "123 || 456 =" var
+    say 'In tight spots, you may want to find out what'
+    say 'ARexx actually thinks certain variables are.'
+    var = 5 ; say 'What is 5?  5 is a' datatype(var)
+    var = 'A' ; say "What is 'A'?  'A' is a" datatype(var)
+
+@endnode
+------------------------------------------------------
+@node "Arrays"
+                          Defining an array
+                          -----------------
+A variable such as x, n, str, name, and so on exists as a container
+for something - for a number, a string of letters, or whatever.
+An array is a linked set of variables, like a pile of envelopes, a
+library of books, or a row of buckets, all of them, note, being
+containers.  So an array is a set of containers.
+
+Strictly speaking, ARexx does not have arrays in the same way as some
+other languages.  It has 'compound variables'.  The months of the
+year, the days of the week, names of people who live in my street, the
+titles of the books on my shelves, and so on, can be handled as
+compound variables.  They are made up of a stem and any number of
+nodes:
+
+           DAY.n                   PLAYER.a.b
+            |  |                    |     |  \
+         stem  node               stem  node1 node2
+    
+When such variables are used in a program, each node is replaced with
+its current value.  If 'n' has the value 2 then 'DAY.n' will be
+expanded to 'DAY.2'. If 'a' has the value 'Aston Villa', and  'b' has
+the value 'goalkeeper' then 'PLAYER.a.b' will expand to  'PLAYER.Aston
+Villa.goalkeeper'.  The string elements retain their case and any
+embedded spaces.
+
+@endnode
+-----------------------------------------
+@node '  Indexed Arrays - Buckets'
+                      Indexed Arrays - Buckets'
+                      -------------------------
+An array which makes use of numbers in a node is called an indexed
+array. In this example of basic array-handling routines, we use a row
+of buckets :
+
+   · We store the number of buckets.
+   · We check that they are all empty.
+   · We fill some of them. 
+   · We check how many are still empty.
+   · We list the contents of those that are not empty.
+
+    /* Example */
+    say "We have a row of 10 buckets."
+    bucket. = ''     /* They are all now empty */
+
+    /*  It is convenient to store the number of buckets
+        in the zero-eth element of the array */
+    bucket.0 = 10 
+    
+    say "We fill some of them."
+    bucket.1 = 'milk'
+    bucket.2 = 'water'
+    bucket.4 = 'wine'
+    bucket.5 = 'red paint'
+    bucket.7 = 'nectar'
+    bucket.9 = 'cream'
+    bucket.10 = 'mountain dew'
+
+    say 'How many buckets are still empty?'
+    n = 0
+    do i = 1 to bucket.0
+       if bucket.i = '' then n = n + 1
+       end
+    say n "buckets are still empty."
+    
+    say 'And what do the others contain?'
+    do i = 1 to bucket.0
+       if bucket.i = '' then iterate
+       say 'Bucket' i || ' contains' bucket.i || '.'
+       end
+    
+@endnode
+------------------------------------------------------
+@node "  Indexed Arrays - Days"
+                        Indexed Arrays - Days
+                        ---------------------
+
+        /* Example */
+        say 'Days of the week as an indexed array'
+        day.1 = 'Monday' ; day.2 = 'Tuesday' ; day.3 = 'Wednesday'      
+        day.4 = 'Thursday' ; day.5 = 'Friday' ; day.6 = 'Saturday'
+        day.7 = 'Sunday'      
+        do d = 1 to 7
+           say 'day.' || d 'is' day.d
+           end
+        today = date('w')
+        say 'The date function tells us that today is 'today || '.' 
+        do d = 1 to 7
+           thats_today = (today = day.d)
+           if thats_today then leave
+           end
+        say "In our array, that's day." || d 
+@endnode
+------------------------------------------------------
+@node "  Indexed Arrays - Neighbours"
+                     Indexed Arrays - Neighbours
+                     ---------------------------
+Say there are 50 houses in my street, numbered 1 to 50, and that I
+intend to get to know all the residents.  So far I know the people in
+only four of the houses. Those I know, I can assign to an array by
+house number: name.24 = 'Smith', name.28 = 'Brown', and so on. But what
+about the unknown cases?  If, for example, I don't yet know the name of the
+people at number 10, and have therefore not yet assigned a value to
+name.10, what will ARexx do if I ask it to 'say name.10'?
+With admirable clarity, it will simply return the value 'NAME.10'.
+
+But there is a very useful way of presetting all elements of an
+array. In the case of the names, I might want the unknown cases to be
+listed as 'Unknown'. I can preset the whole array to 'Unknown' by the
+following assignment :
+                        name. = 'Unknown'
+
+Now all elements of the array are 'Unknown' until the individual
+values are assigned.
+
+     /* Example */
+     say 'My neighbours in an indexed array'
+     house. = 'Unknown'
+     house.24 = 'Jones'; house.26 = 'Brown'
+     house.27 = 'Smith'; house.28 = 'White'
+     do n = 24 to 28
+         say house.n
+         end
+@endnode
+------------------------------------------------------
+@node "  More nodes"
+                              More nodes
+                              ----------
+The neighbours introduced in another topic are considered again
+here, and we can start to get to grips with the real meaning of the
+term 'compound variable'. Instead of just assigning a name to a
+'house' variable, as in "house.24 = 'Jones'", we go one step further,
+and attach a further 'node' to each 'house'.  Each variable can now
+take an assignment to hold '.name', '.job', '.car', and '.phone' ...
+well, we'll use those in our example, but it would be possible to
+include much more information such as salary, number of daughters,
+hobbies, favourite author, etc.  
+
+We won't do it here, but you can regard it as a thinking exercise. Say
+we had 'number of daughters' as a node. 
+That node could take further nodes : age, interests of each daughter... 
+'Interests' could take further nodes : sports, music, fast cars... 
+'Sports' could take further nodes : mud wrestling, skiing... 
+'Skiing' could take further nodes : resorts, companions...
+And so on.  One of my sources says you can go down through 49 levels
+of nodes, but I haven't checked that out.
+
+    /* Example */
+    house. = 'Unknown'
+    house.24.name = 'Jones'     ; house.26.name = 'Brown'
+    house.27.name = 'Smith'     ; house.28.name = 'White'
+    house.24.job = 'diplomat'   ; house.26.job = 'judge'
+    house.27.job = 'politician' ; house.28.job = 'dentist'
+    house.24.car = 'Porsche'    ; house.26.car = 'Mercedes'
+    house.27.car = 'Bentley'    ; house.28.car = 'mini'
+    house.24.phone = '1234567'  ; house.26.phone = '8901234'
+    house.27.phone = '5678901'  ; house.28.phone = '2345678'
+    found = 0
+    say "Tell me about the judge." || '0a'x
+    /* We'll loop from 24 here, because that's the lowest number in
+       the small set of house numbers we happen to be considering. */
+    do i = 24 until found
+      found = (house.i.job = 'judge')
+      if found then leave
+      end
+    say 'His name is' house.i.name 'and he lives at number' i || '.'
+    say 'You can phone him at' house.i.phone || '.'
+    say 'Oh, and by the way, he drives a' house.i.car || '.'
+    
+@endnode
+------------------------------------------------------- 
+@node '  Content addressing'
+                          Content addressing
+                          ------------------
+You will have seen that numbers OR content words can be used as a
+node. The previous topic had items such as 'house.24.job' which used
+a number as one node (in that respect it was an indexed array), and
+content words in the other node. That's what we call 'content
+addressing'.
+
+Here we'll look at two ways of approaching a simple list-lookup task -
+first using two indexed arrays, and then using content addressing.
+
+A clumsy matching program
+-------------------------
+Values are here assigned to two 8-element arrays, one containing
+approximate colour names, and the other the corresponding RGB
+settings.  The program lets you enter, say, 'yellow', and obtain the
+RBG setting for that colour, FF4.
+
+        /*  Compound symbols used in two indexed arrays */
+        
+        colour.1 = "grey"   ; RGB.1 = 8AC   
+        colour.2 = "black"  ; RGB.2 = 000   
+        colour.3 = "white"  ; RGB.3 = FFF   
+        colour.4 = "beige"  ; RGB.4 = DDD   
+        colour.5 = "red"    ; RGB.5 = F00   
+        colour.6 = "green"  ; RGB.6 = 0F0   
+        colour.7 = "blue"   ; RGB.7 = 00F   
+        colour.8 = "yellow" ; RGB.8 = FF4   
+    
+        options prompt "Name of colour "
+        parse upper pull c        /* User input here */
+        found = 0 ; n = 0
+     
+Now we have a loop which will look for the colour name which has
+been entered, and then find the corresponding RGB setting. 
+
+        do until found | n > 8
+          n = n + 1 ; found = ( c = UPPER(colour.n) )
+        end 
+        if n < 9 then say "The RGB setting for "c" is "RGB.n 
+                 else say "Not found"
+
+E.g. if 'red' is entered, a match will be found at 'RED = RED', i.e.
+at colour.5  The corresponding 'RGB.' is F00. 
+        
+A superior version of the above
+-------------------------------
+If we replace the numbers 1-8 of the second list by the values from
+the first list, the first list is no longer necessary.  The numbers
+served no other purpose than to make the link between the two lists,
+and if we have only one list, they can be dispensed with.
+
+    Instead of     colour.1 = "grey"   and   RGB.1    = 8AC 
+        we use                               RGB.grey = 8AC
+        
+    /* Example */
+    /*  Using an array of content-addressable compound symbols */
+    
+        RGB.grey   = 8AC  ;  RGB.red    = F00  
+        RGB.black  = 000  ;  RGB.green  = 0F0  
+        RGB.white  = FFF  ;  RGB.blue   = 00F  
+        RGB.beige  = DDD  ;  RGB.yellow = FF4  
+        
+        options prompt "Name of colour "
+        pull c
+        say RGB.c
+    
+/* The content of a node is itself the message, instead of being just a
+pointer to an element in another array.  Instead of the look-up loop
+used in the earlier example, and its associated multi-step process :
+
+               'grey' -> 'colour.1' -> 'RGB.1' -> 8AC
+    
+we obtain the content of 'RGB.grey' directly. */
+
+@endnode
+------------------------------------------------------- 
+@node '  Two-dimensional arrays'
+                        Two-dimensional arrays
+                        ----------------------
+Here we'll see how compound variables can be used to set up a diagram
+of characters arranged in rows and columns - the traditional
+two-dimensional array.
+
+    /* Example */
+    /*  Setting up a 5 * 5 grid of characters A - Y */
+     n = 0 
+     do row = 1 to 5
+       entry = "         "
+       do column = 1 to 5
+         n = n + 1 
+         char.row.column = D2C(n+64)     /* Yields A, B, etc */
+         entry = entry || char.row.column || "       "
+         end
+       say entry
+       end    
+     
+    /* In which cell is a given letter? */
+     say ""
+     options prompt "        Enter a letter (A - Y)     "
+     pull ch
+     do r = 1 to 5
+       do c = 1 to 5
+         found = (char.r.c = UPPER(ch))
+         if found then leave r
+         end
+       end      
+     say "        That letter is in row "r" and column "c
+     
+    /* Which letter occupies a given cell? */
+     say ""
+     options prompt "         Enter a row (1-5)      " ; pull r                               
+     options prompt "         Enter a column (1-5)   " ; pull c
+     say "      Row "r", column "c" holds the letter "char.r.c
+
+@endnode
+------------------------------------------------------- 
+@node "  Emulating records"
+
+Some languages use 'records' to contain data, in such a way that
+different pieces of information relating to a given item can all be
+stored together.  For example, a 'book' item may have 'author',
+'title', 'date', 'publisher', 'price' as a linked set of data in one
+record.  Compound variables in ARexx can be used for such purposes.
+
+I have in my wine cellar an array of n bottles.  Each bottle has its
+place (its location in the array), and each element of that array -
+each bottle - has contents. I could set up a simple indexed array :
+bottle.1 = 'Muller Thurgau' ; bottle.2 = 'Methode champenoise' ; and
+so on.  But I want to be able to access much more information than
+just a name. I want to store and look up things like vineyard, year,
+supplier, price ...
+
+               --- -------------------------------------------
+              | n | Type | Vineyard | Year | Supplier | Price |
+              |---|------|----------|------|----------|-------|
+   Bottles    | 1 |      |          |      |          |       |
+              | 2 |      |          |      |          |       |
+              .
+              .
+
+Compound variables are a perfect way of handling such data, which we
+can enter thus :
+
+        bottle.1.type = 'Muller Thurgau'
+        bottle.1.vineyard = 'Upper Mission'
+        bottle.1.year = 1993
+        bottle.1.supplier = 'Liquorland'
+              bottle.1.price = '16.95'
+        bottle.2.type = 'Methode champenoise'
+        bottle.2.vineyard = 'Te Mata'
+        bottle.2.year = 1988
+        bottle.2.supplier = 'WestSide Wines'
+              bottle.2.price = '29.80'
+
+The tedious task of making the entries can be made easy by a prompting
+input program. First it looks up how many records it already contains.
+Then it prompts for each item of data to be entered for the next
+bottle :
+
+        this_bottle = number_of_bottles + 1
+        say 'Enter data for the new bottle, number' this_bottle
+        options prompt 'Type? '
+        parse pull bottle.this_bottle.type
+        options prompt 'Vineyard? '
+        parse pull bottle.this_bottle.vineyard
+        options prompt 'Year? '
+        parse pull bottle.this_bottle.year
+        options prompt 'Supplier? '
+        parse pull bottle.this_bottle.supplier
+        options prompt 'Price? '
+        parse pull bottle.this_bottle.price
+
+That new entry might end up containing something like
+
+            bottle.346.Cabernet-Sauvignon
+            bottle.346.Hawkes Bay
+            bottle.346.1996
+            bottle.346.Ta Rapa Wine Store
+            bottle.346.17.60
+        
+From such data, I can arrange to extract information as required : 
+Have I any 1977 wines?  Which is my most expensive bottle?  How many
+bottles of champagne are left?  Where did I get my Chateau Rochefort?
+
+The addition of any further categories as required (such as 'Rating' or
+'Comment') would be possible.
+@endnode
+------------------------------------------------------
+@node "Program Control"
+
+                 Running an ARexx program of your own
+                 ------------------------------------
+   From CLI    Enter : rx program_name
+
+This is the short version which assumes that your 'path'
+specifications include 'sys/rexxc', and that either your current
+directory or your 'rexx:' directory contains the file 'program_name'.
+The long version would be :    sys:rexxc/rx <path>/program_name
+
+   From an icon     Double click on icon
+
+   If that fails    Click on icon
+                Select menu Tools/Information
+                Set default tool to Sys:rexxc/rx 
+                Save
+                Double-click on icon
+
+   To stop a runaway program : Open a new CLI window
+                        Enter HI                
+
+ Controls within a program .. see the following topics.
+
+@endnode
+------------------------------------------------------
+@node "  IF ... THEN ... ELSE"
+                         IF ... THEN ... ELSE
+                         --------------------
+
+   if   
+       <test> expression
+    then
+       Execute if <test> expression is true.
+    else
+       Execute if <test> expression is false.
+
+Formats :
+      if <test>
+         then <instruction>
+         else <instruction>
+
+      where <instruction> may be a multi-line block.
+
+Or
+      if <test> then <instruction> ; else <instruction>
+
+      /* Example */
+      s1 = 'The first number was'
+      s3 = 'than the second.'
+      options prompt 'Enter a number '
+      pull n1
+      say 'n1 = ' n1
+      options prompt 'Enter another, different number '
+      pull n2
+      say 'n2 = ' n2
+      if n1 > n2 then s2 = 'larger' ; else s2 = 'smaller'
+      say s1 s2 s3
+
+@endnode
+------------------------------------------------------
+@node "    NOP"
+                          NOP = No OPeration
+                          ------------------
+Do nothing - a dummy instruction.
+Can be used anywhere in a program, but is only really useful as a
+placeholder in, for example, nested 'if.. then.. else' constructions.
+
+     /* Example */
+     options prompt 'Are Mary and Paul coming to the party? ( Y / N )'
+     pull Mary_and_Paul_are_coming
+     options prompt 'And is George coming? ( Y / N )'
+     pull George_is_coming
+
+     if Mary_and_Paul_are_coming = 'Y' then
+        if George_is_coming = 'Y' then
+           say "You'd better invite Jane then."
+        else nop
+     else say "You'd better invite Paula and Jack then."
+
+@endnode
+------------------------------------------------------
+@node "  DO ... END"
+          'DO .... END' : A block of instructions or a loop
+          -------------------------------------------------
+  do  ...  end
+  do forever                <test>      end
+  do <count>                  ...       end
+  do while/until <test>       ...       end
+  do i = <start> to <end> [by step]  ...end
+  do i while/until <test>            ... end
+
+... and other combinations/extensions thereof!
+ 
+     /* Example */
+     do i = 6 to 16 by 2
+        say i
+        if i = 10 then 
+           do j = 26 to i by -4
+              say "  " j
+              end
+        end
+   
+@endnode 
+------------------------------------------------------
+@node "  Exit from a 'do' loop ..."
+                            Leaving a loop
+                            --------------
+The orthodox way to control a loop is by placing a limit on the number
+of iterations (see 'do ... end').  Cases can arise, however, in which
+it is not known in advance how many iterations are required. 
+
+Such a loop may start with 'do forever', but then some way of exiting
+from the loop, depending on circumstances, must be written in.
+
+See 'break', 'iterate', and 'leave'.
+
+@endnode 
+------------------------------------------------------
+@node "    Break"
+                                Break
+                                -----
+Exit from innermost 'do.. end' block or 'interpret' instruction.
+
+In this example, we don't know in advance how many examples the user
+wishes to see. We break out of the loop when a negative answer is
+given.
+
+   /* Example */
+   options prompt "Want to see some squares and cubes? ( Y / N )"
+   pull yn
+   if yn ~= 'N' then do
+      options prompt "Want to see the next one? "
+      count = 0
+      do forever
+         count = count + 1
+         say count count*count count*count*count
+         pull yn
+         if yn = 'N' then break
+         end
+      end
+   exit
+
+/* (Remaining lines commented out for purposes of 'patch.rexx')
+
+A 'do until' would be a better looping method in this instance, but
+we needed an example of 'break'.
+
+By the way, 'break' is the only one of the three 'exit from a loop '
+instructions (break, iterate, and leave) which can also be used to
+exit from a non-iterative 'do ... end' block. As in :
+
+       /* ... a program extract ... */
+      okay_so_far = 1
+      if okay_so_far then do  
+        say 'Do you wish to continue? ( Y / N )'
+        pull yn
+        if yn = 'N' then break
+        say 'This will not be seen if you entered "N"'
+        end
+      say "We are out of the loop." 
+*/
+@endnode
+------------------------------------------------------
+@node "    Iterate"
+                               Iterate
+                               -------
+Skip to the end of the current iterative loop.
+
+  /* Example */
+  /* Loop 1 to 10, but skip numbers 4 and  7 */
+  do i = 1 to 10
+     if (i = 4) | (i = 7) then iterate
+     say "This is iteration number " || i
+     end
+
+@endnode
+------------------------------------------------------
+@node "    Leave"
+                                Leave
+                                -----
+Break out of current iterative loop. Not recommended if a more
+orthodox method of exiting a loop can be implemented. Like 'break',
+this instruction is open to misuse.
+
+   /* Example */
+   say 'Enter a letter. Enter X to exit.'
+   say 'Program exits anyway after 20 letters.'
+   s = ''
+   options prompt '-> '
+   do forever
+      parse pull letter
+      s = s || letter
+      if (letter = 'X') | (length(s)>19) then leave
+      say s
+      end
+
+@endnode
+------------------------------------------------------
+@node "  Select"
+                                Select
+                                ------
+If there are many possible conditions to be checked, an 'if .. then
+... else ... ' block can become unwieldly, and the use of a 'select
+... when ... otherwise ... ' block is better.
+
+  select         Branch to first case whose controlling condition is met.
+     when        Introduce code to be executed if <test> is true.
+     otherwise   Introduce default case for 'select' control structure.
+     end
+
+     /* Example */
+     city. = 'London'
+     city.1 = 'New York' ; city.2 = 'Washington' ; city.3 = 'Paris'
+     city.4 = 'Berlin' ; city.5 = 'Rome'
+     day = date('w')
+     select
+        when day = 'Monday' then n = 1
+        when day = 'Tuesday' then n = 2
+        when day = 'Wednesday' then n = 3
+        when day = 'Thursday' then n = 4
+        when day = 'Friday' then n = 5
+        otherwise n = 6
+        end
+     say "Ah! " || day || "! That means we're in " || city.n || "!"
+
+@endnode
+------------------------------------------------------
+@node "  Interpret"
+                              Interpret
+                              ---------
+Execute ARexx instructions contained in a string.
+
+The potential power of this instruction is awesome. A script can even
+write scripts of its own...  You supply 'interpret' with an expression,
+the expression is converted into a string, and that string is then
+interpreted as ARexx code, and executed.  You can even pass to it a
+whole program as an argument.  
+
+Here is a trivial example :
+
+      /* Example */
+      say 'Do this THREE times : '
+      say 'Enter an arithmetic expression such as'
+      say '1 + 2, or 4 + 5 * 6,  or  (7.5 - 3.1) / 0.2'
+      instr = 'do 3 ; pull exp; interpret say exp ; end'
+      interpret instr
+
+@endnode
+------------------------------------------------------
+@node "  Signal"
+                                Signal
+                                ------
+ ( 1 ) Turn interrupt type on/off. 
+       Main use is for trapping various kinds of error.
+ ( 2 ) Transfer control to label. Like 'goto' (remember that?)
+       with the same knotty problems if misused. 
+
+Both uses are illustrated in this example :
+
+       /* Example */
+       signal on syntax /* Error trap on */
+       say 'The next line contains a syntax error.'
+       today = date('z')    /* Invalid argument */
+
+       Finish:
+       say 'We come here to make a clean exit.'
+       exit
+
+       /* Come here if there was a syntax error */
+       syntax:
+          say '  Syntax error at line' sigl
+          say '  Error number' rc 
+          say '  Type of error :' errortext(rc)
+          signal 'Finish'          /* = go to 'Finish' */
+
+@endnode
+------------------------------------------------------
+@node "  Exit"
+                            Uses of 'exit'
+                            -------------
+
+   1   'Exit' provides a tidy ending to a script, but if it really is
+       the end of the script, the 'exit' instruction is not needed.
+
+   2   'Exit' is needed to mark the end of the main block of a script,
+       if what follows in the coding is one or more sub-routines.
+
+   3   'Exit' allows a quick exit if certain necessary conditions 
+       are not met.
+
+   4   (Much more complicated) It the script is itself called by
+       another program, and if that parent program expects the script
+       to return a value (like a sub-routine), then the 'exit' 
+       instruction can carry an integer argument which is the
+       returned value.  It might look like :
+
+         exit x
+
+       To use 'return x' instead would be clearer and more logical.
+
+Here's are examples of type 2 and 3.
+
+      /* Example */
+      say 'The next line calls a function.'
+      call SampleFunction()
+      say 'The next line checks for the existence of T:'
+      if ~(exists("T:")) then exit      /* Type 3 */
+      say 'If T: exists, we get to here.'
+      exit                      /* Type 2 */
+
+      SampleFunction:
+        say 'This patch of script is below the main exit point.'
+        return
+
+@endnode
+------------------------------------------------------
+@node "Functions and Arguments"
+                       Functions and Arguments
+                       -----------------------
+Functions
+---------
+Functions are subroutines, useful when a particular task needs to be
+done frequently within a program, or when a particular complication
+is best kept out of the way of the main stream of the coding in a
+program.
+
+For example, a call to a function designed to find the mean value of
+three numbers might look like this :
+ 
+                mean = Mean_of_3( 21,36,58 )
+
+while the function itself could be :
+
+      Mean_of_3:
+         m = ( arg(1) + arg(2) + arg(3) ) / 3
+         return
+
+After the call, then value of 'mean' would be 101.67
+
+
+Arguments
+---------
+Arguments are 'extras' which can be added to a instruction.  In the
+above example, the three arguments passed to the Mean_of_3 function
+were 21, 36, and 58.
+
+Arguments can also be added to the command used to invoke an actual
+ARexx program.  
+
+See under 'arg' and the following topics for more details.
+
+@endnode
+------------------------------------------------------
+@node "  arg"
+                                 arg
+                                 ---
+          Used alone, without parentheses, arg can be used to
+          ascertain what arguments, if any, were used when a
+          program was run.
+
+Here is a program which expects two numerical arguments, and
+will return their sum.  (By the way, there are better ways of doing
+this, but it'll do to illustrate a simple use of the word 'arg'.)
+If the program was called, say, Adder, then it could be run with a
+command such as  rx Adder 25 75 .
+
+         /* Adder */
+         arg twonums      
+         /* The variable twonums now contains the two numbers */
+         n1 = word(twonums,1)
+         n2 = word(twonums,2)
+         say n1 + n2
+
+Since this program expects arguments, it will not work with
+'Runner.rexx'. You'll need to run it explicitly yourself. It makes no
+checks on anything, so if you run it, be sure to add the two required
+arguments.
+
+'arg' is short for 'parse upper arg', so although it has the
+advantage of brevity, it converts the args into UPPER CASE.
+For more details, see under 'parse'.   
+
+@endnode
+------------------------------------------------------
+@node "  arg()"
+                                arg()
+                                -----
+The parentheses indicate that here we are not talking about 'arg'
+used to extract the arguments used when a program was initially run,
+but about the arguments used with a function call within a program.
+
+If you have a function which adds two numbers, then that function
+might be invoked thus :
+
+             sum = adder(25,75)
+
+See also under 'call'.
+
+When you arrive at the called function itself, then 'arg()' and its
+variants become very useful tools.
+
+          arg() tells you how many arguments were passed
+          arg(1) tells you the value of the first argument
+          arg(n) tells you the value of the nth argument
+
+There is also 'arg(n,mode)', where 'mode' may be 'Exists' or 'Omitted'
+(or just 'E' or 'O'), to tell you whether or not a particular argument
+was supplied or omitted. 
+
+We'll include examples of each of the above in the following program.
+
+          /* Example */
+         options prompt 'Enter the first number '
+         pull n1
+         options prompt '... and the second number '
+         pull n2
+         say 'The sum of those two is' Adder(n1,n2)
+         exit
+
+         Adder:
+           num = arg()
+           say num 'arguments were passed to this function.'
+           n1 = arg(1)
+           say 'The first argument was' arg(1) 
+           if arg(2,'e') then 
+             say 'A second argument *was* supplied. It was' arg(2)
+           say 'The sum of those arguments is' n1 + n2
+           say 'That value will now be passed back to the point'
+           say 'at which the Adder() function was called.'
+           return n1 + n2
+
+@endnode
+------------------------------------------------------
+@node "  call"
+                     Using 'call' with a function
+                     ----------------------------
+There are various ways of invoking a function. The previous topic
+showed, for example, that it can be invoked as part of a 'say'
+instruction. Probably more often you will want to assign the returned
+value to a variable, something like 
+
+                sum = Adder(n1, n2)
+
+If n1 = 20 and n2 = 30 then after the call to the function the
+variable 'sum' will contain 50.
+
+It is quite often the case that you do not want a function to
+*return* a value (such as the sum of two numbers) but that you just
+want it to do a particular task : draw a triangle, delete a file,
+allocate some memory, reformat your hard disk (only joking!).
+
+In such cases the function can be invoked with the use of the 'call'
+instruction.  It will do the job, but return no value.  For example, a
+function which stores the current time in a file might be invoked by
+an instruction such as 
+
+            call StoreTime()
+
+You might wish to be able to specify the name of the file in which
+the time is to be stored, in which case the instruction might be 
+
+            call StoreTime('Ram:MyTime')
+
+You may wish to specify the format in which the time is stored :
+
+            call StoreTime('Ram:MyTime','c')
+
+or 'e', 'h', 'm', 'n', 'r', or 's' (see under 'Time' for details).
+
+Here is an example putting these ideas together :
+
+        /* Example */
+        options prompt 'Enter path and name for the storage file.'
+        parse pull timefile
+        if exists(timefile) then do
+          say 'A file by that name already exists.' ; exit
+          end
+        say 'What time format do you want?'
+        options prompt 'Enter a single letter ' ; parse pull fmt
+        call StoreTime(timefile,fmt)
+        say 'Time is stored in' timefile
+        exit
+     
+        StoreTime:
+          interpret 'b = ' || "time('" || arg(2) || "')"
+          op = open(ts,arg(1),'w') ; w = writeln(ts,b) ; cl = close(ts)
+          return
+@endnode
+------------------------------------------------------
+@node "  procedure and expose"
+
+                         Procedure and Expose
+                         --------------------
+If you use functions, and if in those functions you have variables
+like loop counters (n, or i, or x, or whatever), it is all too easy to
+use a variable name which is already in use in the main program.  You
+can protect yourself from unexpected and hard-to-spot problems by
+including the instruction 'procedure' in the function.  This makes all
+variables used within the function private to that function alone.
+
+The case may arise, however, where one purpose of the function is to
+change the value of a variable which needs to be used by the main
+program. The solution is to use 'expose', which enables a sharing of
+any named variables between the function and its caller.
+
+'Procedure' and 'expose' can *only* be used inside a function
+definition, and the orthodox position for them is on the same line as
+the function label, thus :
+                        Changem:  procedure expose c d
+
+See what happens to the variables a, b, c, and d in the following :
+
+      /* Example */
+      a = 25 ; b = 33 ; c = 49 ; d = 64
+      before = 'Before : a =' a '; b =' b '; c =' c '; d =' d ; say before
+      call Changem()
+      after = 'After  : a =' a '; b =' b '; c =' c '; d =' d ; say after
+      say "a and b were protected by 'procedure'; c and d were exposed."
+      exit
+
+      Changem:  procedure expose c d
+        a = 27 ; b = 38 ; c = 54 ; d = 70
+        return
+
+@endnode
+------------------------------------------------------
+@node "  return"
+                                Return
+                                ------
+The subject of 'return', the instruction which comes at the end of
+function definitions, is mentioned under other headings. What we'll
+do here is summarise ways in which is can be used.   :
+
+     1   Simply to terminate a function. No attention is paid to the
+         value. 
+     2   To send a value back to where the function was called.
+     3   To check on the success or otherwise of a function call.
+
+Note that the datatype of what is returned is always CHAR, and
+contains only a single string.  ARexx being a 'typeless' language,
+this does not really matter, but if you want to return, say, x and y
+values, they will be returned as "x y", and when received by the
+calling function must be handled accordingly.
+
+The following example makes three function calls, with three returns,
+one of each of the above types.
+   
+     /* Example */
+       call AddThree(3,4,5) ; say 'Done'
+       b = AddFour(3,4,5,6) ; say b
+       call AddFive(3,4,5,6,7) ; if result = 0 then say 'Success'
+       exit
+
+       AddThree:
+        sum = arg(1) + arg(2) + arg(3)
+        return   
+       AddFour:
+        sum = arg(1) + arg(2) + arg(3) + arg(4)
+        return sum
+       AddFive:
+        sum = 0 
+        do i = 1 to 5 ; sum = sum + arg(i) ; end
+        return 0     /* Zero assigned to 'result' */
+
+@endnode
+------------------------------------------------------
+@node 'Parsing'
+                            Parse Formats
+                            -------------
+'Parse' splits strings into substrings. It has many variations, and is
+*very* useful. 
+
+        Format : PARSE [UPPER] source [template] [,template]
+
+        Source         What 'source' contains
+        ------         ----------------------
+        ARG              The arguments used to invoke a script
+        EXTERNAL         Input from STDERR file
+        NUMERIC          Numeric options: digits fuzz form
+        PULL             Input from STDIN (usually CLI window)
+        SOURCE           'type result called resolved ext host'
+        VALUE expr WITH  Result of expression 
+        VAR varname      Contents of varname
+        VERSION          'version cpu mpu video freq'
+
+The above list is in alphabetical order. The attached subtopics are
+not.
+@endnode
+------------------------------------------------------ 
+@node '  parse arg'
+                              Parse arg
+                              ---------
+'Parse arg ' can be used (1) to ascertain what arguments, if any,
+were added to the command used to run an ARexx program, and (2) what
+arguments, if any, were used in a function call. In our current
+situation, using 'Runner.rexx' and 'ram:patch.rexx', we cannot see
+'parse arg' doing anything meaningful with the program command, but we
+can apply it within a function.
+
+BTW, this example also shows 'parse source' being used.
+
+     /* Example */
+     parse source text ; called = word(text,3) ; numargs = arg()
+     LF = '0a'x 
+     say "Using 'parse source' and 'numargs = arg()' we can confirm"
+     say "that this script was invoked with the command '"called"', and"
+     say "that "numargs" additional arguments were passed." LF
+     say "Not very interesting. So let's try it in a function." LF
+    
+     options prompt "  Enter two words separated by a space : " 
+     parse pull myarg ; call argfunc(myarg)
+    exit   
+  
+    argfunc:
+        parse arg one two .
+        t = "We are now inside a function."
+        say LF || "Your two words were passed as arguments."
+        say "First word : "one"   Second word : "two
+        say "The parse instruction was 'parse arg one two .'"
+        return
+@endnode
+------------------------------------------------------ 
+@node '  parse var'
+                              Parse var
+                              ---------
+'Parse var <variable name>' is used to separate any variable into its
+component pieces.  Those pieces may be separated by spaces, commas,
+hyphens, anything - as long as it is specified in the template
+format. (See, for example, the date template below.)
+
+BTW, this example also shows 'parse pull' in use. 'Pull' alone would
+work, but it converts all entries to UPPER CASE.
+
+    /* Example */
+    LF = '0a'x
+    say "You supply the variables.  The program will parse them."
+    rev = 'In reverse order, they were : '
+    say LF 'Type in three words separated by spaces'
+    options prompt '> '
+    parse pull text ; parse var text a b c . ; say rev c b a
+    say 'The reversal confirms that we have separated them.'
+    say LF 'Type in four words separated by commas'
+    parse pull text ; parse var text a ',' b ',' c ',' d .
+    say rev d c b a
+    
+    options prompt LF 'Type in a date : dd-mmm-yyyy > '
+    parse pull text ; parse var text a '-' b '-' c .
+    say "Day : " a "  Month : " b "  Year : " c
+    
+    say LF 'Type in a sentence of any length'
+    options prompt LF ; parse pull text ; n = 0
+    do until text = ""
+      n = n + 1 ; parse var text part text ; say n "   " part
+      end
+    say 'There were' n 'words.'    
+    return    
+
+@endnode
+------------------------------------------------------ 
+@node '  parse value ... with'
+                         Parse value ... with
+                         --------------------
+Lets you use any ARexx expression to form the parse string. The word
+'with' marks the end of the source expression, and is followed by the
+template.
+
+    /* Example */
+     say " Example outputs from 'parse var' and 'parse value' " '0a'x
+     say "(1) Using a variable 'line' defined as '3 + 4'"
+     line = '3 + 4'
+     parse var line n1 '+' n2 .
+     say "From 'parse var'   : "n1"+ "n2" = "n1 + n2
+     
+     say "(2) Using 'value 3 + 4'"
+     parse value '3 + 4' with n1 '+' n2 .
+     say "From 'parse value' : "n1"+ "n2" = "n1 + n2
+     
+     say "(3) Using a variable 'line' defined as '3-11-94'"
+     line = '3-11-94'
+     parse var line n1 '-' n2 '-' n3
+     say "From 'parse var'   : Day  "n1"   Month  "n2"   Year  "n3
+     
+     say "(4) Using 'value 3-11-94'"
+     parse value '3-11-94' with n1 '-' n2 '-' n3
+     say "From 'parse value' : Day  "n1"   Month  "n2"   Year  "n3
+ 
+     say "(5) Addition using 'parse var'"
+     options prompt "Enter a pair of addends with ' + ' between them > "
+     pull line
+     say "Using a variable 'line' defined as "line
+     parse var line n1 '+' n2 .
+     say "From 'parse var' : "n1'+' n2 '=' n1 + n2
+     
+     say "(6) Addition using 'parse value'"
+     options prompt "Enter addend #1 > "
+     pull a
+     options prompt "Enter addend #2 > "    
+     pull b
+     say "Using 'value" a "+" b"'"   
+     parse value a '+' b '=' a + b  with addends '=' result
+     say "From 'parse value' : "addends '=' result
+    exit
+
+@endnode
+------------------------------------------------------ 
+@node '  parse external'
+                            Parse external
+                            --------------
+Opening an external channel, typically to keep separate the output
+from tracing processes.
+
+   /* Example */
+     options prompt '  >  '
+     call open('STDERR',"con:20/160/500/60/ 'External' console")
+     w = writeln('STDERR','  Type something in here.')
+     parse external line
+     say '  Received from the external channel : ' '0a'x
+     say line
+     call close('STDERR')
+     return      
+@endnode
+------------------------------------------------------ 
+@node '  parse numeric, source, & version'
+            Parse numeric, Parse source, and Parse version
+            ----------------------------------------------
+For a variety of background information. 
+In parsing for 'Version', ARexx does not distinguish between the 68881
+math co-processor chip and the 68882, returning 68881 for both.
+
+    /* Example */
+     p.1 = 'NUMERIC' ; p.2 = 'SOURCE' ; p.3 = 'VERSION'
+     sp = copies(' ',7)
+     do p = 1 to 3
+        cmd = 'parse 'p.p' text'     
+        say "The output from 'parse "p.p"' is :"
+        interpret cmd; say '     ' text 
+        select
+           when p = 1 then say 'That is : digits, fuzz, form'
+           when p = 2 then do
+              say 'That is : How invoked, command or function'
+              say sp '  Result requested or not'
+              say sp '  Script name'
+              say sp '  Path, script name, and extension'
+              say sp '  Default file extension'
+              say sp '  Initial host address'
+              end 
+          when p = 3 then do
+              say 'That is : ARexx release number'
+              say sp '  Microprocessor'
+              say sp '  Math coprocessor'
+              say sp '  Video type'
+              say sp '  Line frequency'
+              end
+          otherwise
+          end
+          say ''
+      end 
+    exit
+    
+@endnode
+------------------------------------------------------ 
+@node '  Template place-holder'
+
+A note on the use of a final full stop as a 'place-holder' in a
+template.
+
+        /* Example */
+    str = 'aaa bbb ccc ddd'
+    say 'Variable str = ' str
+    say "We'll parse it into four 'words'."
+    parse var str s1 s2 s3 s4
+    say 's1 = 's1 ' length(s1) = ' length(s1)
+    say 's2 = 's2 ' length(s2) = ' length(s2)
+    say 's3 = 's3 ' length(s3) = ' length(s3)
+    say 's4 = 's4 ' length(s4) = ' length(s4)
+    say "   The length of s4 is not what you'd expect."
+    say "   A problem with 'end-of-line' detection." '0a'x
+    
+    say "Let's try this "
+    str = 'aaa bbb ccc ddd rest'
+    say 'Variable str = ' str
+    say "We'll parse it into four 'words' and ignore 'rest'"
+    parse var str s1 s2 s3 s4 rest
+    say 's1 = 's1 ' length(s1) = ' length(s1)
+    say 's2 = 's2 ' length(s2) = ' length(s2)
+    say 's3 = 's3 ' length(s3) = ' length(s3)
+    say 's4 = 's4 ' length(s4) = ' length(s4)
+    say "   Now the length of s4 is as it should be, but"
+    say "   there is a neater solution than using 'rest'." '0a'x
+
+    str = 'aaa bbb ccc ddd .'
+    say 'Variable str = ' str
+    say "Note the 'place-holding' full stop at the end."
+    parse var str s1 s2 s3 s4 .
+    say 's1 = 's1 ' length(s1) = ' length(s1)
+    say 's2 = 's2 ' length(s2) = ' length(s2)
+    say 's3 = 's3 ' length(s3) = ' length(s3)
+    say 's4 = 's4 ' length(s4) = ' length(s4)
+    say "   This is in fact the orthodox way of dealing"
+    say "   with the problem of 'end-of-line' detection."
+    
+@endnode
+------------------------------------------------------ 
+@node '  Template stripping'
+                       Stripping down variables
+                       ------------------------
+In the 'parse var' example, there was a loop which is so useful for
+parsing purposes in general that it is worth taking a closer look.
+
+One problem is that we sometimes don't know how many pieces of data
+there are in an argument, and so a complete template cannot be
+specified in advance.  What the loop does is :
+
+    Read off the first element of the template
+        Assign a name to it
+        Rename the remainder with the same name as the original
+    Until there are no elements left.
+
+In the example, the elements are simply displayed as they are located,
+but in a 'real' application they could be stored into an array for
+later use.
+
+   /* Example */
+    LF = '0a'x ; say LF 'Type in a sentence of any length'
+    options prompt LF ; parse pull text ; n = 0
+    do until text = ""
+      n = n + 1 ; parse var text part text ; say n "   " part
+      end
+    say 'There were' n 'words.'    
+    return  
+
+@endnode
+------------------------------------------------------
+@node "Editing strings"
+See the separate subtopics :
+
+          Compress, DelStr, Insert, Overlay,
+          Strip and trim, Substr, Translate, and Upper.
+@endnode
+------------------------------------------------------
+@node "  COMPRESS"
+                s = COMPRESS(str, [list])
+'Compress' removes from the string <str> any characters which are
+in <list>. If no list is specified, all spaces are removed.
+
+    /* Example */
+    say compress('Remove the spaces from this')
+    say compress('Remove the letter s from this','s')
+    say compress('Remove all vowels from this','aeiou')
+    say compress("'Small boys', said he, 'can be a problem!'","',!") 
+
+@endnode
+------------------------------------------------------
+@node "  DELSTR"
+                        DELete part of STRing
+                        ---------------------
+Delete from start point to end of string :
+
+                s = delstr('this string',5)  -> 'this'
+
+Delete n characters, from start point :
+
+                s = delstr('this string',3,6) -> 'thing'
+
+    /* Example */
+    s1 = 'This sentence will lose some of its characters.'
+    s2 = delstr(s1,5,9)
+    s3 = delstr(s2,20,7)    
+    s4 = delstr(s3,14,5)    
+    s5 = delstr(s4,3,9)
+    say s1 '0a'x || s2 '0a'x || s3 '0a'x || s4 '0a'x || s5
+@endnode
+------------------------------------------------------
+@node "  INSERT"
+                                Insert
+                                ------
+Insert one string into another.  Default starting position is 
+at the beginning.
+
+               s = INSERT(this, intothat)
+               thisintothat
+
+Starting point can be specified by a third argument :
+
+               s = INSERT(this, intothat, 5)
+               intothisthat
+
+The length of the insertion may be specified in the 4th argument. If
+longer than inserted text, padding will occur - a space unless
+otherwise specified.
+
+               s = INSERT(this, intothat, 5, 10)
+               intothis     that
+
+The padding can be specified by a 5th argument.
+
+               s = INSERT(this, intothat, 5, 10, '.')
+               intothis.....that
+
+Try it out :
+       /* Example */
+       s1 = 'Ample'
+       s2 = insert('n exa',s1,1,5)
+       s3 = insert('interesting',s2,3,12)
+       s4 = insert('other',s3,2,5)
+       say s1 '0a'x || s2 '0a'x || s3 '0a'x || s4
+@endnode
+------------------------------------------------------
+@node "  OVERLAY"
+                               Overlay
+                               -------
+There must be at least two and may be up to five arguments.
+
+          s = overlay(newtext, oldtext, start, len, pad)
+
+With no explicit startpoint
+     s = overlay('the', 'whose')  -> these
+
+Arg 3 : The start point
+     s = overlay('nd tw','Four are plenty',7)
+                -> Four and twenty
+
+Arg 4 : Use <len> characters only in overlay
+     s = overlay('bewildering','astonishment',1,8)
+                -> bewilderment
+
+Arg 5 : Padding if length of insertion is less than arg 4
+     s = overlay('Help me up','Hold me down',2,11,'!')
+
+     /* Example */
+     s1 = 'This is how overlay behaves'
+     s2 = overlay('.....',s1)
+     s3 = overlay('......',s1,6)
+     s4 = overlay('.....',s1,13,8)
+     s5 = overlay('.....',s1,13,15,'z')
+     s6 = overlay('......',s1,21,7)
+     say s1 '0a'x || s2 '0a'x || s3 
+     say s4 '0a'x || s5 '0a'x || s6
+
+@endnode
+------------------------------------------------------
+@node "  STRIP and TRIM"
+                            Strip and Trim
+                            --------------
+Strip removes specified characters (default is a space) from beginning
+and/or end of a string.
+
+             s = STRIP(str, [mode], [list])
+             Mode : 'b' = both ; 'l' = leading ; 't' = trailing
+
+        s = strip('  example   ')              -> 'example'
+        s = strip('shifts','b','sht')          -> 'if'
+        s = strip('"That will do!"','b','"!')  -> 'That will do'
+        s = strip('Trailing ...   ','t','. ')  -> 'Trailing'
+        s = strip('/* Comment */','b','/* ')   -> 'Comment'
+
+Trim just removes trailing blanks.
+(See also Compress, which removes *all* listed characters.)
+
+        /* Example */
+        s1 = strip('  example1   ')
+        s2 = trim('  example2   ')
+        say "Stripped : " s1 " length = " length(s1)
+        say "Trimmed  : " s2 " length = " length(s2)
+        s3 = strip('shifts','b','sht')
+        s4 = strip('"That will do!"','b','"!')
+        s5 = strip('Trailing ...   ','t','. ')
+        s6 = strip('   ... Leading','l','. ')
+        s7 = strip('/* Comment */','b','/* ')
+        say s3 '0a'x || s4 '0a'x || s5 '0a'x || s6 '0a'x || s7
+                                
+@endnode
+------------------------------------------------------
+@node "  SUBSTR"
+                    Extract substring from string
+                    -----------------------------
+
+          s = SUBSTR(str, start, [len],[pad])
+
+        /* Example */
+        s1 = "He always has the last word."
+        s2 = substr(s1,15) 
+        s3 = substr(s1,4,6) 
+        s4 = substr(s1,24,20) || '|' 
+        s5 = substr(s1,24,20,'.')
+        say s1 '0a'x || s2 '0a'x || s3 '0a'x || s4 '0a'x || s5
+
+@endnode
+------------------------------------------------------
+@node "  TRANSLATE"
+                              Translate
+                              ---------
+        s = TRANSLATE(str,[output],[input],[pad])
+
+Changes the characters of a string according to supplied input and output
+tables. (If tables are not supplied, all alphabetic characters are
+output in UPPER case.)
+
+In the following example, the first translation changes any letters in
+the 'a - j' range to '0 - 9', the second changes each letter to the
+following letter : a -> b, b -> c, and so on, while the third does the
+reverse of the second. 
+
+        /* Example */
+        s1 = 'here is an example to be translated'
+        s2 = translate(s1,xrange("0","9"),xrange("a","e"))
+        s3 = translate(s1,xrange("b","{"),xrange("a","z"))
+        s4 = translate(s3,xrange("a","z"),xrange("b","{"))
+        say s1 "0a"x || s2  "0a"x || s3 "0a"x || s4
+        say "The last line should be the same as the first."
+
+@endnode
+------------------------------------------------------
+@node "  UPPER"
+                        Convert to upper case
+                        ---------------------
+The experts point out that UPPER exists in ARexx in two forms : as an
+instruction and as a function.  You may well feel, as I do, that the
+distinction hardly matters, but here are the grisly details :
+
+        s1 = 'John Smith'
+        upper s1                     /* This is an instruction */
+        /* s1 is now 'JOHN SMITH' */
+
+        s2 = 'Mary Brown'
+        s2 = upper(s2)               /* This invokes a function */
+        /* s2 is now 'MARY BROWN' */
+
+A typical use of 'upper' is checking a password for validity. It may
+be stored as 'SESAME', but 'sesame', 'Sesame', 'sEsAmE', etc. should
+be accepted as valid.
+
+        if  upper(user_input) = stored_password then okay
+
+More elegantly : 
+
+        okay = ( upper(user_input) = stored_password )
+
+By the way, there is no 'lower()' function in ARexx, but the
+translate() function can have the required effect. See str3 in the
+example.
+
+     /* Example */
+     str1 = 'Here is a sample to convert from one case to another.'
+     str2 = upper(str1)
+     str3 = translate(str2,xrange("a","z"),xrange("A","Z"))
+     say str1 '0a'x || str2 '0a'x || str3
+
+@endnode
+------------------------------------------------------
+@node "Strings : Pattern matching"
+See the separate subtopics :
+
+          Abbrev,  Compare,  Index,
+          LastPos, Pos, and  Verify
+
+@endnode
+@node "  ABBREV"
+                          Abbreviation test
+                          -----------------
+Is one string an abbreviation of another?
+                bool = ABBREV(str, abbr, [len])
+The test is made over <len> characters.
+The value returned is 1 or 0.
+
+      abbrev("Princess","Prince",6)       ->  1
+      abbrev("Principality","Prince",6)   ->  0
+      abbrev("Principle","Prin",4)      ->  1
+      abbrev("Principle","Prin",5)      ->  0
+
+      /* Example */
+      say 'Enter the minimum necessary to specify a call to'
+      say  "'List', 'Lookup', 'Delete', 'Decide' or 'Deny'."
+      pull ch
+      select
+        when abbrev('LIST',ch,2) then say 'Okay. List.'
+        when abbrev('LOOKUP',ch,2) then say 'Okay. Lookup.'
+        when abbrev('DELETE',ch,3) then say 'Okay. Delete.'
+        when abbrev('DECIDE',ch,3) then say 'Okay. Decide.'
+        when abbrev('DENY',ch,3) then say 'Okay. Deny.'
+        otherwise say 'Invalid choice.'
+        end
+@endnode
+------------------------------------------------------
+@node "  COMPARE"
+                         Compare two strings
+                         -------------------
+                n = COMPARE(str1, str2, [pad])
+
+Returns the character position at which the compared strings first
+differ. The comparison is case sensitive.  A zero is returned if the
+two strings are identical.
+
+    compare('try','Try')   ->   1
+    compare('try','tRy')   ->   2
+    compare('try','try')   ->   0
+
+                /* Example */
+                say compare('sand','sahara')
+                say compare('infinite','infinitely')
+                say compare('definite   ','definite')
+                say compare('definite...','definite','.')
+
+@endnode
+------------------------------------------------------
+@node "  INDEX"
+                                Index
+                                -----
+               n = INDEX(str,pat,[start])
+
+Return position of pat in str, starting from 1 or start.
+Returns 0 if pat is not found.
+
+          str = 'What on earth?'
+          index(str,"a",4)  -> 10
+          index(str,"w")    -> 0
+          index(str,"W",2)  -> 0
+          index(str,"t",5)  -> 12
+Same as 'pos' except for the order of the arguments.
+
+       /* Example */
+       /* How many times does a pattern occur in a string? */
+       s = "Here is the sentence whose 'e's are to be counted."
+       say "The letter 'e' occurs " || CountEm(s,'e') || ' times.'
+       exit
+       Countem: procedure
+          parse arg s, c ; tally = 0
+          found = index(s,c)
+          do while found > 0
+             tally = tally + 1 ; found = index(s,c,found+1)
+             end
+          return tally      
+@endnode
+------------------------------------------------------
+@node "  LASTPOS"
+                               LastPos
+                               -------
+               n = LASTPOS(pat,str,[start])
+Return position of pat in str, searching backwards from end or start
+
+  str = "Where have you been to?"
+  lastpos("e",str,7)     -> 14
+  lastpos("e",str)       -> 6 
+  lastpos("h",str,18)    -> 2
+@endnode
+------------------------------------------------------
+@node "  POS"
+                                 Pos
+                                 ---
+           n = POS(pat,str,[start])
+Return position of pat in str, from 1 or start (0 if found)
+ 
+  pos("e","Where in the world",6)  -> 12
+  pos("w","Where in the world")    -> 14
+  pos("W","Where in the world",2)  -> 0
+
+See also 'index', where the order of the arguments is different.
+
+@endnode
+------------------------------------------------------
+@node "  VERIFY"
+                                Verify
+                                ------
+         n = VERIFY(str,list,[match],[start])  
+
+If <match> is 'M' or 'm', check whether any of the letters in <list>
+occur in <str>. If <match> is other than 'M' or 'm', or if no third
+arg is given, check whether any of the letters in <list> do NOT occur
+in <str>. The search will be made from <start> (or from 1 if no arg
+is given). Depending on the <match> setting, the returned value will
+be the first character that matches or does not match any in the list.
+
+     /* Example */
+     say "Where is the first example of any of the letters 'xyz' in :"
+     str = 'arithmetically'
+     say '  ' str ' -> ' verify(str,'xyz','m')
+
+     say "Where is the first non-vowel in :"
+     str = 'aerobic'
+     say '  ' str ' -> ' verify(str,'abcde')
+ 
+     say "Where is the first punctuation character in :"
+     str = "I came, I saw, I conquered."
+     say '  ' str ' -> ' verify(str,',.;:"!?-_','m')
+
+     say "Where is the first space or hyphen"
+     say "after the thirtieth character in :"
+     str = 'This could be a part of a text-wrapping program.'
+     v = verify(str,' -','m',30)
+     say '  ' str ' -> ' v
+     say '  ' left(str,v) ; say '  ' right(str,length(str)-(v))
+
+@endnode
+------------------------------------------------------
+@node "Formatting strings"
+See the separate subtopics :
+
+           Centre,  Left,  Reverse,  Right,  Space
+@endnode
+------------------------------------------------------
+@node '  CENTRE'
+                                Centre
+                                ------
+        s = CENTRE(str, width, [pad])
+Centre <str> in a field of given width, filling our with <pad>
+if specified.  Default padding is spaces.
+
+        /* Example */
+        say centre("Centering text",30)
+        say centre("--- Centering text ---",30)
+        say centre(" Centering text ",30,'-')
+@endnode
+------------------------------------------------------
+@node '  LEFT'
+                                 Left
+                                 ----
+        s = LEFT(str,n,[pad])
+Extract n characters from left of <str>. Pad on right if needed
+(default pad a space).
+
+        /* Example */
+        str = 'This text will be progressively sliced.'
+        n = length(str)
+        do i = 1 to n by 5 ; say left(str,i+5,'.') ; end
+@endnode
+------------------------------------------------------
+@node '  REVERSE'
+                               Reverse
+                               -------
+            s = REVERSE(str)
+            reverse("golf")   ->  flog
+ 
+            say reverse('.cipot siht ni elpmaxe oN')
+                ->  No example in this topic.
+@endnode
+------------------------------------------------------
+@node '  RIGHT'
+                                Right
+                                -----
+            s = RIGHT(str,width,[pad])
+
+        /* Example */
+        str = 'This text will be progressively sliced.'
+        n = length(str)
+        do i = n to 1 by -5 ; say right(str,i+10,'.') ; end
+@endnode
+------------------------------------------------------
+@node '  SPACE'
+                                Space
+                                -----
+          s = SPACE(str, [len], [pad])
+Inter-word spacing in <str> will be set to <len>.
+A <pad> other than a space can be supplied.
+
+  space("Four spaces between these",4)   
+      -> Four    spaces    between    these.
+  space("| | | | |",5,"_")    -> |_____|_____|_____|_____|
+@endnode
+------------------------------------------------------
+@node "Word oriented"
+See the separate subtopics :
+
+           DelWord,   Find,  SubWord,
+           Word,  WordIndex,  WordLength,  Words
+
+They are all simple functions, and examples are not included with
+them. For those of you you *like* running samples, here is one
+sample program that contains all seven.
+
+       /* Example */
+     s.1 = 'An example containing seven word-orientated functions.'
+     s.2 = 'DelWord : ' delword(s.1,5)
+     s.3 = 'Find "seven" : ' find(s.1,'seven')
+     s.4 = 'SubWord : ' subword(s.1,2,3)
+     s.5 = 'Word : ' word(s.1,5)
+     s.6 = 'WordIndex : ' wordindex(s.1,5)
+     s.7 = 'WordLength : ' wordlength(s.1,4)
+     s.8 = 'Words ' words(s.1)
+     do i = 1 to 8 ; say s.i ; end 
+
+@endnode
+------------------------------------------------------
+@node "  DELWORD"
+                             Delete words
+                             ------------
+          s = DELWORD(str, start, [len])
+
+Removes words (defined by spaces) from str. Deletion starts at word
+number <start>. <Len> words are deleted (default, to end of str).
+
+          delword("Delete from word 2",2)    ->  Delete
+          delword("Delete second word",2,1)  ->  Delete word
+@endnode
+------------------------------------------------------
+@node "  FIND"
+                                 Find
+                                 ----
+      n = FIND(str, phrase)
+Returns the word position of a word or phrase in a string.
+
+     find("Lend me your ears.","your")    ->  3
+     find("Lend me your ears.","me your") ->  2
+     find("Lend me your ears.","our")     ->  0
+@endnode
+------------------------------------------------------
+@node "  SUBWORD"
+                               SubWord
+                               -------
+            s = SUBWORD(str, start, [n])
+Extract n words (default=rest of str) from str, from start word
+
+     subword("Lend me your ears.",2,1)    ->  me
+     subword("Lend me your ears.",3)      ->  your ears
+@endnode
+------------------------------------------------------
+@node "  WORD"
+                                 Word
+                                 ----
+            s = WORD(str,n)
+Extract word n from str
+
+           word("Lend me your ears.",2)    ->  me  
+@endnode
+------------------------------------------------------
+@node "  WORDINDEX"
+                              WordIndex
+                              ---------
+            n = WORDINDEX(str,n)
+
+Determine character position in str of start of word n
+
+          wordindex("What on earth?",3)       ->  9
+          wordindex("Where is that word?",4)  -> 15
+@endnode
+------------------------------------------------------
+@node "  WORDLENGTH"
+                              WordLength
+                              ----------
+n = WORDLENGTH(str,n)
+
+Returns length of word n in str
+
+  wordlength("This returns the length of the forth word.",4)  ->  6
+@endnode
+------------------------------------------------------
+@node "  WORDS"
+                                Words
+                                -----
+n = WORDS(str)
+Counts the words in a string :
+
+  words("A lot of little words will all add up to many.")  ->  11
+@endnode
+------------------------------------------------------
+@node "Other string functions"
+                        Other string functions
+                        ----------------------
+        Concatenation
+        Copies
+        Hash   -- The most pointless of ARexx functions?
+        Length
+        XRange
+@endnode
+------------------------------------------------------
+@node '  Concatenation'
+                            Concatenation
+                            -------------
+You can use || to join strings together with no intervening space.
+If you use a space you'll get a space.
+
+          a = "black" ; b = "bird" 
+          say a b a || b    ->   black bird blackbird
+@endnode
+------------------------------------------------------
+@node '  COPIES'
+                                Copies
+                                ------
+        s = COPIES(str, n)
+Concatenate n copies of str
+
+          copies("-",12)        ->   ------------
+          copies("\_/",4)       ->   \_/\_/\_/\_/
+          copies("thankyou ",3) ->   thankyou thankyou thankyou 
+
+        /* Example */
+        do i = 1 to 15
+            s1 = copies('/',i) ; s2 = copies('\',i)
+            say copies(' ',20-i) s1  || s2
+            end
+        say copies(' ',5) copies('^',14) || '|^|' || copies('^',13)
+        do i = 1 to 3
+            say copies(' ',19) '| |'
+            end
+        say copies('`',40)
+
+@endnode
+------------------------------------------------------
+@node '  HASH'
+                                 Hash
+                                 ----
+        s = HASH(str)
+        Calculate a hash value for str, that is, the sum, mod 256, of
+        the ASCII characters in the string.
+
+        a = 'A'
+        HASH(a) = 65    /* The ASCII equivalent */
+        a = 'AA'
+        HASH(a) = 130   /* i.e. 65 + 65 */
+        a = 'AAAA'
+        HASH(a) = 4     /* (65 + 65 + 65 + 65) // 256 */
+                /* '//' = 'remainder from division'  */       
+
+        What is it used for?  I've no idea.     
+@endnode
+------------------------------------------------------
+@node '  LENGTH'
+                                Length
+                                ------
+        n = LENGTH(str)
+Return length of str in characters
+
+        length('antidisestablishmentarianism')   ->   28
+        s = 'Eisenbahnbrückebaumeistergesellschaftversammlung'
+        (It's German for "a conference of railway bridge builders") 
+        length(s)  -> 48
+@endnode
+------------------------------------------------------ 
+@node '  XRANGE'
+                                XRange
+                                ------
+         s = XRANGE([c1],[c2]) 
+
+Builds a character string of consecutive ASCII values ranging from c1
+to c2.
+
+        xrange("1","9")   ->  123456789
+        xrange("a","i")   ->  abcdefghi
+        length(xrange("a","z"))  ->  26 
+
+For examples, see 'Translate' and 'Upper' topics.
+@endnode
+------------------------------------------------------ 
+@node "Numbers"
+See the separate subtopics :
+
+              Absolute,          Division,  
+              Exponentiation,    Max and Min,
+              Numeric,           Random and Randu,
+              Sign,              Trunc
+@endnode
+------------------------------------------------------ 
+@node '  ABS'
+                               ABSolute
+                               --------
+        absval = ABS(num)
+Returns the absolute value of a numeric expression
+          abs(4)   ->  4
+          abs(-1)  ->  1 
+          
+@endnode
+------------------------------------------------------ 
+@node '  Division'
+  Division        /  : 7 / 2  = 2.333
+  Integer division  %  : 7 % 3  = 2
+  Remainder      // : 7 // 3 = 1
+Some languages use the terms DIV and MOD for the second   
+and third of these; e.g. 7 MOD 3 = 1
+@endnode
+------------------------------------------------------ 
+@node '  Exponentiation'
+** ( = 'raised to the power of')
+  3 ** 3 = 27
+@endnode
+------------------------------------------------------
+@node '  MAX and MIN'
+                             Max and Min
+                             -----------
+        n = MAX(n1, n2 [, n3 ...])
+Returns the largest of a set of numbers
+
+        max(1.05,2.23,13.34,25.78,33.33)   ->  33.33
+
+        n = MIN(n1, n2 [, n3 ...])
+Returns the smallest of a set of numbers
+
+        min(1.05,2.23,13.34,25.78,33.33)   ->  1.05
+
+@endnode
+------------------------------------------------------ 
+@node '  NUMERIC'
+                               Numeric
+                               -------
+        NUMERIC DIGITS num
+        NUMERIC FUZZ num
+        NUMERIC FORM SCIENTIFIC
+        NUMERIC FORM ENGINEERING
+
+        Set numeric calculation and display options
+
+n = DIGITS()
+Returns current NUMERIC DIGITS setting, i.e. how many decimal places
+are used (default 9).
+
+        Numeric digits 3   /* Sets to 3 */
+        say digits()       /* Confirms setting */
+
+f = FORM()
+Returns current NUMERIC FORM setting, i.e how large or small numbers
+are displayed (default SCIENTIFIC).
+
+        Numeric form engineering  /* Sets to ENGINEERING */
+        say form()                /* Confirms setting    */
+
+f = FUZZ()
+Returns current NUMERIC FUZZ setting, i.e. variation from of exactness
+to be allowed when making numeric comparisons (default 0).
+
+        Numeric fuzz 2           /* Sets to 2 */
+        say fuzz()               /* Confirms setting */
+The fuzz setting cannot exceed one less than the current numeric
+digits setting.
+
+@endnode
+------------------------------------------------------ 
+@node '  RANDOM and RANDU'
+                                Random
+                                ------
+        n = RANDOM([low],[high],[seed])
+
+Returns a pseudo-random integer between low and high inc.
+
+        random()       ->  Any number from 0 to 999
+        random(10,30)  ->  Any number from 10 to 30
+
+To make the numbers returned by 'random' to appear to be truly random,
+a good seed value to use is time('s') ( seconds since midnight ).
+Seeding is needed only once in a program. Put the following near the
+beginning of your program, and all subsequent calls to random() will 
+be really random.
+   
+        random(,,time('s'))
+
+                                Randu
+                                -----
+        n = RANDU([seed])
+
+Returns a pseudo-random number between 0 and 1
+
+        /* Example */
+        say 'Unseeded.'
+        say 'Will return the same set of values'
+        say 'each time you run it.'
+        numeric digits 2        /* 2 decimal points */
+        do i = 1 to 5
+          say random(1,100) '   ' randu()
+          end
+        random(,,time('s')) ; randu(time('s'))
+        say 'Seeded. These should always be different.'
+        do i = 1 to 5
+          say random(1,100) '   ' randu()
+          end
+        numeric digits 9   /* Reset to default */
+
+@endnode
+------------------------------------------------------ 
+@node '  SIGN'
+                                 Sign
+                                 ----
+        n = SIGN(num)
+        Returns the sign of a number, positive, or negative (or zero)
+
+        sign(-4)   ->  -1
+        sign(0)    ->   0
+        sign(4)    ->   1
+@endnode
+------------------------------------------------------ 
+@node '  TRUNC'
+                                Trunc
+                                -----
+        n = TRUNC(number,[n])
+
+        Truncates a number to n decimal places (default 0)
+
+        trunc(34.56789)    ->  34
+        trunc(34.56789,2)  ->  34.56 (not rounded)
+@endnode
+------------------------------------------------------ 
+@node "Data conversion : B2C, etc"
+
+            B2C   C2B   C2D   C2X   D2C   D2X   X2C   X2D
+
+Some of these are easy to understand, and handy to use.  Others can
+be baffling, and are best left to addicts.  It would be a good idea
+to open a CLI window and explore at least some of them with the
+supplied 'Try.rexx' program.
+
+        B2C
+        ---     b = B2C(binstr)
+
+Returns character equivalent of binary string
+  b2c("01001111 01101011") -> Ok 
+
+        C2B
+        ---     b = C2B(str)
+
+Returns binary digit string equivalent to character string
+  c2b("Ok")'  ->  01001111 01101011
+
+        C2D
+        ---     n = C2D(str, [len])
+
+Returns integer number corresponding to string (of len bytes)
+  c2d("A")    -> 65  (i.e. standard ASCII)
+This is as near as ARexx comes to a plain ASC() function.
+
+  c2d("AB",1) -> 66  (truncated to 'B')
+The 'len' reads from the right.
+
+  c2d("A"x)   -> 10          (Hex A = Decimal 10)
+  c2d("A"x) is the same as x2d(A)
+  c2d("FF"x)  -> 255         (Hex FF = Decimal 255)
+  c2d("Help")' -> 48656C70
+
+What on earth does a number like 48656C70 mean?
+The word 'Help' is made up of the ASCII characters 72 101 108 112. 
+The Hex equivalents are 48 65 6C 70.
+String them together as a hex number $48656C70.  
+Now try x2c(48656C70).  You'll get 'Help'.
+Mind-boggling.  If you work with these for long you'll soon need
+more than x2c(48656C70).  You'll need some aspirin.
+
+        C2X
+        ---     h = C2X(str)
+
+Returns hexadecimal number corresponding to string
+   c2x("A") ->  41
+   x2d(c2x("A"))  ->  65      
+
+        D2C
+        ---     s = D2C(num,[count])
+
+Return string equivalent, count bytes long, of num
+  d2c(65)      ->  A       (Plain ASCII)
+  d2c(20331) -> Ok
+
+        D2X
+        ---     h = D2X(num,[count])
+
+Return hexadecimal string, count bytes long, equivalent to num
+  d2x(65)           ->  41
+  d2x(16)           ->  10
+  d2x(123456789)    -> 75BCD15
+  d2x(123456789,5)  -> BCD15
+
+        X2C
+        ---     s = X2C(hex)
+
+Return character equivalent of hex string
+  x2c(41 42 43 44 61 62 63 64)  ->  ABCDabcd
+
+        X2D
+        ---     n = X2D(hex,[n])
+
+Convert n rightmost digits (or all) of hex string to decimal
+  x2d(ff)   -> 255
+  x2d(0f)   ->  15
+  x2d(0f,1) ->  -1
+
+        /* Example */
+  
+  say 'b2c("01001111 01101011") = 'b2c("0100111101101011") 
+  say 'c2b("G4C")             = 'c2b("G4C")
+  say 'c2d("A")               = 'c2d("A")
+  say 'c2d("AB",1)            = 'c2d("AB",1)
+  say 'c2d("Amiga",4)         = 'd2c(c2d("Amiga",4))
+  say 'c2d("A"x)              = 'c2d("A"x)
+  say 'c2d("FF"x)             = 'c2d("FF"x)
+  say 'c2d("G4C")             = 'c2d("G4C")
+  say 'c2x("A")               = 'c2x("A")
+  say 'x2d(c2x("A"))          = 'x2d(c2x("A"))
+  say 'd2c(65)                = 'd2c(65)
+  say 'd2c(5858675)           = 'd2c(5858675)
+  say 'd2x(65)                = 'd2x(65)
+  say 'd2x(16)                = 'd2x(16)
+  say 'x2c(41 42 43 61 62 63) = 'x2c(41 42 43 61 62 63)
+  say 'x2c(48656C70)          = 'x2c(48656C70)
+  say 'x2d(ff)                = 'x2d(ff)
+  say 'x2d(0f)                = 'x2d(0f)
+  say 'x2d(0f,1)              = 'x2d(0f,1)
+
+@endnode
+------------------------------------------------------ 
+@node "Bit manipulation"
+
+I have never had occasion to use any of the bit manipulations, and
+cannot see why anyone would ever want to use any of them. 
+
+Nevertheless, two subtopics on the subject are included...
+
+@endnode
+------------------------------------------------------ 
+@node "  For beginners"
+         An Absolute Beginner's Brief Introduction to Binary
+         ---------------------------------------------------
+Take my tip : 
+If this is really new to you, have a look first at the
+topics 'c2b' and 'c2d' under the heading 'Data conversion'.
+
+If you've done that, or if you don't need to do it, then the
+following statements should come as no surprise to you.
+
+ASCII equivalents of characters :
+        c2d('*') = 42
+        c2d('-') = 45
+        c2d('(') = 40
+
+Binary equivalents of characters :
+        c2b('*') = 00101010
+        c2b('-') = 00101101
+        c2b('(') = 00101000
+
+Step by step, what does it all mean?
+
+Take the character '*'.  It's ASCII code is 42.
+What does that mean?
+It means that the binary code for '*' is '00101010'.
+
+How do we get 42 from '00101010'?
+Reading from the right by 'powers of 2' : 
+
+               128 64 32 16  8  4  2  1
+                 0  0  1  0  1  0  1  0
+
+Sum the columns which contain '1' : 
+                      32  +  8  +  2  = 42       
+
+What about another character, say, '-'?
+ASCII code 45; binary code '00101101'
+Check : 32 + 8 + 4 + 1 = 45
+
+Let's do an binary addition of the two codes : 
+(The total of a column is 1 if BOTH addends are 1.)
+
+           *      00101010
+    and    -      00101101
+                  --------
+   Binary sum     00101000
+
+ What is the ASCII equivalent of that sum?   40 
+ And what character is that?    '('  
+
+So the bitwise sum of '*' and '-' is '(', which we can easily confirm
+by using the ARexx BITAND function :
+
+        say bitand('*','-')       ->   (
+
+If this interests you, or if you think any of it might be
+useful for anything, then get stuck into it, and enjoy.
+All you'll find here - well, in the next topic - is a brief summary!
+
+@endnode
+------------------------------------------------------ 
+@node '  The bit functions'
+                            Bit functions
+                            -------------
+        Run the example if you are feeling brave!
+
+   /* Example */
+LF = '0a'x ; options prompt '   Fascinating. Please tell me more.  '
+star = '       *****************************************'
+say star
+say '       You can escape at any time by entering X.'
+say star LF
+say '           s = BITAND(str1, [str2], [pad])'
+say '           -------------------------------'
+say 'Bit-wise AND of two strings, padded to equal length' LF
+say '   A ' c2d('A') ' ' c2b('A')
+say '   B ' c2d('B') ' ' c2b('B')
+say '           --------'
+say '  ' bitand('A','B') ' 'c2d(bitand('A','B')) ' ' c2b(bitand('A','B')) LF
+say 'Adding : result is a 1 if BOTH addends are 1'
+call c()
+say '           s = BITCHG(str, n)' 
+say '           ------------------'
+say 'Inverts bit n, counting from right, in str'
+say "'Invert' means swap 0 and 1"
+say "Here we do it to 'A', with 'n' in a 1 to 5 loop."
+say "Note the diagonal of '1's in the results." LF
+do i = 1 to 5
+  say '  ' bitchg('A',i) ' '  c2d(bitchg('A',i)) ' ' c2b(bitchg('A',i))
+  end
+say LF "'GUI' variations using BITCHG with n : 2, 9, and 16"
+say '   ' bitchg('GUI',2) bitchg('GUI',9) bitchg('GUI',16)
+call c()
+say '           s = BITCLR(str, n)'
+say '           ----------------- '
+say 'Clears bit n, counting from right, in str'
+say "'Clear' means set to 0"
+say "Here we do it to '?', with 'n' in a 1 to 4 loop."
+say "Note the diagonal of '0's." LF
+do i = 1 to 4
+  say '  ' bitclr('?',i) ' '  c2d(bitclr('?',i)) ' ' c2b(bitclr('?',i))
+  end
+say LF
+call c()
+say '           n = BITCOMP(str1, str2, [pad])'
+say '           ------------------------------'
+say 'Returns first bit, counting from right, at which str1 ~= str2'
+say '(-1 if equal)'
+say 'bee  ' c2b('bee') 
+say 'see  ' c2b('see')
+say '             |'
+say "bitcomp('bee','see') tells us that 'bee' and 'see' first differ,"
+say 'from the right, at bit' bitcomp('bee','see')
+call c()
+say '           s = BITOR(str1, [str2], [pad])'
+say '           ------------------------------'
+say 'Returns bit-wise OR of two strings, padded to equal length' LF
+say "   bitor('A','B') = "bitor('A','B')
+say "So bitor('A','B') returns 'C'. Let's check it." LF
+say "   c2b('A') = " c2b('A')
+say "   c2b('B') = " c2b('B')
+say "OR-ing : put a 1 in columns which have 1 OR 0 : "
+say "               01000011"
+say "which is the same as c2b('C') : " c2b('C') LF
+say "   c2b(bitor('A','B')) = " c2b(bitor('A','B'))
+say "We can SEE that they are the same. Let's use bitcomp to check."
+say "If bitor('A','B') really is the same as 'C',"
+say "this should return -1 ( = no difference)" LF
+txt = "   bitcomp(c2b(bitor('A','B')),c2b('C')) = "
+say txt || bitcomp(c2b(bitor('A','B')),c2b('C'))
+call c()
+say '           s = BITSET(str, n)'
+say '           ------------------'
+say '   Set bit n, counting from right in str'
+say '   The opposite of BITCLR.'
+say "Here we do it to '!', with 'n' in a 1 to 7 loop."
+say "Note the diagonal of '1's." LF
+do i = 1 to 7
+  say '  ' bitset('!',i) ' '  c2b(bitset('!',i)) ' ' c2d(bitset('!',i))
+  end
+say LF
+call c()
+say '           bool = BITTST(str, n)'
+say '           ---------------------'
+say 'Test bit n, counting from right, in str' LF
+say " c2b('A') = " c2b('A')
+say 'Bit by bit : '
+do i = 0 to 7
+  say " bittst('A'," || i || ") = " bittst('A',i) 
+  end
+call c()
+say '           s = BITXOR(str1, [str2], [pad])'
+say '           ------------------------------'
+say 'Returns bit-wise OR of two strings, padded to equal length.'
+say 'It is NEARLY the same as BITOR, from which I have copied and'
+say 'slightly adapted the example. Just the adding method differs.' LF
+say "   bitxor('A','1') = "bitxor('A','1')
+say "So bitxor('A','1') returns 'p'. Let's check it." LF
+say "   c2b('A') = " c2b('A')
+say "   c2b('1') = " c2b('1')
+say "XOR-ing : put a 1 in columns which ONE 1 : "
+say "               01110000"
+say "which is the same as c2b('p') : " c2b('p') LF
+say "   c2b(bitxor('A','1')) = " c2b(bitxor('A','1'))
+say "We can SEE that they are the same. Let's use bitcomp to check."
+say "If bitxor('A','1') really is the same as 'p',"
+say "this should return -1 ( = no difference)" LF
+txt = "   bitcomp(c2b(bitxor('A','1')),c2b('p')) = "
+say txt || bitcomp(c2b(bitxor('A','1')),c2b('p'))
+say LF 'You deserve a medal if you got this far.'
+exit
+
+c: say LF ; pull more ; say LF ; if more = 'X' then exit ; return
+@endnode
+------------------------------------------------------ 
+@node "Values and variables"
+See the separate subtopics :
+
+                Datatype,  Drop,  Symbol,  Value
+@endnode
+------------------------------------------------------ 
+@node '  DATATYPE'
+                               DataType
+                               --------
+          type = DATATYPE(str)
+          bool = DATATYPE(str,mode)
+
+Without the second argument, 'datatype' returns `NUM' or `CHAR'.
+
+          datatype(1.5)      ->  NUM 
+          datatype("Hello")  ->  CHAR
+
+The second argument is a single letter specifying the 'mode', and 1 or
+0 is returned.
+
+Modes:
+           A - Alphanumeric  B - Binary         L - Lower case
+           M - Mixed case    N - Numeric        S - Symbol
+           U - Upper case    W - Whole number   X - Hexadecimal 
+
+        /* Example */
+        say 'Hi there' datatype('Hi there')   
+        say 12345 datatype(12345)   
+        say 'Alphanumeric? <*> '  datatype('<*>',A)   
+        say '              abc '  datatype('abc',A)
+        say 'Upper?        ABC '  datatype('ABC',U)   
+        say '              abc '  datatype('abc',U)   
+        say 'Lower?        DEF '  datatype('DEF',L)   
+        say '              def '  datatype('def',L)   
+        say 'Mixed?        Ghi '  datatype('Ghi',M)   
+        say '              Gh1 '  datatype('Gh1',M)
+        say 'Whole number? 123 '  datatype('123',W)   
+        say '              1.2 '  datatype('abc',W)   
+        say 'Binary?  01010101 '  datatype('01010101',B)   
+        say '         01201201 '  datatype('01201201',B)
+        say 'Whole number? 123 '  datatype('123',W)   
+        say '              1.2 '  datatype('abc',W)   
+        say 'Symbol?       str '  datatype('str',S)   
+        say '              s-r '  datatype('s-r',S)
+        say 'Hexadecimal?   8F '  datatype('8F',X)   
+        say '               8G '  datatype('8G',X)   
+
+@endnode
+------------------------------------------------------ 
+@node "  DROP"
+                                 Drop
+                                 ----
+Reset a variable to its uninitialized state.  The default value of
+uninitialised variables is the name of the variable itself.
+
+Example output will be
+
+aitch
+THIS_VAR  
+
+        /* Example */
+        this_var = 'aitch' ; say this_var
+        drop this_var ; say this_var
+@endnode
+------------------------------------------------------ 
+@node "  SYMBOL"
+                                Symbol
+                                ------
+        s = symbol(str)
+
+Confirms whether a string is a valid ARexx symbol.
+
+Returns  LIT  if the string is a literal number
+              or a valid but unused variable name
+         VAR  if the string is a valid variable name
+              to which a value has been assigned
+         BAD  Not a literal number, nor a valid
+              variable name
+
+        /* Example */
+        say 123 symbol(123)     /* LIT */
+        x = 20
+        say 'x  ' symbol('x')   /* VAR */
+        say 'y  ' symbol('y')   /* LIT */
+        say 'a-c' symbol('a-c') /* BAD */
+
+@endnode
+------------------------------------------------------ 
+@node "  VALUE"
+                                Value
+                                -----
+        v = value(str)
+
+Evaluates the string as an ARexx symbol and returns the value.
+
+I am unable to discover any situation in which the presence of 
+'value' adds anything of value to a piece of ARexx code.
+
+Meanwhile, here's are some trivial examples of its use :
+
+        /* Example */
+        MyYears = 34; Age = 'Years'; say "I am" value('My'Age) || '.'
+        Age = 35 ; C = 'Age'; say "I'll be" value(C) 'next year.' '0a'x
+        Number.1 = 54; Name= 'Jones'
+        say 'The' Name 'live at Number' value(Number'.1')
+        Number.2 = 60; Name= 'Blacks'
+        say 'The' Name 'live at Number' value(Number'.2') '0a'x
+
+        Name = 'White'; White ='Chalky'; Chalky='Fatso' ; call Name(Name)
+        Name = 'Robert'; Robert ='Bob'; Bob='Bobsy' ; call Name(Name)
+        Name = 'Charles'; Charles ='Chas'; Chas = 'Thingy' ; call Name(Name)
+        exit
+
+        Name:
+         say Name || "'s friends call him" value(name) || '.'
+         say 'His wife calls him' value(value(name)) || '.'
+         return
+
+@endnode
+------------------------------------------------------ 
+@node "Console input/output"
+                         Console input/output
+                         --------------------
+        echo expr
+        say  expr
+Both send the expression result to the standard output, which
+normally means that they display it on the screen.
+
+        pull
+A shorthand form of 'parse upper pull', obtains user input.
+
+        push expr
+        queue expr
+These allow expressions to be pre-loaded, prior to their execution as
+commands.  They are a way of getting round having to wait until one
+job, like a long listing, is done before being able to enter a further
+command.  'Queue' works on a first-in, first-out basis - jobs are done
+in the order they are entered. 'Push' does jobs in a last-in, first-out
+order.
+
+The two tiny scripts below, Example1 and Example2, show that
+something like an AmigaDOS batch script can be run in ARexx.
+
+   /* Example1.rexx : Queue example - not runnable via [ Macro ] */
+        queue Example2.rexx      /* Runs Example2.rexx    */
+        queue 'Y'                  /* Sends 'Y' to keyboard */
+        queue 'N'                   /* Sends 'N' to keyboard */
+
+        /* Example2.rexx */
+        say "The time is" time('c')
+        say 'Do you want to see the date as well?'
+        pull yn
+        if yn = 'Y' then say date()
+        say 'Anything else you would like to know?'
+        pull yn
+        exit 
+
+@endnode
+------------------------------------------------------ 
+@node "File input/output"
+                          File input/output
+                          -----------------
+Topics are :
+                Close,   Eof,   Open,    ReadCh, 
+                ReadLn,  Seek,  WriteCh, WriteLn
+@endnode
+------------------------------------------------------ 
+@node "  File I/O example program"
+                         
+Here is an example program in which all eight of the File I/O
+instructions are used.  It will be trivial, to make it easy to
+understand, and somewhat artificial, in order to include an example of
+every instruction in the set.  We'll use a file called Ram:fio. The
+steps in the example will be as follows :
+
+1  Check that a file of that name does not already exist.
+
+2  Open a file called Ram:fio.  Three things are needed :
+        A unique identification string. We'll use 'f1'.
+        A path and name.  That's 'Ram:fio'
+        A 'mode' : Read, Write, or Append.
+We want to Write to it, so we'll open it in Mode 'w'.
+Our command will be :  success = open(f1,'Ram:fio','w') 
+
+3  Confirm file opened, by examining the value of 'success'. It should
+be 1. If it isn't, we'll exit.
+
+4  Write to the file
+We can use WriteLn() to write lines of text to the file. Lines written
+in that way will have a line-feed added. Or we can use WriteCh() to
+write one or more characters to the file, but these will NOT have a
+line-feed added. The latter is handy if, for example, you want to send
+a colour-setting instruction.
+
+To illustrate WriteCh(), the Example program will include a colour
+setting function Colour(n).
+
+To illustrate WriteLn(), a few lines of text will be written to the
+file, and the Colour() function will be called at the beginning of
+each. Notice that it will have its effect without requiring a new
+line. 
+
+To reinforce that important idea, a third line of text will be written
+using WriteCh only, and it will contain colour changes *within* the
+line.
+
+5  Close the file : simply "cl = Close(f1)".
+The 'cl' is a throwaway variable. You can use anything.
+
+6  Then, just for interest, we'll use the statef() function which
+returns all sorts of information about the file we have just created.
+See the 'statef' topic for more details.
+
+7  Open the file again, this time with 'r' as the third argument,
+because we want to read it.
+
+8  Read it in, line by line, using ReadLn(), until we reach eof
+(end-of-file), but we won't close it yet, because there are some more
+interesting things we can do with it while it is still open.
+
+9  Use the seek() function to go to the 67th character of the file and
+report that new position back to us.
+
+10 From the 67th character onwards, we will use :
+   (a) ReadCh() to read the next 10 characters in one gulp
+   (b) Seek() to reverse 10 characters through the text
+   (c) ReadCh() again, this time in a loop of 10, to read a single
+       character at a time.
+
+11 Close and delete the file.
+
+That's it. All eight file input/output functions have been used.
+
+        Oh the power! Oh the flexibility! Oh the ease!  Ah, ARexx!
+
+    /* Example */
+    LF = '0a'x                                    /* Line feed */
+    if exists('Ram:fio') then do                      /* 1 */
+       say "A file called 'Ram:fio' already exists.  It will be"
+       say "over-written if we continue? Is that okay? ( Y / N ) "
+       pull yn ; if yn = 'N' then exit
+       end 
+    success = open(f1,'Ram:fio','w')                  /* 2 */
+    say 'Success = ' success
+    if ~( success ) then do                           /* 3 */
+       say "We've got problems. Better exit." ; exit
+       end
+                                                      /* 4 */
+    call writeln(f1,"These rather boring lines of text will be")
+    call Colour(2) 
+    call writeln(f1,"used as examples to illustrate how text is")
+    call Colour(3) 
+    call writeln(f1,"written to the file which we have opened.")
+    call Colour(1) ; call writech(f1,"This line ")
+    call Colour(2) ; call writech(f1,"will be written ")
+    call Colour(3) ; call writech(f1,"using Writech()." LF)
+    call Colour(1)
+    cl = close(f1)                                    /* 5 */
+    say "Statef('Ram:fio') : " statef('Ram:fio')      /* 6 */
+    success2 = open(f1,'Ram:fio','r')                 /* 7 */
+    say LF '    The contents of Ram:fio are :' LF
+    do until eof(f1) ; say readln(f1) ; end           /* 8 */
+    n = seek(f1,67,'b') ; say 'Offset position is' n  /* 9 */
+    say "In one grab : " readch(f1,10)                /*10 */
+    n = seek(f1,-10)
+    say 'In 10 single-character steps : '
+    do i = 1 to 10 ; say copies(' ',i) readch(f1) ; end
+    cl = close(f1)                                    /*11 */
+    call delete('ram:fio')
+    exit
+    Colour:
+        call writech(f1, '1b'x'[3'arg(1)'m')
+        return
+
+@endnode
+------------------------------------------------------ 
+@node "Directories and Files"
+See the separate subtopics :
+                        Delete     Exists     Makedir
+                        Rename     Showdir    Statef
+@endnode
+------------------------------------------------------ 
+@node '  DELETE'
+                                Delete
+                                ------
+        b = DELETE(name)
+
+Deletes a file or directory.  The returned value, here 'b', can be
+checked for success.  Or the function can be invoked with :
+
+        call Delete(name)
+@endnode
+------------------------------------------------------ 
+@node '  EXISTS'
+                                Exists
+                                ------
+        b = EXISTS(name)
+Returns 1 ( = TRUE) if given file or directory exists.
+A check for non-existence can take the form :
+
+        if ~(exists( name )) then ...
+@endnode
+------------------------------------------------------ 
+@node '  MAKEDIR'
+                               Makedir
+                               -------
+        b = MAKEDIR(dirname)
+Creates a directory of the given name.  To include a prior check, the
+code could be :
+
+        if ~(exists( name )) then b = Makedir( name )
+OR      if ~(exists( name )) then call Makedir( name )
+
+@endnode
+------------------------------------------------------ 
+@node '  RENAME'
+                                Rename
+                                ------
+        b = RENAME(oldname, newname)
+Rename 'oldname' file or directory as 'newname'.  To include a check
+against overwriting an existing directory, the code might be :
+
+        if ~(exists( newname )) then b = Makedir( newname )
+
+@endnode
+------------------------------------------------------ 
+@node '  SHOWDIR'
+                               Showdir
+                               -------
+        filelist = SHOWDIR(dir, [mode], [pad])
+Lists the file and/or directory names in a directory
+Modes: 
+        A - All (default)  
+        F - Files only  
+        D - Directories only  
+
+The output is not tidily formatted, and can be improved by the
+inclusion of the linefeed character '0a'x as a pad between each item.
+
+        formatted = showdir(dirname,f,'0a'x)
+
+Will list all files in 'dirname' directory in a single column.
+@endnode
+------------------------------------------------------ 
+@node '  STATEF'
+                                Statef
+                                ------
+        filestr = STATEF(pathname)
+
+Returns information about a file or directory in the form
+
+                  type size  blk  bits   day  min tick com
+
+        Example : FILE 83559 82 ----RWED 7062 866 950 
+
+            type -> FILE or DIR
+            size -> in bytes
+            blk  -> in blocks
+            bits -> protection settings
+            day  -> creation date in days since 1/1/1988
+            min  -> creation time in minutes since midnight
+            tick -> creation time in ticks within the minute
+            com  -> filenote, if any
+
+Any specifically required elements of this information can be parsed
+out using 'parse var filestr type size blk bits day min tick com'
+or 'parse value statef(pathname) with type size blk bits day min tick
+com'. Further work on the output could produce practically any format
+you could wish for, including converting 'day min tick' into a normal
+date and time format.
+
+@endnode
+------------------------------------------------------ 
+@node "Script environment"
+See the separate subtopics :
+
+                Date   Errortext   Options
+                SourceLine  Time   Trace
+@endnode
+------------------------------------------------------ 
+@node '  DATE'
+                                 Date
+                                 ----
+        d = DATE([outmode],[indate],[inmode])
+
+With no arguments, output is today's date in 'normal' format :  dd mmm yyyy
+The dd element is padded with a leading 0 if necessary.
+With just the first argument (the 'outmode', as in date('b')), the
+following outputs are available :
+
+         B - Base (days since 01/01/0000)
+         C - Century (days this century)
+         D - Days (days since start of year, counting today)
+         E - European (dd/mm/yy - e.g. 19/11/76)
+         I - Internal (days since 01/01/1978)
+         J - Julian (yyddd - 2-digit year, 3-digit days this year)
+         M - Month name in English mixed case (e.g. `November')
+         N - Normal, the default (dd mmm yyyy, e.g. 01 Jun 1986)
+         O - Ordered (yy/mm/dd, e.g. 84/05/24)
+         S - Standard (yyyymmdd, e.g. 19921005)
+         U - USA (mm/dd/yy, 12/21/88)
+         W - Weekday name in English mixed case (e.g. `Thursday')
+
+Details for a date other than today can be obtained by specifying the
+required date as the second argument. Unless specified otherwise,
+the input format of that date will be yyyymmdd.
+
+The third argument, if present, specifies which format is used for
+the second argument. It can only be 's' ( = standard, the default),
+or 'i' ( = internal, as in the above list).
+
+        /* Example */
+        say "    Today is : "
+        d.1  = "Base     " ; d.2  = "Century  " ; d.3  = "Days     " 
+        d.4  = "European " ; d.5  = "Internal " ; d.6  = "Julian   " 
+        d.7  = "Month    " ; d.8  = "Normal   " ; d.9  = "Ordered  " 
+        d.10 = "Standard " ; d.11 = "USA      " ; d.12 = "Weekday  "
+        do i = 1 to 12 ; say d.i ' ' date(left(d.i,1)) ; end
+
+@endnode
+------------------------------------------------------ 
+@node '  ERRORTEXT'
+                              Error Text
+                              ----------
+        text = ERRORTEXT(n)
+Returns a description of syntax error number n
+
+        errortext(1)  ->  Program not found
+        errortext(2)  ->  Execution halted
+        errortext(3)  ->  Insufficient memory
+
+Numbers go up to 48, with a few gaps. The example shows them all.
+
+        /* Example */
+        do i = 1 to 48
+           txt = errortext(i)
+           if txt ~= '' then say i ' : ' txt
+           end
+
+@endnode
+------------------------------------------------------ 
+@node '  OPTIONS'
+                               Options
+                               -------
+        OPTIONS PROMPT <text>
+You'll see 'Options prompt' in a lot of the examples. It displays a
+reminder to the user to enter something, and has the advantages over a
+reminder displayed by 'say ' that it doesn't end with a linefeed and
+it reappears each time a 'pull', 'parse pull', or 'parse external'
+instruction occurs.
+
+        OPTIONS RESULTS
+Include this before trying to obtain information from some other
+process.  The following lines will not work unless OPTIONS RESULTS
+precedes them :
+
+        address 'Gui4Cli'
+        'SendRexx' this_port required_data
+        address  /* Reset to REXX */
+
+        OPTIONS NO RESULTS turns it off
+
+        OPTIONS CACHE  is on by default, and is best left on.
+        It activates 'an internal statement caching-scheme, whatever
+        that means.
+
+        OPTIONS FAILAT n
+        Sets a failure level (n = 5, 10, 20, etc) for error trapping
+        purposes. Useful for bug-hunting when used with TRACE.
+
+        OPTIONS
+        With no keyword, resets all OPTIONS to their default :
+              RESULTS off
+              CACHE on
+              PROMPT '' (empty)
+              FAILAT (generally 10)
+
+@endnode
+------------------------------------------------------ 
+@node '  SOURCELINE'
+                              SourceLine
+                              ----------
+        n = sourceline()
+Returns the number of lines in the currently running script.    
+
+        line_of_code = sourceline(line_number)
+Returns the text of the indicated line.
+
+        /* Example */
+        say 'This short example exists for the purpose'
+        say 'of demonstrating the ARexx sourceline() instruction.'
+        n =  sourceline()
+        say 'This program has' n 'lines.'
+        do i = 1 to n
+           say i  sourceline(i)
+           end
+@endnode
+------------------------------------------------------ 
+@node '  TIME'
+                                 Time
+                                 ----
+        t = TIME([mode])
+Find current or elapsed time
+Modes:
+         C - Civil (h:mmAM or h:mmPM, e.g. 3:07AM)
+         E - Elapsed (s.cc, seconds and hundredths, in interval)  
+         H - Completed hours since midnight (e.g. 4)
+         M - Completed minutes since midnight (e.g. 243)
+         N - Normal, the default (hh:mm:ss, e.g. 17:04:41)
+         R - Same as elapsed, but resets timer to 0.00
+         S - Completed seconds since midnight (e.g. 17353)
+        
+        /* Example */
+        d.1  = "Civil   " ; d.2  = "Elapsed " ; d.3  = "Hours   " 
+        d.4  = "Minutes " ; d.5  = "Normal  " ; d.6  = "Reset   " 
+        d.7  = "Seconds "
+        say '   Time ...'
+        do i = 1 to 7 ; say d.i ' ' time(left(d.i,1)) ; end
+
+@endnode
+------------------------------------------------------ 
+@node '  TRACE'
+                                Trace
+                                -----
+The general trace facilities in ARexx are *very* powerful.
+
+See under 'Support Programs' for details of TS, TE, TCC, and TCO.
+
+Trace Instruction
+-----------------
+                trace mode 
+Just the first letter is enough to select a mode :
+
+  All : Lists all clauses as they execute.
+  Background : (Nearly) the same as Off.
+  Commands : Traces commands and returns.
+  Errors : Lists any non-zero error return.
+  Intermediates : The most detailed tracing mode.
+  Labels : Lists label clauses (e.g. calls to functions) as.processed.
+  Normal : Default trace mode. Similar to 'Errors' mode, but ignores
+  errors below the Failat threshold.
+  Off : No tracing.
+  Results : List results of every expression evaluation.
+  Scan : The same as 'All', but instructions are not actually
+  executed.  Allows a risk-free practice run.
+
+Trace options, e.g. 'trace r', may be set anywhere in a script.
+
+Two special features :  ?  and  !
+--------------------
+The question mark turns interactive tracing on or off.
+The exclamation mark suppresses the execution of external commands,
+a useful precaution when testing potentially destructive commands
+such as AmigaDOS 'Delete'.
+
+Examples : trace ?n
+           trace !c
+
+Numeric arguments :
+-----------------
+    trace 10  
+        Will continue as before, but will not pause again
+        until the tenth next possible pause.
+    trace -20
+        Will suspend tracing for the next 20 clauses
+
+Trace Function
+--------------
+The instructions listed above can be invoked as functions, e.g.
+
+     oldtrace = trace('i')   /* Switches to intermediate mode */
+     call trace(oldtrace)    /* Re-invokes whatever oldtrace was */
+
+@endnode
+------------------------------------------------------ 
+@node "ARexx environment"
+See the separate subtopics :
+
+                Addlib and Remlib
+                Address and Shell
+                Getclip and Setclip
+                Show
+@endnode
+------------------------------------------------------ 
+@node '  ADDLIB and REMLIB'
+                          Addlib and Remlib
+                          -----------------
+        b = AddLib(libname,pri,[offset,version])
+
+Example :  b = AddLib('rexxarplib.library,0,-30,0)
+
+Adds a library name or host name to the active list - makes it available
+for use in a program. The call to add a library assumes that a copy of the
+library exists in LIBS:
+
+
+        b = RemLib(libname)
+
+Removes a library name from the active list. Rarely needed.
+
+@endnode
+------------------------------------------------------ 
+@node "  ADDRESS and SHELL"
+                          Address and Shell
+                          -----------------
+'Shell' is an exact synonym for 'address' ; they are completely
+interchangeable.  
+
+         The Address *function* and the Address *instruction*
+         ----------------------------------------------------
+  The function
+  ------------
+There is an ADDRESS() function (note the parentheses) which returns
+the address string of the current 'host'.  In simple terms, it
+identifies whatever it is that's driving the current process.  The
+function is informative but not very powerful.
+
+      /* hello.rexx */
+      say 'Hello'               -> Hello
+      say address()             -> REXX
+
+    REXX is the default host name for all ARexx processes.
+
+  The instruction
+  ---------------
+There is an ADDRESS instruction (Note : no parentheses) used to modify
+a host address or to send a command to a host.  Possible forms are :
+
+        (a) ADDRESS
+        (b) ADDRESS name
+         or ADDRESS value name-expression
+        (c) ADDRESS name command-expression
+ 
+    (a) Toggles between the main and any alternative command host.
+    (b) Specifies a new command host, literally, or by value.
+    (c) Sends a command to a specified host 
+
+After use of (a) or (b), what is returned by the ADDRESS() function
+will have changed.  That is not the case with (c). 
+
+  Address command ...
+  ---------------
+One of the most useful applications of (c) is to invoke an
+AmigaDOS command.  The format is simply 'address command' plus the
+required command, in quotes if it contains more than one word :
+
+                address command list 
+                address command 'copy sourcefile destfile'
+
+  Toggling
+  --------
+Address changing is typically needed when you wish to send a command
+from an ARexx process to some other process.  You set the address to
+the other process, send one or more commands to that other process,
+and then reset the address back to REXX.  This switching between
+addresses was referred to above as toggling 'between the main and any
+alternative command host'. 
+
+  Ports
+  -----
+Messages which are exchanged between processes are passed through
+'Ports'. A particular port must be available for any messages to be
+passed through it. How can you find out what ports are available?  
+Enter this in a shell :
+              > rx 'say show("P")'
+or for a neater output
+              > rx 'say show("P",,'0a'x)'
+
+The output from this command will be a list of ports, and any of those
+port names is a valid argument to an 'address' instruction.
+
+                            -------------
+
+Among the portnames returned by my system are 'REXX', 'Gui4Cli', and
+'MYPORT1'.  I always have 'REXX' and 'Gui4Cli' on line, because
+'rexxmast' is run at bootup, and I've got a sort of homemade Gui4Cli
+directory manager running permanently in the background.  The
+existence of the MYPORT1 port tells me that my text editor is running,
+which is no surprise, because I am using it to write this script.
+
+These port names mean that it would be possible to send messages
+between any combination of REXX, Gui4Cli, and my editor.  As a typical
+example, I can use something like the following ARexx sequence :
+
+        address 'Gui4Cli'
+        ·
+        [ Anything in here would be one or more legal Gui4Cli commands.
+        They will be passed to a 'Gui4Cli' process which will be
+        expecting them, and which will be coded in such a way as to
+        handle them as required.]
+        ·
+        address  [Resets the address to REXX]
+
+If only one command is to be sent, then a one-line form of the above
+sequence could be used :  address 'Gui4Cli' <the_command>
+
+Now let's start looking at some actual examples.  I can make *no*
+assumptions about your system setup, and so the following script is a
+discussion document rather than a runnable example.
+
+        /*  This is the script. The lines are        */
+        /*  numbered for discussion below.           */
+        say show("P")                           /* 1 */
+        say address()                           /* 2 */
+        address MYPORT1                         /* 3 */
+        say address()                           /* 4 */
+            'BOL';'CRU';'CRU';'MARK 3';'CRD'    /* 5 */
+            'CRD';'CRD';'CRD';'EOL';'MARK 1'    /* 6 */
+            'SAVEAS \\Ram:SavedLines'           /* 7 */
+        address                                 /* 8 */
+        say address()                           /* 9 */
+        address command 'type ram:SavedLines'   /*10 */
+
+      Line 
+        1  Confirms that MYPORT1 is available 
+        2  Displays current address, i.e. REXX
+        3  Sets the address to MYPORT1.  We are now ready to send 
+           to my editor one or more of the hundreds of commands which
+           it understands.
+        4  A check on the current address. It should be MYPORT1.
+        5 - 7  A set of 11 commands sent to the editor.  What they
+           actually do in this example is utterly trivial and
+           unimportant.  The important thing is that they will be
+           sent, and carried out. 
+           [The cursor will be on a certain line of the file being 
+           edited. Consider that line as the third one of a group of
+           five lines. Those five lines will be saved to a new file.]
+        8  Toggles the current address back to REXX
+        9  Another check. It should now return REXX
+       10  If the above all worked, there should be a new file 
+           called 'Ram:SavedLines'. We can display its contents by
+           using the 'address command ' instruction as shown.
+
+@endnode       
+------------------------------------------------------ 
+@node "  SETCLIP and GETCLIP"
+                         SetClip and GetClip
+                         -------------------
+        b = SETCLIP(name, [value])
+Sets a string value for the clip name. Strings which are set as
+'clips' in this way can be stored and shared by programs or passed
+between programs.
+
+        b = SETCLIP(name)     Clears the setting for 'name'.
+
+        s = GETCLIP(clip)
+Returns the value string associated with clip name
+
+        /* One program - does background calculations */
+        /* and stores result */
+        b = setclip('trend','99.78')
+
+        /* Another program - needs the value */
+        say getclip('trend')
+
+SetClip and GetClip are similar to AmigaDOS SetEnv and GetEnv.
+Unfortunately the two pairs of functions store the strings
+differently, and so they cannot be used in partnership.
+
+@endnode
+------------------------------------------------------ 
+@node "  SHOW"
+                                 Show
+                                 ----
+        s = SHOW(mode,,[pad])    Returns a list of names.
+If 'pad' is '0a'x (linefeed), and if the results of the call are
+displayed using, for example, 'say', then the results will be
+displayed in a column.
+
+        b = SHOW(mode,name)   
+Returns 1 if 'name' is in the specified list, otherwise 0.
+
+The modes are :
+        C - Clips             
+                Existing clips, listed by clip name
+        F - Files
+                Any files which are currently open
+        I - Internal ports    
+                Ports opened by the current ARexx program
+        L - Function Libraries
+                Libraries on the currently active list
+        P - Ports
+                System message ports
+
+        /* Example */
+        b = setclip('Clip_1',"I'm a clip")
+        say '    Existing clips'
+        say show('C')
+        say 'Clip_1  -> ' show('C','Clip_1')
+        say '    Currently open files'
+        say show('F')
+        say '    Online libraries'
+        say show('L',,'0a'x)
+        say '    System ports'
+        say show('P')
+
+@endnode
+------------------------------------------------------ 
+@node "Messages, packets and ports"
+                     Messages, packets and ports
+                     ---------------------------
+The following are included under this heading :
+
+                Openport    Closeport
+                Getarg      Reply
+                Getpkt      Waitpkt
+
+A simple framework in which to explore messages and ports is to
+set up two CLI windows, one of which sends a message to another. This
+will require two programs, one to handle the message sending
+('Send.rexx'), and the other the receiving ('Receive.rexx').  The
+latter must be run first, so that its port is open, ready and waiting
+for a message to be sent from the partner program.
+
+But of course we've also got to have a CLI window available for us to
+issue the commands to run those programs, and unless we box clever,
+we'll have to have one CLI window from which to run 'Receive.rexx'
+and another from which to run 'Send.rexx'.  There is a way round
+this, but you will appreciate that we won't be able to just click on
+the [ Macro ] button to run these programs. Instead, take the
+following steps :
+
+1  Use the [ Grab ] button to save a copy of this topic to a
+   temporary file such as Ram:temp.
+2  Use a text editor to extract from ram:temp the patches of code
+   for Receive.rexx and Send.rexx (see below).
+3  Open a CLI window.
+4  Receive.rexx must be run first, as explained above, but DO NOT
+   enter 'rx Receive.rexx' or else you'll then have to open another
+   CLI window to run Send.rexx. Instead, use this command :
+       
+           run >NIL: rx Receive.rexx
+
+5  Then the same window can be used to enter  rx Send.rexx
+
+6  All being well, 'Receive' and 'Send' should each have opened their
+   window.  Enter a message into the 'Send' window.  It will be
+   passed to 'Receive' and displayed in its window. All very trivial,
+   but it is a real working example of inter-port message passing,
+   and has *enormous* potential.
+
+                        ----------------------
+/* Receive.rexx */
+    /* Useful constants are predefined */
+    LF  = '0a'x                                 /* `linefeed'     */
+    CU  = '1b'x"M"                              /* `cursor up'    */
+    EL  = '1b'x"[1K"                            /* `clear to eol' */
+
+    /* A library check, just in case ... */
+    if ~show('l', "rexxsupport.library") then
+     check = addlib('rexxsupport.library',0,-30,0)
+
+    /* A message receiving console window is opened */
+    call open(con1,"con:20/40/500/80/Waiting_for_message/CLOSE")
+    call writeln con1,LF LF"    This is the first of two programs."
+    call writeln con1,"    The other program will send it a message."
+
+    /* A port called MYPORT is opened. */
+    call openport(MYPORT)
+
+    /* It is important that we wait until that port-opening task is
+       completed before we continue. */
+    if ~show('i',MYPORT) then             /* 'i' = Internal port */
+      address command 'WaitForPort MYPORT'  /* Is it open yet?     */
+
+/* The ARexx support program called WaitForPort is specifically designed for this
+waiting task, and it should be included in your ARexx package. If you know
+that you do not have that program, then the following little looping hack will
+do instead of the two preceding lines of code :
+
+    do until show('i',MYPORT)
+       call delay(1)
+       end  
+*/
+    /* Receive.rexx now sits and waits for a message. */
+    gottit = 0
+    do until gottit
+      call waitpkt(MYPORT)                /*  z  z  z  z  z  */
+      packet = getpkt(MYPORT)             /* Receive a message */
+      gottit = (packet ~= null())    /* Check that it is not empty */
+    end
+
+    message = getarg(packet)                    /* Read it         */
+    call reply(packet,0)                        /* Acknowledge it  */
+    do 2 ; call writech con1,CU EL ;  end       /* Tidy up screen  */
+
+    call writeln(con1,"  The message sent was : " LF)
+    call writeln(con1,centre(message,60))       /* Display message */
+        
+    str = "     To quit, press Return or click on Close gadget."
+    call writech(con1,str)
+    call readch(con1,1)                       /* Wait for keypress */
+ 
+    call closeport(MYPORT)              /* Not essential, but tidy */
+    exit
+    /* ------- End of Receive.rexx ------- */
+
+    /* Send.rexx */
+
+    LF  = '0a'x
+    call open con2,"con:20/120/500/60/Type_in_your_message"
+    call writeln(con2,LF"    Enter your message.")
+    call writech(con2,LF " -> ")         /* writech does not add CR */
+
+    /* Here's where you enter your message  */
+    sendthis = readln(con2)
+
+    /* That message is sent to MYPORT */
+    address MYPORT sendthis
+    exit
+    /* ------- End of Send.rexx ------- */
+
+@endnode
+------------------------------------------------------ 
+@node "Operating system"
+See the separate subtopics :
+          Delay    Forbid and Permit   Next
+          Null     Pragma          Showlist
+@endnode
+------------------------------------------------------ 
+@node '  DELAY'
+                                Delay
+                                -----
+        call Delay( n )
+
+Pauses for n 50ths of a second.
+
+        /* Example */
+        str = 'Watch these pauses'
+        do i = 1 to length(str)
+          call delay(8)
+          say left(str,i)
+          end
+@endnode
+------------------------------------------------------ 
+@node '  FORBID and PERMIT'
+                          Forbid and Permit
+                          -----------------
+Toggle multitasking while scanning shared data such as memory 
+details.
+                USE SPARINGLY, IF AT ALL 
+
+    /* Example */
+    tab = '09'x
+        /* Obtain 4-byte screen address */
+    ScrAdd = showlist(l, 'intuition.library',, a)
+    call forbid           /* Turn off multitasking */
+    Screen = next(ScrAdd, 56)
+    Mouse_X = c2d(import(offset(Screen, 18), 2))
+    Mouse_Y = c2d(import(offset(Screen, 16), 2))
+    Font = next(Screen, 136)
+    Font_Height = c2d(import(offset(Font, 20), 2))
+    Font_Width = c2d(import(offset(Font, 24), 2))
+    call permit           /* Re-enable multitasking */
+    say 'Details obtained :'
+    say tab 'Mouse_X     = 'Mouse_X
+    say tab 'Mouse_Y     = 'Mouse_Y
+    say tab 'Font height = 'Font_Height
+    say tab 'Font width  = 'Font_Width
+
+@endnode
+------------------------------------------------------ 
+@node  '  NEXT'
+                                 Next
+                                 ----
+        value = next(address[, offset])
+
+Returns the 4-byte value stored at address + offset. 
+See the 'Forbid and Permit' topic for an example.
+@endnode
+------------------------------------------------------ 
+@node '  NULL'
+                                Null()
+                                 ----
+Returns a 4-byte string ('00000000'x) corresponding to a null address.
+Is exactly equal to '00000000'x, and could be replaced by it, but it
+improves script readability.  The script in the 'Messages, Packets,
+and Ports' topic contains the following instance of its use.
+
+   gottit = (packet ~= null())    /* Check that it is not empty */
+
+@endnode
+------------------------------------------------------ 
+@node '  PRAGMA'
+                                Pragma
+                                ------
+'Pragma' groups together as one function a motley collection of
+system facilities.
+
+        olddir = pragma('d')          Returns current directory
+        olddir = pragma('d',newdir)   Returns old directory and
+                                      changes to newdir
+
+        oldpri = pragma('p',newpri)   Sets current priority to newpri
+                                      and returns previous priority
+
+        oldsize = pragma('s',size)    Sets stack to size
+                                      and returns old stack size
+
+        1 = pragma('w','n')           Suppresses DOS warning requesters
+        1 = pragma('w')               Re-enables DOS warning requesters
+
+        task = pragma('i')            Returns address of current task
+
+        b = pragma('*')               Sets default console handler,
+              normally STDIN and STDOUT via a CLI console window.
+        b = pragma('*',other)         Specifies another console,
+              opened as a file whose name begins with con: .
+
+No example script provided. I don't want to meddle with your system.
+
+@endnode
+------------------------------------------------------ 
+@node '  SHOWLIST'
+                               Showlist
+                               --------
+Returns lists of just about everything to do with your system you'll
+ever want to know - more, in fact.
+
+        list = showlist(mode)          An unformatted list
+        list = showlist(mode,,pad)     
+          A formatted list, e.g. one item per line if pad = '0a'x
+        b = showlist(mode,name)
+          Returns 1 if name exists in the list, else 0.
+        b = showlist(mode,name,,'a')
+          Returns the address of name (if it exists) as a 4-byte
+          string.
+
+Just the initial letter of the required mode is enough. One or two
+which you'll *never* need are omitted from the list, but the modes
+include the following :
+
+        Assigns         Like the list returned from AmigaDOS 'assign'
+        Devices         timer.device, console.device, etc.
+        Handlers        PIPE:, CON:, etc
+        Libraries       intuition.library, rexxsupport.library, etc.
+        Memory          Names of nodes on the MemList list.
+        Ports           The same as show("P")
+        Resources       disk.resource, potgo.resource, etc.
+        Task ready      Tasks which are not currently active but
+                        'ready to go'. List usually empty - done!
+        Volumes         Volume names
+        Waiting         Tasks which are idling, waiting for a call -
+                        generates a surprisingly long list.
+
+        /* Example */
+        say 'Press one of the following keys to'
+        say 'invoke showlist(key), or press q to quit. '
+        options prompt 'a d h l m p r t v w q > '
+        do forever
+            pull char
+            if char = 'Q' then leave
+            say showlist(char,,'0a'x)
+            end
+@endnode
+------------------------------------------------------ 
+@node "NOT INCLUDED"
+                             Not included
+                             ------------
+There are some topics which :
+
+        (a) I have never used and do not imagine I will ever use.
+OR      (b) Remain a mystery.
+OR      (c) Are not without risk - fiddling with memory, etc.
+
+They include :
+        AllocMem   Baddr      Export      FreeMem   
+        Import     GetSpace   FreeSpace   Offset
+        Storage    Typepkt  
+
+Such topics are not covered in this database. If you think you're
+likely to want to use them, you're going to need a lot more help than
+is offered here.
+
+Other topics?  I have either overlooked them or, for some reason, have
+considered them to lie beyond the scope of this collection.
+
+@endnode

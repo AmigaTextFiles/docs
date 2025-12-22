@@ -1,0 +1,369 @@
+/**********************************************************************************
+;
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;
+***********************************************************************************/
+
+
+#include <stdio.h>
+#include <string.h>
+
+#include <proto/exec.h>
+#include <proto/bsdsocket.h>
+
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <proto/socket.h>
+
+// /opt/amiga/bin/m68k-amigaos-gcc Connect.c -noixemul -Os -o Connect
+
+
+// ---------------------------------------------------------------------------
+// Ensure that AmigaOS gives us enough stack
+
+#ifdef __VBCC__
+	__entry char StackCookie[] = "$STACK:10240";
+#endif
+#ifdef __GNUC__
+	__attribute__((used)) char StackCookie[] = "$STACK:10240";
+#endif
+
+// ---------------------------------------------------------------------------
+
+// The SocketBase is only required by GCC.
+#ifdef __GNUC__
+	struct Library * SocketBase = NULL;
+#endif
+
+// The variables used to store the socket error codes
+static long ErrNo=0;
+static long HErrNo=0;
+
+
+// ---------------------------------------------------------------------------
+// - Ensure the error number is within the expected range.
+// - Get the human readable string and print it after the provided message.
+
+void Error( char * pMsg )
+{
+	long Error = ErrNo;
+
+	if ( Error < 0 ) Error = -Error;
+	if ( Error > 10000 ) Error -= 10000;
+
+	struct TagItem tags[2];
+	tags[0].ti_Tag= SBTM_GETVAL(SBTC_ERRNOSTRPTR);
+	tags[0].ti_Data= Error;
+	tags[1].ti_Tag= TAG_END;
+
+	if ( SocketBaseTagList( tags ) != 0 )
+	{
+		printf( "%s Unkown error: %ld\n", pMsg, ErrNo );
+	}
+	else
+	{
+		char * pErrStr = (char *)tags[0].ti_Data;
+		printf( "%s Error: %ld (%s)\n", pMsg, ErrNo, pErrStr );
+	}
+}
+
+// ---------------------------------------------------------------------------
+// - Try to resolve the hostname into an IP address.
+// - Return the address as a 32 bits number.
+
+ULONG GetIPAddress( char * pName )
+{
+	struct hostent * pHE = gethostbyname( pName );
+	if ( !pHE )
+	{
+		printf( "GetIPAddress: Unable to resolve hostname! Error: %ld\n", HErrNo );
+		return 0;
+	}
+
+	if ( pHE->h_length != 4 )
+	{
+		printf( "GetIPAddress: Address length = %ld!\n", pHE->h_length );
+		return 0;
+	}
+
+	ULONG Addr = 0;
+	memcpy( (char *)&Addr, pHE->h_addr, sizeof( Addr ) );
+
+	return Addr;
+}
+
+// ---------------------------------------------------------------------------
+// - Open a socket of the requested type.
+// - Select the events that are of interest.
+// - Enable non-blocking. This will also enable asynchronous events.
+
+int PrepareSocket( int Type )
+{
+	int Socket = socket( AF_INET, Type, 0 );
+	if ( Socket < 0 )
+	{
+		Error( "PrepareSocket: Unable to open socket!" );
+		return -1;
+	}
+
+	ULONG Temp = FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+	setsockopt( Socket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+
+	ULONG Value = 1;
+	if ( IoctlSocket( Socket, FIONBIO, (char *)&Value ) < 0 )
+	{
+		CloseSocket( Socket );
+		Error( "PrepareSocket: Unable to set socket to non-blocking!" );
+		return -1;
+	}
+
+	return Socket;
+}
+
+// ---------------------------------------------------------------------------
+
+void ReadLastData( int Socket )
+{
+	char Buffer[ 2048 ];
+
+	while ( 1 )
+	{
+		int BytesDone  = recv( Socket, Buffer, 2047, 0 );
+		if ( BytesDone == 0 )
+		{
+			printf( "Nothing more to read - connection closed!\n" );
+			return;
+		}
+
+		if ( BytesDone < 0 )
+		{
+			if ( ErrNo != EAGAIN )
+			{
+				Error( "recv" );
+				return;
+			}
+		}
+		else
+		{
+			Buffer[ BytesDone ] = '\0';
+			printf( "Received: %d bytes\n", BytesDone  );
+			//printf( "%s\n", Buffer );
+		}
+	}
+}
+
+// ---------------------------------------------------------------------------
+
+int ProcessSocketSignal( char * pGetRequest )
+{
+	// Check which socket received which events
+	ULONG EventMask=0;
+	int EventSocket = GetSocketEvents( &EventMask );
+	if ( EventSocket == -1 )
+	{
+		printf( "No events!\n" );
+		return 0;
+	}
+
+	printf( "Event for socket: %d ", EventSocket );
+
+	if ( EventMask & FD_ERROR )
+	{
+		if ( ErrNo == 0 )
+		{
+			// Get the error from the socket
+			long Length = sizeof( ErrNo );
+			getsockopt( EventSocket, SOL_SOCKET, SO_ERROR, &ErrNo, &Length );
+		}
+		Error( "FD_ERROR!" );
+		return -1;
+	}
+
+	if ( EventMask & FD_CONNECT )
+	{
+		printf( "FD_CONNECT\n" );
+	
+		// Connected - send the GET request
+		int Len = strlen( pGetRequest );
+		int BytesDone = send( EventSocket, pGetRequest, Len, 0 );
+		if ( BytesDone < 0 )
+		{
+			Error( "send" );
+		}
+		else
+		{
+			printf( "Sent %d bytes\n", BytesDone );
+		}
+
+		// And that is all we will send.
+		shutdown( EventSocket, 1 );
+	}
+
+	if ( EventMask & FD_READ )
+	{
+		printf( "FD_READ " );
+
+		// There is data to be read
+		char Buffer[ 2048 ];
+		int BytesDone  = recv( EventSocket, Buffer, 2047, 0 );
+		if ( BytesDone < 0 )
+		{
+			if ( ErrNo != EAGAIN )
+			{
+				Error( "recv" );
+			}
+		}
+		else
+		{
+			Buffer[ BytesDone  ] = '\0';
+			printf( "Received: %d bytes\n", BytesDone  );
+			//printf( "%s\n", Buffer );
+		}
+	}
+	
+	if ( EventMask & FD_WRITE )
+	{
+		printf( "FD_WRITE\n" );
+	}
+	
+	if ( EventMask & FD_CLOSE )
+	{
+		printf( "FD_CLOSE\n" );
+		ReadLastData( EventSocket );
+		return -1;
+	}
+
+	return 0;
+}
+
+// ---------------------------------------------------------------------------
+
+void Connect( char * pName, ULONG SocketSignalMask )
+{
+	// Resolve the domain name into an IP address
+	ULONG Addr = GetIPAddress( pName );
+	if ( !Addr )
+	{
+		return;
+	}
+
+	printf( "Address: %s\n", Inet_NtoA( Addr ) );
+	
+	// Prepare a non-blocking TCP socket.
+	int Socket = PrepareSocket( SOCK_STREAM );
+	if ( Socket < 0 )
+	{
+		return;
+	}
+	
+	printf( "Socket open..\n" );
+		
+	// Begin connection to port 80 on the IP address
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = 80;
+	SockAddr.sin_addr.s_addr = Addr;
+	
+	int Result = connect( Socket, (struct sockaddr *)&SockAddr, sizeof( SockAddr ) );
+	if ( Result < 0 )
+	{
+		if ( ErrNo != EINPROGRESS )
+		{
+			Error( "Unable to connect socket!\n" );
+			CloseSocket( Socket );
+			return;
+		}
+	}
+
+	printf( "Socket connecting..\n" );
+	
+	char RequestStr[ 250 ];
+	sprintf( RequestStr, "GET / HTTP/1.0\r\nhost: %s\r\n\r\n", pName );
+	
+	while ( 1 )
+	{
+		// Sleep until there is a socket event or a CTRL-C in the CLI/shell
+		ULONG Signals = Wait( SocketSignalMask | SIGBREAKF_CTRL_C );
+		if ( Signals & SIGBREAKF_CTRL_C )
+		{
+			printf( "Break signal!\n" );
+			break;
+		}
+		
+		if ( Signals & SocketSignalMask )
+		{
+			if ( ProcessSocketSignal( RequestStr ) < 0 )
+			{
+				break;
+			}
+		}
+	}
+	
+	CloseSocket( Socket );
+}
+
+// ---------------------------------------------------------------------------
+
+int main( int argc, char *argv[] )
+{
+	if ( argc < 2 )
+	{
+		printf( "Please provide a hostname or IP address to connect to.\n" );
+		return 0;
+	}
+	
+	printf( "Connecting to: %s\n", argv[1] );
+	
+	// Open the BSD socket library
+	#ifdef __GNUC__
+	SocketBase = OpenLibrary( "bsdsocket.library", 4 );
+	if ( !SocketBase )
+	{
+		printf( "Unable to open bsdsocket.library!\n" );
+		return 0;
+	}
+	#endif
+	
+	// Allocate an Exec signal
+	BYTE SocketSignal = AllocSignal( -1 );
+	ULONG SocketSignalMask = 1 << SocketSignal;
+	
+	// Use the signal for the socket asynchronous events and
+	// specify the variables that will receive socket library error codes.
+	SocketBaseTags( SBTM_SETVAL(SBTC_SIGEVENTMASK), SocketSignalMask,
+					SBTM_SETVAL(SBTC_ERRNOLONGPTR), (int)&ErrNo,
+					SBTM_SETVAL(SBTC_HERRNOLONGPTR), (int)&HErrNo,
+					TAG_END );
+	
+	// Connect to the server
+	Connect( argv[1], SocketSignalMask );
+	
+	// Free the allocatations
+	#ifdef __GNUC__
+	CloseLibrary( SocketBase );
+	#endif
+	FreeSignal( SocketSignal );
+	
+	
+	return 0;
+}

@@ -1,0 +1,124 @@
+BitMap0,704,224,5                 ; double wide
+BitMap1,704,224,5                 ; double buffered
+Slice 1,77,320,224,$fff8,5,0,32,704,704    ;for ECS machines
+
+;First the calling code in the main loop:
+.main
+.....
+       If ex>bitmapx+272   ;scroll right
+            direction=1
+            If old_direction=-1
+                Gosub Update_Maps
+                firstx2=firstx
+                secondx2=secondx
+                delay_block2=delay_block
+                delay_y2=delay_y
+            EndIf
+            old_direction=1
+            bitmapx+direction
+            extra=1
+            Gosub Update_Maps
+        EndIf
+
+        If ex<bitmapx+48    ;scroll left
+            direction=-1
+            If old_direction=1
+                Gosub Update_Maps
+                firstx2=firstx
+                secondx2=secondx
+                delay_block2=delay_block
+                delay_y2=delay_y
+            EndIf
+            old_direction=-1
+            bitmapx+direction
+            Gosub Update_Maps
+            If mx>2 Then extra=1
+        EndIf
+.......
+
+End of main loop.   
+
+;Now the Hardware Scroll Gosub:
+
+.Update_Maps
+
+    blockx=divide16(bitmapx)
+    y=posx_in_block(bitmapx)
+
+    If direction=1     ; Scroll right.
+
+        If bitmapx<368
+
+            If y < #blocks_high AND mx<#blocks_wide    ; for each
+               ;pixel moved (0 to 12), in block-  paste a block down 
+               ;a colomn
+                mx=blockx+20+jump22(jump)
+                delay_block=map(mx,y)
+                delay_y=times16(y)
+
+                If mx< 42 +jump22(jump)  ; do a colomn 21 blocks 
+                                         ;ahead
+                    firstx=bitmapx+336
+                    Block delay_block,firstx,delay_y
+                Else
+                    firstx=-1
+                EndIf
+
+                If blockx>1     ; do block behind if not at block 0
+                    secondx=bitmapx-16
+                    Block delay_block,secondx,delay_y
+                Else
+                    secondx=-1
+                EndIf
+
+            EndIf
+        Else
+            jump+1  ;jump back to begining of bitmap and block 0
+            bitmapx=16
+            ex-352
+            fix_scroll=-352
+            firstx=-1
+            secondx=-1
+        EndIf
+
+    Else                  ; Scroll left
+        If bitmapx>16
+            mx=blockx-2+jump22(jump)
+            If y < #blocks_high AND mx>-1  ; for each pixel moved (0
+                                          ;to 12), in block- paste a
+                                          ;block up a colomn front
+                delay_block=map(mx,y)
+                delay_y=times16(y)
+
+                If blockx>1      ; do a colomn 2 blocks ahead
+                    firstx=bitmapx-16
+                    Block delay_block,firstx,delay_y
+                Else
+                    firstx=-1
+                EndIf
+
+                If blockx<22     ; do 12 blocks behind if not at          
+                                 ;block 22 or 0
+                    secondx=bitmapx+336
+                    Block delay_block,secondx,delay_y
+                Else
+                    secondx=-1
+                EndIf
+
+            EndIf
+        Else
+            If jump=0
+                If bitmapx=14
+                    bitmapx+1
+                EndIf
+            Else
+                jump-1  ;jump back to end of bitmap and block 22
+                bitmapx=368
+                ex+352
+                fix_scroll=352
+                firstx=-1
+                secondx=-1
+            EndIf
+        EndIf
+    EndIf
+Return

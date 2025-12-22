@@ -1,0 +1,415 @@
+<html>
+<title> Blade HomePage - Programming.</title>
+<body link=#aa0000 alink=#00aa00 vlink=#410041 bgcolor=#999999 text=#ffffff BACKGROUND="bpics/moon4.gif">
+
+<a name="top"></a>
+<h1>
+<center>
+<b>THE AMIGANET BLITZ BASIC FAQ</b><br>
+<h2>
+</center>
+<b>BLITZ MODE</b><br>
+<h3>
+
+<ul>
+<li>MISC
+  <ul>
+  <li><A HREF=#MapBytes>Help for Map-based games.</a>
+  <li><A HREF=#2ndMouse>Reading a second mouse.</a>
+  <li><A HREF=#ChunkyLibDemo>A small demo of the new Chunky library.</a>
+  <li><A HREF=#AsmVars>Blitz variables and assembly.</a>
+  </ul>
+<li>COPPER
+  <ul>
+  <li><A HREF=#FetchModes>Infos on the AGA Fetch Modes.</a>
+  <li><A HREF=#DualPlayFieldAGA>How to setup a AGA Dual Play Field screen.</a>
+  <li><A HREF=#2PaletteFade>Fade between two palettes.</a>
+  </ul>
+<li>BLITTER & BITMAPS
+  <ul>
+  <li><A HREF=#CircularShape>Grabbing a circular shape.</a>
+  <li><A HREF=#FloodFill>Flood fill graphic FX.</a>
+  <li><A HREF=#ColorShapes>Blitting color.</a>
+  <li><A HREF=#HorizScrolling>Horizontal Scrolling.</a>
+  </ul>
+</ul>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A NAME="ColorShapes"></a>
+<h2>COLOR SHAPES
+<h3>
+Original message by Matthijs Hollemans<br><br><br>
+<p><i>
+I  want  to  be  able to blit text (shapes) out in any color I
+like.  I use a 16-colour screen, and I CAN get it to print out
+in  about 5 different colours using more or less random use of
+the  ExecessOn/Off  flag in the Blit command...  But I need to
+be  able  to  blit  it  out  in ANY colour of the 16, and have
+totalt control.  Does anybody know how to to it??<br>
+</i></p>
+<p>
+Uhr, what you are trying to say is that you have a whole bunch
+of  shapes  which  represent  text (or characters), right ?  I
+assume these shapes have a depth of one bitplane ?  If this is
+so,  it  pretty  much  complicates  things,  but  don't worry:
+blitting in any color is possible.
+</p><p>
+You  see,  to  create  a color, you have to blit into all 4 of
+your  bitplanes.   In  your  color is 6, you need to draw into
+bitplanes  1  and  2, and erase from bitplanes 0 and 3 !  But,
+you can't do this with the ExcessOn/Off flag.  Fortunately BB2
+has  a  command called "BitplanesBitmap".  This sets up a fake
+bitmap from one or more of your planes.  Blitting to this fake
+bitmap  only affects the bitplanes you selected.  So, to write
+your  text  in  color  6, you set up such a fake bitmap, which
+only  holds  bitplanes  1  and  2.   And then you blit to this
+bitmap.
+</p><p>
+This is all fairly easy, but there is a catch (of course there
+is,  there  always  is  a  catch).  You also need to erase the
+shape  from the planes you do not blit in.  Suppose there is a
+circle  on  screen  in color 1.  This means that a big part of
+bitplane  0 is filled with 1's.  If you want to blit your text
+in  color  6,  you draw into bitplanes 1 and 2, like described
+above.   But  what's  on  screen  isn't  color 6, but color 7.
+That's  because  bitplanes  0,  1 and 2 have all ones in them,
+which  makes  up color 7.  I hope this makes it clear that you
+have to erase as well.
+</p><p>
+You  can  erase  your  shape  from a bitplane by blitting it's
+inverse  into  the plane.  This means you have to have another
+set of shapes, which are the inverses of your original shapes.
+With inverse I mean this:
+</p>
+
+<IMG SRC="Faqpics/Inverse.gif" align=left>
+
+<p>
+On the left you can see the original, on the right the inverse.<br>
+(The white is for set pixels, black is for cleared pixels)<br>
+Of course you can select the planes in which you want to erase
+again by using the BitplanesBitmap command.
+</p><p>
+You  can  also  do  all  of this by directly manipultating the
+blitter  of  course,  but  that's pretty hard to understand if
+you're  not an assembly-coder, so I suggest you first try this
+method.   If  you  can't  figure out how it works, then let me
+know,  and I'll see if I can write a small example program for
+you.  But to really know what you're doing, try it yourself!
+</p>
+
+<br><A href=#top>Go to top of page.</a>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A name="AsmVars"></a>
+<h2>ASM VARS
+<h3>
+Original message by Anton Reinauer<br><br><br>
+<p>
+You  do the Gosub .assem in your initialisation (the only time
+you  need  to  use  Getreg), and then can access your variable
+both from Blitz and assembler in your main loop.  There should
+be  no  slow down in the assembler code because you are saving
+your variables (regs) normally.
+</p>
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+<listing>
+  DefaultOutput
+  test.w=20
+
+  Gosub assem          ;initialise assembler side of variable
+
+  .main
+    MOVE.l pos,a0        ;put address of test in a0
+    MOVE  (a0),d0        ;put value of test in d0
+    ADD #4,d0            ;add 4 to test   (20+4)
+    MOVE d0,(a0)         ;re-store value back in test
+
+    NPrint test          ;print test- 24 !!!
+
+    MouseWait            ;press mousebutton to end
+  End
+
+  .assem
+    GetReg a0,&test   ;put address of test in a0 using a pointer
+    MOVE.l a0,pos     ;store address of test in pos
+
+    pos:
+      Dc.l 0          ; address of test stored here
+  Return
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+</listing>
+<h3>
+PS:  The only testing of this idea is in this code, so give me a yell if it doesn't work properly, because I'm looking at using it soon myself.<br>
+PPS: I'm not that experienced at assembler, so if anyone knows how to do it better- plese show me.<br>
+
+<br><A href=#top>Go to top of page.</a>
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A name="FloodFill"></a>
+<h2>FLOOD FILL
+<h3>
+Original example by Alex Moon<br><br><br>
+To  work  correctly,  the  loaded bitmap width have to be a 64 multiple, due to the AGA fetch mode.<br>
+
+<A href="Faqlists/Floodfx.txt">Take a look.</A>
+
+<br><A href=#top>Go to top of page.</a>
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A name="2PaletteFade"></a>
+<h2>FADE BETWEEN TWO PALETTES
+<h3>
+Original example by Simon Ravn<br>Modified by Andrea doimo<br><br><br>
+<p>
+OK  here's another little routine that I use for a music-disk.
+Not  very advanced, but it does a good job, fading between two
+palettes.   I  haven't  been  able to make Blitz do that using
+FadePalette  or  other  palette-commands - it can only fade up
+from black to a palette.
+</p><p>
+This  statement  can  fade  between two palettes.  You need to
+define three arrays first:
+</p>
+
+Dim palsr(#COLORS-1),palsg(#COLORS-1),palsb(#COLORS-1) ; Palette Arrays.
+
+Syntax: FadePals {source palette,destination palette,delay}<br>
+
+<A href="Faqlists/2palettefade.txt">Take a look.</a>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="DualPlayFieldAGA"></a>
+<h2>DUAL PLAYFIELD (AGA)
+<h3>
+Original example by Ted Bailey (posted by Dave Dexter)<br>
+Modified by Andrea Doimo<br><br><br>
+
+<p>
+An example of how to setup a Dual Play Field screen for
+AGA Amigas (16+16 colors) plus three 16 color AGA sprites.
+</p>
+
+<A href="Faqlists/DualplayfieldAGA.txt">Take a look.</a>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="FetchModes"></a>
+<h2>FetchModes
+<h3>
+
+Original message by Dave Dexter<br><br><br>
+<p>
+What  follows is the only bit of half decent info on the FMODE
+register  that  I  could  find.  Hope it helps and if you suss
+anything out, please let me know.
+</p>
+<b>The Magic FMode Register (from howtocode6.txt)</b><br>
+<p>
+If  you  set  your  1200/4000 to a hiresmode (such as 1280x512
+Superhires  256  colours)  and disassemble the copperlist, you
+find  fun  things happen to the FMODE register ($dff1fc).  The
+FMODE  register  determines  the  amount  of words transferred
+between  chipram  and the Lisa chip in each data fetch.  NOTE:
+Using  a  data  fetch  >  0  in  standard  LOWRES  or in hires
+resolutions,  the  COPPERLIST  will be faster (will leave free
+more time for the 680x0 and blitter), but the BLITTER speed is
+the SAME.
+</p>
+$dff1fc bits 0 and 1 value<br>
+<ul>
+  <li>$00 - Normal (word aligned bitmaps) - for standard ECS modes
+      and up to 8 bitplanes 320x256
+  <li>$01 - Double (longword aligned bitmaps) - for 640x256 modes in
+      more than 16 colours
+  <li>$10 - Double (longword aligned bitmaps) - Same effect, for 640
+      x 256 modes but different things happen... Not sure why!
+  <li>$11 - Quadruple [x4] (64-bit aligned bitmaps) - for 1280x256
+      modes...
+</ul>
+<br>
+<b>Fetch Mode Required for Displays</b><br>
+<p>
+*ALL*  ECS  and  lower  screenmodes require only 1x datafetch.
+All  modes run *FASTER* with at least 2x bandwidth, so try and
+use 2x bandwitdh if possible.
+</p><p>
+Bits  2  and  3  do  the  same  for  sprite width, as has been
+mentioned elsewhere...
+</p><p>
+Remember...   To  take  advantage  of the increased fetchmodes
+(which  give  you  more  processor  time  to  play with!) your
+bitmaps  must  be  on  64-bit  boundaries  and be multiples of
+64-bits wide (8 bytes)
+</p>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="CircularShape"></a>
+<h2>CircularShape
+<h3>
+
+Original example by Dave Dexter<br>
+Modified by Andrea Doimo<br><br><br>
+<p>
+This is an example of how to cut a 32 pixel diameter circle
+from a source bitmap, and paste this into a destination bitmap
+without causing any corruption.
+</p>
+
+<A href="Faqlists/Circularshape.txt">Take a look.</a>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="ChunkyLibDemo"></a>
+<h2>CHUNKY LIB DEMO
+<h3>
+
+Original example by Andrea Doimo<br><br><br>
+<p>
+The set-up commands taken by an old demo by Acid guys (the only way to understand how to use them!!!!)
+</p>
+
+<A href="Faqlists/ChunkyLibDemo.txt">Take a look.</a>
+
+<h3>
+
+Press mouse button to skip each "fx"<br>
+Keep RMB at the end (fireworks) to quit.<br>
+I'm  sorry for not using "newtypes" with the fireworks FX, but
+I've adapted a my old program...<br>
+For slower Amigas, change the line "num=48" to smaller numbers...<br>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+
+
+<A name="MapBytes"></a>
+<h2>MapBytes
+<h3>
+
+Original example by Alex Moon<br><br><br>
+<p><i>
+How  do I poke.b higher than 127 (up to 255).  I used to do  it  in AXXs all of the time, that's how Scene Editor
+worked.  I know that I could use poke.w instead but that would waste a lot of memory.
+</i></p>
+Try some assembler:<br>
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+<listing>
+ Dim Map(100,100)
+ Tile.w=[0-255]
+  GetReg  a0,&Tile
+ GetReg  a1,&Map(x,y)
+ MOVE.b  (a0),(a1)
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+</listing>
+<h3>
+
+Or you could do the whole thing:<br>
+
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+<listing>
+ Dim Map.b(100,100)
+ Tile.w=[0-255]
+ GetReg a0,&Tile
+ GetReg a1,&Map(0,0)
+ GetReg d0,[x]
+ GetReg d1,[y]
+ MULU  #[Your maximum x coordinate, here it's 100],d1 (MULU #100,d1)
+ ADD.l  d0,d1 
+ ADD.l  d1,a1
+ MOVE.b (a0),(a1)
+<center><IMG SRC="Faqpics/cutter.gif"></center>
+</listing>
+<h3>
+
+You'd get it by replacing the last line to this one:<br>
+MOVE.b (a1,a0)<br><br>
+
+This replacement aplies to both examples.<br>
+
+<br><A href=#top>Go to top of page.</a>
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="2ndMouse"></a>
+<h2>2ndMouse
+<h3>
+
+Original example by Alex Moon<br><br><br>
+<p>
+Well,  you  might  wanna  make  a  game that uses 2 mice, like
+Settlers  or  Lemmings.   Anyway, here is a bit of source that
+let's you read both mouseports.
+</p>
+
+<A href="Faqlists/2ndmouse.txt">Take a look.</a><br>
+<A href=#top>Go to top of page.</a>
+
+<center><IMG SRC="bpics/Bar.gif"></center>
+
+<A name="HorizScrolling"></a>
+<h2>HORIZONTAL SCROLLING
+<h3>
+
+Original example by Anton Reinauer<br><br><br>
+<p><i>
+for my part, I can get it going really well in *one* direction but cant figure how to
+reverse it, its OK going from one end to another but how do you
+reverse in the middle, e.g, an object that could switch directions at will ????
+</i></p><p>
+<p>
+Well done in getting it going in one direction! - that's half the battle!
+Now for the other half. To go in the other direction you just do the opposite
+ie: put blocks ahead and behind as before, but assuming we're going left now,
+you put one block 21 blocks (21*16 pixels)  to the left and one block, one
+block (1*16 pixels) behind you. The last half of the battle (wot 3 halfs? - I
+never said it was easy!) is getting the bugs out switching from one side to
+the other.
+</p><p>
+Here's the main bits. There's a fair bit of setup code not here (I'll have
+to extract it), but hopefully this helps.
+</p>
+
+<A href="Faqlists/Horizscroll.txt">Take a look.</a>
+
+<p>
+This code is efficient, but I'm about to fix it up, and make it a bit faster-
+enjoy :-)
+</p>
+<p><i>
+Or maybe something like 'Project Buzzbar' as per the BUM disks, but
+with a much larger playfield ???????????? What do you think ???
+</i></p>
+<p>
+Well the problem with that sort of thing is your background is limited to
+the size of your bitmap. Updating with a map means you can have massive
+background areas to scroll around in (essential for platform games or
+shoot-em-ups). The only memory needed being for the double wide bitmaps (or
+quadruple for 8-way). To do the same thing Buzzbar style would require
+ridiculous amounts of memory. So it depends on what sort of game you want to
+make (Buzzbar's a fun game!).
+</p>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+<A href="bmyhome.htm"><IMG SRC="bpics/I-Home.GIF"></a>
+<A href="bprogs.htm"><IMG SRC="bpics/I-Blitz.GIF"></a>
+
+</body>
+</html>

@@ -1,0 +1,299 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1991
+
+                                33.Teil...
+
+Wollen wir das Listing aus dem Letzten Kursteil doch mal ueberarbeiten und
+versuchen es schneller zu machen.
+Suchen wir erstmal logisch ab, und versuchen eine Loesung zu finden.
+
+1. Die hin und her springerei im Programm tut der Geschwindigkeit bestimmt
+nicht so gut. Also setzen wir anstelle des
+
+Bsr.s   Set
+
+in der Kreisroutine, direkt die Routine `Set` in die Kreisroutine.
+Das anspringen von Programme dauert zwar nicht solange, ebensowenig das
+Rts`en, aber bei 239 anspruengen macht sich das schon bemerkbar.
+
+2. Das rotieren der Sinustabelle, koennte ja auch der Blitter machen. Man
+muss sich nur mit dem Prozessor das oberste Wort merken, damit man es
+hinterher wieder hintendran Pflanzen kann.
+
+Das Rotieren mit dem Blitter saehe dann etwas so aus.
+
+Blitrotate:
+        Move.w  Sinus,Sinbuffer ; Erstes Wort retten
+        Move.w  #%0000100111110000,Bltcon0
+        Move.l  #-1,Bltafwm
+        Move.l  #Sinus+2,Bltapt
+        Move.l  #Sinus,Bltdpt
+        Move.w  #Anzahl der Zeile der Sintab * 64+8,Bltsize
+        Rts
+
+Gleichzeitig koennten wir noch die groesse der Elemente aendern. Wir
+koennten Bytes nehmen. Da der Blitter aber nur mit Worten arbeitet, wird
+immer eine Koordinate uebersprungen, was aber nicht so schlimm ist, da die
+bewegung eh noch etwas langsam ist. Die grosse Vorteil ist dann, das die
+Zeit die der Blitter braucht halbiert wird.
+Achtet allerdings auf die veraenderungen im Listing, da es der 68000 sehr
+krumm nimmt wenn man etwas an eine ungerade stelle schreiben, oder von eben
+eine solchen lesen, will wenn der Befehl nicht durch `.b` dafuer ausgelegt
+ist. Also, vorsicht!
+
+Wir warten allerdings nicht auf den Blitter, sondern starten die Aktion vor
+der Kreisroutine. Da sich die Punkte dann nur Max. um eine Koordinate
+verschieben, macht das nichts aus. Aber wir haben wieder ne menge Zeit
+gespart.
+
+3. Machen wir uns mal an die beiden Zeitkiller Nummer eins, in der
+Set-routine ran.
+
+Divu und Mulu.
+
+3.1 Mulu ist schnell ersetzt, indem wir einfach eine Tabelle erschaffen, in
+der die zu den verschiedene Koordinaten gehoerenden Werte fuer die Additon
+zur Playfieldbase stehen. die noetigen aenderungen waeren -
+
+3.1.1 Tabelle mit 64 ($3f) Elemente, die immer um 40 ($28) hochgezaehlt
+      wird.
+
+3.1.2 Den Mulu #40,d1 befehl durch
+
+      Add.w   d1,d1         ; Um auf Worte zu kommen
+      Move.w  (a4,d1.w),d1  ; Indirekt aus der Tabelle lesen.
+
+ersetzen. Die Addertabelle fuer d1, muss ihn A4 stehen. Wagt es nicht das
+jedesmal in der Schleife mit Lea zu erledigen, sondern stellt es vor dem
+Aufruf der Kreisroutine, oder vor der Schleife ein.
+
+3.2 Bei Divu kriegen wir da schon mehr schwierigkeiten. Obwohl ich gesagt
+habe das ich keine schnellere loesung kenne, habe ich mich doch mal auf die
+suche gemacht, und habe selbst etwas rumprobiert. Allerdings suchte ich
+immer nach dem Kompletten Divu-ersatz. Den werde ich wohl auch noch laenger
+suchen. Aber ich habe mir ueberlegt, das uns ja ein Divu #8 ersatz genuegt.
+
+Setzt also anstelle des Divu`s, bitte folgende Zeilen ein -
+
+        Ror.l   #3,D0
+        Swap    D0
+        Rol.w   #3,D0
+        Swap    D0
+
+Dauert im gegensatz zum echten Divu #8 mit 140 Taktzyklen, nur um die 30
+Tz, und das ist doch schon eine ganze Menge.
+
+Es gibt noch mehrere kleine Extra die man einbauen koennte, aber das sind
+die Groebsten Zeitfresser in dem Listing, ohne sie wird der Dots Effekt
+langsam Konkurrenzfaehig.
+
+Kommen wir jetzt mal zu den Manipulationsmoeglichkeiten fuer die
+Sinus-Kurve selbst.
+Dort koennen wir durch einfaches weiterstellen der Zeiger auf die
+Sintabelle, sehr schoenen effekte erzeugen.
+Die erste Form ist im Listing schon enthalten.
+
+        Move.w  (a0)+,d0        ; X-Koordinate nach D0 mit gleichzeitigem
+                                ; weiterstellen auf das naechste Element
+        Addq    #6,a0           ; Den Zeiger auf das naechste Element, fuer
+                                ; den naechsten durchlauf weiter nach
+                                ; hinten setzen
+        Move.w  (a1)+,d1
+        Addq    #4,a1
+
+Dadurch wird ereicht das mehrere Element einfach uebersprungen werden, und
+somit die X-Kurve schneller durchlauf wird, was eine Elipsen-Form des Sinus
+hervorruft.
+
+Desweiteren waere noch ein Addieren eines Beliebigen Wertes aus der Sintab
+moeglich. Er musste dann vor der bearbeitung der X-Koordinate erfolgen. Man
+kann diese Werte auf dieselbe Art und Weise aus der Tabelle holen.
+Probiert ruhig ein bisschen mit den Add-Werten rum, die Muster die manchmal
+dabei entstehen, sind ein wahrer genuss. Wenn man jetzt noch ueberlegt, wie
+begrenzt die moeglichkeiten bei so einen kleine Sinus bzw. bei so einer
+kleinen Tabelle sind, da kann man sich nur dasselbe mit einem 200*200 Sinus
+freuen.
+
+Bleiben wir mal bei dem Thema `Manipulationsmoeglichkeiten`. Wir koennen
+allerdings auch von aussen in das geschehen eingreifen, indem wir die Werte
+waehrend das Programm laeuft veraendern. Es staenden dafuer die beiden
+Add-werte die die Zeiger auf die naechste X- oder Y-Koordinate veraendern,
+der Wert der zur ermittelten X-Koordinate zugezogen wird, und die Anzahl
+der Punkte zur auswahl.
+Davon sucht sich am besten jeder selbst das aus was er am schoensten
+findet, oder erweitert die Abfrage nach seinem Geschmack.
+
+Dann waere da noch die Frage wie wir in das geschehen eingreifen. Da
+staenden wieder drei moeglichkeiten offen. Als da waeren Joystick2, Maus
+oder die Tastatur.
+Nun, die Maus laesst sich zwar einfach abfragen, ist aber sehr schwer zu
+dosieren. Der Joystick waere da schon besser, allerdings artet das so
+langsam in Arbeit aus. Die Tastatur zum assemblieren, dann schnell den
+Joystick hinter dem Bildschirm her kramen, um das ganze zu veraendern und
+zum schluss wieder die Maus betatscht, damit der ganze Spuk ein Ende hat.
+Also bleiben wir doch einfach mal bei der Tastatur.
+Suchen wir uns noch ein paar schoene Tasten aus..O.K nehmen wir die
+Cursortasten, den mehr als Vier brauchen wir ja sowieso nicht. Damit
+koennen wir 2 Parameter im laufenden Programm veraendern..Das reicht
+erstmal zum kennenlernen.
+
+Tasten koennen wir ueber die Seriellen Datenregister der Cia (Computer
+Interface Adapter) erhalten. Die Cia im Amiga, und auch in allen anderen
+Computer sind zur Kommunikation mit anderen Geraten da, erledigen aber
+auch andere Sachen.
+Jedenfalls liegt das Register das wir suchen bei $Bfec01 und heisst Ciaaspr
+(Cia-A-Seriell Port Register) und ist ein Byte lang, und wie meistens bei
+den Cia`s ist es Lowaktiv, daran muessen wir denken bei der Arbeit. Den
+Wert den wir dort lesen koennen muessen wir vor der abfrage noch
+bearbeiten damit die Orginal-Tasten Codes verwendet werden koennen,
+ansonsten kann man die Werte natuerlich auch so uebernehmen, allerdings
+muesste man dann immer bevor man einen Buchstaben abfragen will, von hand
+nachschauen, welchen Wert er im Ciaaspr hinterlaesst.
+Sobald wir diese aufbereitung des Codes haben, koennen wir mit der
+Auswertung beginnen. Das folgende Prograemmchen veraendert bei Tastendruck
+die Bildschirmfarbe, und ist mit Mausbutton zu verlassen. Das Programm ist
+sehr einfach gehalten, und es duerfte nicht schwer sein, es in die
+Endlos-Wait schleife des Programm einzusetzen. Ihr koenntet es sofort nach
+dem Start der Blitclear-Routine aufrufen, dann waere es auch noch Optimal
+in das Listing eingefuegt, und belastet die Gesamtzeit der Routinen nicht.
+
+Color00=        $DFF180
+Ciaapra=        $BFE001
+Ciaaspr=        $BFEC01
+
+Holdkey:Move.b  Ciaaspr,D0      ; Wert vom Cia abholen
+        Move.b  #$ff,D1         ; Maske fuer Lowaktiv
+        Sub.b   D0,D1           ; Lowaktiv umdrehen
+        Ror.b   #1,D1           ; Eins nach Rechts
+        Cmp.b   #$4c,D1         ; Vergleich `Oben`
+        Beq.s   Hoch            ; Ja? Nein-> Weiter
+        Cmp.b   #$4d,D1         ; Vergleich `Runter`
+        Beq.s   Runter          ; Ja? Nein-> Weiter
+        Cmp.b   #$4f,D1         ; Vergleich `Links`
+        Beq.s   Links           ; Ja? Nein-> Weiter
+        Cmp.b   #$4e,D1         ; Vergleich `Rechts`
+        Beq.s   Rechts          ; Ja? Nein-> Weiter
+        Btst    #6,Ciaapra      ; Maustest
+        Beq.s   Raus            ; Ja?-> Raus, Nein-> Weiter
+        Bra.s   Holdkey         ; Zurueck zum Anfang
+Raus:   Rts                     ; Raus!
+Hoch:   Move.w  #$f00,Color00
+        Bra.s   holdkey
+Runter:
+        Move.w  #$0f0,Color00
+        Bra.s   Holdkey
+Links:
+        Move.w  #$00f,Color00
+        Bra.s   Holdkey
+Rechts:
+        Move.w  #$fff,Color00
+        Bra.s   Holdkey
+
+
+Denkt dran das dieses ein eigenstaendig laufaehiges Proggy ist..Ihr muesst
+es umschreiben, um es einbauen zu koennen.
+
+Fuer die Farbveraenderung muesst ihr dann eben nur Parameter ihm Listing
+aendern. Ihr koennt dazu die letztens kennengelernte `Selbstmodifikation`
+benutzen, oder mit Dc.w oder so, abgelegte Parameter aendern. Denkt daran
+das ihr je nach dem wie ihr euch entschieden habt, das listing nochmals
+durchzugehen, da man beim einbauen von Routinen oft schlampt, und
+manchmal viel vom neuen weglassen kann.
+
+Auf diesem Weg der Tastatur abfrage, geht man ja nicht ueber irgendwelche
+Betriebssystemroutine (Hatte ich ja versprochen, das wir diese umgehen)
+Sondern fragen direkt an der Tastatur nach welche Taste gedrueckt ist.
+Da die Tasten durchnummeriert sind, kriegen wir die Werte nicht nach dem
+Alphabet geordnet wieder, sondern so wie sie auf der Tastatur geordnet
+sind. Deswegen sind die Werte die ich mal hier zusammen gestellt habe, auch
+ziemlich chaotisch.
+
+F1 - $50        F2 - $51        F3 - $52        F4 - $53        F5 - $54
+F6 - $55        F7 - $56        F8 - $57        F9 - $58       F10 - $59
+ESC  $45        DEL  $46        HELP $5f        Space $40       `  - $00
+
+Alt Links  $64          Alt Rechts  $65
+
+Amiga Links $66         Amiga Rechts $67
+
+Shift Links $60         Shift Rechts $61
+
+
+Cursor  Oben $4c
+        Unten $4d
+        Rechts $4e
+        Links $4f
+
+Return $44
+
+Backspace $41
+
+TAB $42
+
+CTRL $63
+
+1.Tastenreihe
+
+1 - $01         2 - $02         3 - $03         4 - $04         5 - $05
+6 - $06         7 - $07         8 - $08         9 - $09         0 - $0a
+· - $0b         , - $0c         \ - $0d
+
+2.Tastenreihe
+
+q - $10         w - $11         e - $12         r - $13         t - $14
+z - $15         u - $16         i - $17         o - $18         p - $19
+Å - $1a         + - $1b
+
+3.Tastenreihe
+
+a - $20         s - $21         d - $22         f - $23         g - $24
+h - $25         j - $26         k - $27         l - $28         î - $29
+Ñ - $2a         # - $2b
+
+4.Tastenreihe
+
+< - $30         y - $31         x - $32         c - $33         v - $34
+b - $35         n - $36         m - $37         , - $38         . - $39
+- - $3a
+
+Zehnerblock
+
+[ - $5a         ] - $5b         / - $5c         * - $5d
+7 - $3d         8 - $3e         9 - $3f         - - $4a
+4 - $2d         5 - $2e         6 - $2f         + - $5e
+1 - $1d         2 - $1e         3 - $1f
+0 - $f          . - $3c
+
+Enter $43
+
+
+Das das nur Tastennummern sind koennt ihr daran sehen, das Shift links und
+rechts, obwohl dieselbe wirkung einen unterschiedlichen Tastencode haben.
+
+Wenn ihr diese Werte selber mal nachpruefen wollt, koennt ihr folgendes
+kleine Prograemmchen benutzen. Mit dem habe ich die ganzen Code auch
+geholt.
+Die benutzung ist relativ einfach. Einfach starten und dann die Taste
+druecken, dessen Code man habe will. Taste festhalten, und gleichzeitig die
+Maus zum verlassen druecken. Der Gueltige Code steht dann in D1 bei der
+Seka-Register ausgabe. Fuer Tasten die den Seka veranlassen den Bildschirm
+zu loeschen, habe ich das Ergebnis nochmal im Buffer abgelegt, den man mit
+`QBuffer` abfragen kann.
+
+Ciaapra=        $bfe001
+Ciaaspr=        $bfec01
+
+Holdkey:Move.b  Ciaaspr,D0
+        Move.b  #$ff,D1
+        Sub.b   D0,D1
+        Ror.b   #1,D1
+        Move.w  d1,Buffer
+        Btst    #6,ciaapra
+        Bne.s   holdkey
+        Rts
+Buffer: Dc.w 0
+
+
+Viel Spass
+
+                Jeff Kandle
+

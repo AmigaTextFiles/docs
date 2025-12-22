@@ -1,0 +1,726 @@
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                                                                  CHAPTER 6
+                                                      DIALING AND ANSWERING
+
+
+          BASIC REQUIREMENTS
+
+          To successfully establish a communications link, the called or
+          calling modem must be compatible with the following standards at
+          the specified rates.
+
+                    Bits per  
+                     Second   Standard
+                    
+                      9600    USR-HST or compatible
+                      2400    CCITT V.22bis
+                      1200    Bell 212A
+                       300    Bell 103
+
+          To successfully exchange data, both modems must use the same 10-
+          bit data format.  The formats allowed are as follows:
+
+                    Start     Data                     Stop
+                    Bits      Bits      Parity         Bits
+                     1         7      Even, Odd,        1
+                                      Mark, Space           
+                     1         7      None, Even, Odd,  2
+                                      Mark, Space
+                     1         8      None             1,2
+                    
+
+          Transmission Rate
+
+          In general, you should know the transmission rate of the other
+          modem before calling.  However, if the link rate is set to the
+          default, &N0, and the remote modem is operating at a lower rate,
+          the Courier falls back to the rate of the remote modem.  This
+          applies to both Originate and Answer Modes.  See the discussion
+          under Data Rate Commands, in Chapter 4.
+
+          Error Control
+
+          Always set the Courier HST for error control, &M4 (the default)
+          or &M5, for 9600 bps connections.
+
+          It's a good idea to find out if the remote modem is MNP-
+          compatible at 2400/1200 bps.  Some public network services, for
+          example, are not.  If the Courier HST is set to &M4 and dials a
+          modem that isn't under error control, it operates in Normal Mode
+          (no error control).  However, if the remote modem doesn't support
+          the MNP protocol at 2400 or 1200 bps, the MNP link-request
+          signals may be misinterpreted and block a successful connection.
+
+                                                                         6-1
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          If you know the remote modem doesn't support MNP, we recommend
+          setting the Courier HST to &M0 before dialing.
+
+          Automatic Retrain
+
+          An HST or V.22bis modem sends a retrain signal if it senses that
+          a problem in the phone line connection may be causing data
+          unreliability.  The modems stop the transfer of data for about a
+          second while they resynchronize, and then resume Data Mode
+          operation.
+
+          Retraining only occurs during 9600 and 2400 bps communications.
+          For a description of the signaling sequence, see Appendix E-3.
+
+          PLACING CALLS
+
+          The commands discussed in this section are used in the following
+          operations:
+
+               Dialing             D (0-9 # * , ; ! P T W @ R), DSn
+               Redialing           A/, A>, >
+               Canceling dialing   <any key>
+
+          Dial (D)
+
+          When the Dial command is issued the modem goes off hook -- the
+          equivalent of your picking up the phone -- then enters Originate
+          Mode and dials the number sequence that follows.  The modem also
+          executes any other commands or options included in the command
+          line.
+
+          The command string may include up to 40 characters, plus the AT
+          prefix and Carriage Return/Enter key.  The modem doesn't count
+          spaces.  It counts punctuation characters such as parentheses and
+          hyphens, but ignores them.
+
+          The following command instructs the modem to stop the display of
+          commands (E0, turn off the local echo), to dial (D) using Touch-
+          Tone dialing (T), and to turn off the speaker (M0).  The spaces
+          shown are ignored by the modem and are only included here for
+          readability.
+
+                    AT E0 DT 1234567 M0 <Enter>
+
+          Dialing Type (P, T)
+
+          If set to X0 or X1, the modem defaults to pulse (rotary) dialing.
+          To have the modem use tone dialing, use the T command, which also
+          allows you to use the asterisk (*) and pound sign (#).   The
+
+
+
+                                                                         6-2
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          command may be included in the Dial string, as in the above
+          example, or issued separately:
+
+                    ATT <Enter>
+
+          The following command resets the modem to pulse dialing:
+
+                    ATP <Enter>
+
+          You can switch from one dial type to another within a dialing
+          sequence.  For example, you might have a phone line that only
+          accepts pulse dialing (slower than Touch-Tone dialing) but
+          subscribe to a long-distance service that accepts tone dialing,
+          such as  MCI.  You can switch to tone dialing once you've hooked
+          into the long-distance service.  In the following example, a
+          switch is made to tone dialing before entering a service account
+          number and the long-distance destination. (The commas are
+          discussed shortly.)
+
+                    ATDP 9,,7654321,,T 55555,,1 312 1234567 <Enter>
+
+          NOTE:  The modem remains set for Touch-Tone dialing until it is
+          reset or the ATP (pulse) command is reissued.
+
+          Adaptive Dialing (X2-X7)
+
+          When any of the X2 through X7 options is in effect and you don't
+          issue a dialing type in the Dial string, the Courier uses tone
+          dialing, which is faster than the default pulse type.  However,
+          if the phone company central office doesn't have Touch-Tone
+          detection equipment, the modem can not "break dial" and continues
+          to detect the dial tone.  If this occurs, the modem automatically
+          reverts to pulse dialing.
+
+          Pause (,)
+
+          A comma causes a two-second delay in the dial sequence.  The
+          following example contains four-second delays at several points:
+
+                    ATDP 9,,7654321,,T 55555,,1 312 1234567 <Enter>
+
+          The first four-second pause is to access an outside line after
+          dialing 9, the second to make sure the remote computer is ready
+          for the user's account number, and the third, to delay before
+          dialing the long-distance number.
+
+          Such pauses, however, may not be necessary.  Experiment and use
+          delays only as required.
+
+          NOTE:  A slash (/) can be used in any command string to have the
+          modem pause for only 125 milliseconds.  Some users find the
+
+                                                                         6-3
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          shorter delay of a series of slashes, rather than the 2-second
+          comma pause, useful for certain applications.
+
+          Dial and Return to Command Mode (;)
+
+          If your phone is plugged into the modem, you can use this option
+          to have the modem Auto Dial a telephone rather than a modem.  The
+          Courier dials, remains off hook and returns the OK message,
+          indicating it is in Command Mode.
+
+          For example, to have the modem place a voice call, issue the Dial
+          command with a semicolon:
+
+                    ATDT5551234; <Enter>
+
+          When the modem returns the OK result, pick up your phone receiver
+          so you can talk to the other party and tell the modem to hang up:
+
+                    ATH <Enter>
+
+          Similarly, you can call a recorded weather or other service.
+          Have the modem Dial, listen to the recording over the modem's
+          speaker and, when you're finished, tell the modem to hang up.
+
+          Dialing Letters (")
+
+          Quotation marks are used to have the modem dial abbreviations and
+          acronyms used as phone "numbers," such as DIAL USR (the
+          USRobotics Sales Department's 800 number).  The option is called
+          Quote Mode.  Quotation marks are inserted at the beginning of the
+          alphabetic string:
+
+                    ATDT"BBS-NEWS <Enter>
+
+          If you're including another command after the dial string, use
+          closing quotation marks before the additional command.
+
+          Transferring Calls (!)
+
+          This command applies to modems in installations where other
+          modems share the phone line.  The modem flashes the switch-hook,
+          i.e., goes off hook 0.5 seconds, on hook for 0.5 seconds, and off
+          hook again to dial the specified extension. The following example
+          includes instructions to return to Command Mode (;) and to hang
+          up (H).
+
+                    ATDT !1234;H <Enter>
+
+
+
+
+
+                                                                         6-4
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Wait for a Second Dial Tone (W)
+
+          This command is useful in situations where you must wait for a
+          second dial tone before entering a password, for example, when
+          using MCI, Sprint, or other long-distance service.  The following
+          command tells the modem to dial the service number, wait for the
+          second dial tone, dial the ID, pause two seconds, then place the
+          long-distance call.
+
+                    ATDT 5551234 W 12345, 3121234567 <Enter>
+
+          NOTE:  This command executes only if result code option X3 or
+          greater has been issued.  If the modem is set to X2 or lower, the
+          modem interprets the W as a comma (two-second pause).
+
+          Wait for an Answer (@)
+
+          Some online services answer the phone and return a tape-recorded
+          request for information before processing transactions.  In such
+          instances, the @ command can be used in the Dial string to tell
+          the modem to detect at least one ring, wait for five seconds of
+          silence at the other end of the call, and then continue to
+          execute the Dial string.
+
+          To use the @ command, set the modem to X3, X4 or X7.  If the
+          modem is set to X2 or lower, the modem returns an ERROR message
+          when encountering the @ character in a command string.  If set to
+          X5 or X6, the modem hangs up when it detects a voice answer and
+          sends the VOICE result code.
+
+          In the next example, the modem is set to the X4 result code
+          option and dials a banking service.  Each occurrence of @ in the
+          example indicates a five-second wait for silence after taped
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         6-5
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          requests from the bank for the labeled items.  The transaction
+          code might be used, for example, to request an account balance.
+
+                                           Password
+                                              |
+                    ATX4 DT1234567 @ 12345 @ 6789 @ 2;
+                                        |           |
+                                   Account #  Transaction Code
+
+          If the necessary conditions don't occur -- no rings, or no
+          following five seconds of silence -- the modem times out as it
+          normally would (after 30 seconds).  It then sends the message NO
+          ANSWER to the screen and aborts the command.
+
+          Reversing Originate/Answer Frequencies (R)
+
+          This command allows calls to an originate-only modem.  It
+          reverses the modem's originate/answer frequencies, forcing the
+          Courier to dial out at the answer frequency.  The command follows
+          the Dial command, before or after the phone number:
+
+                    AT D1234567R <Enter>
+                    AT DR1234567 <Enter>
+
+          CANCELING DIALING
+
+          To cancel dial-command execution, press <any key>.  If you
+          inadvertently hit a key on the keyboard while the modem is
+          dialing, the call is canceled.  If this occurs, type the A/
+          command explained in the next section.
+
+          REDIALING
+
+          The most frequent reason for redialing is receipt of a busy
+          signal.  The Courier HST provides three ways to redial, as
+          follows.
+
+          Re-execute the Last Command (A/)
+
+          The A/ command, which doesn't take the AT prefix or a Carriage
+          Return, redials one time:
+
+                    A/
+
+          When the modem receives a command, it stores the instruction in
+          its command buffer until the next AT command is received.  Note
+          that if you've sent the modem an additional command since the
+          Dial command, A/ re-executes that command instead of redialing.
+
+
+
+
+                                                                         6-6
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          Automated Redialing (>, A>)
+
+          These two commands, while they can be used to continuously repeat
+          any command, are designed for automated redialing.  The first (>)
+          is included in the Dial command.  The second (A>) is used alone
+          to redial the command string in the buffer.
+
+          Continuous Repeat (>)
+
+          If you know the modem you're calling is frequently busy, include
+          the Repeat command in the Dial string, as follows:
+
+                    AT > DT 1234567 <Enter>
+                    AT DT 1234567 > <Enter>
+
+          The modem enters Repeat Mode, dials the number, waits the default
+          30 seconds for a carrier, and hangs up.  Then, after a two-second
+          pause, it redials.
+
+          The cycle continues until the modems connect or the modem reaches
+          a maximum of 10 attempts.  The 10-try limit is mandated by the
+          Canadian Department of Communications (DOC) to prevent tying up
+          local telephone company exchanges with unconnected calls.
+
+          Continuous Re-execute (A>)
+
+          This command combines the features of both the A/ and > commands.
+          The modem enters Repeat Mode as described above, and redials the
+          Dial string in the command buffer.  Like the A/ command, A>
+          doesn't take the AT prefix or a Carriage Return:
+
+                    A>
+
+          Exiting Repeat Mode
+
+          Should you use > or A> with a command other than a Dial string,
+          abort the cycle by pressing <any key>.
+
+          To abort automated redialing, be sure to press <any key> when the
+          result code appears, during the pause before the modem begins
+          dialing again.  If you press <any key> while the modem is
+          dialing, that dial attempt is canceled but the cycle continues.
+
+          DIALING A STORED NUMBER (DSn)
+
+          Chapter 5 includes instructions for storing up to four telephone
+          numbers in nonvolatile random access memeory (NRAM).  To have the
+          modem dial a stored number use the DSn command, where n is the
+          number's position, 0-3, in NRAM.  In the first of the next two
+
+
+
+                                                                         6-7
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          examples, the phone number is stored at position 0, assumed by
+          the modem if there is no numeric parameter:
+
+                    ATDS <Enter>
+                    ATDS3 <Enter>
+
+          If you've stored a long distance service number/access code, for
+          example at position 1, use the DSn command to dial the number and
+          code, and follow that with a Dial command to dial the call's
+          destination.  (The spaces are included for readability.)
+
+                    AT DS1 D 312 5556789 <Enter>
+
+          ESCAPE CODE OPERATIONS (+++)
+
+          Once the modem is online to another system, the only command it
+          recognizes is an escape code of three pluses, which forces the
+          modem back to Command Mode:
+
+               -- Wait one second after entering the last item of data
+
+               -- Type: +++
+
+               -- Wait one second before typing any data
+
+          Do not type the AT prefix or a Carriage Return.  The guard time
+          of one second before and after the code prevents the modem from
+          misinterpreting the occurrence of +++ in the transmitted data
+          stream.
+
+          If necessary, the character used in the escape code or the
+          duration of the guard time can be changed by resetting S-register
+          2 or 12.  See Appendix B-5.
+
+          Modem Response to +++
+
+          The modem returns to Command Mode when it detects the escape
+          code.  However, it keeps the line open or hangs up, depending on
+          the setting of DIP switch 9:
+
+               DIP Switch 9   Response to +++
+                   UP         Modem goes on hook (hangs up), sends NO
+                              CARRIER result code
+                  DOWN        Modem maintains connection, sends OK result
+                              code (Factory Setting)
+               
+          Retain the factory-set position (DIP switch 9 DOWN) if you want
+          the modem to execute commands and return online.  (See the O
+          command, below.)
+
+
+
+                                                                         6-8
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          If you want an automatic disconnect when you issue +++, set
+          switch 9 UP.  (If the modem is on, also issue the ATZ command.)
+          An advantage of this is that you're not likely to inadvertently
+          run up an all-night phone bill.
+
+          WARNING
+
+          For unattended modem operations:  in rare instances, the modem
+          may fail to recognize the +++ escape code sequence.  If you are
+          running the modem under software control for unattended
+          operations, we suggest you use the surefire method of dropping
+          the RS-232C DTR signal for at least 50 milliseconds, to ensure
+          against costly phone charges.  Methods of turning the DTR signal
+          off, e.g., closing the communications port, differ from one
+          computer to another.
+
+          RETURNING ONLINE (O)
+
+          If DIP switch 9 is DOWN (on detection of the escape code the
+          modem maintains the connection), you can issue commands and then
+          toggle the modem back online with the O command, as in this
+          example:
+
+                    AT Q1 O <Enter>
+
+          HANGING UP (Hn)     
+
+          If DIP switch 9 is DOWN (factory setting), the escape code forces
+          the modem back to Command Mode but leaves the line open.  To
+          instruct the modem to hang up, issue the following command once
+          the modem sends the OK result code:
+
+                    ATH <Enter>
+
+          If DIP switch 9 is UP, the modem automatically hangs up on
+          receipt of the escape code.
+
+          AUTOMATIC ANSWERING
+
+          The Courier HST is shipped with DIP switch 5 DOWN, Auto Answer
+          suppressed.  To set the modem to automatically answer incoming
+          calls, do one of the following:
+
+          1.   Before powering on the modem, set DIP switch 5 UP.  When you
+               turn the modem on, it answers incoming calls on the first
+               ring.
+
+          2.   If the modem is on, use software control.  The following
+               command instructs the modem to answer on the first ring.
+               (You can substitute a higher value.  See the S-Register
+               summary in Appendix B-5.)
+
+                                                                         6-9
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+                    ATS0=1 <Enter>
+
+          When the modem senses a call coming in, it sends the result code
+          RING to your screen, goes off hook, and sends the remote modem a
+          high-pitched answer tone.  If there is no Carrier Detect within
+          30 seconds, the modem hangs up. If the connection is made, the
+          modem sends a CONNECT result code.  When the call is disconnected
+          by you or the remote user, the modem hangs up and returns the NO
+          CARRIER code.
+
+          Suppressing Auto Answer
+
+          To disable Auto Answer, reverse steps 1 or 2 above.  Set DIP
+          switch 5 DOWN before powering on the modem or, if it is powered
+          on, use the command to set the modem to answer on zero rings:
+
+                    ATS0=0 <Enter>
+
+          Points to Remember
+
+          1.   If the modem is attached to a computer, you can set the
+               modem to receive calls when you're not there.  Put the modem
+               in Terminal Mode and set it for Auto Answer.  Also set your
+               software's file-save function to save incoming messages
+               and/or files.
+
+          2.   If you've attached your phone so it can be used for
+               conventional calls, disable Auto Answer when you're not
+               expecting incoming data calls.  Otherwise, your modem may
+               answer the phone before you do, greeting a voice caller with
+               a high-pitched, irritating answer tone.
+
+          INTERNATIONAL CALLS
+
+          The Courier HST has three settings which enable international
+          calls.  These settings do not apply to calls originating in the
+          U.S. or Canada.
+
+          U.S./CCITT Answer Tone (Bn)
+
+          In the United States and Canada, modems use a 2225 Hz answer
+          tone.  Outside North America, most modems adhere to the CCITT
+          V.25 standard and send out a 2100 Hz tone followed by a 2250 Hz
+          tone.  If you're expecting an overseas call, set the Courier to
+          use the CCITT answer tone.  The setting won't affect the modem's
+          ability to connect with a domestic modem, although it will take
+          slightly longer to connect with a calling modem.
+
+          B0   CCITT answer sequence, used to answer calls calls
+               originating outside North America.  Required with &G2
+               setting.
+
+                                                                         6-10
+
+
+
+
+
+
+
+
+
+
+                                                                COURIER HST
+
+
+          B1   U.S. answer tone.  Default.
+
+          Guard Tone (&Gn)
+
+          British phone switching systems require the modem to send an 1800
+          Hz guard tone after it sends an answer tone.  The guard tone is
+          not used in the United States or Canada.
+
+          &G0  No guard tone, U.S./Canada.  Default.
+
+          &G1  Reserved.
+
+          &G2  1800 Hz guard tone follows answer tone, United Kingdom and
+               some Commonwealth countries.  Requires B0 setting as well.
+
+          Pulse Dial Make/Break Ratio (&Pn)
+
+          This command sets the ratio of the off-hook/on-hook (make/break)
+          interval for pulse dialing.  The default sets the modem for use
+          in North America.  The ratio must be changed if the modem is used
+          in the United Kingdom and some Commonwealth countries.
+
+          &P0  Make/break ratio, U.S./Canada:  39%/61%.  Default.
+
+          &P1  Make/break ratio, United Kingdom, some Commonwealth
+               countries:  33%/67%.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                         6-11
+
+
+
+

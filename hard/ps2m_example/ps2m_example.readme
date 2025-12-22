@@ -1,0 +1,224 @@
+Short:    PS/2 WheelMouseController - PCB photos
+Author:   rdc@cyberlan.mtu-net.ru
+Uploader: rdc@cyberlan.mtu-net.ru
+Type:     hard/hack
+Version:  1.5
+
+This are photos of PS/2 controller PCB, made by Marc SAVART
+<sil51@ifrance.com>.
+
+Main package with full source code, scheme, PCB diagrams
+and detailed hypertext manual is located in hard/hack/ps2m.lha.
+
+Latest ps2m version you always can see at:
+
+                  http://rdc.euro.ru/ps2m
+
+
+Advantages of this controller:
+
+- full open source under GPL
+  (General Public License, text of license included)
+- linear movement interpolation: mouse movements will be
+  ideal smooth on any screen frame rates
+- MMB (Middle Mouse Button) support
+- System-friendly fourth mouse button support
+- Fifth mouse button support - now on Amiga too!
+- detection of Amiga mouse counters overrun
+  (127 pixels per frame for DblPAL 48Hz)
+- full Plug'n'Play support:
+  hotswap - you can change mouse «on the fly»
+- mouse hangs detection: controller checks mouse every
+  2 seconds and will reset it if mouse doesn't reply
+- support of popular Microsoft Intellimouse wheel protocol
+  (these mice work with wheel)
+- support of Microsoft Intellimouse Explorer protocol
+  (for example, A4Tech WOP-35 - all 5 buttons work)
+- support of Genius NetScroll Optical
+  (this mouse works with wheel and all 5 buttons)
+- fully compatible with Amiga NewMouse wheel standard
+- fully compatible with WheelBusMouse software
+- you can simultaneously use mouse & 2 joysticks
+- no «calibration» requirements
+- wheel works in any screen mode
+- horizontal scrolling even on one-wheel mouse
+- very low CPU load in wheel mode
+- most advanced Amiga PS/2 mouse controller :-)
+
+
+More detailed info:
+
+- detection of Amiga mouse counters overrun:
+
+  Amiga has only one-byte signed counters for mouse, and AmigaOS
+  checks them only one time per vblank.  This means that mouse may
+  move only 127*VBlankFreq pixels per second (6096 pixels per
+  second for default DblPAL).  If this value was overran, AmigaOS
+  can't detect true movement of mouse and pointer will disorderly
+  jump.  For correct this, my PS/2 controller limits movement to
+  maximum 6000 pixels per second.  If mouse moves faster, movement
+  will be remembered and executed at 6000 pixels per second.
+
+  Slower movements will be always executed at real speed.
+
+- linear movement interpolation:
+
+  As we know, RS-232C (aka «COM») mice at PeeCee are extremely
+  poor quality - mouse pointer with them doesn't move, it jumps.
+  It is because generic 3-button RS-232C mouse reports about
+  movement only 25 times per second.  PS/2 mice work better - all
+  of them can report about state 80 times per second, and most of
+  them (excluding 5-button mice) can report 200 times per second.
+  But it is not an ideal because refresh rate of mouse (for
+  example, 80fps of Genius NetScroll Optical) interferes with
+  similar refresh rate (for example, 72Hz of Super72).  For correct
+  this, my controller moves «virtual Amiga mouse» smoothly.  If
+  user moves PS/2 mouse at 500 pixels per second, Amiga will get
+  from my PS/2 controller true 500 counts per second, with true
+  2-milliseconds intervals - you can get oscilliscope and check it.
+
+  Most another PeeCee-mouse-controllers don't have similar feature,
+  and move «virtual Amiga mouse» by «count packets» after every
+  byte packet from PeeCee-mouse.  For example, if user moves 
+  RS-232C mouse at 500 pixels per second, and mouse sends 25
+  reports per second, Amiga will get 25 packets of 20 fast (some
+  microsecond between counts) counts per second, with approx.40
+  milliseconds interval between packets.  If user has 75Hz screen
+  refresh rate, mouse pointer will update only every three vblank,
+  and jumps of pointer (in comparison with ideally smooth Amiga
+  mouse) will only incline user to suicide using mouse cord :-)
+
+  My PS/2 controller is free from this bug.  Theoretically I can do
+  even smooth RS-232C mouse controller, but is it nonsense because
+  of RS-232C mice death.  Modern optical mice already don't have
+  RS-232C versions, but there is no modern mice without PS/2 version.
+
+- mouse hangs detection:
+
+  Some Chinese mice are very cheap and very unstable.  Integrated
+  to mouse controller can hang and even don't response to reset
+  command.  These mice on PeeCee require reconnect (and sometimes
+  reboot because of not-PnP initial nature of PeeCee).  My
+  controller in case of 2-seconds silence (user doesn't touch
+  mouse) asks mouse about state.  If mouse doesn't respond,
+  controller will automatically take away power souce for some
+  time.
+
+  Take care: hardware reset does not work in 5-button version because
+  of lack of PIC pins - you can select between 5-buttons version with
+  quality mice, and 4-buttons version with bad mice.  But anyway, you
+  can reset mouse by reconnect it «on the fly».  It is not a PeeCee :)
+
+- full Plug'n'Play support:
+
+  Because of previous feature, controller will detect mouse
+  replacement.  Unlike PeeCee, wheel function (or it's absence)
+  will be detected automatically.  You don't need to replace
+  drivers if you change mouse «on the fly» :)
+
+- support of popular Microsoft Intellimouse/Explorer wheel protocol
+
+  Microsoft (for this paragraph it is a company name, not an abuse)
+  instead of it's normal practice to hide all details, published
+  protocol of wheel mouse.  It has two «layers»: protocol of wheel
+  mouse, and protocol of 5-button wheel mouse.  There are many
+  Microsoft Intellimouse compatible devices, and all of them will work
+  with wheel at my controller.
+
+  Some other mice are Intellimouse Explorer (5 buttons) compatible.
+  For example, it is A4Tech WOP-35.  That mice will work with all 5
+  buttons.  If you use 4-buttons version of controller, both
+  additional buttons will work as one.
+
+- support of Genius NetScroll Optical protocol
+
+  Another mice, like of Genius NetScroll Optical, can be compatible
+  with Intellimouse, but incompatible with Intellimouse Explorer.
+  Genius NetScroll supports both Intellimouse and own protocols.
+  In Intellimouse mode it works as 3-button wheeled mouse, and in own
+  Genius-mode it works as 5-button wheeled mouse.  From version 1.5,
+  ps2m supports both 5-button protocols - Genius NetScroll and MS
+  Intellimouse Explorer.
+
+  Yet some another mice, like A4Tech WOP-35, can be Intellimouse (and
+  even Explorer) compatible, but have additional features like two
+  wheels, feedback (Logitech iFeel), etc.  Some mice can have even
+  different ideology - like Maxxtro with «joystick» between buttons.
+  Additional features of these mice can't be used with current version
+  of ps2m, but things have characteristic to change :-)
+
+  If you have unsupported mice - you can send me it (or money, enough
+  for buy it here) by mail, and I will do support for it.
+
+- Fifth mouse button support - now on Amiga too!
+
+  Up to this time there was only maximum 4-button mice support on
+  Amiga.  My controller breaks this barrier - let's be more buttons,
+  good and different! :)
+
+- horizontal scrolling even on one-wheel mouse
+
+  You can switch vertical scrolling to horizontal by qualifier
+  pressing - like MMB in Mroocheck, but you can select any
+  qualifier key or joystick/mouse button.  For example - I use
+  left ALT.  Additional 4th and 5th mouse buttons may be used
+  for this too.
+
+- fully compatible with Amiga NewMouse wheel standard
+
+  Amiga NewMouse standard describes an internal AmigaOS protocol
+  for wheel mice.  There are some NewMouse-compatible sofware,
+  MUIWheel and Directory Opus Magellan for example.  All this
+  software will work with my PS/2 controller.
+
+  Unfortunately, Amiga NewMouse standard describes only four buttons.
+  But anyway, any of two additional buttons may be used as generic
+  fourth button, and another - as qualifier for X-Y scroll temporary
+  switching.  Both buttons can be used even as a second scroller.
+
+- fully compatible with WheelBusMouse software
+
+  WheelBusMouse is a software driver early released by me, that
+  allows to use any wheel mouse without controller (but you must
+  alter the mouse).  My PS/2 controller is fully electrically
+  compatible with WBM package.  This means that you can install
+  WBM driver and use altered wheel mouse instead of soldering
+  PS/2 controller.  Or you even can simply plug second mouse and use
+  it as a scroller :-)
+
+- you can simultaneously use mouse & 2 joysticks
+
+  You can use joystick(s) in parallel with mouse: pressing «Fire»
+  of any joystick will disable mouse function on this port.
+
+  If you press «Fire» on Joy1 (wheel function) - wheel will be
+  reseted to initial phase (don't touch wheel during game).
+
+  If you press «Fire» on Joy2 (mouse port) - mouse will be disabled
+  at all.  For protect against probable mouse movement, mouse will
+  be enabled only after any mouse button pressing.
+
+- no «calibration» requirements
+
+  My controller doesn't use analog inputs and doesn't require
+  calibration (like Mroocheck interface from Elbox).
+
+- wheel works in any screen mode
+
+  Wheel works in any screen mode - you can simultaneously use
+  wheeled applications on PAL, DblPAL, Super72 or any other
+  screens (unlike Mroocheck with horizontal rate setting).
+
+- very low CPU load in wheel mode
+
+  This controller doesn't use any software emulated serial protocols
+  like CD32 joypad and analog-to-digital conversions like Mroocheck.
+  It reduces slow chipset reading/writing cycles number to absolute
+  minimum, and this wheel solution is the fastest ever made for Amiga.
+
+- most advanced Amiga PS/2 mouse controller.
+
+  Do you doubt in this yet? :) ;) =)
+
+
+All instructions included in hard/hack/ps2m.lha.  Have fun!

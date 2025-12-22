@@ -1,0 +1,370 @@
+
+        Hardware Access Using The AmigaBASIC And ARexx Interpreters.
+        ------------------------------------------------------------
+
+                                   Part 4.
+                                   -------
+
+  Yep, it's me again... :)
+
+  Well we have successfully accessed pin 6 of the games port in READ mode.
+
+  We are now going to switch the direction and WRITE 1s and 0s to pin 6 of
+  the games port. This will generate a train of 'Square Wave' pulses at TTL
+  level that can be used as a variable speed clock. The same hardware can
+  be used for both input and/or output so as to protect the port from damage.
+  Pin 6 is now going to be used in WRITE mode so beware!.
+
+  The registers CIAAPRA and CIAADDRA are both going to be changed this time
+  as they are not set up during a coldboot or reboot. See the previous issue
+  of the magazine for the details of CIAAPRA and CIAADDRA.
+
+  Ensure NOTHING, EXCEPT the home built hardware, is connected to the games
+  port of the AMIGA to prevent possible damage. Read the 'WARNING' below.
+
+  As will be seen there is an Assembly version which was compiled using
+  ~a68k~ and linked using ~blink~. These are FREE on AMINET, EXTREMELY
+  SMALL in size, easy to use from the CLI/Shell and require nothing special
+  to compile basic machine code programs. This generates an executable
+  called ~TTL-Clock~ and when run produces a high speed square wave at pin
+  6 of the games port. This is PROBABLY the fastest REAL TIME external user
+  clock pulse via a port on the AMIGA WITH the ability to stop it using a
+  left mouse click only. To attain this speed interrupts and tasking are
+  BOTH DISABLED during running to ensure a constant output at pin 6 of the
+  games port so be VERY AWARE of this fact. The ~_LVO?~ offsets are shown
+  as comments with the actual 'exec' offsets placed into the code directly.
+  Because there is NOT likely to be any more changes to the classic AMIGA
+  hardware then why waste time and effort writing complex assembly code
+  using 'equates', 'offsets' etc... just to access, the now, well
+  established hardware registers.
+
+  REMEMBER!!! If a hardware resource is there, grab it for your own use as
+  only one item at a time can be connected to it! Don't bother to notify
+  the OS that you need it. You know whether it is free for your use or not!
+
+  To give some idea of the generated clock rates for each of these three
+  coding methods; then here are the APPROXIMATE frequencies for:-
+
+  1) An A500 with 0.5MB upgrade at $C00000, AmigaBASIC and OS1.3x...
+     >8Hz.
+  2) An A1200 with 4MB FastRam, AmigaBASIC, KS3.0x and Workbench 1.3x...
+     >50Hz.
+  3) An A600 with 2MB ChipRam, ARexx and OS2.0x...
+     >3Hz.
+  4) An A1200 with 4MB FastRam, ARexx and OS3.0x...
+     >15Hz.
+  5) An A600 with 2MB ChipRam, OS2.0x and the 'TTL-Clock' executable...
+     >25KHz!!!
+  6) An A1200 with 4MB FastRam, OS3.1x and the 'TTL-Clock' executable...
+     >75KHz!!!!!
+
+  To prove that these events are happening then a 'Frequency Counter'
+  AND/OR 'Oscilloscope' needs to be attatched to the Blue Wire, (OUTPUT),
+  and the Black Wire, (GND/RETURN)...
+
+----------------------------------------------------------------------------
+
+  AmigaBASIC Code:-
+  -----------------
+
+REM ***********************************************************************
+REM
+REM Games Port WRITE access using STANDARD AmigaBASIC only.
+REM
+REM Original idea and copyright, (C)1996 B.Walker, (G0LCU).
+REM
+REM Now PD 2007 via:-     http://www.thecryptmag.com
+REM
+REM This is ready for AmigaBASIC, an old style A500 and OS1.3x.
+REM
+REM ***********************************************************************
+
+REM Written so that youngsters can inderstand it!
+REM $VER: TTL-Clock.b_Version_0_78_00_(C)2007_B.Walker_G0LCU.
+REM Set up any string variables.
+  LET a$="(C)2007 B.Walker, G0LCU."
+REM Set up any numerical variables.
+  LET n=0
+
+REM ~CIAA~ address for register ~pra~.
+  LET pra=12574721
+REM ~CIAA~ address for direction of port ~pra~, (1=OUTPUT).
+  LET ddra=12575233
+
+REM Store single byte values of these addresses for future use.
+  LET valpra=PEEK(pra)
+  LET valddra=PEEK(ddra)
+REM Bit 0 of port ~ddra~ DO NOT CHANGE...
+REM Bit 1 of port ~ddra~ switches the ~LED~ ON or OFF, (1=ON).
+REM Bits 2 to 5 inclusive of port ~ddra~ DO NOT CHANGE...
+REM Bits 6 and 7 of port ~ddra~ alter PIN 6 of the mouse/games ports, (1=OUTPUT).
+
+REM Generate a simple setup screen.
+  COLOR 1,0
+  CLS
+  LOCATE 4,18
+  PRINT "Open the games port for WRITE access..."
+  LOCATE 6,18
+  PRINT "Data direction address is at 12575233..."
+  LOCATE 8,18
+  PRINT "Press almost any key to exit..."
+  LOCATE 12,18
+  PRINT "Data tansfer address is at 12574721..."
+  LOCATE 14,18
+  PRINT "Value at pin 6 of the games port is:- 1."
+  
+REM Write ~1~s and ~0~s to PIN 6 of the games port.
+REM Force bit 7 of ~pra~ as an OUTPUT.
+REM It is assumed that it is ALREADY set as an INPUT!!!
+  POKE ddra,(valddra+128)
+REM Enter the ~Clock Mode~ loop...
+loopit:
+  LET n=PEEK(pra)
+REM Set bit 7 of ~pra~ to a value of ~1~.
+  IF n<=127 THEN POKE pra,(n+128)
+  LOCATE 14,56
+  PRINT "1"
+  LET n=PEEK(pra)
+REM Set bit 7 of ~pra~ to a value of ~0~.
+  IF n>=128 THEN POKE pra,(n-128)
+  LOCATE 14,56
+  PRINT "0"
+REM Press almost any key to Quit...
+  LET a$=INKEY$
+  IF a$="" THEN GOTO loopit:
+
+REM Exit routine.
+REM Reset all of the registers back to their original state.
+  POKE pra,valpra
+  POKE ddra,valddra
+  END
+
+----------------------------------------------------------------------------
+
+  ARexx Code:-
+  ------------
+
+/* ------------------------------------------ */
+/*  TTL-Clock.rexx, (C)2006 B.Walker, G0LCU.  */
+/* ------------------------------------------ */
+/* Direct games port programming using AREXX. */
+/* ------------------------------------------ */
+
+/* This simple program generates a square wave at approximately 5Hz on */
+/* a stock A1200(HD) with 4MB of FastRam at TTL level. */
+/* Use an Oscilloscope to check that this works. */
+/* Written so that youngsters can understand it! */
+
+/* Set up any constants or variables. */
+  mousetrap=1
+  copyright='9'x'$VER: TTL-Clock.rexx_Version_0.92.00_(C)2006_B.Walker_G0LCU.'
+
+/* Set up the games port screen. */
+  ECHO 'c'x
+  ECHO '9'x'9'x'Open the games port for WRITE access...'
+  ECHO 'a'x'd'x'9'x'9'x'Data direction address is at $BFE201...'
+/* Click mouse button to exit. */
+  ECHO 'a'x'd'x'9'x'9'x'Click left mouse button to exit...'
+/* Access the games port directly. */
+  ECHO 'a'x'a'x'd'x'9'x'9'x'Data transfer address is at $BFE001...'
+  ECHO
+
+/* Set up games port pin 6 for write only. */
+  EXPORT('00BFE201'x,'83'x,1)
+  ECHO '9'x'9'x'Value at pin 6 is:- 1.'
+
+/* This is the main loop. */
+  DO FOREVER
+/* Set pin 6 of the games port to 0. */
+    ECHO 'b'x'9'x'9'x'Value at pin 6 is:- 0.'
+    EXPORT('00BFE001'x,'7C'x,1)
+/* Click left mouse button to exit. */
+    mousetrap=IMPORT('00BFE001'x,1)
+    IF BITTST(mousetrap,6)=0 THEN CALL getout
+/* Reset pin 6 of the games port to 1. */
+    ECHO 'b'x'9'x'9'x'Value at pin 6 is:- 1.'
+    EXPORT('00BFE001'x,'FC'x,1)
+  END
+
+/* Exit the program safely. */
+getout:
+/* Reset pin 6 of the games port back to TTL logic 1. */
+  EXPORT('00BFE001'x,'FC'x,1)
+/* Set pin 6 of the games port back to READ mode. */ 
+  EXPORT('00BFE201'x,'03'x,1)
+  ECHO 'c'x
+  SAY copyright
+  EXIT(0)
+
+----------------------------------------------------------------------------
+
+  This Is A Special Extra Assembly Code:-
+  ---------------------------------------
+
+  To compile from the command line:-
+  ----------------------------------
+
+  AMIGA-Shell:> a68k -n TTL-Clock.asm<RETURN/ENTER>
+  <Some reports here...>
+  AMIGA-Shell:> blink TTL-Clock.o<RETURN/ENTER>
+  <some more reports here...>
+  AMIGA-Shell:> TTL-Clock<RETURN/ENTER>
+  <Awaiting a left mouse click here to return back to the Shell/CLI...>
+
+  NOTE:-
+  ------
+  This also compiles and runs under DevPac2/3 successfully... :)
+
+
+	;$VER: TTL-Clock.asm_Version_0.10.00_(C)2007_B.Walker_G0LCU.
+	;-----------------------------------------------------------
+					;
+					;This is an example of direct HW
+					;access using plain assembly. It
+					;is the fastest means of generating
+					;a TTL level clock pulse for your
+					;usage.
+					;
+					;Assembled with a68k.
+					;
+	;	http://main.aminet.net/dev/asm/A68kGibbs.lha
+					;
+					;Linked with blink.
+					;
+	;	http://main.aminet.net/dev/misc/blink67.lha
+					;
+					;START...
+	movem.l	d0-d7/a0-a6,-(sp)	;Save all registers just in case!
+					;
+	movea.l	$4,a6			;Set the 'ExecBase' pointer.
+	jsr	-132(a6)		;Offset -132 == [_LVO]Forbid()
+					;Disable tasking and interrupts
+	jsr	-120(a6)		;Offset -120 == [_LVO]Disable()
+					;
+	bset	#7,$bfe201		;Set pin 6 of the games port to
+					;WRITE mode.
+lmb:					;
+	bchg	#7,$bfe001		;Toggle bit 7 of the games port.
+	btst	#6,$bfe001		;Check to see if the left mouse
+					;button is pressed to quit.
+	bne.s	lmb			;IF NOT then loop until it is.
+					;
+	bclr	#7,$bfe201		;Reset pin 6 of the games port to
+					;READ mode.
+	movea.l	$4,a6			;Set the 'ExecBase' pointer again.
+					;NOTE:- This is a double check only!
+	jsr	-126(a6)		;Offset -126 == [_LVO]Enable()
+					;Enable interrupts and tasking.
+	jsr	-138(a6)		;Offset -138 == [_LVO]Permit()
+	movem.l	(sp)+,d0-d7/a0-a6	;Restore all registers.
+					;
+	clr.l	d0			;Ensure return code is 0.
+					;
+	rts				;Return to calling routine.
+					;
+	END				;END... SIMPLE EH!
+
+
+  A brief explanation of what is going on in the assembly version...
+
+  IMPORTANT!!! THIS IS DIRECT PROGRAMMING OF THE HW SO BEWARE!!!
+
+  At the START of the program all standard registers are saved just in case,
+  to ensure they are preserved for later. This is always good practice
+  anyhow. Then a pointer to the 'ExecBase' is loaded into register a6.
+
+  IMPORTANT! Next the interrupts and tasking are DISABLED to ensure that
+  the resultant square wave at pin 6 is not corrupted. This WILL give the 
+  impression that the computer has locked up completely - IT HASN'T!!!
+
+  Next the 'CIAADDRA' register $BFE201 has bit 7 switched to a '1' for
+  OUTPUT mode. You now enter the continuous loop for the clock generation.
+
+  Bit 7 of 'CIAAPRA', (pin 6 of the games port), is toggled from its present
+  state to its inverse state, that is from say a '1' to a '0'.
+  Bit 6 of 'CIAAPRA', (pin 6 of the mouse port), is checked to see whether
+  the left mouse button is pressed; if NOT then carry on toggling pin 6 of
+  the games port. If the LMB IS pressed then exit the loop.
+
+  Upon exitting the loop immediately reset the games port back to READ mode.
+
+  Ensure that the 'ExecBase' pointer has not been corrupted and then ENABLE
+  the interrupts and tasking to make the computer usable again.
+
+  Return the registers back to where they were before running this program.
+
+  And finally give a return code of '0', (OK), and return back to the Shell
+  or Workbench and normal computer usage.
+
+  SIMPLE EH!... :)
+
+  As a final note on this version, the 'TTL-Clock' executable was tested on
+  an A600(HD) in 2 and 6MB modes using trapdoor and/or CC0: PCMCIA 4MB
+  memory expansions and OS2.0x and an A1200(HD) in 2, 6 and 10MB modes using
+  trapdoor and/or CC0: PCMCIA memory also and OS3.0x/OS3.1x.... :)
+
+============================================================================
+
+                                IMPORTANT:-
+                                -----------
+
+
+    The Legal Stuff:-
+    -----------------
+
+    These programs are Freeware and no profit will be made from them,
+    also all of the files must remain unaltered and intact including this
+    one. The author is not responsible for any damage to, or loss of, or
+    failure of equipment or data caused in any way by the use of these
+    programs. There is NO warranty with the use of these software releases
+    and YOU USE THEM AT YOUR OWN RISK.
+
+----------------------------------------------------------------------------
+
+    Testing Evaluation:-
+    --------------------
+
+    An A1200(HD) in 2MB, 6MB and 10MB modes using trapdoor memory AND/OR
+    PCMCIA memory expansions. Also tested on an A600(HD) in 2MB and 6MB
+    modes. All test conditions were/are running STANDARD KS2.0x to 3.1x,
+    and using standard ~topaz 8~ fonts throughout.
+
+    I have no idea what a strange configuration setup will create so refer
+    to the ~The Legal Stuff~ above.
+
+----------------------------------------------------------------------------
+
+                                 WARNING.
+                                 --------
+
+  1) DISCONNECT any faulty equipment under test from the MAINS supply.
+  2) If a DC supply is used do NOT reverse polarity the connections.
+  3) Do NOT power up any electronic item until it is safe to do so.
+  4) CHECK and RECHECK all of your construction and repair work thoroughly.
+  5) Handle ALL tools used with care.
+  6) Beware of ALL types of solvents, glues and etching fluids.
+  7) NEVER leave a soldering iron switched on unattended.
+  8) KEEP everything OUT of the reach of small children.
+  9) Switch OFF the AMIGA before disconnecting or connecting any hardware.
+ 10) And finally read 1) to 9) again.
+
+----------------------------------------------------------------------------
+
+   Contact:-
+   ---------
+
+   Mr Barry Walker, G0LCU.
+
+   Email:-     wisecracker@tesco.net
+   URL:-       http://homepages.tesco.net/wisecracker/G0LCU.HTM
+
+   Author of the ~TestGear?~ projects in the ~docs/hard~ drawer of AMINET.
+
+----------------------------------------------------------------------------
+
+   A very useful HardWare related site, (C) Anthony Hoffman, for
+   modifications, schematics, repairs and the like is:-
+
+                          http://amiga.serveftp.net/
+
+============================================================================

@@ -1,0 +1,70 @@
+1      REM *****************************************************************
+2      REM *
+3      REM *              Programm I2C_Treiber_O Version 1.0
+4      REM *         ( gekuerzte Nur-Ausgabe-Version zum testen )
+5      REM *      <c> 1996 Andreas Heinrich / Alle Rechte vorbehalten
+6      REM *     Dieser Treiber ist nur fuer registrierte Anwender des 
+7      REM *          8052 AH-Basic-Entwicklungspaketes gedacht.
+8      REM *        Die Weitergabe an Dritte und das unberechtigte
+9      REM *                 kopieren ist nicht erlaubt.
+10     REM *
+11     REM ***************************************************************** 
+20    MTOP=31743
+25     PRINT "Setze MTOP auf 31743 = 7BFFH"
+30    A=7C00H
+40    CHECK=0
+50    C=34+23903
+60     PRINT "Kopiere die Treiber ins RAM..."
+100    FOR I=1 TO 220
+110    READ B
+120   XBY(A)=B
+130   A=A+1
+135    IF A=7C00H+2 THEN A=7E00H
+140    NEXT I
+145    PRINT "Fertig! Errechne nun die Checksumme..."
+150   A=7C00H
+160    FOR I=1 TO 220
+170   B=XBY(A)
+180   CHECK=CHECK+B
+190   A=A+1
+195    IF A=7C00H+2 THEN A=7E00H
+200    NEXT I
+210    IF CHECK=C THEN  PRINT "Checksumme OK" ELSE  PRINT "Checksummenfehler!"
+220    PRINT "Bitte das Kopier-Programm aus dem Speicher mit >NEW< entfernen!"
+999    END 
+1000   REM Hier wuerde der Eingabe-Treiber stehen
+1010   REM Ruecksprung aus der Routine mit 22H  
+1230   DATA 00H,22H
+1240   REM Bytes = 2
+1250   REM Checksumme = 34
+1260   REM
+2000   DATA 0C0H,0E0H,0C0H,0F0H,0C0H,81H,0C0H,0D0H
+2010   DATA 0C0H,82H,0C0H,83H,78H,78H,0D1H,80H
+2020   DATA 85H,27H,6EH,0D0H,83H,0D0H,82H,0D0H
+2030   DATA 0D0H,0D0H,81H,0D0H,0F0H,0D0H,0E0H,22H
+2040   DATA 00H,22H,0D2H,96H,30H,96H,0FDH,22H
+2050   DATA 0C2H,97H,12H,7EH,22H,12H,7EH,20H
+2060   DATA 0D2H,97H,12H,7EH,20H,0C2H,3AH,22H
+2070   DATA 75H,6FH,08H,33H,92H,97H,12H,7EH
+2080   DATA 22H,12H,7EH,20H,0C2H,96H,12H,7EH
+2090   DATA 20H,0D5H,6FH,0EFH,0D2H,97H,12H,7EH
+2100   DATA 22H,12H,7EH,20H,30H,97H,02H,0D2H
+2110   DATA 38H,0C2H,96H,12H,7EH,20H,22H,0D2H
+2120   DATA 3AH,0C2H,38H,0C2H,39H,30H,96H,13H
+2130   DATA 30H,97H,10H,0C2H,97H,12H,7EH,20H
+2140   DATA 0C2H,96H,12H,7EH,20H,0E5H,6CH,12H
+2150   DATA 7EH,38H,22H,0D2H,39H,0D2H,38H,22H
+2160   DATA 12H,7EH,5FH,20H,38H,0BH,0E6H,12H
+2170   DATA 7EH,38H,08H,20H,38H,03H,0D5H,6DH
+2180   DATA 0F5H,12H,7EH,28H,22H,75H,6FH,08H
+2190   DATA 12H,7EH,22H,12H,7EH,20H,0A2H,97H
+2200   DATA 33H,0C2H,96H,12H,7EH,20H,0D5H,6FH
+2210   DATA 0EFH,0C0H,0E0H,0E5H,6DH,0B4H,01H,04H
+2220   DATA 0D2H,97H,80H,02H,0C2H,97H,12H,7EH
+2230   DATA 22H,0D0H,0E0H,12H,7EH,20H,0C2H,96H
+2240   DATA 0D2H,97H,12H,7EH,20H,22H,05H,6CH
+2250   DATA 12H,7EH,5FH,20H,38H,08H,12H,7EH
+2260   DATA 95H,0F6H,08H,0D5H,6DH,0F8H,12H,7EH
+2270   DATA 28H,22H
+2280   REM Bytes = 218
+2290   REM Checksumme = 23903

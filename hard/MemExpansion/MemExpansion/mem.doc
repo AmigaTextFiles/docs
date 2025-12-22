@@ -1,0 +1,91 @@
+This document describes the operation and construction of a one megabyte
+memory board with optional battery backed up clock for the Amiga. You can
+also build a 512k memory by only populating one bank. I do not mention
+elsewhere that the software needs to be modified to match the new limits if
+you do this. 
+
+The memory system consists of two banks of 256k words each. The banks are
+selected by the row address strobe (RAS) which is qualified by an address
+bit (A19) to select the bank. The upper and lower data strobes are used to
+generate seperate column address strobes (CAS) for the upper and lower
+bytes. Refresh is accomplished by activating the row address strobes for
+both banks while supplying a refresh address. Refresh cycles occur, if
+possible, when the memory is not being accessed (because some other resource
+is being addressed) or when necessary by holding off the processor to force
+time for the refresh cycle. All timing is derived from the 68000 clocks.
+This allows a fully synchronous design so that there are no glitches in
+timing possible. This also means that the processor must wait one clock
+cycle when it accesses this memory. The processor clock is simply too slow
+to go through the necessary states without the wait. If one eliminated the
+wait the system would be 20% faster. This would require a delay line or an
+asynchronous design. The cost of these alternatives is more than I was
+willing to pay. Also, the design would be harder to duplicate because of the
+more delicate timing.
+The clock is a Motorola MC146818. It keeps track of the date and time
+including daylight savings and leapyear. A nicad battery is charged by the
+Amiga when it is powered up. This battery runs the clock when the Amiga is
+off. As long as the Amiga is on 1% of the time, the clock will remain
+accurate.
+
+This memory board does not autoconfigure. This means that the Amiga doesn't
+know about it until it is told. A program called AddMem is distributed on
+the assembler or C disks. This program is needed to tell the Amiga that the
+memory exists. I have not written a clone of this program. I have written a
+memory test program to test the board. It is included in this release.
+
+At this time, a number of programs, including Deluxe Paint, do not work
+properly with external memory. I hope that as more Amigas get added memory
+the suppliers of these programs will fix the problems. Mostly, graphics
+objects cannot reside in external memory. If a graphics object is a program
+constant, the program must be chip memory resident. There is no way to do
+this within a language.  When a program allocates memory, it must specially
+ask for chip memory if needed because the operating system will allocate
+>from external memory if it can. If you want to use one of the programs that
+does not work with external memory, simply do not use the AddMem command.
+There is no need to remove the card. Amiga has released the ATOM program to
+developers which is used to tell the loader that some hunks must be loaded
+into chip memory. If you can get this program, it will fix the above
+problems.
+
+The hardware clock isn't used by the Amiga during normal operation since it
+keeps its own internal clock. I have written a program to read the hardware
+clock and set the system clock (this is more trouble than I wanted). This
+program is also included in this release.
+
+The easiest way to use these new resources is to modify your
+s/startup-sequence file to include:
+
+AddMem 400000 500000
+Clock
+
+ as added commands at the beginning. I also usually copy the entire system
+disk to ram: and reassign all the logicals to the copy in ram:. The system
+is very fast when running entirely out of ram.
+
+I wirewrapped the memory since I expected to make changes. It took three
+tries before the control circuit worked well. There were a number of pins
+that were essentially undocumented and I had little choice but to try things
+until they worked. Because this design has no support from Amiga, I cannot
+guarantee that it works with your machine. On the other hand, I design
+memories (and other things) for a living. I know what I'm doing. The design
+is very forgiving of small timing changes (another reason to keep it slow)
+and I do not expect anyone to have problems. I have no intention of
+supplying a PC board. I don't mind if someone else takes on that project as
+long as it is non-commercial. (If you are interested in a commercial design
+let me know, I would do many things differently if it were a high quantity
+commercial product. This design is bent in the direction of ease of
+duplication with no special parts.)
+
+There are four additional files I will mention here. The mechanical
+description is in mem.mechanical. This includes the connector and board info
+and the chip socket locations. Some comments on construction are also
+included. The parts list is in mem.parts. The parts given will work.
+Substitutions are possible, but at your own risk. The schematic is in
+mem.schematic and clock.schematic (this section can be built at a later
+time.) This is not the most beautiful method of drawing schematics,
+but it allows this project to be electronically documented so it can reach a
+lot of people without the 10th generation xerox problem. The schematic files
+look best if printed at eight lines per inch.
+
+
+

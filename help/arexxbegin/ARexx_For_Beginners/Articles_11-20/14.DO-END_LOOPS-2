@@ -1,0 +1,471 @@
+@DATABASE "ARB14"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 14 - DO...End Loops Part 2"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 14 - PROGRAMMING LOOPS WITH DO...END - PART 2
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+@{JLEFT}
+
+Having now dealt with various types of operators and conditional statements
+in Articles 12 to 14, we can now get back to our discussion of @{B}LOOPS@{UB} using
+the @{B}DO ... END@{UB} instructions that we started off in @{"Article 10" LINK "ARB:Articles_01-10/10.DO-END_LOOPS-1/MAIN"}.
+@{JCENTER}
+
+@{" Tossing A Coin Program - Version 2   " LINK "Tossing"}
+@{" The ITERATE Instruction - Discussion " LINK "Iterate1"}
+@{" The ITERATE Instruction - Usage      " LINK "Iterate2"}
+@{" Breaking Out of Loops                " LINK "Breaking"}
+@{" The LEAVE Instruction                " LINK "Leave"}
+@{" The BREAK Instruction                " LINK "Break"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Tossing" "Article 14 - DO...End Loops Part 2 - Tossing A Coin Version 2"
+
+@{B}@{U}@{JCENTER}Tossing A Coin Program - Version 2@{UB}@{UU}
+@{JLEFT}
+In Part 1 of DO...END loops I ended up by saying that "You will find that
+`DO FOREVER' can be very useful at times. An example is where you, the
+programmer, do not know how many times the user will want to use the
+loop."
+
+To illustrate this point, let's go back to our simulation of tossing a
+coin in @{"Example12-5" LINK "ARB:Articles_11-20/12.Conditional_Statements/Tossing"}. I said at that time that the program would only work
+once and to get another toss you would need to RX it again.
+
+The following example program illustrates how use a @{B}forever@{UB} loop to get
+the program to allow as many plays as the user wants.
+
+@{B}@{U}Tossing a Coin! (Version 2)@{UB}@{UU}
+
+/* Example14-1 */
+/* Version 2 of Coin Toss Program */
+
+ 1 Correct = 'You won'
+ 2 Wrong = 'You lost'
+ 3 CALL RANDOM(,,TIME('S'))
+
+ 4 DO FOREVER
+ 5   SAY ; SAY 'Coin Toss Program' ; SAY
+ 6   SAY 'Enter your choice: H - Heads, T -Tails, Q - Quit'
+ 7   PULL Choice
+ 8   IF Choice = 'Q' THEN DO
+ 9     SAY ; SAY 'Quitting Program - Are you sure? (Y/N)'
+10     PULL yesno
+11     IF yesno = 'Y' THEN EXIT
+12     ELSE ITERATE
+13   END
+14   ELSE DO
+15     IF Choice ~= 'H' & Choice ~= 'T' THEN DO
+16       SAY 'Wrong entry - enter again'
+17       ITERATE
+18     END
+19     Headtail = RANDOM(1,2)
+20     IF Headtail = 1 THEN DO
+21       SAY 'HEADS'
+22       IF Choice = 'H' THEN SAY Correct
+23       ELSE SAY Wrong
+24     END
+25     ELSE DO
+26       SAY 'TAILS'
+27       IF Choice = 'T' THEN SAY Correct
+28       ELSE SAY Wrong
+29     END
+30   END
+31 END
+
+The differences between this and @{"Example12-5" LINK "ARB:Articles_11-20/12.Conditional_Statements/Tossing"} are:-
+
+1. The main part of the program has been included in a DO FOREVER loop
+   starting at Line 4 and ending at Line 31.
+
+2. An extra input option of "Q" for "Quit" has been added at Line 6.
+
+3. A test and action has been added for "Choice = Q" at Lines 8-13. Maybe
+   entering "Q" was a mistake so I have put in an "Are you sure" type of
+   option. If "Quit" is really wanted then the EXIT instruction (Line 11)
+   causes the program to stop. If "Quit" is not wanted then the @{"ITERATE" LINK "Iterate1"}
+   instruction (Line 12) is used which causes an exit from the current
+   operation of the DO FOREVER and causes another operation of the
+   DO FOREVER to be started.
+
+4. A change to the "Wrong Entry" has been made. In Example12-5 it EXITed
+   from the program. Now we use ITERATE (Line 17) to allow another
+   operation of the DO FOREVER.
+
+When we come to look at functions in @{"Article 16" LINK "ARB:Articles_11-20/16.Functions-Internal/MAIN"} we will further extend
+our coin toss program to let it keep track of the number of heads and
+tails that come up and the number of wins and losses.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Iterate1" "Article 14 - DO...End Loops Part 2 - ITERATE - Discussion"
+
+@{B}@{U}@{JCENTER}The ITERATE Instruction - Discussion@{UB}@{UU}
+
+(@{"Click here" LINK "Iterate2"} for usage of ITERATE.)
+@{JLEFT}
+From the Macquarie Dictionary:-
+
+  @{B}Iterate@{UB} v.t., Def. 2. to do (something) over again or repeatedly.
+
+The DO-END instructions used with IF-THEN-ELSE instructions are
+"Non-Iterative". That is, they are @{B}not@{UB} and @{B}cannot@{UB} be repeated.
+
+The DO-END instructions that @{B}can@{UB} be repeated over and over, such as we
+looked at in Part 1 of DO-END in @{"Article 10" LINK "ARB:Articles_01-10/10.DO-END_LOOPS-1/MAIN"} are of the "iterative" kind.
+They have instructions following the DO to indicate how often the loop
+is to be operated, or "iterated".
+
+Each repetition of an iterative loop is called an @{B}"Iteration".@{UB}
+
+The ITERATE instruction @{B}cannot@{UB} be used to exit from a non-iterative DO-END.
+You use the @{"Break" LINK "Break"} instruction to do this. In fact, if "Iterate" is used
+when it is @{B}not@{UB} within an iterative DO-END then the program will stop with
+an error message.
+
+When used within an iterative loop, the ITERATE instruction immediately
+terminates the current iteration without completing it, and a determination
+is made as to whether another iteration is required. All instruction clauses
+in the loop @{B}after@{UB} the iterate instruction are ignored for that iteration
+of the loop.
+
+Another iteration of the loop after an ITERATE command will depend entirely
+on how the DO was set up.
+
+If it is an unlimited loop, i.e. a FOREVER loop, then ITERATE will always
+cause another iteration.
+
+If it is a limited loop, i.e. the DO instruction has set up definite limits
+to the number of iterations, then ITERATE will only cause another iteration
+if the limit has NOT been reached. If the limit HAS been reached, then
+ITERATE will cause it to jump to the correct END and the program will
+continue with any coding after that END.
+
+In Example14-1 above, ITERATE has been used twice in Lines 12 and Line
+17:-
+
+ 8   IF Choice = 'Q' THEN DO
+ 9     SAY ; SAY 'Quitting Program - Are you sure? (Y/N)'
+10     PULL yesno
+11     IF yesno = 'Y' THEN EXIT
+12     ELSE ITERATE
+13   END
+14   ELSE DO
+15     IF Choice ~= 'H' & Choice ~= 'T' THEN DO
+16       SAY 'Wrong entry - enter again'
+17       ITERATE
+18     END
+
+Line 12 is contained within a non-iterative DO-END from Line 8 to Line 13.
+
+Line 17 is contained within a non-iterative DO-END from Line 15 to Line
+18 which itself is contained within a non-iterative DO-END from Line 14
+to Line 30.
+
+However, the ITERATEs do @{B}not@{UB} have any effect on any of these three
+non-iterative DO-ENDs. The loop they @{B}DO@{UB} act on is that which starts
+at the DO in Line 4 and ends with the END at Line 31 of @{"Example14-1" LINK "Tossing"15}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Iterate2" "Article 14 - DO...End Loops Part 2 - ITERATE - Usage"
+
+@{B}@{U}@{JCENTER}The ITERATE Instruction - Usage@{UB}@{UU}
+
+(@{"Click here" LINK "Iterate1"} for a discussion of ITERATE.)
+@{JLEFT}
+The ITERATE command can be used on its own (as in the above @{"Example14-1" LINK "Tossing"32}),
+in which case it is "Unqualified".
+
+Or it can be followed by a symbol name, for example:-
+
+   ITERATE SymbolName
+
+in which case it is "qualified" by the symbol name.
+
+If an @{B}unqualified@{UB} ITERATE is found in nested iterative loops, then it
+will act on the innermost iterative loop.
+
+If a @{B}qualified@{UB} ITERATE is found in nested iterative loops, then it will
+exit from the iterative loop that used the symbol name as its index in
+the format:-
+
+  DO symbol = Start TO End
+
+It is important to note that qualified ITERATEs can @{B}only@{UB} be used in the
+above form of DO.
+
+They following forms of DO @{B}cannot@{UB} be used with qualified iterates:-
+
+  DO FOR
+  DO WHILE
+  DO UNTIL
+  DO FOREVER
+
+They can only be used with an @{B}unqualified@{UB} ITERATE.
+
+To illustrate qualified ITERATEs, consider the next three
+examples:-
+
+  /* Example 14-2.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+When RX'd, this program will display:-
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 1
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 2
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 3
+
+For each X-loop (1, 2 and 3) there are 2 Y-loops (1 and 2).
+
+Now if we change this to:-
+
+  /* Example 14-3.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      IF x = 2 THEN ITERATE y
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+It will abort the Y-loop (but NOT the X-loop) when x = 2 and
+display:-
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 1
+
+  From X loop 2
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 3
+
+Note that the X-loop has been completed all 3 times. It is only the Y-loop
+that has been aborted when x = 2. The Y-loop @{B}is@{UB} actually entered twice
+while X = 2 and the program @{B}does@{UB} reach the line starting "IF X = 2" each
+time but the rest of the Y-loop is missed as the "ITERATE y" tells ARexx
+to go back to the start of the Y-loop.
+
+The ITERATE instruction clause, in this case, could have been written
+as:-
+
+      IF x = 2 THEN ITERATE
+
+Because the ITERATE is contained within the loop that it is to act upon,
+it can be used with or without the qualifying symbol index name. However,
+it may be easier for a human to read the program if the symbol name is
+used.
+
+Now change it to:-
+
+  /* Example 14-4.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      IF x = 2 THEN ITERATE x
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+and the display will be:-
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 1
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 3
+
+This time there is no display for the X-loop at all when x = 2. The "ITERATE
+x" has aborted the X-loop and, because the Y-loop is really a part of
+the X-loop, it has also been aborted.
+
+Note that, in this case, it is essential for the qualifying symbol index
+name to be used because we wish to have ITERATE act on the outside X-loop
+even though it is contained within the inner Y-loop.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Breaking" "Article 14 - DO...End Loops Part 2 - Breaking Out Of Loops"
+
+@{B}@{U}@{JCENTER}Breaking Out of Loops@{UB}@{UU}
+@{JLEFT}
+The ITERATE command does not really break out of a loop completely. It
+causes the next iteration of the loop, if one is due, to be
+commenced.
+
+To break out of the loop altogether, we use the @{"LEAVE" LINK "Leave"} or @{"BREAK" LINK "Break"}
+instructions.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Leave" "Article 14 - DO...End Loops Part 2 - The LEAVE Instruction"
+
+@{B}@{U}@{JCENTER}The LEAVE Instruction@{UB}@{UU}
+@{JLEFT}
+As with @{"ITERATE" LINK "Iterate2"}, LEAVE can be used with or without the qualifying symbol
+index name. However, it causes the loop to be aborted altogether without
+allowing any more iterations of the loop.
+
+LEAVE @{B}cannot@{UB} be used in a non-iterative DO-END. @{"BREAK" LINK "Break"} must be used for
+that.
+
+Let's go back to our previous examples and change ITERATE to LEAVE.
+
+  /* Example 14-5.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      IF x = 2 THEN LEAVE y
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+This will display:-
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 1
+
+  From X loop 2
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 3
+
+Hold on - isn't that the same result as when we used ITERATE? Yes, but
+don't forget that, when ITERATE was used, the Y-loop was entered twice
+and aborted twice. In this case it is entered only once and aborted
+totally.
+
+Now try it with:-
+
+  /* Example 14-6.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      IF x = 2 THEN LEAVE x
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+This will display:-
+
+    This is Y loop 1
+    This is Y loop 2
+  From X loop 1
+
+When x = 2, the "LEAVE x" causes the X-loop to be aborted totally. The
+Y-loop is entered once during the second X-loop but, as the Y-loop is
+a part of the X-loop, it is also aborted.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Break" "Article 14 - DO...End Loops Part 2 - The BREAK Instruction"
+
+@{B}@{U}@{JCENTER}The BREAK Instruction@{UB}@{UU}
+@{JLEFT}
+The BREAK instruction is similar to @{"LEAVE" LINK "Leave"} but with these two differences.
+
+@{B}Firstly,@{UB} BREAK can act on non-iterative DO-END instructions as well as
+iterative DO-END's. Thus it could be used as follows:-
+
+  /* Example14-7.rexx */
+
+  DO x = 1 to 10
+    IF x//2 = 0 THEN DO
+      SAY x 'is an EVEN number'
+      IF x//4 ~= 0 THEN BREAK
+      SAY x 'is also divisible by 4'
+    END
+  END
+
+This would display:-
+
+  2 is an EVEN number
+  4 is an EVEN number
+  4 is also divisible by 4
+  6 is an EVEN number
+  8 is an EVEN number
+  8 is also divisible by 4
+  10 is an EVEN number
+
+When x//2 = 0 there is no remainder from the division of 4 by 2 (// gives
+the @{B}remainder@{UB} of the division) so the number must be even and the THEN
+DO is operated, which is a non-iterative DO.
+
+When x//4 ~= 0 then the number is NOT divisible by 4 so we BREAK out of
+the non-iterative DO and the message about divisibility by 4 is NOT
+shown.
+
+@{B}Secondly,@{UB} BREAK can @{B}not@{UB} have a qualifying symbol index name after it.
+Therefore it can only break out of the inner most DO instruction in which
+it is contained.
+
+Thus we could use it to replace the LEAVE in @{"Example14-5" LINK "Leave"10}, as in:-
+
+  /* Example 14-8.rexx */
+
+  DO x = 1 to 3
+    DO y = 1 to 2
+      IF x = 2 THEN BREAK
+      SAY ' This is Y loop' y
+    END
+    SAY 'From X loop' x ; SAY
+  END
+
+and we would get exactly the same result as Example14-5.
+
+However, we could @{B}not@{UB} use it to replace the LEAVE in @{"Example14-6" LINK "Leave"39} as this
+LEAVE is @{B}not@{UB} referencing the innermost loop in which it is contained.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

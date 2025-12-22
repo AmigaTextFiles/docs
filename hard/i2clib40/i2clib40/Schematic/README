@@ -1,0 +1,88 @@
+
+
+WARNING
+-------
+
+Connecting selfmade hardware to your Amiga is never a good idea.
+Although I do mention some particular dangers in the following
+paragraphs, there are a lot more things you might do wrong. If you
+feel uncomfortable with this idea, quit now before you can do any
+damage. Otherwise proceed at your own risk.
+
+
+Power supply
+------------
+
+One of the most dreadful things that can happen to your Amiga is
+blowing a fuse on one of the external connectors. These fuses are
+soldered to the motherboard (at least that's true for A2000, and I
+don't think things have become any better with the later Amiga models)
+and, as you can imagine, they are very hard to replace.
+
+So when in doubt, always use an external power supply for your I²C bus
+interface and devices, and don't connect any more lines than are
+absolutely necessary to establish data communication. And, for
+heaven's sake, always make sure you connect the right lines.
+
+Now for some details on the power outputs:
+
+- Parallel port: +5V on pin 14, up to 100 mA (not present on A1000).
+  Don't use this supply, unless you've made sure that your I²C chips
+  require significantly less than that current. Hint: *Never* use this
+  power supply for a teletext decoder, because 100 mA is about exactly
+  what that chip consumes!
+
+- Serial port: ±12V on pin 9/10, up to 50 mA (not present on A1000).
+  Alright, here's one exception: It would be foolish *not* to use
+  this power supply. After all, you'll only use it for the RS232 line
+  driver, and that's what it apparently was intended for.
+
+- Floppy port: +5V on pin 12, up to 270 mA (410 mA surge).
+  If you already have some external floppies, try to determine their
+  power requirements first, to see how much would be left for other
+  devices. But no matter what the result, it is *always* a bad idea to
+  blindly connect some selfmade and not yet tested hardware to this
+  supply, because defective hardware might just short out the power.
+  (Don't say that's silly, it has happened to me.)
+  Note: According to RKRM, there are also some Amigas rated for
+  540 mA (870 mA surge) on this line. I suppose this refers to the
+  "big" models (A2/3/4000), but unfortunately RKRM doesn't state
+  that for certain. So unless you can confirm this information from
+  your user's manual, always assume that the current limit is
+  270 mA. :-(
+
+
+The floppy interface
+--------------------
+
+The relationship between SELx signals and the pin numbers that they
+can be found on depends on what position in the floppy chain you are
+talking about. So to clarify things:
+
+The line that is designated "SEL1/Pin 21" in the diagram should always
+be connected to Pin 21. Don't worry about which SELx line the
+interface will ultimately end up with, i2c.library will find it.
+
+The I²C interface as shown in the diagram is intended to be the last
+device in the floppy chain.
+
+Other configurations are conceivable, too, but would be more
+complicated. If you want your I²C interface to have both a "disk in"
+and "disk out" connector, you can't just "tap" the floppy bus, you
+also have to kind of rotate the SELx lines between both connectors:
+
+ disk in     disk out
+    21                  this is the SELx signal that you listen to
+    9----->-----21
+    20---->-----9
+                20      this line is not connected for the next drive
+
+One more important note on the floppy interface. For reasons that I
+can't quite comprehend, it seems that the plain SN7401 isn't available
+from many dealers, the 74LS01 seems to be much more common. That's
+alright, however, because LS (low-power) or not doesn't make much of a
+difference here. But NEVER ever use a 7400 NAND chip instead of the
+7401! The 7401 has open-collector gates, the 7400 hasn't! Such a
+modification to the interface design would not work and would most
+likely result in damaging or destroying your I²C peripherals!
+

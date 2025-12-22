@@ -1,0 +1,294 @@
+<html>
+<title> Blade HomePage - Programming.</title>
+<body link=#aa0000 alink=#00aa00 vlink=#410041 bgcolor=#999999 text=#ffffff BACKGROUND="bpics/moon4.gif">
+
+<a name="top"></a>
+<h1>
+<center>
+<b>THE AMIGANET BLITZ BASIC FAQ</b><br>
+<h2>
+</center>
+<b>SPEEED OPTIMIZATIONS</b><br>
+<h3>
+<p>
+As you know, there are many ways to obtain the same result, you can do an
+easy to read program, but not very fast, or an incomprehensible and faster
+one...
+</p><p>
+Here are my tests:  Using the "ticks" commands i read the elapsed time to
+accomplish to the same task, but in differen ways.  The faster one will be
+used!  :)
+</p>
+
+<ul>
+  <li><A HREF=#Random>RND numbers generators.</a>
+  <li><A HREF=#Double>Doubling a variable.</a>
+  <li><A HREF=#FastPrint>Fastest ways to print text.</a>
+</ul>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A NAME="FastPrint"></a>
+<h2>FAST PRINT
+<h3>
+Original message by Lynn Jennings<br><br><br>
+
+<p>
+Printing things takes a <u>very</u> long time.  First I'll briefly try to
+explain why, then I'll try to be helpful and offer some suggestions on
+speeding your code up.
+</p>
+Suppose I want to do this:<br>
+
+<listing>
+BitmapOutput 0
+Print "Score: "+str$(Score)
+</listing><br>
+
+What does this involve?<br>
+<p>
+First,  the string to be printed must be generated.  Basically
+this involves:
+</p>
+
+<ol>
+  <li>Get the first bit ("Score: ")
+  <li>Use a routine that converts the variable (Score) into a string of characters that represents the value of the variable.  For example, the number 10 would be converted from $0A to $31 $30 $00.
+  <li>Create a third string by tacking the string from (2) to the end of the string from (1).
+</ol>
+<p>
+Now  that  it  knows  what to print, it has to print it.  This
+involves:
+</p>
+
+<ol>
+  <li>Start at the first character of the string to print
+  <li>Is this the end of the string?  If yes, then quit.
+  <li>Use the ASCII code of the current character to look up what shape we are supposed to plot (using the current font).
+  <li>Use the blitter to blast the character onto the screen at the current cursor position, being careful not to draw outside of the actual screen.
+  <li>Increment  the  cursor position and get the next character in the string.
+  <li>Go to step (2) and continue until the print is finished.
+</ol>
+As you can see, that's a LOT of steps to go through for each Print you use.<br>
+How can you ease the situation?<br>
+<p>
+Here  are  strategies  you  can use alone or in combination to
+speed up the printing routine:
+</p>
+
+<h2>
+[1]
+<h3>
+Only print what you have to; print constant strings <u>once</u>.<br>
+For example, if you are using code like this:<br>
+<listing>
+    .main
+     Repeat
+       Gosub Update
+     Forever
+
+     Update:
+       Locate X,Y
+       NPrint "Player One: "+str$(Score(0))
+       Print  "Player Two: "+str$(Score(1))
+     Return
+</listing>
+<br>Change your code to this:<br>
+<listing>
+    Locate X,Y
+    NPrint "Player One: "
+    Print  "Player Two: "
+    .main
+    Repeat
+      Gosub Update
+    Forever
+
+    Update:
+      Locate X+12,Y  :Print str$(Score(0))
+      Locate X+12,Y+1:Print str$(Score(1))
+    Return
+</listing>
+
+<h2>
+[2]
+<h3>
+Only print things <u>when</u> they change.<br>
+Use  copies of variables to detect when they have changed.<br>
+For example, if you use code like this:<br>
+
+<listing>
+    ...
+    If HitTarget Then Score+100  ; 100 points for hitting target
+    ...
+    Print str$(Score)
+</listing>
+<br>Change your code to this:<br>
+<listing>
+    ...
+    If HitTarget Then Score+100  ; 100 points for hitting target
+    ...
+    If OldScore<>Score Then Print str$(Score):OldScore=Score
+</listing>
+
+<h2>
+[3]
+<h3>
+<p>
+Don't print everything every time through.  If you intend to update the
+screen at 25 frames per second or so, you don't need to update <u>scores</u>
+that often!  Every 1/6 second or thereabouts is usually more than adequate.
+Divide your screen updates into a number of subjobs, and only do one subjob
+each time the Update routine is called.  For example, if you have code like
+this:
+</p>
+<listing>
+    Update:
+      Print str$(Score(0)) ; Update player 1's score
+      Print str$(Score(1)) ; Update player 2's score
+    Return
+</listing>
+<br>Change it to look like this:<br>
+<listing>
+    Update:
+      UpdateFlag=1-UpdateFlag ; this var will toggle between 0`and 1
+      If UpdateFlag
+        Print str$(Score(0))  ; Update player 1's score
+      Else
+        Locate X,Y+1
+        Print str$(Score(1))  ; Update player 2's score
+      EndIf
+    Return
+</listing>
+<br>
+For more than two subgroups, of course, use a normal counter:<br>
+<listing>
+    n=n+1:if n>#NUMBER_OF_SUBGROUPS_PLUS_ONE then n=0
+</listing>
+<p>
+If you use the above trick to get a vaule for a two-player game (as in
+Score(0) and Score(1)), and you have to update a LOT (and I mean a LOT) of
+things in arrays (eg.  X(0/1), Y(0/1), TimeLeft(0/1), etc., etc.), then it
+will be faster to use the following:
+</p>
+<listing>
+    .main
+    Repeat
+      Player=1-Player
+      if Player=0 
+        Gosub HandlePlayerOne
+      else
+        Gosub HandlePlayerTwo
+      endif
+    Forever
+
+    HandlePlayerOne:
+      Print Score(0):Return
+
+    HandlePlayerTwo:
+      Print Score(1):Return
+</listing>
+<p>
+Again, this is only an economical tradeoff between speed and code size when
+you are updating a LOT of things.
+</p>
+Hope you find the above useful.<br>
+
+<br><A href=#top>Go to top of page.</a>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A name="Random"></a>
+<h2>RANDOM NUMBERS GENERATOR
+<h3>
+Original message by Andrea Doimo<br><br><br>
+<p>
+In games makeing the RND function is used for many purposes, so is very
+important to find the fastest way to take decisions.
+</p><p>
+I was used with other languages to use the "integer" version, but with
+Blitz, it's better to use the first solution.
+</p>
+
+<listing>
+DEFTYPE .w
+ResetTimer
+
+;First test.  Fixed point numbers.
+For n=1 To 25000
+  If Rnd>.5 Then
+Next
+t1.l=Timer
+
+;Second test.  Integer numbers.
+ResetTimer
+For n=1 To 25000
+  If Rnd(100)>50 Then
+Next
+t2.l=Timer
+
+NPrint t1
+NPrint t2
+MouseWait
+</listing>
+
+<br><A href=#top>Go to top of page.</a>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+</center>
+
+<A name="Double"></a>
+<h2>DOUBLING A VARIABLE CONTENT
+<h3>
+Original message by Andrea Doimo<br><br><br>
+<p>
+I've found three ways to double a variable:  Using the classic "*"
+operator, left shifting the bytes, or adding the variable to itself.
+</p><p>
+The last one is the fastest, but in many ways using the shifting is easyer.
+Shifting is the best choose when you've to mutiply by powers of 2, like
+4,8,16,32 and so on...
+</p>
+<listing>
+DEFTYPE .w
+
+;First Test.  * operator
+ResetTimer
+For n.l=1 To 500000
+  a=n*2
+Next
+t1.l=Timer
+
+;Second test. Bytes shifting
+ResetTimer
+For n.l=1 To 500000
+  a=n ASL 1
+Next
+t2.l=Timer
+
+;Thirth test. Adding to itself.
+ResetTimer
+For n.l=1 To 500000
+  a=n+n
+Next
+t3.l=Timer
+
+NPrint t1
+NPrint t2
+NPrint t3
+MouseWait
+End
+</listing>
+<A href=#top>Go to top of page.</a>
+
+<center>
+<IMG SRC="bpics/Bar.gif">
+<A href="bmyhome.htm"><IMG SRC="bpics/I-Home.GIF"></a>
+<A href="bprogs.htm"><IMG SRC="bpics/I-Blitz.GIF"></a>
+
+</body>
+</html>

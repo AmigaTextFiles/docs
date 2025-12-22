@@ -1,0 +1,835 @@
+@DATABASE "ARB41"
+@INDEX "ARB:Misc/Index.Text/Main"
+@HELP "ARB:Misc/Help/Main"
+@NODE "Main" "ARexx For Beginners - Article 41 - Memory Handling"
+
+@{B}@{U}@{JCENTER}AREXX FOR BEGINNERS
+
+ARTICLE 41 - MEMORY HANDLING
+
+BY FRANK BUNTON@{UB}@{UU}
+
+@{" COPYRIGHT © FRANK P. BUNTON 1995-1998 " LINK "ARB:Misc/Read_Me_First!!/Copyright"}
+
+@{" General Discussion                        " LINK "General"}
+
+@{" The GETSPACE()  Function (Built In)       " LINK "Getspace()"}
+@{" The ALLOCMEM()  Function (RexxSupport)    " LINK "Allocmem()"}
+@{"     Differences Between GETSPC & ALLCOMEM " LINK "Differences"}
+@{" The FREESPACE() Function (Built In)       " LINK "Freespace()"}
+@{" The FREEMEM()   Function (RexxSupport)    " LINK "Freemem()"}
+@{" The EXPORT()    Function (Built In)       " LINK "Export()"}
+@{" The STORAGE()   Function (Built In)       " LINK "Storage()"}
+@{"     Differences Between EXPORT & STORAGE  " LINK "Differences2"}
+@{"     WARNING For EXPORT() & STORAGE()      " LINK "Warning"}
+@{" The IMPORT()    Function (Built In)       " LINK "Import()"}
+
+@{" More General Comments                     " LINK "General2"}
+@{" Usage Of Memory Handling                  " LINK "Usage"}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General" "Article 41 - Memory Handling - General Discussion"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - GENERAL DISCUSSION@{UB}@{UU}
+@{JLEFT}
+In discussing memory, it is necessary to bear in mind that, when an ARexx
+program is run, it sets aside for its own use a certain amount of the
+system's memory. This is called ARexx's @{B}"Internal Pool"@{UB} and is used for
+storing a lot of information such as the values of variable symbols, host
+addresses, the options set for numerics, etc.
+
+This internal pool of memory is released back to the system when the ARexx
+program is terminated.
+
+The following @{B}Built In@{UB} functions can be used to utilise this internal
+pool of memory:-
+
+  @{" GETSPACE()  " LINK "Getspace()"} To allocate a block of memory for use by the programmer
+  @{" EXPORT()    " LINK "Export()"} To store a string to memory allocated by GETSPACE()
+  @{" STORAGE()   " LINK "Storage()"} To store a string in memory and return previous contents.
+  @{" IMPORT()    " LINK "Import()"} To retrieve a string from memory.
+  @{" FREESPACE() " LINK "Freespace()"} To free memory allocated by GETSPACE()
+
+With the above mentioned @{B}Built In@{UB} functions, we can allocate memory for
+our own use, store strings in it, retrieve the strings, and free up the
+memory again.
+
+There are also two @{B}RexxSupport.Library@{UB} functions that deal with the Amiga's
+@{B}system memory@{UB} which is @{B}not@{UB} part of the ARexx internal pool. These functions
+are:-
+
+  @{" ALLOCMEM() " LINK "Allocmem()"} To allocate memory from the Amiga's system memory
+  @{" FREEMEM()  " LINK "Freemem()"} To free memory allocated with FREEMEM()
+
+The sequence of events that you would use when making use of memory would
+be:-
+
+- Reserve some memory with @{"GETSPACE()" LINK "Getspace()"} or @{"ALLOCMEM()" LINK "Allocmem()"}.
+
+- Write some data to that memory with @{"EXPORT()" LINK "Export()"} or @{"STORAGE()" LINK "Storage()"}.
+
+- Retrieve data from memory with @{"IMPORT()" LINK "Import()"}.
+
+- Release the memory with @{"FREESPACE()" LINK "Freespace()"} or @{"FREEMEM()" LINK "Freemem()"}.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Getspace()" "Article 41 - Memory Handling - The GETSPACE() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE GETSPACE() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The GETSPACE() @{"built in" LINK "ARB:Articles_11-20/17.Functions-Built_In/General"} function will allocate a block of memory of a
+specified length (number of bytes) from Arexx's internal memory pool.
+It returns the starting address of memory allocated. Its format is:-
+
+  GETSPACE(Length)
+
+where "Length" is the size in bytes of the block of memory required.
+
+An example of its usage is given in @{"Example41-1" LINK "General2"}
+
+This function is somewhat similar to @{"FREEMEM()" LINK "Freemem()"} but with some @{"differences" LINK "Differences"}
+in the way they work.
+
+The address returned is usually stored in a variable symbol. For example:-
+
+  MemAdd = GETSPACE(20)
+
+The symbol "MemAdd" will now hold the starting address of a 20 byte block
+that has been reserved. Nothing else will be able to use that 20 byte
+block until it has been freed.
+
+The space so reserved can be used to store data with the @{"EXPORT()" LINK "Export()"} or the
+@{"STORAGE()" LINK "Storage()"} functions.
+
+The memory allocated by GETSPACE() can be returned to the pool with the
+@{"FREESPACE()" LINK "Freespace()"} function (see below).
+
+However, it is also freed if the program is exited without the use of
+FREESPACE() so that the information stored there is lost when the program
+is exited.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Differences" "Article 41 - Memory Handling - Differences Between GETSPACE() and ALLOCMEM()"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - DIFFERENCES BETWEEN GETSPACE() & ALLOCMEM()@{UB}@{UU}
+@{JLEFT}
+The differences in the way that @{"GETSPACE()" LINK "Getspace()"} and @{"ALLOCMEM()" LINK "Allocmem()"} work
+are:-
+
+1. GETSPACE() allocates memory from the ARexx's @{"internal pool" LINK "General"}.
+   ALLOCMEM() allocates from the system's pool of free memory.
+
+2. If the program is exited without the memory being freed up with
+   @{"FREESPACE()" LINK "Freespace()"} or @{"FREEMEM()" LINK "Freemem()"} then:-
+
+   - memory allocated with GETSPACE() will be automatically freed
+     and returned to the system's memory pool
+
+   - memory allocated with ALLOCMEM() will @{B}NOT@{UB} be freed.
+     FREEMEM() @{B}must@{UB} be used before the program is exited.
+     (However, a power off or a reset of your Amiga would, of course,
+     free up the memory!!).
+
+Off hand, the only reason that I can think of to use ALLOCMEM() is for
+occasions when you are allocating memory for use by a program external
+to the ARexx system and external to any ARexx programs and you want the
+information stored in the memory to survive after the ARexx program has
+been shut down.
+
+If you are going to use the memory entirely within the ARexx system and
+ARexx programs then @{B}do not@{UB} use ALLOCMEM(). It is highly unlikely that
+the average ARexx programmer would need to use it.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Allocmem()" "Article 41 - Memory Handling - The ALLOCMEM() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE ALLOCMEM() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The ALLOCMEM() @{"RexxSupport.Library" LINK "ARB:Articles_31-40/39.Support.Library/General"} function is somewhat similar to
+@{"GETSPACE()" LINK "Getspace()"} but with some @{"differences" LINK "Differences"} in the way they work.
+
+The format for function is:-
+
+  ALLOCMEM(Length [,Attribute])
+
+The only difference in @{B}format@{UB} between this and @{"GETSPACE()" LINK "Getspace()"} is the optional
+argument "Attribute".
+
+If not used, the default attribute of "Public" is used. I will not go into
+the subject of memory attributes as it is beyond the scope of a beginner's
+guide to ARexx. Just take it that, if you @{B}really must@{UB} use ALLOCMEM()
+before having made a separate study of the Amiga's memory systems, then
+@{B}do not@{UB} use an attribute.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Freespace()" "Article 41 - Memory Handling - The FREESPACE() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE FREESPACE() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The FREESPACE() @{"built in" LINK "ARB:Articles_11-20/17.Functions-Built_In/General"} function frees up the memory allocated with
+@{"GETSPACE()" LINK "Getspace()"}. Its format is:-
+
+  FREESPACE(Address,Length)
+
+where "Address" is the address determined by GETSPACE() and "Length" is
+the length allocated by GETSPACE().
+
+It returns a @{"Boolean" LINK "ARB:Misc/Glossary/Boolean"} value of 1 for success and 0 for failure.
+
+For example:-
+
+  SAY FREESPACE(MemAdd,20)
+  --> 1
+
+An example of its usage is given in @{"Example41-1" LINK "General2"}
+
+Although the closure of an ARexx program will automatically return memory,
+which was allocated with @{"GETSPACE()" LINK "Getspace()"}, to the system's memory pool, it is
+always best to free it with FREESPACE() as soon as it is finished with. If
+you have allocated a rather large block of memory then go on to do other
+things in your program after you have finished with it, you may find your
+program running into memory shortages. So get into the habit of freeing
+memory as soon as you have finished with it.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@ENDNODE
+
+@NODE "Freemem()" "Article 41 - Memory Handling - The FREEMEM() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE FREEMEM() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The FREEMEM() @{"RexxSupport.Library" LINK "ARB:Articles_31-40/39.Support.Library/General"} function frees up the memory allocated
+with @{"ALLOCMEM()" LINK "Allocmem()"}. Its format is:-
+
+  FREEMEM(Address,Length)
+
+where "Address" is the address determined by ALLOCMEM() and "Length" is
+the length allocated by ALLOCMEM().
+
+It @{B}cannot@{UB} be used to release memory allocated with @{"GETSPACE()" LINK "Getspace()"}. If you
+try to use it that way then you will most likely end up with a GURU!
+
+It returns a @{"Boolean" LINK "ARB:Misc/Glossary/Boolean"} value of 1 is the release is successful and 0 if
+it is not.
+
+For example:-
+
+  SAY FREEMEM(MemAdd,20)
+  --> 1
+
+Unlike @{"FREESPACE()" LINK "Freespace()"20}, exiting the ARexx program will @{B}not@{UB} free up the memory
+allocated with ALLOCMEM(). FREEMEM() @{B}must@{UB} be used before the program is
+finished.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Warning" "Article 41 - Memory Handling - Warning For EXPORT() & STORAGE()"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - WARNING FOR EXPORT() & STORAGE()@{UB}@{UU}
+@{JLEFT}
+@{B}WARNING As @{I}ANY @{UI}area of random access memory can be overwritten with @{"EXPORT()" LINK "Export()"}
+or @{"STORAGE()" LINK "Storage()"} it is @{I}absolutely essential @{UI}that you use only memory addresses
+obtained with the @{"GETSPACE()" LINK "Getspace()"} and @{"ALLOCMEM()" LINK "Allocmem()"} functions and to ensure that
+you @{I}do NOT @{UI}send a string of greater length than that specified in these
+two functions. If you use a greater length, or use any other memory address,
+then it is quite possible that a vital bit of data or program could be
+@{I}overwritten @{UI}causing malfunctioning or system crashes!!!@{UB}
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Export()" "Article 41 - Memory Handling - The EXPORT() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE EXPORT() FUNCTION@{UB}@{UU}
+
+@{B}PLEASE READ THIS @{"WARNING" LINK "Warning"} BEFORE USING THIS FUNCTION!!@{UB}
+@{JLEFT}
+The EXPORT() @{"built in" LINK "ARB:Articles_11-20/17.Functions-Built_In/General"} function will transfer a string to a block of memory
+starting at the nominated memory address.
+
+It is similar to @{"STORAGE()" LINK "Storage()"} but has some @{"differences" LINK "Differences2"}.
+
+Its format is:-
+
+  EXPORT(Address [,String][,Length][,Pad])
+
+where:-
+
+- @{B}Address@{UB} is the starting address of the block to be used as determined
+  by the @{"GETSPACE()" LINK "Getspace()"} or @{"ALLOCMEM()" LINK "Allocmem()"} functions.
+
+- @{B}String@{UB} is the string to be stored in memory.
+
+- @{B}Length@{UB} is the maximum length that is to be exported. It should @{B}never@{UB}
+  exceed the length specified in the @{"GETSPACE()" LINK "Getspace()"} or @{"ALLOCMEM()" LINK "Allocmem()"} functions.
+
+  If @{B}Length@{UB} is less than the length of the string then the string will be
+  curtailed at the specified length.
+
+  If @{B}Length@{UB} is omitted, the length of the string is used as a default.
+
+  However, it is @{"strongly recommended" LINK "General2"} that @{B}length@{UB} always be used!!
+
+- @{B}Pad@{UB} is the pad character used if the length specified is greater than the
+  length of the string. If it is not used, a null character ('0'x) is
+  used. This null character is important when we come to use the @{"IMPORT()" LINK "Import()"}
+  function which can be set to read all characters up to a null.
+
+The function returns the number of characters written to memory.
+
+An example of its usage is given in @{"Example41-1" LINK "General2"}
+
+  MemAdd = GETSPACE(20)
+  SAY EXPORT(MemAdd,'This is a String')
+  --> 16
+
+As no "Length" option is used, the default length is the length of the
+string, i.e. 16
+
+  MemAdd = GETSPACE(20)
+  SAY EXPORT(MemAdd,'This is a String',20)
+  --> 20
+
+Now a length has been specified so the functions returns the value of the
+length used. As no pad has been used, the 20 character string is:-
+
+  This is a String plus 4 null characters ('0'x)
+
+  MemAdd = GETSPACE(20)
+  SAY EXPORT(MemAdd,'This is a String',20,'*')
+  --> 20
+
+Now a pad has been used, the 20 characters written are:-
+
+  This is a String****
+
+  MemAdd = GETSPACE(20)
+  SAY EXPORT(MemAdd,'This is a String',,'*')
+  --> 16
+
+In this case, the position in which the @{B}Length@{UB} should appear is a null
+(as nothing is between the two commas) so the default length is the length
+of the string. Therefore the pad character is @{B}not@{UB} used. In fact, this
+usage, although possible, is useless!
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Differences2" "Article 41 - Memory Handling - Differences Between EXPORT() & STORAGE()"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - DIFFERENCES BETWEEN EXPORT() & STORAGE()@{UB}@{UU}
+@{JLEFT}
+The two functions @{"EXPORT()" LINK "Export()"} and @{"STORAGE()" LINK "Storage()"} are very similar but have these
+differences:-
+
+@{B}Address@{UB} is:-
+
+   @{B}essential@{UB} with EXPORT()
+   @{B}optional@{UB}  with STORAGE()
+
+@{B}The values returned@{UB} by the functions are:-
+
+   EXPORT()  - the number of characters written to memory
+
+   STORAGE() - the previous contents of the memory location written to.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Storage()" "Article 41 - Memory Handling - The STORAGE() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE STORAGE() FUNCTION()@{UB}@{UU}
+
+@{B}PLEASE READ THIS @{"WARNING" LINK "Warning"} BEFORE USING THIS FUNCTION!!@{UB}
+@{JLEFT}
+The STORAGE() @{"built in" LINK "ARB:Articles_11-20/17.Functions-Built_In/General"} function will transfer a string to a block of memory
+starting at the nominated memory address.
+
+It is similar to @{"EXPORT()" LINK "Export()"} but has some @{"differences" LINK "Differences2"}.
+
+The format for STORAGE() is:-
+
+  STORAGE([Address][,String][,Length][,Pad])
+
+Thus @{B}all@{UB} arguments are @{B}optional@{UB} and the function can be used @{B}without any
+arguments@{UB}:-
+
+  STORAGE()
+
+This will return the amount of free system memory. For example:-
+
+  SAY STORAGE()
+  --> 1290321
+
+This would mean that 1290321 bytes of system memory (chip @{B}plus@{UB} fast) are
+free.
+
+In the full format:-
+
+  STORAGE([Address][,String][,Length][,Pad])
+
+the arguments are:-
+
+- @{B}Address@{UB} is the starting address of the block to be used as determined
+  by the @{"GETSPACE()" LINK "Getspace()"} or @{"ALLOCMEM()" LINK "Allocmem()"} functions.
+
+- @{B}String@{UB} is the string to be stored in memory.
+
+- @{B}Length@{UB} is the maximum length that is to be exported. It should @{B}never@{UB}
+  exceed the length specified in the @{"GETSPACE()" LINK "Getspace()"} or @{"ALLOCMEM()" LINK "Allocmem()"} functions.
+
+  If @{B}Length@{UB} is less than the length of the string then the string will be
+  curtailed at the specified length.
+
+  If @{B}Length@{UB} is omitted, the length of the string is used as a default.
+
+  However, it is @{"strongly recommended" LINK "General2"} that @{B}length@{UB} always be used!!
+
+- @{B}Pad@{UB} is the pad character used if the length specified is greater than the
+  length of the string. If it is not used, a null character ('0'x) is
+  used. This null character is important when we come to use the @{"IMPORT()" LINK "Import()"}
+  function which can be set to read all characters up to a null.
+
+@{B}If used with an Address and String@{UB} then the string is written to the memory
+address and the function @{B}returns the previous contents of the memory
+address@{UB}.
+
+For example:-
+
+  MemAdd = GETSPACE(20)
+  SAY EXPORT(MemAdd,'This is a String',20)
+  --> 20
+  Previous = STORAGE(MemAdd,'Another string',20)
+  SAY Previous
+  --> 'This is a String'
+
+If the above lines were used then this is what would happen:-
+
+- The address "MemAdd" is given the contents "This is a String" by the
+  EXPORT() instruction.
+
+- The STORAGE() function retrieves the @{B}old@{UB} contents of memory at
+  "MemAdd" (i.e. "This is a string") and stores them in the symbol
+  "Previous"
+
+  It then gives the memory address "MemAdd" new contents,
+  i.e. "Another String".
+
+If you wanted to write to memory, then restore the previous contents at
+a later time, then you would use STORAGE() as above, then restore them
+later on with one of these:-
+
+  EXPORT(MemAdd,Previous)
+  STORAGE(MemAdd,Previous)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Import()" "Article 41 - Memory Handling - The IMPORT() Function"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - THE IMPORT() FUNCTION@{UB}@{UU}
+@{JLEFT}
+The IMPORT() @{"built in" LINK "ARB:Articles_11-20/17.Functions-Built_In/General"} function retrieves the contents of a memory address.
+Its format is:-
+
+  IMPORT(Address,[Length])
+
+@{B}Address@{UB} is essential and is the start address of the block of memory to
+be read. It should be the address that has been used in a previous @{"EXPORT()" LINK "Export()"}
+or @{"STORAGE()" LINK "Storage()"} instruction.
+
+You will recall that EXPORT() and STORAGE() @{"can cause harm" LINK "Warning"} to RAM contents
+by using random addresses. Using random address with IMPORT() cannot harm
+memory but will, in nearly all cases, give you a load of useless garbage!
+
+The value returned by IMPORT is the string that it finds in memory.
+
+@{B}Length@{UB} is the number of characters to be read. It is optional and, if
+not used, IMPORT() will keep reading characters until it comes across
+a null character ('0'x). This is illustrated by @{"Example41-4" LINK "General2"104} below.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "General2" "Article 41 - Memory Handling - General Comments"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - GENERAL COMMENTS@{UB}@{UU}
+@{JLEFT}
+There are 6 example programs in this section, all making points on the
+use of memory.
+
+In order to avoid the danger of overwriting memory unintentionally, we
+need to ensure that we never write a string that is longer than the length
+of memory allocated. We can do this by @{B}always@{UB} using the "Length" option
+in the @{"EXPORT()" LINK "Export()"} and @{"STORAGE()" LINK "Storage()"} functions. For example:-
+
+  /* Example41-1 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  Text = 'This string is longer than the space allocated'
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  SAY 'Text written was             =' IMPORT(MemAdd,Length)
+  CALL FREESPACE(MemAdd,Length)
+
+This program should give this output:-
+
+  Number of characters written = 20
+  Text written was             = This string is longe
+
+If @{"EXPORT()" LINK "Export()"} or @{"STORAGE()" LINK "Storage()"} is used @{B}without@{UB} the "Length" option, then the
+length used is the length of the string. If another shorter string is
+then written to the @{B}same@{UB} memory address, then only @{B}part@{UB} of the original
+string will be overwritten. The rest of the old string will still be there.
+Using @{"IMPORT()" LINK "Import()"} without a "Length" option, or with a length option equal
+to the length allocated with @{"GETSPACE()" LINK "Getspace()"} will cause the remainder of the
+old string to be retrieved along with the shorter new string. This is
+illustrated with:-
+
+  /* Example41-2 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  Text = 'String with 20 chars'
+  HowMuch = EXPORT(MemAdd,Text)
+  SAY 'Number of characters written =' HowMuch
+  SAY 'String retrieved =' IMPORT(MemAdd)
+  Text = 'Short String'
+  HowMuch = EXPORT(memAdd,Text)
+  SAY 'Number of characters written =' HowMuch
+  SAY 'String retrieved =' IMPORT(MemAdd)
+  CALL FREESPACE(MemAdd,Length)
+
+This should output:-
+
+  Number of characters written = 20
+  String retrieved = String with 20 chars
+  Number of characters written = 12
+  String retrieved = Short String20 chars
+
+This illustrates that the second retrieval has picked up the characters
+@{B}"20 chars"@{UB} from the previous string.
+
+This problem can be overcome, when exporting strings, by @{B}always@{UB} using
+the "Length" option but @{B}not@{UB} using the "Pad" option. The default pad will
+then be used, i.e. the null character '0'x (ASCII code zero). Then @{"IMPORT()" LINK "Import()"}
+will only read up to, but not including, the first null character that
+it finds.
+
+This is illustrated by this rewrite of Example41-2:-
+
+  /* Example41-3 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  Text = 'String with 20 chars'
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  Import = IMPORT(MemAdd)
+  SAY 'String retrieved =' Import
+  SAY 'With a length of' LENGTH(Import)
+
+  Text = 'Short String'
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  Import = IMPORT(MemAdd)
+  SAY 'String retrieved =' Import
+  SAY 'With a length of' LENGTH(Import)
+  CALL FREESPACE(MemAdd,Length)
+
+This will output:-
+
+  Number of characters written = 20
+  String retrieved = String with 20 chars
+  With a length of 20
+  Number of characters written = 20
+  String retrieved = Short String
+  With a length of 12
+
+Each of the @{"EXPORT()" LINK "Export()"} instructions have written 20 characters but the second
+one has written 8 null characters after the 12 character string.
+
+The second @{"IMPORT()" LINK "Import()"} has read the 12 characters then stopped when it found
+the 13th to be a null string.
+
+The following example illustrates that @{"IMPORT()" LINK "Import()"} really @{B}will@{UB} stop at a
+null character:-
+
+  /* Example41-4 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  Text = 'String with'||'0'x||' 20 char'
+  SAY 'Symbol "Text" =' Text
+  SAY 'And it is' LENGTH(Text) 'characters long'
+
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  Import = IMPORT(MemAdd)
+  SAY 'Imported string =' Import
+  SAY 'And it is' LENGTH(Import) 'characters long'
+  CALL FREESPACE(MemAdd,Length)
+
+This program will output:-
+
+  Symbol "Text" = String with 20 char
+  And it is 20 characters long
+  Number of characters written = 20
+  Imported string = String with
+  And it is 11 characters long
+
+What has happened is that we have created a string with a null character
+in the middle of it:-
+
+  Text = 'String with'||'0'x||' 20 char'
+
+The program tells us the string and its length:-
+
+  Symbol "Text" = String with 20 char
+  And it is 20 characters long
+
+It may appear to be only 19 characters long but the '0'x in the middle
+@{B}is@{UB} included in the character count but it is @{B}not@{UB} displayed by the SAY
+instruction!
+
+The full string is written to memory and the program reports:-
+
+  Number of characters written = 20
+
+When retrieved by @{"IMPORT()" LINK "Import()"} @{B}without@{UB} the @{B}Length@{UB} option, IMPORT stops at
+the null and retrieves only the first 11 characters as shown by this
+output:-
+
+  Imported string = String with
+  And it is 11 characters long
+
+If you @{B}do@{UB} use @{"IMPORT()" LINK "Import()"} with a length option equal to the length of memory
+allocated, then you @{B}will@{UB} retrieve any null characters. However, these
+can be eliminated with the @{"STRIP()" LINK "ARB:Articles_11-20/18.Functions-String/Strip()"} function. This rewrite of Example41-3
+illustrates this:-
+
+  /* Example41-5 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  Text = 'String with 20 chars'
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  Import = IMPORT(MemAdd)
+  SAY 'String retrieved =' Import
+  SAY 'With a length of' LENGTH(Import)
+
+  Text = 'Short String'
+  HowMuch = EXPORT(MemAdd,Text,Length)
+  SAY 'Number of characters written =' HowMuch
+  Import = IMPORT(MemAdd,Length)
+  SAY 'String retrieved =' Import
+  SAY 'With a length of' LENGTH(Import)
+  Stripped = STRIP(Import,'T','0'x)
+  SAY 'Stripped String =' Stripped
+  SAY 'With a length of' LENGTH(Stripped)
+
+  CALL FREESPACE(MemAdd,Length)
+
+
+This will output:-
+
+  Number of characters written = 20
+  String retrieved = String with 20 chars
+  With a length of 20
+  Number of characters written = 20
+  String retrieved = Short String
+  With a length of 20
+  Stripped String = Short String
+  With a length of 12
+
+This time we have used the "Length" option in the second @{"IMPORT()" LINK "Import()"}
+instruction so that the full contents of the allocated memory block are
+recovered. This consists of the 12 characters of the original string plus
+8 null characters. However, as the last line of the example shows, using
+the STRIP() function with a "Pad" of '0'x will strip off the trailing null
+characters returning the string to its original length of 12 characters
+without the loss of any significant characters.
+
+Unless there is some very compelling reason to use a "Pad" character,
+then leave out this option so that the null character is used.
+
+However, one situation where you could use it is if, for some strange
+reason, you wish to fill a whole block of memory with a single character.
+In that case, use that character as the "Pad" and omit the "String" option.
+(Just put two commas (,,) with nothing in between in place of the "String"
+option.)
+
+This is illustrated with the example:-
+
+  /* Example41-6 */
+
+  Length = 20
+  MemAdd = GETSPACE(Length)
+
+  HowMuch = EXPORT(MemAdd,,Length,'*')
+  SAY 'Number of characters written =' HowMuch
+  SAY IMPORT(MemAdd,Length)
+
+  CALL FREESPACE(MemAdd,Length)
+
+This will output:-
+
+  Number of characters written = 20
+  ********************
+
+As no string was used, the whole length of the memory block was filled
+with the "Pad" character "*".
+
+If you wanted to fill a whole area with null characters you could use:-
+
+  EXPORT(MemAdd,,Length)
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE
+
+@NODE "Usage" "Article 41 - Memory Handling - Usage Of memory Handling"
+
+@{B}@{U}@{JCENTER}MEMORY HANDLING - USAGE OF MEMORY HANDLING@{UB}@{UU}
+@{JLEFT}
+I cannot see much use for this type of programming within a single program
+as it would be a lot easier to use variable symbols to store the string
+values. However, string values held in symbol values cannot be passed
+from one program to another.
+
+The following two programs demonstrate how strings can be stored in memory
+in one program, the memory addresses and lengths stored in @{"CLIPS" LINK "ARB:Articles_31-40/37.Using_Clips/List"} and the
+whole lot retrieved by a second program.
+
+
+  /* Example41-7 */
+
+  DO FOREVER
+
+    SAY 'c'x'Enter a message for Example41-8'
+    PARSE PULL Text
+    Length = LENGTH(Text)
+    MemAdd = GETSPACE(Length)
+    CALL EXPORT(MemAdd,Text,Length)
+    CALL SETCLIP('Msg1',MemAdd)
+    CALL SETCLIP('Msg2',Length)
+    IF UPPER(Text) = 'QUIT' THEN LEAVE
+
+  END
+
+  /* Example41-8 */
+
+  SAY 'c'x'Waiting for message from Example41-7'
+  DO FOREVER
+
+    DO WHILE SHOW('C','Msg2') = 0
+    END
+
+    MemAdd = GETCLIP('Msg1')
+    Length = GETCLIP('Msg2')
+    CALL SETCLIP('Msg1')
+    CALL SETCLIP('Msg2')
+    Text = IMPORT(MemAdd,Length)
+    CALL FREESPACE(MemAdd,Length)
+    IF UPPER(Text) = 'QUIT' THEN LEAVE
+    SAY 'c'x'Message from Program 1 is:- '||'a'x||Text
+
+    END
+
+To use these programs, open two Shell/CLI windows and position them so
+that you can see the action in both at the same time.
+
+RX Example41-7 in one window and Example41-8 in the other. It does not
+matter in which order you RX them.
+
+These programs are similar to those in @{"Article 40" LINK "ARB:Articles_31-40/40.Communications/1st"} in that messages typed
+into Example41-7's window will appear in Example41-8's window.
+
+@{B}Example41-7@{UB} @{"PULLs" LINK "Usage"14} the text to send to the other program. It then allocates
+memory using a length equal to the string PULLed. The string is exported
+to memory and the memory address and length are then stored in @{"clips" LINK "ARB:Articles_31-40/37.Using_Clips/MAIN"}.
+An entry of "Quit" will exit both programs.
+
+Note that the clips are not removed and the memory is not freed in this
+program. That is done from @{"Example41-8" LINK "Usage"28}
+
+@{B}Example41-8@{UB} will @{"wait for a clip" LINK "ARB:Articles_31-40/37.Using_Clips/Show()"19} called @{"Msg2" LINK "Usage"28} to appear before it can
+proceed beyond the "DO WHILE" loop. I have used "Msg2" instead of "Msg1" as
+it will be the last to appear.
+
+The memory address and length are retrieved from memory and the string
+"Text" is imported. If it is "Quit" the program exits @{B}after@{UB} removing the
+clips and freeing memory. If it is not "Quit" the message is displayed
+and the "DO FOREVER" loop is executed again.
+
+This program deletes the clips from memory by using @{"SETCLIP()" LINK "ARB:Articles_31-40/37.Using_Clips/Setclip()"28} with the
+name but no value.
+
+Of course the whole thing could be done more simply by using clips totally
+but I did it this way to illustrate exporting from one program and importing
+in another program, and to show that memory reserved in one program can
+be freed in another.
+
+
+@{JCENTER}=== End of Text ===
+@{JLEFT}
+@ENDNODE

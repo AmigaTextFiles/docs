@@ -1,0 +1,341 @@
+        <html>
+        <head><base target="_self">
+<title>русский транзит - amiga#1: arexx, общие функции</title>
+</head>
+<body link="#009999" vlink="#006666" alink="#000088" bgcolor="#ffffff" text="#000000">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta name="keywords" content="amiga,develope,ARexx,общие,функции,address,addlib,arg,datatype,delay,digits,errortext,form,fuzz,getclip,pragma,remlib,setclip,sourceline,symbol,trace,value">
+
+<font face="Arial, Helvetica, sans-serif" size="4">
+<p align="left"><a name=A159>Общие функции</a></p></font>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1591>
+<b>ADDRESS</b>()
+<blockquote>res = <b>ADDRESS</b>(&lt;имя&gt;,&lt;приоритет&gt;[,&lt;смещение&gt;][,&lt;версия&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает имя текущего &quot;хозяина&quot; ARexx-программы (т.е. имя связного порта, куда отправляются все те утверждения программы, которые сам ARexx-интерпретатор понять не в состоянии). Пример:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+say ADDRESS   ==> TURBOCALC.1
+</pre></blockquote></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1592>
+<b>ADDLIB</b>()
+<blockquote>res = <b>ADDLIB</b>(&lt;имя&gt;,&lt;приоритет&gt;[,&lt;смещение&gt;][,&lt;версия&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция добавляет библиотеку ARexx-a к списку библиотек, имеющегося у системного ARexx-процесса.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Аргумент &quot;имя&quot; добавляемой библиотеки чувствителен к регистру букв, поэтому не стоит вводить, например, &quot;REXXSUPPORT.LIBRARY&quot; вместо &quot;rexxsupport.library&quot;. В случае сомнения, загляните лишний раз в каталог LIBS: как там названа нужная библиотека. Не забывайте также заключать имя библиотеки в апострофы, иначе ARexx автоматически преобразует его в заглавный регистр! Если в &quot;имени&quot; явно не указан маршрут, то предполагается, что искомая библиотека находится в каталоге LIBS:.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Параметр &lt;приоритет&gt; - целое число в диапазоне от -100 до 100 определяет порядок поиска требуемой функции в серии подключенных библиотек. Библиотеки просматриваются в порядке убывания приоритета. Поскольку &quot;перелистывание&quot; библиотек при поиске нужной функции занимает некоторое время, есть смысл присваивать больший приоритет часто используемым библиотекам. Если библиотеки добавлялись в список с одним и тем же приоритетом, то порядок их просмотра будет соответствовать порядку включения в список.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Параметр &quot;смещение&quot; для некоторой библиотеки определяется тем, кто эту библиотеку создал. Почти во всех библиотеках значение &quot;смещения&quot; равно -30. Почему именно 30? Дело в том, что по отношению к базовому адресу библиотеки, который ОС возвращает ARexx-y при ее открытии, таблица векторов функций занимает меньшие адреса памяти. Каждый вектор занимает ровно 6 байт; первые 5 векторов обслуживают внутрисистемные нужды - такие как открытие и закрытие библиотеки и т.д. Поэтому функции ARexx-a начинаются с &quot;общей&quot; (public) части таблицы векторов, отстоящей на -(6x5) = -30 байт от базового адреса.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Параметр &quot;версия&quot; определяет минимальный номер версии (не модификации!) открываемой библиотеки. В случае равенства нулю, сгодится библиотека любой версии. При ненулевом значении ARexx откажется использовать библиотеку в том случае, если номер ее версии будет меньше значения параметра &quot;версия&quot; (принимается во внимание только ВЕРСИЯ, но не МОДИФИКАЦИЯ! Например, версия библиотеки  reqtools.library 38.1266 равна 38, а модификация - 1266).
+</p></blockquote>
+ 
+<blockquote>Пример:</blockquote>
+
+<blockquote><blockquote><pre>
+call ADDLIB('rexxsupport.library', 0, -30, 0)
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+При исполнении ADDLIB() никакой реальной загрузки библиотеки не происходит - ее имя просто добавляется в список ARexx-библиотек и все. Загрузка произойдет позже, в том случае, если ARexx встретит неизвестную функцию в теле программы.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1593>
+<b>ARG</b>()
+<blockquote>res = <b>ARG</b>([&lt;номер&gt;][,'E'|'O'])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Будучи использованной без аргументов, функция ARG() возвращает количество аргументов, переданных ARexx-программе при ее запуске. Если задан единственный параметр &quot;номер&quot;, то возвращается сам аргумент с этим номером, либо пустая строка, если такой аргумент отсутствует. Если использован один из взаимоисключающих параметров 'E' (Exists - существует) или 'О' (Omitted - опущен), то функция возвращает булевское значение TRUE или FALSE, в зависимости от того, был ли передан программе заданный &quot;номером&quot; аргумент.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Если ARexx-программа была запущена из shell (как правило, с помощью команды <a href="AMIGA-11.html">RX</a>), то все переданные аргументы рассматриваются как единая строка, даже невзирая на явные разделители типа запятой. Множественные аргументы передаются только подпрограммам, вызванным в качестве внутренних функций или программам, вызванным в качестве внешних функций. Пример:
+</p></blockquote>
+
+<blockquote><blockquote>
+Мы вызвали программу из shell следующим образом:
+</blockquote></blockquote>
+
+<blockquote><blockquote><pre>
+rx &quot;program parl,par2,par3&quot;
+</pre></blockquote></blockquote> 
+ 
+<blockquote>
+В программе исполняются следующие утверждения ARexx-a:
+</blockquote>
+
+<blockquote><blockquote><pre>
+say ARG()       ==> 1
+say ARG(1)      ==> parl,par2,par3
+say ARG(2, E)   ==> 0
+say ARG(2, O)   ==> 1
+</pre></blockquote></blockquote>
+
+<blockquote>
+Если же мы вызвали эту же программу, как функцию, то результат будет иным:
+</blockquote>
+
+<blockquote><blockquote><pre>
+say ARG()       ==> 3
+say ARG(1)      ==> par1
+say ARG(2)      ==> par2
+say ARG(2, E)   ==> 1
+say ARG(2, O)   ==> 0
+</pre></blockquote></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1594>
+<b>DATATYPE</b>()
+<blockquote>res = <b>DATATYPE</b>(&lt;строка&gt;)[,&lt;тип&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Если параметр &quot;тип&quot; отсутствует, функция вернет строку &quot;NUM&quot; в случае, если &quot;строка&quot; может трактоваться, как число в любом из допустимых для ARexx-a форматов чисел; в противном случае будет возвращена строка &quot;char&quot;.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Если присутствует параметр &quot;тип&quot;, то функция возвращает булевское значение TRUE или FALSE в зависимости от того, принадлежит ли &quot;строка&quot; к заданному типу. &quot;Тип&quot; может иметь значения:
+</p></blockquote>
+
+<blockquote><blockquote><pre>
+Numeric       - число;
+Whole         - целое (integer) число;
+X             - шестнадцатеричное число;
+Binary        - двоичное число;
+Alphanumeric  - все русские и латинские буквы, либо цифры от 0 до 9;
+Upper         - заглавные русские и латинские буквы;
+Lowercase     - строчные русские и латинские буквы;
+Mixed         - все русские и латинские буквы;
+Symbol        - символ ARexx-a.
+</pre></blockquote></blockquote>
+
+<blockquote><p align="justify">
+Функция правильно работает со всеми русскими буквами, если в вашей системе находится слегка скорректированная автором этой книги библиотека rexxsyslib.library, входящая в комплект русификатора, начиная с версии 6.03 (стандартные версии библиотеки отказываются считать "Ё" и "ё" за букву).
+</p></blockquote>
+
+<blockquote><blockquote>Пример:</blockquote></blockquote>
+
+<blockquote><blockquote><pre>
+say DATATYPE('Привет', 'm')   ==> 1
+</pre></blockquote></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1595>
+<b>DELAY</b>()
+<blockquote>res = <b>DELAY</b>(&lt;задержка&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция вызывает задержку исполнения ARexx-программы на временной интервал, равный &quot;задержке&quot;, деленной на 50 (в секундах). Возвращаемое функцией значение несущественно.
+</p></blockquote>
+
+<blockquote><p align="justify">
+ARexx-программирование на Амиге подчиняется тем же общим правилам, что и программирование на Амиге вообще - зацикливание с целью получения требуемой временной задержки считается грубейшей ошибкой! Функция DELAY() просто кладет вашу программу &quot;спать&quot; на заданный промежуток времени, не расходуя процессорного времени на пустопорожние зацикливания.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1596>
+<b>DIGITS</b>()
+<blockquote>res = <b>DIGITS</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает результат текущей установки NUMERIC DIGITS, определяющей точность расчета арифметических выражений.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1597>
+<b>ERRORTEXT</b>()
+<blockquote>res = <b>ERRORTEXT</b>(&lt;номер&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается текст, характеризующий ошибку с заданным &quot;номером&quot;. Если для заданного &quot;номера&quot; текст отсутствует, то возвращается пустая строка.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1598>
+<b>FORM</b>()
+<blockquote>res = <b>FORM</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает результат текущей установки NUMERIC FORM, определяющей формат вывода экспоненциальной формы числа (научный - SCIENTIFIC или инженерный - ENGINEERING).
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A1599>
+<b>FUZZ</b>()
+<blockquote>res = <b>FUZZ</b>()
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает результат текущей установки NUMERIC FUZZ, определяющей точность сравнения чисел.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159A>
+<b>GETCLIP</b>()
+<blockquote>res = <b>GETCLIP</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается содержимое клипа, определяемого &quot;именем&quot; (регистр букв &quot;имени&quot; учитывается). Если клип с заданным &quot;именем&quot; отсутствует, возвращается пустая строка.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159B>
+<b>PRAGMA</b>()
+<blockquote>res = <b>PRAGMA</b>(&lt;опция&gt;[,&lt;значение&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция изменяет системное окружение ARexx-программы, либо возвращает информацию о нем. &quot;Опция&quot; определяет требуемый элемент окружения, которому ставится в соответствие некоторое &quot;значение&quot;. Ниже дан список возможных &quot;опций&quot; (при вызове функции достаточно указать только первую букву имени &quot;опции&quot;).
+</p></blockquote>
+
+<center><table width="80%" border="0" cellspacing="3" cellpadding="3">
+<tr>
+<td align="center"><i>Опция</i></td>
+<td align="center"><i>Значение</i></td>
+<td align="center"><i>Пояснение</i></td>
+</tr>
+
+<tr align="justify">
+<td><b>D</b>irectory</td>
+<td>[&lt;маршрут&gt;]</td>
+<td>Если указан &quot;маршрут&quot;, то по нему устанавливается текущий каталог ARexx-программы. Если &quot;маршрут&quot; не указан, возвращается маршрут текущего каталога.</td>
+</tr>
+
+<tr align="justify">
+<td><b>I</b>D</td>
+<td></td>
+<td>Возвращает шестнадцатеричное значение - идентификатор процесса, ассоциированного с текущей ARexx-программой. Если одновременно работают несколько копий этой программы, то этот идентификатор позволяет различать их, что, например, часто требуется при создании внутри каждой из работающих копий связного порта с уникальным именем, используя функцию <a href="AMIGA-15-10.html#A15104">OPENPORT()</a>.</td>
+</tr>
+
+<tr align="justify">
+<td><b>P</b>riority</td>
+<td>[&lt;число&gt;]</td>
+<td>По аналогии с ОС-командой SETPRI управляет приоритетом процесса, ассоциированного с текущей ARexx-программой. Если &quot;число&quot; отсутствует, то возвращается текущий приоритет этого процесса; в противном случае устанавливается новый приоритет в соответствии с &quot;числом&quot; и возвращается значение прежнего приоритета. &quot;Число&quot; может принимать значения в диапазоне от -127 до 127, однако в реальной жизни значение &quot;числа&quot;, превышающее приоритет резидентного ARexx-процесса (как правило, 4), является недопустимым.</td>
+</tr>
+
+<tr align="justify">
+<td><b>S</b>tack</td>
+<td>[&lt;число&gt;]</td>
+<td>Если &quot;число&quot; присутствует, то переопределяет размер стека текущего ARexx-процесса в соответствии с &quot;числом&quot; и возвращает прежний размер стека; в противном случае просто возвращается размер стека.</td>
+</tr>
+
+<tr align="justify">
+<td></td>
+<td>[&lt;имя&gt;]</td>
+<td>Ставит в соответствие новое логическое &quot;имя&quot; текущему хэндлеру консольного (shell) окна, идентификатором которого в ОС является символ &quot;*&quot;. Таким образом становится возможным ассоциировать несколько потоков ввода (вывода) с одним и тем же окном.</td>
+</tr>
+
+<tr align="justify">
+<td><b>W</b>indow</td>
+<td>['N' | 'W']</td>
+<td>Определяет поведение риквестеров системы, например, &quot;Вставьте диск...&quot;. По умолчанию работает значение 'W' (сокращенно от Workbench), что заставляет риквестеры открываться на Workbench-экране; этот же режим будет включен при отсутствии &quot;значения&quot; во время вызова функции PRAGMA(). Значение 'N' (или 'NULL', отключает системные риквестеры, которые могли бы быть вызваны ОС Амиги в результате обращений к ней из текущей ARexx-программы.</td>
+</tr>
+</table></center>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159C>
+<b>REMLIB</b>()
+<blockquote>res = <b>REMLIB</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция удаляет указанную по &quot;имени&quot; библиотеку из списка библиотек резидентного ARexx-процесса. Как и любой другой ресурс системы (см. описание команды ОС AVAIL), отвергнутая библиотека не &quot;отстреливается&quot; из памяти немедленно - просто ее счетчик пользователей сбрасывается в ноль; изъятие же из памяти произойдет лишь тогда, когда памяти будет кому-то нехватать, либо подобная ситуация будет имитирована.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Функция полезна, например, если вы исполнили <a href="AMIGA-15-9.html#A1592">ADDLIB()</a> для несуществующей библиотеки; наличие такой библиотеки в списке библиотек ARexx-a может в некоторых случаях помешать правильному поиску функций в действительно существующих библиотеках. Можно также использовать REMLIB(), если вы абсолютно уверены, что функции из добавленной по ADDLIB() библиотеки вам никогда больше не понадобятся и тратить время (и, возможно, память) на ненужную библиотеку незачем.
+</p></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает TRUE, если требуемая библиотека была успешно удалена из списка.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159D>
+<b>SETCLIP</b>()
+<blockquote>res = <b>SETCLIP</b>(&lt;имя&gt;[,&lt;значение&gt;])
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Устанавливается содержимое клипа, определяемого &quot;именем&quot; (регистр букв &quot;имени&quot; учитывается) в соответствии с заданным &quot;значением&quot;. Если &quot;значение&quot; отсутствует, то заданный &quot;именем&quot; клип удаляется.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159E>
+<b>SOURCELINE</b>()
+<blockquote>res = <b>SOURCELINE</b>(&lt;номер&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Возвращается строка текста ARexx-программы в соответствии с ее &quot;номером&quot;. Если &quot;номер&quot; отсутствует, возвращается общее число строк программы. Функцией удобно пользоваться для выдачи пользователю некоторой справочной информации прямо из текста программы.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159F>
+<b>SYMBOL</b>()
+<blockquote>res = <b>SYMBOL</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция может возвращать одно из следующих значений:
+</p></blockquote>
+
+<blockquote><ul>
+<li>'BAD' - возвращается в том случае, если &quot;имя&quot; не является символом ARexx-a;</li><br>
+<li>'VAR' - указывает на то, что &quot;имя&quot; является переменной, которой было присвоено некоторое значение;</li><br>
+<li>'LIT - получаем тогда, когда &quot;имя&quot; является константой либо переменной без присвоенного значения.</li>
+</ul></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159G>
+<b>TRACE</b>()
+<blockquote>res = <b>TRACE</b>(&lt;опция&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает строку, сообщающую о факте включения режима трассировки на момент исполнения TRACE(). Эту функцию можно также использовать для управления трассировкой подобно инструкции <a href="AMIGA-14.html#A14N">TRACE</a>.
+</p></blockquote>
+
+<blockquote><p align="justify">
+&quot;Опция&quot; может быть любым выражением, в результате вычисления которого получается литера, устанавливающая тот или иной режим трассировки (см. описание инструкции <a href="AMIGA-14.html#A14N">TRACE</a>). Если &quot;опция&quot; определена, то функция возвратит идентификатор режима трассировки, который был установлен на момент исполнения TRACE(). В отличие от инструкции <a href="AMIGA-14.html#A14N">TRACE</a>, функция TRACE() изменит режим трассировки &quot;изнутри&quot; программы даже если с помощью инструкции <a href="AMIGA-11.html">TS</a> была начата интерактивная (диалоговая) трассировка. Идентификаторы '?' и '!' могут быть использованы в &quot;опции&quot; как поодиночке, так и в комбинации с буквенными опциями трассировки; '?' и '!' работают как переключатели, в первый раз включая заданную опцию, затем - выключая ее. '?' является переключателем интерактивной трассировки, а '!' - переключателем режима &quot;отключенного хозяина&quot;.
+</p></blockquote>
+
+<blockquote><font face="Arial, Helvetica, sans-serif" size="4"><pre>
+<a name=A159H>
+<b>VALUE</b>()
+<blockquote>res = <b>VALUE</b>(&lt;имя&gt;)
+</blockquote></a></pre></font></blockquote>
+
+<blockquote><p align="justify">
+Функция возвращает значение некоторого символа ARexx-a, идентифицируемого по его &quot;имени&quot;. &quot;Имя&quot; может получаться в результате вычисления любого допустимого выражения. Таким образом, мы можем &quot;вычислять&quot; имя переменной, значение которой необходимо получить.
+</p></blockquote>
+
+<hr>
+
+</body></html>

@@ -1,0 +1,81 @@
+README.Amiga
+------------
+
+Yet another PIC programmer based on Daivd Tait's work.  This time for the hardware
+published in Silicon Chip March 2001.
+
+I looked at many hardware designs, some looked a bit risky as far as the Amiga's fragile
+parallel port was concerned.  Several of the designs used signals not available on the Amiga
+parallel port implementation.  Then I found the Silicon Chip "PIC programmer and
+checkerboard", this uses D0 to D3 and ACK, apart from ACK this is good. The problem with ACK
+is that even though there's a pin with that name on the Amiga's parallel port, it's not
+directly readable by software, transitions on it generate interupts.  I used BUSY in place
+of ACK, this requires either a change to the hardware or a special cable.  To keep the
+programmer compatible with the PC software I chose to make up a cable.
+
+The Amiga's parallel port and a timer are used in a multitasking friendly manner.
+
+If silent -s flag is used, screen_beeps on fail.
+
+Program and Verify now report what area is being accessed.
+
+Dump flag -d mow silently overwrites an existing file of the same name.
+
+The go -g flag is currently not available - hardware limitation, to be addressed later (see
+note below).
+
+The environment variable PPDELAY accepts an argument up 999999.
+
+^C at any prompt will abort PP.
+
+CABLE
+-----
+
+              DB 25 male                DB 25 female
+              Amiga end                 Programmer end
+
+     D0       P2  --------------------  P2       D0  
+     D1       P3  --------------------  P3       D1  
+     D2       P4  --------------------  P4       D2  
+     D3       P5  --------------------  P5       D3  
+     BUSY     P11 --------------------  P10      ACK
+     GND      P18 -\                /-  P18      GND 
+              P19 -|                |-  P19
+              P20 -|                |-  P20
+              P21 -|----------------|-  P21
+              P22 -|                |-  P22
+              P23 -|                |-  P23
+              P24 -|                |-  P24
+              P25 -/                \-  P25
+
+
+The intention of the diagram is to show a) 5 wires needed, b) pin 11 on the male Amiga end
+goes to pin 10 on the female end, c) the ground pins 18 to 25 are connected together at each
+ends and a single wire connects the ends.
+
+The alternative to a special cable is to modify the programmer by cutting the track to pin
+10 on the DB 25 on the bottom of the board and connecting it to pin 11.  DON'T JUST BRIDGE
+PIN 10 AND 11 TOGETHER.
+
+Another alternative would a standard parallel cable and an adaptor, a male and a female DB
+25 mounted back to back.  Cutting off pin 10 on the back of the male and pin 11 on the back
+of the female then directly soldering the pins together along with a jumper from pin 10 to
+11 would do the trick.
+
+ 
+Go flag Note
+------------
+
+It might be possible to use the middle position of the rotary switch in a load and go mode
+for a hands off program development cycle.
+
+With a couple of extra diodes and resistors on the MCLR line it should work, not tried it
+yet but I will.
+
+
+The archive includes the original topic tar file and the modified sources that compile with
+SAS C.
+
+Ken Tyler
+kent@werple.net.au
+31-Dec-2001

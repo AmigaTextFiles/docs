@@ -1,0 +1,83 @@
+WBStartup
+
+#_BitMap=$8000002E
+#_LikeWorkbench=$80000047
+
+; Define our bitmaps and open a new screen same as WB to show
+; output on.
+; Bitmap 2 = new shape
+; Bitmap 3 = new shape mask
+
+WbToScreen 0
+ScreensBitMap 0,0
+BitMap 2,32,32,WBDepth
+CopyBitMap 2,3
+BitMap 1,WBWidth,WBHeight,WBDepth
+ScreenTags 1,"Copy Circle",#_BitMap,Addr BitMap(1),#_LikeWorkbench,True
+
+; Work out the max number of colours available
+
+maxcol=1 LSL WBDepth
+
+;maxcol=1
+;For n=1 To WBDepth
+;  maxcol=maxcol*2
+;Next
+
+; Draw the circular mask, 32 pixel diameter and then cut it
+; out to the mask bitmap
+
+Use BitMap 1
+Use Screen 1
+Circlef 50,50,16,16,maxcol-1
+Use BitMap 3
+Scroll 50-16,50-16,32,32,0,0,1
+Use BitMap 1
+Cls 0
+
+; Ok, now cut out a 32x32 pixel block from the WB to use as our
+; shape.
+
+Use BitMap 2
+Scroll 0,0,32,32,0,0,0
+
+; Get the addresses of the bitmap objects to find out the actual
+; bitplane addresses of the shape and mask.
+
+shape_object.l=Addr BitMap (2)
+mask_object.l=Addr BitMap (3)
+
+; This actually works through the block cut from the WB, word by word,
+; and logically AND's it with the circular mask. This then produces
+; the new cirular shape.
+
+For y=0 To WBDepth-1
+  shape_bitmap.l=Peek.l (shape_object+8+(y*4))
+  mask_bitmap.l=Peek.l  (mask_object+8+(y*4))
+  For n=0 To 64*2-1
+    cshape.w=Peek.w (shape_bitmap+n)
+    mask.w=Peek.w (mask_bitmap+n)
+    Poke.w  shape_bitmap+n,cshape.w AND mask.w
+  Next n
+Next y
+
+; Now produce a standard Blitz shape from the new circular one.
+
+Use BitMap 2
+GetaShape 1,0,0,32,32
+
+; Finally, put some random boxes on the screen and blit 10 copies
+; of out new circular shape.
+
+Use BitMap 1
+For n=1 To 20
+  Boxf Rnd(WBWidth-32),Rnd(WBHeight-32),Rnd(WBWidth-32),Rnd(WBHeight-32),Rnd(maxcol-1)
+Next n
+BlitMode CookieMode
+For n=1 To 10
+  Blit  1,Rnd(WBWidth-32),Rnd(WBHeight-32)
+Next n
+
+ClickMouse
+
+End

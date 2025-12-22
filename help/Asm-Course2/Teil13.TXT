@@ -1,0 +1,363 @@
+          A S S E M B L E R - K U R S       (c)  Jeff Kandle 1990
+
+                                13.Teil...
+
+So Leute, nachdem wir einige tolle sachen kennengelernt haben die unser
+Demo/Intro schmuecken, wollen wir uns mal wieder etwas einfachem widmen.
+
+15.Darstellung von Sprites
+
+So, erstmal was sind sprites....Orginaltext Data Becker (treffender koennte
+selbst ich es nicht ausdruecken)
+
+`Sprites sind kleine Grafik Elemente, die voellig unabhaengig von den
+Playfields verwendet werden koennen`
+
+Also ganz klar es sind kleine Objekte....Ich weiss zwar nicht wie Data
+Becker das gemeint hat, aber die sind wirklich schrecklich klein, naemlich
+maximal nur 16 Pixel breit. Dafuer aber so lang wie wir wollen, schwacher
+trost.
+
+So, wozu braucht man Sprites....Wenn ich da an frueher denke auf dem 64`er,
+da hatten die Dinger echt ne` Bedeutung.
+Aber jetzt..wenn der Mauszeiger nicht waere wuerde man sie nie benutzen.
+Es ist unheimlich kompliziert mit ihnen zu hantieren, das einzige wofuer
+ich sie einsetze sind Sternenhintergruende....ja dafuer kann man sie
+gebrauchen.
+
+Erstmal zum aufbau von Sprites...Wie gesagt maximal 16 Pixel breit, dafuer
+so lang wie wir wollen. Es gibt 8 Stueck von ihnen, von denen jeder 4
+Farben annehmen kann. Man kann sie aber auch kombinieren, zu insgesamt 4
+Stueck, allerdings dann jeder mit 16 Farben..das ist doch schon mal was.
+
+Wie kriegt man sie zu sehen ?, und was muss man beachten.
+
+Tja, da hat sich der Erfinder wirklich gedanken gemacht, wie man soetwas
+gut verstecken kann. Erstmal grob die Punkte und dann die erklaerungen.
+
+1.Sprite DMA Kanaele anschalten (oder nicht ausschalten)
+2.Bitplane DMA an
+3.Playfield erzeugen
+4.Farben geben
+5.Sprite Datenliste erzeugen
+6.Zeiger der unbenutzten Sprites auf leere Listen verbiegen
+
+Puuuh, ist ja eine Ganze menge fuer so kleine Dinge. Also fangen wir mal
+an.
+
+1. Sprite DMA ist ja Klar..wiegesagt muss fuer solche Sachen erst der
+Zustaendige Kanal geoeffnet werden, sonst kommen die Zustaendigen
+Spezialchips, in diesen Fall sind es Agnus und Denise, nicht an die Daten
+ran.!
+
+2. Tja das ist einer der Haken, man muss ebenfalls die Bitplanes anhaben,
+da sonst nichts kommt.
+
+3. Es kommt noch schlimmer, man muss sogar ein Komplettes Playfield
+erstellen, mit allen drum und dran. Den an den Diwstrt und Diwstop werten
+orientieren sich die sprites, das heisst wir ein Sprites teilweise oder
+ganz ausserhalb des playfields gesetzt werden, wird das Stueck einfach ganz
+dreist abgeschnitten, frechheit.
+
+4. Naja farben muss man den dingern nicht unbedingt geben, aber es sieht
+halt nich besonders gut aus, wenn es Schwarz auf schwarz ist. Und da das
+die Default einstellung ist, muessen wir um sie zu sehen auch etwas farbe
+ins spiel bringen.
+
+5. Diese Datenliste enthaelt alle sonstigen informationen ueber das Sprite,
+naja was heisst alle, nur zwei..aber die wichtigsten...Aussehen und
+Position.
+
+Wie sieht diese Datenliste aus ?
+
+Als erstes kommen zwei kontrollworte..In den Ersten steht die X-und Y
+Koordinate des Sprites, in dem Zweiten bis wo er auf dem Bildschirm geht,
+danach richtet sich auch die laenge der Daten liste richtet, und die beiden
+9.ten Bits fuer die x und y koordinaten, weil mehr als 256 positionen
+vorhanden sind, sind die Zaehler auf 256 angesetzt. Desweiteren steht bei
+den ungeraden noch das sogenannte Attach Kontroll Bit. Das sagt aus ob
+dieser sprite mit dem Darauffolgenden grade zu einem 16 Farbigen gekoppelt
+ist. Wie ihr seht knn man auch nur mal eben zwei verkoppeln, man muss nicht
+direkt alle nehmen.
+
+6. Das was dann noch kommt ist nicht notwendig da die Sprites schon stehen,
+und ebenfalls nicht wenn man sowieso alle sprites benutzt. Aber falls
+einige nicht benutzt werden, dann muss man es machen.
+
+Die unangenehme eigenschaft des Sprite DMA Kanals ist das sofort alle
+sprites angeschaltet werden. Da wir aber den nichtbenutzten Sprites keine
+Datenliste zuweisen, steht in den registern nur 0. Die DMA nimmt das aber
+als Adresse..und da im vorderen Teil des Speichers, so bei 0 immer was los
+ist, erscheinen mal hier mal da immer wieder Truemmer, sowas wie ihr es
+seht wenn ihr vergesst die Sprite-DMA auszuschalten. Also nur eine
+Schoenheitskorrektur.
+
+Naja, wie gesagt benutze ich nur Sprites wenn ich Sternen hintergruende
+mache, denn dafuer eignet sich das Prinzip dieser Datenliste eigentlich
+ganz gut. So jetzt wollen wir aber erstmal ueberhaupt etwas darstellen. Das
+mit den Sternen bau ich irgendwann spaeter mal in einen laengere Effekt ein
+oder so..denn es ist nicht besonders schwierig..oder mal gucken Vielleicht
+kommt es noch als eigenstaendiger Effekt...ich weiss es noch nicht..ich
+muesste mal gucken wie kurz ich es machen kann, denn diese scheiss langen
+Source Codes, zerren doch ganz schoen an eurer Telefon rechnung oder Dem
+Kleingeld fuer das Druckerpapier.
+
+Naja, bis jetzt war es ja noch leicht, wenn es aber um die Definition der
+Form und farbe geht dann wird es Haarig. Obwohl so schlimm ist es wiederrum
+nicht..das Grundprinzip kennt ihr schon.
+
+Bei der Sprites Form und Fargebung, funktioniert es aehnlich wie bei den
+Bitplanes der Bilder. Hier wird auch wieder aus der Kombinatioen von 2 Bits
+die Farbe errechnet. Diese Beiden SpritePlanes die so ein 4 Farben sprite
+dann braucht, werden aber nicht wie bei den Bitplanes fuer die Raw Bilder,
+untereinander, Plane fuer Plane...sondern immer eine Plane zeile nach der
+ander. Naja Bildlich gesehen sieht es dann so aus. Stellt euch bitte mal
+ein Sprite vor das nur eine Zeile hat, aber mit allen 4 farben drin, da ich
+hier nicht die Farben malen kann, muessen wir und leider mit den Nummern
+zufriedengeben, obwohl da vielleicht besser ist...also die Farben der Zeile
+sind so
+
+  0011223333221100
+
+Also auf und ab, die Bit Kombination fue die Zahlen muessten eigentlich
+klar sein, falls nicht...
+
+      Wert     Bit 0       Bit 1
+
+        0 =      0           0
+        1 =      0           1
+        2 =      1           0
+        3 =      1           1
+
+und so sieht das dann fuer eine Zeile sprite daten liste aus, es werden die
+gesetzten Bits 0 und 1, getrennten in zwei worten gehandelt.
+
+       gesetzte bits 0   gesetzte bits 1
+
+dc.w %0011001111001100,%0000001111000000
+
+gehen wir mal die zeile durch, wir lesen immer das erste Bit des ersten
+wortes, und das erste bit des zweiten wortes.
+
+Zweimal 0 ergibt 0, wir schaun oben, da steht auch null, das naechste Bit
+dasselbe.
+Doch dann Bit 0 ist gesetzt, und in der zweiten zeile nicht, wir muessen
+uns das dann etwas anders vorstellen, denn normaler weise schreibt man
+zahlen von rechts nach links, und so liest man sie auch, Binaer geht es
+ebenso, die Kleinste einheit steht immer Rechts, wenn wir das hier aber so
+machen, kommen wir an falsche ergebnisse, wir muessen also um richtig zu
+liegen die Bitkombination die wir aus den Beiden Worten kriegen spiegel
+verkehrt sehen. Also sehen wir das erste Bit ist gesetzt, und das zweite
+nicht. Das ergibt 01, und das ist 1...also farbe 1.
+
+Als naechte kombination erhalten erhalten wir erst eine 0 und dann eine 1,
+das ergibt 10, das ist laut Tabelle 2. Also farbe zwei...Die letzte
+Kombination ist die fuer die Farbe drei, dort sind beide gesetzt, das
+ergibt ja 3.
+
+Die Defintionsadressen tragt ihr fuer die Sprites bei den Registern
+
+SPR0PTH und SPR0PTL bis SPR7PTH und SPR7PTL ein.
+Sie liegen bei $DFF0120 bis $DFF13E...Schaut es euch im Listing an.
+
+So eigentlich duerfte das Klar sein..aber ihr muesstet gemerkt haben
+wieviel arbeit es ist so kleine Objekte zu erhalten. Also am ergebnis ist
+ja zusehen was fuer ein Aufwand das ist..Aber arbeitet ruhig mal ein
+bisschen damit, wenigstens so lange bis ihr Bobs beherscht, denn die sind
+mit viel weniger aufwand zu machen und die Moeglichkeiten ungleich hoeher.
+
+Naja genug der Laberei, nun wollen wir mal meinen wohlklingenden Vornamen
+auf den Bildschirm Spriten.
+
+Org $3e000
+Load $3e000
+
+execbase=       4
+openlibrary=    -408
+vposr=          $dff004
+intena=         $dff09a
+intenar=        $dff01c
+forbid=         -30-102
+permit=         -30-108
+cop1lc=         $dff080
+ciaapra=        $bfe001
+dmacon=         $dff096
+
+start:
+        move.l  execbase,a6             ; Multitasking aus
+        jsr     forbid(a6)
+        move.w  #$a000,intena           ; Interrupts sperren
+
+        bsr.l   initpointers
+        move.l  #copperliste,cop1lc     ; copperliste erstellen
+
+wait:   move.l  vposr,d0                ; Rasterpos holen
+        and.l   #$1ff00,d0              ; alles unwichtige ausmaskieren
+        cmp.l   #$1000,d0               ; Zeile 16 ($10) erreicht ?
+        bne.s   wait                    ; noe...
+
+        btst    #6,ciaapra
+        bne.s   wait
+
+ende:   move.l  execbase,a6             ; Multitasking an
+        jsr     permit(a6)
+        lea     gfxname(pc),a1
+        jsr     openlibrary(a6)
+        move.l  d0,a6
+        move.w  #$83e0,dmacon
+        move.w  #$C000,intena
+        move.l  38(a6),cop1lc
+        moveq   #0,d0                   ; Keinen Dos-Returncode
+        rts
+
+copperliste:
+        dc.l    $00e00004
+        dc.l    $00e20000
+        dc.l    $008e1a64
+        dc.l    $009039d1
+        dc.l    $00920030
+        dc.l    $009400d8
+First:
+        dc.l    $01200003
+        dc.l    $01220000
+Second:
+        dc.l    $01240003
+        dc.l    $01260000
+Third:
+        dc.l    $01280003
+        dc.l    $012a0000
+Fourth:
+        dc.l    $012c0003
+        dc.l    $012e0000
+Fifth:
+        dc.l    $01300004
+        dc.l    $01320000
+Sixth:
+        dc.l    $01340004
+        dc.l    $01360000
+Seventh:
+        dc.l    $01380004
+        dc.l    $013a0000
+Last:
+        dc.l    $013c0004
+        dc.l    $013e0000
+
+        dc.l    $01a20fff
+        dc.l    $01a40888
+        dc.l    $01a60ccc
+        dc.l    $01aa0fff
+        dc.l    $01ac0888
+        dc.l    $01ae0ccc
+        dc.l    $01001200
+        dc.l    $01800000
+        dc.l    $0182000a
+        dc.l    $fffffffe
+
+gfxname:
+        dc.b    "graphics.library",0
+
+even
+
+sprite1:
+        dc.l    $50506000
+        dc.w    %1111111111111110,%0000000000000001
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %0000000000111110,%0111111111111111
+        dc.w    %0000000000111110,%0000000000011111
+        dc.w    %0000000000111110,%0000000000011111
+        dc.w    %0000000000111110,%0000000000011111
+        dc.w    %1111100000111110,%0000000000011111
+        dc.w    %1111111111111110,%0111100000011111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %0111111111111100,%0011111111111110
+        dc.w    %0011111111111000,%0001111111111100
+        dc.w    %0000000000000000,%0001111111111000
+        dc.l    0
+sprite2:
+        dc.l    $50596000
+        dc.w    %1111111111111111,%0000000000000000
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111100000000000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111111111,%0111100000000000
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1000000000000000,%0111111111111111
+        dc.l    0
+sprite3:
+        dc.l    $50626000
+        dc.w    %1111111111111111,%0000000000000000
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111100000000000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111100000000000,%0111111111110000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1000000000000000,%0111110000000000
+        dc.l    0
+sprite4:
+        dc.l    $506b6000
+        dc.w    %1111111111111111,%0000000000000000
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111111111111110,%0111111111111111
+        dc.w    %1111100000000000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111111111100000,%0111111111110000
+        dc.w    %1111100000000000,%0111111111110000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1111100000000000,%0111110000000000
+        dc.w    %1000000000000000,%0111110000000000
+        dc.l    0
+
+initpointers:
+        move.l  #sprite1,d0
+        move.w  d0,first+6
+        move.l  #sprite2,d0
+        move.w  d0,second+6
+        move.l  #sprite3,d0
+        move.w  d0,third+6
+        move.l  #sprite4,d0
+        move.w  d0,fourth+6
+        rts
+
+Nun, wie ihr am anfang seht, benutze ich auch die Org/Load kombination. Das
+mache ich deshalb, weil ich dann die initpointersroutine am ende Kuerzer
+halten kann, und sie nur die Low adressen eintragen muss, weil ich die
+Highwerte der adressen der Datenliste schon in der Copperliste die im
+Source enthalten schon eingetragen habe.
+
+Wundert euch nicht ueber die Spritedefinitionen, sie sehen etwas komisch
+aus, aber das ergenbnis muesste doch ueberzeugen.
+Ich wuerde vorschlagen ihr definiert mal selber ein Logo, damit ihr etwas
+Uebung in sachen Spritedatenliste bekommt. Ihr koennt allerdings auch mehr
+als 4 sprites benutzten, ihr muesst dann nur, in der copperliste aus der
+4 im High werte in der Copperliste eine Drei machen, und die Initpointer
+routine am ende erweitern...alles Klor ?
+
+                Jeff Kandle

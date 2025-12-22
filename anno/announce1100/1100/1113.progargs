@@ -1,0 +1,129 @@
+From zerkle Thu Apr 13 02:21:41 1995
+Received: by toadflax.cs.ucdavis.edu (4.1/UCD.CS.2.6)
+	id AA15962; Thu, 13 Apr 95 02:21:40 PDT
+Received: from python.CS.ORST.EDU by toadflax.cs.ucdavis.edu (4.1/UCD.CS.2.6)
+	id AA15956; Thu, 13 Apr 95 02:21:37 PDT
+Received: from gila.CS.ORST.EDU (gila.CS.ORST.EDU [128.193.36.61]) by python.CS.ORST.EDU (8.6.9/8.6.9) with ESMTP id CAA05566 for <announce@cs.ucdavis.edu>; Thu, 13 Apr 1995 02:21:37 -0700
+Received: (hackbod@localhost) by gila.CS.ORST.EDU (8.6.9/8.6.4) id CAA27503; Thu, 13 Apr 1995 02:21:40 -0700
+Date: Thu, 13 Apr 1995 02:21:40 -0700 (PDT)
+From: Dianne Hackborn <hackbod@mail.CS.ORST.EDU>
+To: Amiga Announcements <announce@cs.ucdavis.edu>
+In-Reply-To: <9504130918.AA15910@toadflax.cs.ucdavis.edu>
+Message-Id: <Pine.3.89.9504130253.A27470-0100000@gila.CS.ORST.EDU>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Subject: SUBMIT ProgArgs Library v1.2
+Errors-To: zerkle@cs.ucdavis.edu
+X-Server: Zserver v0.90beta
+Status: RO
+
+submit
+
+TITLE
+
+     ProgArgs Library - program argument parsing support
+ 
+VERSION
+
+     1.2
+
+AUTHOR
+
+     Dianne Hackborn
+
+     E-mail: hackbod@mail.cs.orst.edu
+
+DESCRIPTION
+
+     ProgArgs is a shared library which is intended to make the handling
+     of CLI, Workbench and text file arguments simpler and more consistent.
+     It basically provides a wrapper around the DOS ReadArgs() function and
+     the Workbench argument functions, which unifies them into one standard
+     interface.  It also provides support for intelligently writing tool
+     types back out to disk -- only modifying the relevant entries, creating
+     comments for tool types which do not have a value, etc -- and provides
+     for the reading and writing of text files which are formatted much like
+     tool types.
+     
+     The library uses an argument definition format similar to the template
+     style used by ReadArgs(), except it extends this to an array of
+     structures, to include the additional information needed.  For example,
+     to process the arguments "FILES/A/M,ALL/S" with the defaults "#?" and
+     "no", a program would look something like this:
+     
+     #define FILES_ARG (TAG_ARGENTRY+1)
+     #define ALL_ARG (TAG_ARGENTRY+2)
+
+     struct MultiArg DefFiles[] = {
+       { "#?", NULL, NULL },
+       { NULL }
+     };
+
+     struct ArgEntry myEntries[] = {
+       { FILES_ARG, "FILES/A/M", "Files to process",
+         AEFLAG_DEFAULT, &DefFiles[0], NULL },
+       { ALL_ARG, "ALL/S", "Recursively process files",
+         AEFLAG_DEFAULT, FALSE, NULL },
+       { TAG_END }
+     };
+     
+     ...
+
+     struct ProgArgs * myArgs;
+
+     myArgs = AllocProgArgs(&myEntries[0],
+            PA_WBStartup,       _WBenchMsg,  /* Hand in WB startup */
+            RPA_WBArguments,    FILES_ARG,   /* Parse WB startup */
+            PA_IgnoreError,     TRUE,        /* Don't fail on next err */
+            RPA_ProgIcon,       !_WBenchMsg, /* If no WB startup, read */
+                                             /* directly from icon */
+            PA_IgnoreError,     FALSE,       /* Allow fail on next err */
+            RPA_CmdInput,       TRUE,        /* Parse command line */
+            TAG_END);
+
+     if(!myArgs) exit(20);
+     
+     /* Retrieve program arguments */
+     
+     struct MultiArg* files;
+     ULONG all_flag;
+
+     GetProgArgs(myArgs, FILES_ARG,&files, ALL_ARG,&all_flag, TAG_END);
+	
+SPECIAL REQUIREMENTS
+
+     OS 2.04 (V37) or greater; tested up to 3.1.
+     No other software requirements.
+
+     Only tested with SAS/C; no assembly language header files provided.
+
+AVAILABILITY
+
+     Available from Aminet, eg:
+        
+     ftp://ftp.wustl.edu/pub/aminet/util/libs/progargs1_2.lha
+
+     If you have WWW access, it can also be retrieved from my pages at
+     http://www.cs.orst.edu/~hackbod/amiga/
+
+PRICE
+
+     Shareware.  A fee of $5 is asked for programmers using the
+     library who would like more support than the documentation
+     provided with it or to include the library binary in their own
+     distributions.  There is no shareware fee for end-users.
+
+DISTRIBUTABILITY
+
+     Copyright (C) 1995 by Dianne Hackborn.
+
+     Freely distributable as long as the contents of the archive
+     are kept intact.
+
+----------------------------------------------------------------------------
+Dianne Kyra Hackborn         "All our lives we love illusion, neatly caught
+hackbod@mail.cs.orst.edu     between confusion and the need to know we are
+Oregon State University      alive."
+//www.cs.orst.edu/~hackbod/                                 -- The Residents
+
+

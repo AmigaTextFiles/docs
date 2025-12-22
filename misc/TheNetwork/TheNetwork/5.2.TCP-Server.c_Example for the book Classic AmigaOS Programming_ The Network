@@ -1,0 +1,391 @@
+/**********************************************************************************
+;
+; Copyright 2025 ing. E. Th. van den Oosterkamp
+;
+; Example software for the book "Classic AmigaOS Programming: The Network"
+; http://edsa.uk/books (ISBN  9798301294907)
+;
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated files (the "Software"), to deal in the Software
+; without restriction, including without limitation the rights to use, copy,
+; modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+; and to permit persons to whom the Software is furnished to do so,
+; subject to the following conditions:
+;
+; The above copyright notice and this permission notice shall be included in
+; all copies or substantial portions of the Software.
+;
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+; INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+; PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+; HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+; SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+;
+***********************************************************************************/
+
+
+#include <stdio.h>
+#include <string.h>
+
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/dos.h>
+#include <intuition/intuitionbase.h>
+#include <intuition/intuition.h>
+
+#include <netdb.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <proto/socket.h>
+
+
+// /opt/amiga/bin/m68k-amigaos-gcc Server.c -noixemul -Os -o Server
+
+// ---------------------------------------------------------------------------
+// Ensure that AmigaOS gives us enough stack
+
+#ifdef __VBCC__
+	__entry char StackCookie[] = "$STACK:10240";
+#endif
+#ifdef __GNUC__
+	__attribute__((used)) char StackCookie[] = "$STACK:10240";
+#endif
+
+// ---------------------------------------------------------------------------
+
+// The SocketBase is only required by GCC.
+#ifdef __GNUC__
+	struct Library * SocketBase = NULL;
+#endif
+
+// The variables used to store the socket error codes
+static long ErrNo=0;
+static long HErrNo=0;
+
+
+// ---------------------------------------------------------------------------
+// - Ensure the error number is within the expected range.
+// - Get the human readable string and print it after the provided message.
+
+void Error( char * pMsg )
+{
+	long Error = ErrNo;
+	
+	if ( Error < 0 ) Error = -Error;
+	if ( Error > 10000 ) Error -= 10000;
+	
+	struct TagItem tags[2];
+	tags[0].ti_Tag= SBTM_GETVAL(SBTC_ERRNOSTRPTR);
+	tags[0].ti_Data= Error;
+	tags[1].ti_Tag= TAG_END;
+	
+	if ( SocketBaseTagList( tags ) != 0 )
+	{
+		printf( "%s Unkown error: %ld\n", pMsg, ErrNo );
+	}
+	else
+	{
+		char * pErrStr = (char *)tags[0].ti_Data;
+		printf( "%s Error: %ld (%s)\n", pMsg, ErrNo, pErrStr );
+	}
+}
+
+// ---------------------------------------------------------------------------
+// - Open a socket of the requested type.
+// - Select the events that are of interest.
+// - Enable non-blocking. This will also enable asynchronous events.
+
+int PrepareSocket( int Type )
+{
+	int Socket = socket( AF_INET, Type, 0 );
+	if ( Socket < 0 )
+	{
+		Error( "PrepareSocket: Unable to open socket!" );
+		return -1;
+	}
+	
+	ULONG Temp = FD_ACCEPT | FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+	setsockopt( Socket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+	
+	ULONG Value = 1;
+	if ( IoctlSocket( Socket, FIONBIO, (char *)&Value ) < 0 )
+	{
+		CloseSocket( Socket );
+		Error( "PrepareSocket: Unable to set socket to non-blocking!" );
+		return -1;
+	}
+	
+	return Socket;
+}
+
+// ---------------------------------------------------------------------------
+// Open a window with a close gadget.
+
+struct Window * PrepareWindow()
+{
+	static char  Title[] = "TCP Server";
+	ULONG WinTags[] = {
+						WA_Width,    200,
+						WA_Height,   100,
+						WA_Title,    (ULONG)&Title,
+						WA_IDCMP,IDCMP_CLOSEWINDOW,
+						WA_Activate, 1,
+						WA_CloseGadget,1
+					 };
+	
+	struct Window * pWin = OpenWindowTagList( NULL, (struct TagItem *)&WinTags );
+	if ( !pWin )
+	{
+		printf( "PrepareWindow: Unable to open window!\n" );
+		return NULL;
+	}
+	
+	return pWin;
+}
+
+// ---------------------------------------------------------------------------
+// - Check the window's user port for messages.
+// - Return -1 if the close gadget was clicked.
+// - Otherwise return 0.
+
+int ProcessWindowMsg( struct Window * pWin )
+{
+	int Result = 0;
+	
+	struct Message * pMsg;
+	while ( pMsg = GetMsg( pWin->UserPort ) )
+	{
+		struct IntuiMessage * pIMsg = (struct IntuiMessage *)pMsg;
+		
+		switch ( pIMsg->Class )
+		{
+			case IDCMP_CLOSEWINDOW :
+					Result = -1;
+					break;
+		}
+		
+		ReplyMsg( pMsg );
+	}
+	
+	return Result;
+}
+
+// ---------------------------------------------------------------------------
+
+static int NewSocket = -1;
+
+int ProcessSocketEvent()
+{
+	// Check which socket received which events
+	ULONG EventMask=0;
+	int EventSocket = GetSocketEvents( &EventMask );
+	if ( EventSocket == -1 )
+	{
+		printf( "No events!\n" );
+		return 0;
+	}
+	
+	printf( "Event for socket: %d ", EventSocket );
+	
+	if ( EventMask & FD_ERROR )
+	{
+		if ( ErrNo == 0 )
+		{
+			// Get the error from the socket
+			long Length = sizeof( ErrNo );
+			getsockopt( EventSocket, SOL_SOCKET, SO_ERROR, &ErrNo, &Length );
+		}
+		Error( "FD_ERROR!" );
+	}
+	
+	if ( EventMask & FD_ACCEPT )
+	{
+		// Only accepting one connection at one time
+		if ( NewSocket < 0 )
+		{
+			NewSocket = accept( EventSocket, NULL, 0 );
+			if ( NewSocket == -1 )
+			{
+				Error( "Unable to accept on socket!" );
+			}
+			else
+			{
+				printf( "Incoming connection! New socket %d!\n", NewSocket );			
+				ULONG Temp = FD_READ | FD_WRITE | FD_CLOSE | FD_ERROR;
+				setsockopt( NewSocket, SOL_SOCKET, SO_EVENTMASK, &Temp, sizeof(Temp) );
+			}
+		}
+	}
+	
+	if ( EventMask & FD_WRITE )
+	{
+		printf( "FD_WRITE\n" );
+	}
+	
+	if ( EventMask & FD_READ )
+	{
+		printf( "FD_READ " );
+		
+		// There is data to be read
+		char Buffer[ 1024 ];
+		int BytesDone = recv( EventSocket, Buffer, 1023, 0 );
+		if ( BytesDone < 0 )
+		{
+			Error( "recv" );
+		}
+		else
+		{
+			Buffer[ BytesDone  ] = '\0';
+			printf( "Received: %d bytes\n", BytesDone  );
+			//printf( "%s\n", Buffer );
+			
+			// Send the received data back to the sender
+			int BytesSent = send( EventSocket, Buffer, BytesDone, 0 );
+			if ( BytesSent < 0 )
+			{
+				Error( "send" );
+			}
+			else
+			{
+				printf( "sent: %d bytes.\n", BytesSent );
+			}
+		
+			// And that is all we will send.
+			shutdown( EventSocket, 1 );
+		}
+	}
+	
+	if ( EventMask & FD_CLOSE )
+	{
+		printf( "FD_CLOSE\n" );
+		
+		if ( EventSocket == NewSocket )
+		{
+			CloseSocket( NewSocket );
+			NewSocket = -1;
+		}
+	}
+	
+	return 0;
+}
+
+// ---------------------------------------------------------------------------
+
+void Server( ULONG SocketSigMask )
+{
+	// Prepare a non-blocking TCP socket.
+	int Socket = PrepareSocket( SOCK_STREAM );
+	if ( Socket < 0 )
+	{
+		return;
+	}
+	
+	printf( "Socket open..\n" );
+
+	// Prepare the window.
+	struct Window * pWin = PrepareWindow();
+	if ( !pWin )
+	{
+		CloseSocket( Socket );
+		return;
+	}
+	
+	// Get the signal mask for the signal used by the window's IDCMP port
+	ULONG WindowSigMask = 1 << pWin->UserPort->mp_SigBit;
+	
+	// Bind the socket to port 80.
+	struct sockaddr_in SockAddr;
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_port = 80;
+	SockAddr.sin_addr.s_addr = INADDR_ANY;
+	
+	int Result = bind( Socket, (struct sockaddr *)&SockAddr, sizeof( SockAddr ) );
+	if ( Result < 0 )
+	{
+		Error( "Unable to bind socket!" );
+		CloseWindow( pWin );
+		CloseSocket( Socket );
+		return;
+	}
+	
+	printf( "Socket bound!\n" );
+	
+	// Listen for incoming connections
+	Result = listen( Socket, 1 );
+	if ( Result == -1 )
+	{
+		Error( "Unable to listen on socket!" );
+	}
+	else
+	{
+		int Result = 0;
+		while ( Result >= 0 )
+		{
+			// Wait for a socket event, a window message, or a CTRL-C in the CLI/shell
+			ULONG Signals = Wait( SocketSigMask | WindowSigMask | SIGBREAKF_CTRL_C );
+			if ( Signals & SIGBREAKF_CTRL_C )
+			{
+				printf( "Break signal!\n" );
+				break;
+			}
+	
+			if ( Signals & WindowSigMask )
+			{
+				printf( "That's the window's IDCMP signal..\n" );
+				Result = ProcessWindowMsg( pWin );
+			}
+	
+			if ( Signals & SocketSigMask )
+			{
+				printf( "That's the Socket event signal..\n" );
+				Result = ProcessSocketEvent();
+			}
+		}
+	}
+	
+	CloseWindow( pWin );
+	
+	if ( NewSocket != -1 )
+	{
+		CloseSocket( NewSocket );
+	}
+	
+	CloseSocket( Socket );
+}
+
+
+// ---------------------------------------------------------------------------
+
+int main()
+{
+	// Allocate an Exec signal
+	BYTE SocketSignal = AllocSignal( -1 );
+	ULONG SocketSigMask = 1 << SocketSignal;
+	
+	// Open the BSD socket library
+	#ifdef __GNUC__
+	SocketBase = OpenLibrary( "bsdsocket.library", 4 );
+	if ( !SocketBase )
+	{
+		printf( "Unable to open bsdsocket.library!\n" );
+		return 0;
+	}
+	#endif
+	
+	// Use the signal for the socket asynchronous events and
+	// specify the variables that will receive socket library error codes.
+	SocketBaseTags( SBTM_SETVAL(SBTC_SIGEVENTMASK), SocketSigMask,
+					SBTM_SETVAL(SBTC_ERRNOLONGPTR), (int)&ErrNo,
+					SBTM_SETVAL(SBTC_HERRNOLONGPTR), (int)&HErrNo, TAG_END );
+	
+	Server( SocketSigMask );
+	
+	#ifdef __GNUC__
+	CloseLibrary( SocketBase );
+	#endif
+	FreeSignal( SocketSignal );
+	
+	
+	return 0;
+}
